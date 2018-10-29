@@ -33,7 +33,7 @@ if use_pickled_theories:
     ## think about whether you want each run of vgdl.load_games to use a particular theory for each game,
     ## or to loop through all of them, etc.
     embed()
-burn_in_episodes_per_game = 1
+burn_in_episodes_per_game = 5
 
 if game_name==str(0):
     game_name = game_names[game_number]
@@ -150,7 +150,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps):
     print game_levels
 
     total_time = time.time() - start_time
-
+    print "time it took to run play_trainset one time: {}".format(total_time)
     return total_time
 
 def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path=None):

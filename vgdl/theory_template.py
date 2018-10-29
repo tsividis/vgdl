@@ -292,9 +292,8 @@ class Theory(object):
 
 		self.goalColor = False ## TODO. Hack added 1/18/17 in lieu of termination set.
 
-		self.resource_limits = defaultdict(lambda:1)
+		self.resource_limits = defaultdict(int)#defaultdict(lambda:1)
 
-	## is to copy a theory and then change its interactionSet and spriteSet.
 	def __hash__(self):
 		return hash(sum([r.__hash__() for r in self.interactionSet]) + sum([s.__hash__() for s in self.spriteSet]))
 
@@ -2551,7 +2550,11 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
 
 	for resource in resourcesToAdd:
-		theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
+		if resource in theory.resource_limits.keys():
+			theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
+		else:
+			## writing it this way to circumvent what was previously theory.resource_limits = defaultdict(lambda:1)
+			theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, 1)
 
 	if goalLoc:
 		if newGoalType == 'blank_space':
