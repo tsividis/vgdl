@@ -280,7 +280,15 @@ p = ggplot(subset(plantimedata, game_name!='boulderchase_1'), aes(x=agent_type, 
 p
 ## save as 10x16
 
-## same thing but not grouped by game. not easy to ready.
+## plot idx_1 vs idx_3
+for (i in 1:length(levels(data$agent_type))){
+  agent = levels(data$agent_type)[i]
+  p = ggplot(subset(data, agent_type==agent), aes(x=planner_settings))
+  p=p+geom_histogram(breaks=c(0.5,1.5,2.5,3.5,4.5),aes(y=..density..))+facet_wrap(~game_name)
+  p
+}
+
+## same thing but not grouped by game. not easy to read.
 # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
 #   geom_bar(position='dodge', stat='identity')+
 #   theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_fill_manual(values=colors)
@@ -343,13 +351,6 @@ m = multiplot(plotlist = plantimeplots, layout=layout)
 
 
 
-
-##plot of hyperparameter_idx_1 vs idx_3
-for (i in 1:length(levels(data$agent_type))){
-  agent = levels(data$agent_type)[i]
-  d=subset(data, agent_type==agent)
-  ## sum planner_nodes that match each planner_settings value 
-}
 
 model_run1 = '2018-10-15_'
 model_run2 = '2018-10-18_'
