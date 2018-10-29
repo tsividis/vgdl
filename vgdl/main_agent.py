@@ -128,8 +128,9 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.shortHorizonRandomChoice = [200,500,1000]
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
-                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes)
+        self.allow_long_range = False ## for the exploration lesion we want to optionally disable long-range planning
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
+                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes, self.allow_long_range)
         print self.param_ID
         self.conservative = False
         self.regrounding = 1
@@ -878,14 +879,15 @@ class Agent:
                     ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                     if self.checkForRepeatedDeaths(self.episodeRecord, 2):
                         if self.hyperparameter_index == 1:
-                            # if self.display_text:
-                                # print "Repeated deaths. Switching to short-range planning"
                             new_index = 1
                             conservative = False
                         elif self.hyperparameter_index == 3:
-                            if self.display_text:
-                                print "Repeated deaths. Switching to long-range planning"
-                            new_index = 1
+                            if self.allow_long_range:
+                                if self.display_text:
+                                    print "Repeated deaths. Switching to long-range planning"
+                                new_index = 1
+                            else:
+                                new_index = 3
                             conservative = False
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
 
@@ -904,9 +906,13 @@ class Agent:
                                 (not movingTypes or (movingTypes and not scoreChange)):
                                 # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                             # if self.display_text:
-                            print "switching to long-range planning"
-                            ## switch to long-range planning
-                            new_index = 1
+                            
+                            if self.allow_long_range:
+                                print "switching to long-range planning"
+                                ## switch to long-range planning
+                                new_index = 1
+                            else:
+                                new_index = 3
                             planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                             conservative = False
                             # embed()
@@ -954,7 +960,7 @@ class Agent:
                         self.extra_atom = True
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
                         # if self.display_text:
-                        print "Didn't get solution. Observing, then replanning."
+                        print "Didn't get solution. Taking random steps."
                         # self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
                         solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                         for i in range(self.random_steps_on_plan_failure):
