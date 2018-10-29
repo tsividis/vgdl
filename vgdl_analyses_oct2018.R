@@ -10,7 +10,7 @@ library("RColorBrewer")
 
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
-date = c('oct28_local')
+date = c('oct26')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -31,6 +31,7 @@ dir.create(plotpath)
 
 ## load human data
 humandatapath = c('pilot_Oct29th_Full')
+date='oct28_local'
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
 humandata=read.csv(path, header=TRUE, na.strings='NA')
 humandata$agent_type=as.factor('human')
@@ -38,7 +39,7 @@ humandata$subject_ID = as.factor(humandata$subject)
 humandata$subject = NULL ## drop old name
 humandata$modelrun_ID = as.factor('oct29')
 humandata$condition = as.factor('full')
-humandata$game_name = humandata$gameName
+humandata$game_name = as.factor(humandata$gameName)
 humandata$gameName = NULL
 humandata$level_number = humandata$gameLevel
 humandata$gameLevel = NULL
@@ -49,8 +50,50 @@ humandata$group = NULL ## drop this for now. it refers to the groupings of the g
 humandata$gameNumber = NULL
 humandata$gameRound = NULL
 humandata$exploration_burn_ins = as.factor(0)
-humandata$
-humandata
+humandata$episode_end = NA
+humandata$win = NA
+humandata$episode_end = NA
+humandata$timestep = humandata$steps
+humandata$steps = NULL
+humandata$sparse_score = NA
+humandata$level_accumulated_score=NA ##TODO: fix
+humandata$win=NA
+humandata$planner_settings = NA
+humandata$planner_nodes = NA
+humandata$cumulative_planner_nodes = NA
+humandata$local_score = NA
+humandata$all_score = NA
+humandata$level_max_score = NA
+humandata$cumulative_max_score = NA
+
+## fix cumulative_timesteps
+humandata$cumulative_timestep = 1
+for (i in 2:length(humandata$timestep)){
+  prevrow = humandata[i-1,]
+  row = humandata[i,]
+  if (row$subject_ID==prevrow$subject_ID & row$game_name==prevrow$game_name){
+    humandata[i,]$cumulative_timestep = prevrow$cumulative_timestep + 1
+  }
+  else{
+    print(row)
+  }
+}
+
+##remove first part of game string from humandata names
+
+humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name())))
+
+data$real_time = NA
+names(humandata) = names(data)
+alldata = rbind(data, humandata)
+
+
+p = ggplot(subset(alldata,game_name==levels(humandata$game_name)[3]), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
+p+geom_point()+geom_smooth()
+
+## continue here:
+## episode_end in data roughly matches gameRound, which is the round of some particular level that we're playing
+
 ## figure out how to add the two data frames so we can plot everything together
 
 g_legend <- function(a.gplot){ 
@@ -59,15 +102,20 @@ g_legend <- function(a.gplot){
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
 
-
-remove_variant_from_name = function(name){
-  if (grepl('variant', name)){
-    keep = substr(name, nchar('variant_')+1, nchar(name))
+##finish this
+remove_string_from_name = function(name){
+  strings_to_remove = c('gvgai_variant','expt_variant', 'variant','gvgai')
+  for (i in length(strings_to_remove)){
+    string_to_remove = strings_to_remove[i]
+    if (grepl(string_to_remove, name)){
+      keep = substr(name, nchar(string_to_remove)+2, nchar(name))
+    }
+    else{
+      keep=name
+    }
+    return(keep)
+    
   }
-  else{
-    keep=name
-  }
-  return(keep)
 }
 
 
