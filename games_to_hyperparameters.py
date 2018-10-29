@@ -3,7 +3,7 @@
 game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
 'bees_and_birds','variant_bees_and_birds_1',  
 'butterflies', 'variant_butterflies_1', 'variant_butterflies_2', 
-'chase', 'variant_chase_1', 'variant_chase_2',
+'chase', 'variant_chase_1', 'variant_chase_2', 'variant_chase_3', 
 'closing_gates', 'variant_closing_gates_1',
 'corridor','variant_corridor_1', 
 'expt_ee', 'variant_expt_ee_1', 'variant_expt_ee_2', 'variant_expt_ee_3', 
@@ -14,13 +14,9 @@ game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_
 'surprise', 'variant_surprise_1', 'variant_surprise_2',
 'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
  'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3',# ] ##44
-
-## more memory -- 64gb
-# game_names = [
 'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 'bait', 'variant_bait_1', 'variant_bait_2',
-# 'boulderdash', 'variant_boulderdash_1',
-'variant_chase_3', 
+'boulderdash', 'variant_boulderdash_1', 'variant_boulderdash_2',
 'expt_antagonist', 'variant_expt_antagonist_1','variant_expt_antagonist_2', 
 'expt_helper', 'variant_expt_helper_1', 'variant_expt_helper_2', 
 'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_preconditions_2', #19
