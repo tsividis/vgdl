@@ -64,7 +64,10 @@ def process_model_run(data, modelrun_ID):
 		gamefilewriter = csv.writer(f)
 	
 	agent_type = data['modelParams']
-	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 'NA'
+	agent_type = 'agent1'
+	print "you've modified agent_type to test a single thing, but you need to remove this modification"
+	embed()
+	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 0
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0

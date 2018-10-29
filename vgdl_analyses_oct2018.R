@@ -10,7 +10,7 @@ library("RColorBrewer")
 
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
-date = c('oct23')
+date = c('oct28_local')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -22,14 +22,19 @@ data$local_score = as.numeric(as.character(data$score))
 data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
+data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_variant_from_name)))
-
-# data = transform(data,game_name=factor(game_name, levels=all_game_names))
-
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
+# data = transform(data,game_name=factor(game_name, levels=all_game_names))
 
+## load human data
+humandatapath = c('pilot_Oct29')
+path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
+humandata=read.csv(path, header=TRUE, na.strings='NA')
+
+## figure out how to add the two data frames so we can plot everything together
 
 g_legend <- function(a.gplot){ 
   tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
@@ -105,10 +110,10 @@ remove_variant_from_name = function(name){
 
 ## plot scores
 plots = list()
-for (i in 1:length(existing_games)){
-  game = existing_games[i]
+for (i in 1:length(levels(data$game_name))){
+  game = levels(data$game_name)[i]
   
-  p=ggplot(subset(data, (game_name==game)&(agent_type=='params__IW=2__ea=True') ), aes(x=cumulative_steps, y=level_accumulated_score, color=modelrun_ID)) ##color=agent_type
+  p=ggplot(subset(data, (game_name==game) ), aes(x=cumulative_steps, y=level_accumulated_score, color=modelrun_ID)) ##color=agent_type
   p=p+geom_point(size=1, position=position_jitter(width=.1,height=.1),color='steelblue3')+
     geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5, color='steelblue3')+
     #  scale_color_manual(values=colors) + #theme(legend.position="none")+
@@ -139,6 +144,8 @@ for (i in 1:length(existing_games)){
   #ggsave(title, plot=p, width=15, height=10)
 }
 
+
+
 colors = c('firebrick2', 'tomato2', 'salmon', 
            'steelblue3', 'steelblue1', 
            'palegreen3', 'seagreen3','darkolivegreen1',  
@@ -152,8 +159,8 @@ max_num_agents = 0
 ## plot wins
 plots = list()
 q=list()
-for (i in 1:length(existing_games)){
-  game = existing_games[i]
+for (i in 1:length(levels(data$game_name))){
+  game = levels(data$game_name)[i]
   d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=False")
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
@@ -201,6 +208,28 @@ for (i in 1:length(existing_games)){
   #ggsave(title, plot=p, width=15, height=10)
 }
 
+
+#####
+#####
+### playing around with plotting exploration lesion data.
+colors = c('firebrick2', 'steelblue1', 'salmon', 
+           'steelblue3', 'steelblue1', 
+           'palegreen3', 'seagreen3','darkolivegreen1',  
+           'purple2', 'mediumorchid2', 
+           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+
+names(colors)=levels(data$exploration_burn_ins)
+colorScale = scale_color_manual(name="exploration_burn_ins", values=colors)
+
+
+p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=exploration_burn_ins))
+p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+  scale_color_manual(values=colors) + theme(legend.position="none")+
+  ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+p
+
+#####
+#####
 ## create blank data frame object so we can move the legend to the right.
 # df <- data.frame()
 # w = ggplot(df) + geom_point() +xlim(0,1) 
