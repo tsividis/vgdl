@@ -89,6 +89,13 @@ class WBP():
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
 	
+		if self.theory.resource_limits.keys():
+			print "in WBP. Got a theory with pre-set limits"
+			embed()
+		else:
+			## set it to what it should have been if we were able to pickle lambda functions
+			self.theory.resource_limits = defaultdict(lambda:1)
+
 		##### MARK, EXPLORATION
 		##### ANY FUTURE PLANNING (LIKE WHEN BFS IS CALLED) DEPENDS ON
 		##### THEORY'S CURRENT STATE
