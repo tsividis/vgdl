@@ -117,7 +117,7 @@ class Agent:
         self.extra_atom = False
         self.epsilon_greedy = epsilon_greedy
         self.hybrid = True
-        self.switch_to_exploit_step = 2000
+        self.switch_to_exploit_step = 1000
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
@@ -327,7 +327,7 @@ class Agent:
             pass
         return Vrle
 
-    def VrleInitPhase(self, flexible_goals=False):
+    def VrleInitPhase(self, flexible_goals=False, updateTermins=True):
         ## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
         VRLEs = []
 
@@ -335,7 +335,7 @@ class Agent:
             tempHypothesis = copy.deepcopy(hypothesis)
             tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-            if not flexible_goals and not self.init_hypothesis:
+            if not flexible_goals and updateTermins:
                 tempHypothesis.updateTerminations()
             VRLEs.append(self.initializeVrle(tempHypothesis))
 
@@ -755,15 +755,17 @@ class Agent:
                 quit_level = False
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
-            if self.init_hypothesis:
+            updateTermins = True
+            if self.init_hypothesis or (not self.hybrid and not drew_random_action):
                 print "removing noveltyTerminations from the theory"
                 ## Remove noveltyTerminations from the theory.
                 def is_not_novelty_rule(rule):
                     return not isinstance(rule, NoveltyRule)
                 self.hypotheses[0].terminationSet = filter(is_not_novelty_rule, self.hypotheses[0].terminationSet)
+                updateTermins = False
 
             ## initialize one or many VRLEs according to hypothesis-selection method
-            theoryRLEs = self.VrleInitPhase(flexible_goals)
+            theoryRLEs = self.VrleInitPhase(flexible_goals, updateTermins)
 
             quitting = False
 
