@@ -116,7 +116,7 @@ class Agent:
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
         self.epsilon_greedy = epsilon_greedy
-        self.hybrid = False
+        self.hybrid = True
         self.switch_to_exploit_step = 2000
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
