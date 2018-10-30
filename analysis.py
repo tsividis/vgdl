@@ -66,12 +66,12 @@ def process_model_run(data, modelrun_ID):
 	
 	agent_type = data['modelParams']
 	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 'NA'
-	if 'exploration_burn_ins' in data.keys():
-		agent_type = 'lesion'
-	else:
-		agent_type = 'normal'
-	print "you've modified agent_type to test a single thing, but you need to remove this modification"
-	embed()
+	# if 'exploration_burn_ins' in data.keys():
+	# 	agent_type = 'lesion'
+	# else:
+	# 	agent_type = 'normal'
+	# print "you've modified agent_type to test a single thing, but you need to remove this modification"
+	# embed()
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0

@@ -17,7 +17,7 @@ parser.add_argument('--make_movie', type=str2bool, default=False, help='make_mov
 parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
 parser.add_argument('--max_rand_steps',type=int,default=0,help='MAX STEPS')
 parser.add_argument('--use_pickled_theories',type=str2bool, default=False)
-parser.add_argument('--epsilon_greedy',type=float, default=0)
+parser.add_argument('--epsilon_greedy',type=str2bool, default=False)
 
 args = parser.parse_args()
 game_number = args.game_number
@@ -121,7 +121,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, epsilon_greedy=0):
+def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, epsilon_greedy=False):
     start_time = time.time()
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
@@ -216,9 +216,8 @@ def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_inde
 ## To run with epsilon_greedy call w/o max_rand_steps and w/o pickled_theory_path but w/ epsilon_greedy=True
 #######
 ## normal play
-if pickled_theory_path==str(0) and max_rand_steps==0 and epsilon_greedy==0:
-    print "you actually haven't implemented things such that you can run normal mode in this branch"
-    embed()
+if pickled_theory_path==str(0) and max_rand_steps==0 and epsilon_greedy==False:
+    print "running normal mode"
     play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
 ##explore randomly to make theories
 elif pickled_theory_path == str(0) and max_rand_steps>0:
