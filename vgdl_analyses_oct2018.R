@@ -45,26 +45,16 @@ humandata$level_number = humandata$gameLevel
 humandata$gameLevel = NULL
 humandata$cumulative_wins = humandata$levels_won
 humandata$levels_won = NULL
+humandata$exploration_burn_ins = as.factor(0)
+humandata$timestep = humandata$steps
+humandata$steps = NULL
+humandata$levelscore=humandata$score
+humandata$score=0
+
 humandata$levels_lost = NULL ##idk what this is; we don't need it
 humandata$group = NULL ## drop this for now. it refers to the groupings of the games we gave to people
 humandata$gameNumber = NULL
 humandata$gameRound = NULL
-humandata$exploration_burn_ins = as.factor(0)
-humandata$episode_end = NA
-humandata$win = NA
-humandata$episode_end = NA
-humandata$timestep = humandata$steps
-humandata$steps = NULL
-humandata$sparse_score = NA
-humandata$level_accumulated_score=NA ##TODO: fix
-humandata$win=NA
-humandata$planner_settings = NA
-humandata$planner_nodes = NA
-humandata$cumulative_planner_nodes = NA
-humandata$local_score = NA
-humandata$all_score = NA
-humandata$level_max_score = NA
-humandata$cumulative_max_score = NA
 
 ## fix cumulative_timesteps
 humandata$cumulative_timestep = 1
@@ -73,29 +63,55 @@ for (i in 2:length(humandata$timestep)){
   row = humandata[i,]
   if (row$subject_ID==prevrow$subject_ID & row$game_name==prevrow$game_name){
     humandata[i,]$cumulative_timestep = prevrow$cumulative_timestep + 1
+    if (row$level_number==prevrow$level_number){
+      humandata[i,]$score = prevrow$score + (row$levelscore-prevrow$levelscore)
+      }
+    else if (row$level_number > prevrow$level_number){
+      humandata[i,]$score = prevrow$score
+    }
   }
-  else{
-    print(row)
+}
+##remove first part of game string from humandata names
+humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
+humandata$levelscore = NULL
+humandata$level_number = as.factor(humandata$level)
+## now make sure that humandata has all the column names that data has.
+for (colname in names(data)){
+  if (!(colname %in% names(humandata))){
+    humandata[,colname] = NA
+    print(colname)
   }
 }
 
-##remove first part of game string from humandata names
+## and vice-versa
+for (colname in names(humandata)){
+  if (!(colname %in% names(data))){
+    data[,colname] = NA
+    print(colname)
+  }
+}
 
-humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name())))
-
-data$real_time = NA
-names(humandata) = names(data)
+## make a single dataframe
 alldata = rbind(data, humandata)
 
+##example plot for one game
+p = ggplot(subset(alldata,game_name==levels(humandata$game_name)[1]), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
+p+geom_point()+geom_smooth()+ggtitle(game_name)
 
-p = ggplot(subset(alldata,game_name==levels(humandata$game_name)[3]), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
-p+geom_point()+geom_smooth()
+game=levels(humandata$game_name)[2]
+p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=score,color=agent_type))
+p+geom_point()+geom_smooth()+ggtitle(game)
 
-## continue here:
-## episode_end in data roughly matches gameRound, which is the round of some particular level that we're playing
 
-## figure out how to add the two data frames so we can plot everything together
+## this is weird when you plot by level_number and also when you plot by subject. looks like I took more actions
+## even in the games where that's not really possible (like surprise)
+p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
+p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)
+p
 
+
+
+           
 g_legend <- function(a.gplot){ 
   tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
@@ -105,17 +121,17 @@ g_legend <- function(a.gplot){
 ##finish this
 remove_string_from_name = function(name){
   strings_to_remove = c('gvgai_variant','expt_variant', 'variant','gvgai')
-  for (i in length(strings_to_remove)){
+  for (i in 1:length(strings_to_remove)){
     string_to_remove = strings_to_remove[i]
     if (grepl(string_to_remove, name)){
       keep = substr(name, nchar(string_to_remove)+2, nchar(name))
+      return(keep)
     }
     else{
       keep=name
     }
-    return(keep)
-    
   }
+  return(name)
 }
 
 
