@@ -17,6 +17,7 @@ parser.add_argument('--make_movie', type=str2bool, default=False, help='make_mov
 parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
 parser.add_argument('--max_rand_steps',type=int,default=0,help='MAX STEPS')
 parser.add_argument('--use_pickled_theories',type=str2bool, default=False)
+parser.add_argument('--epsilon_greedy',type=float, default=0)
 
 args = parser.parse_args()
 game_number = args.game_number
@@ -28,6 +29,7 @@ make_movie = args.make_movie
 pickled_theory_path = args.pickled_theory_path
 max_rand_steps = args.max_rand_steps
 use_pickled_theories = args.use_pickled_theories
+epsilon_greedy = args.epsilon_greedy
 if use_pickled_theories:
     print "haven't implemented use_pickled_theories stuff in load_games.py"
     ## think about whether you want each run of vgdl.load_games to use a particular theory for each game,
@@ -119,7 +121,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps):
+def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, epsilon_greedy=0):
     start_time = time.time()
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
@@ -139,7 +141,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps):
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
-            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps)
+            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, epsilon_greedy=epsilon_greedy)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -153,7 +155,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps):
     print "time it took to run play_trainset one time: {}".format(total_time)
     return total_time
 
-def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path=None):
+def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, pickled_theory_path=None):
     start_time = time.time()
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
@@ -214,16 +216,21 @@ def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_inde
 ## To run with epsilon_greedy call w/o max_rand_steps and w/o pickled_theory_path but w/ epsilon_greedy=True
 #######
 ## normal play
-if pickled_theory_path==str(0) and max_rand_steps==0:
+if pickled_theory_path==str(0) and max_rand_steps==0 and epsilon_greedy==0:
     print "you actually haven't implemented things such that you can run normal mode in this branch"
     embed()
     play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
 ##explore randomly to make theories
 elif pickled_theory_path == str(0) and max_rand_steps>0:
+    print "exploring randomly to make theories"
     for i in range(burn_in_episodes_per_game):
         play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
+elif pickled_theory_path == str(0) and epsilon_greedy:
+    print "playing with epsilon_greedy"
+    play_trainset(hyperparameter_sets, hyperparameter_index, epsilon_greedy=epsilon_greedy)
 ##use learned theories
 elif pickled_theory_path != str(0):
+    print "using learned theories"
     pickled_theory_path = './lesions/rand_exploration/{}'.format(game_name)
     max_rand_steps = 0 ## don't do random exploration if you're using a previously-acquired theory
     play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_index, max_rand_steps, pickled_theory_path)
