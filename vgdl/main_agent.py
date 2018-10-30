@@ -116,6 +116,8 @@ class Agent:
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
         self.epsilon_greedy = epsilon_greedy
+        self.hybrid = False
+        self.switch_to_exploit_step = 2000
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
@@ -130,8 +132,8 @@ class Agent:
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.shortHorizonRandomChoice = [200,500,1000]
         self.allow_long_range = False ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
-                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes, self.allow_long_range)
+        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
+                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice,self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy,self.switch_to_exploit_step, self.hybrid)
         print self.param_ID
         self.conservative = False
         self.regrounding = 1
@@ -731,6 +733,21 @@ class Agent:
         #######################################
         while not ended:
 
+            drew_random_action = False
+            
+            ### flip here. or take a random step. by doing this here you can leverage all the other stuff you've built
+            if self.epsilon_greedy:
+                ## calculate epsilon value according to annealing schedule
+                steps_so_far = self.total_game_steps+steps
+                if  steps_so_far < self.switch_to_exploit_step:
+                    epsilon = 1.-steps_so_far*((1-0.05)/self.switch_to_exploit_step)
+                else:
+                    epsilon = 0.05
+                print "steps so far {}. epsilon {}".format(steps_so_far, epsilon)
+                if random.random()<epsilon:
+                    print "taking a random step"
+                    drew_random_action = True
+
             self.max_nodes = self.stored_max_nodes
 
             if self.total_game_steps+steps > MAX_STEPS:
@@ -759,7 +776,7 @@ class Agent:
             ##############################
             ##### IF MOVING RANDOMLY #####
             ##############################
-            if self.max_rand_steps > 0 and self.total_game_steps+steps < self.max_rand_steps:
+            if (self.max_rand_steps > 0 and self.total_game_steps+steps < self.max_rand_steps) or (drew_random_action):
 
                 # do random moves
                 action = np.random.choice(legalActions)
@@ -842,7 +859,7 @@ class Agent:
                 ## noveltyTerminations after the random step phase.
                 ## This flag is passed to the planner.
                 filter_novelty = False
-                if self.max_rand_steps > 0 or self.init_hypothesis is not None:
+                if self.max_rand_steps > 0 or self.init_hypothesis is not None or (not self.hybrid and not drew_random_action):
                     filter_novelty = True
                     print "filter novelty", filter_novelty
 
@@ -858,9 +875,6 @@ class Agent:
 
                 ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
 
-                if self.epsilon_greedy:
-                    print "found epsilon_greedy"
-                    embed()
                 ## Initialize planner
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,

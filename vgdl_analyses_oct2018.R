@@ -10,7 +10,8 @@ library("RColorBrewer")
 
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
-date = c('oct28_local')
+## oct_18_local has model results for small_zelda
+date = c('oct30_local')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -162,7 +163,7 @@ plots = list()
 q=list()
 for (i in 1:length(levels(data$game_name))){
   game = levels(data$game_name)[i]
-  d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=False")
+  d=subset(data, game_name==game)
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
@@ -230,7 +231,7 @@ p=ggplot(data, aes(x=cumulative_steps, y=cumulative_wins,color=interaction(agent
 p=p+geom_point() +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)
 p
 
-## try another way of plotting this
+## try another way of plotting this once you have several games.
 
 #####
 #####
