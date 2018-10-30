@@ -22,6 +22,7 @@ data$local_score = as.numeric(as.character(data$score))
 data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
+
 data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_variant_from_name)))
@@ -218,15 +219,18 @@ colors = c('firebrick2', 'steelblue1', 'salmon',
            'purple2', 'mediumorchid2', 
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
+data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
+
 names(colors)=levels(data$exploration_burn_ins)
 colorScale = scale_color_manual(name="exploration_burn_ins", values=colors)
 
-
-p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=exploration_burn_ins))
-p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-  scale_color_manual(values=colors) + theme(legend.position="none")+
-  ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+## you're plotting based on the interaction but that gives you a discrete color scale, so you'd have to specify it manually. Maybe the thing
+## to do is make up a segmentation of some color spectrum (after you've seen the various points of the theory values).
+p=ggplot(data, aes(x=cumulative_steps, y=cumulative_wins,color=interaction(agent_type,exploration_burn_ins)))
+p=p+geom_point() +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)
 p
+
+## try another way of plotting this
 
 #####
 #####
