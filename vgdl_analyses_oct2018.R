@@ -24,17 +24,12 @@ data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
 
-data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
+#data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_variant_from_name)))
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
 # data = transform(data,game_name=factor(game_name, levels=all_game_names))
-
-## load human data
-humandatapath = c('pilot_Oct29')
-path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
-humandata=read.csv(path, header=TRUE, na.strings='NA')
 
 ## figure out how to add the two data frames so we can plot everything together
 
