@@ -102,7 +102,7 @@ class WBP():
 			def is_not_novelty_rule(rule):
 				return not isinstance(rule,NoveltyRule)
 			self.theory.terminationSet = filter(is_not_novelty_rule,self.theory.terminationSet)
-		print self.theory.terminationSet
+
 		if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
 			movingTypesInGame = True
 		else:
