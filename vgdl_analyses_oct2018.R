@@ -24,16 +24,26 @@ data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
 data$exploration_burn_ins = as.factor(data$exploration_burn_ins) ## you might want to make this as.numeric()
 ## remove 'variant_' from names
-data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_variant_from_name)))
+data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
 # data = transform(data,game_name=factor(game_name, levels=all_game_names))
 
 ## load human data
-humandatapath = c('pilot_Oct29th_Full')
+humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full')
 date='oct28_local'
-path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
-humandata=read.csv(path, header=TRUE, na.strings='NA')
+humandata = list()
+for (humandatapath in humandatapaths){
+  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
+  d=read.csv(path, header=TRUE, na.strings='NA')
+  if (length(humandata)==0){
+    humandata = d
+  }
+  else{
+    humandata = rbind(humandata,d)
+  }
+}
+
 humandata$agent_type=as.factor('human')
 humandata$subject_ID = as.factor(humandata$subject)
 humandata$subject = NULL ## drop old name
@@ -95,8 +105,9 @@ for (colname in names(humandata)){
 alldata = rbind(data, humandata)
 
 ##example plot for one game
-p = ggplot(subset(alldata,game_name==levels(humandata$game_name)[1]), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
-p+geom_point()+geom_smooth()+ggtitle(game_name)
+game = levels(humandata$game_name)[6]
+p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
+p+geom_point()+geom_smooth()+ggtitle(game)
 
 game=levels(humandata$game_name)[2]
 p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=score,color=agent_type))
@@ -106,7 +117,7 @@ p+geom_point()+geom_smooth()+ggtitle(game)
 ## this is weird when you plot by level_number and also when you plot by subject. looks like I took more actions
 ## even in the games where that's not really possible (like surprise)
 p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
-p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)
+p=p+geom_histogram(binwidth=20,aes(y=..density..))+facet_wrap(~game_name)
 p
 
 
