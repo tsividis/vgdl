@@ -6,6 +6,7 @@ from vgdl.util import str2bool
 import cPickle
 import os
 from shutil import copy2
+import numpy as np
 
 
 ## python -m vgdl --date oct6
@@ -64,10 +65,13 @@ def process_model_run(data, modelrun_ID):
 		gamefilewriter = csv.writer(f)
 	
 	agent_type = data['modelParams']
-	agent_type = 'agent1'
+	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 'NA'
+	if 'exploration_burn_ins' in data.keys():
+		agent_type = 'lesion'
+	else:
+		agent_type = 'normal'
 	print "you've modified agent_type to test a single thing, but you need to remove this modification"
 	embed()
-	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 0
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
@@ -116,14 +120,17 @@ def process_model_run(data, modelrun_ID):
 				if win:
 					accumulated_score = accumulated_score + score
 					level_accumulated_score = accumulated_score
-				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
-				row = (agent_type, agent_type, modelrun_ID, condition, exploration_burn_ins, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
-						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				cumulative_timestep += 1
 
-				prev_level_number = level_number
+				mean_burn_in = np.mean(exploration_burn_ins) if type(exploration_burn_ins)==list else 'NA'
+				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
+				row = (agent_type, agent_type, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
+						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				gamefilewriter.writerow(row)
 				mergedfilewriter.writerow(row)
+
+				prev_level_number = level_number
+
 	f.close()
 	g.close()
 
