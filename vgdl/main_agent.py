@@ -1035,15 +1035,16 @@ class Agent:
                             self.hypotheses = hypotheses
                             print 'theory changed'
                             hypotheses[0].display()
-                            f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
-                            f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
-                            oldout = sys.stdout
-                            sys.stdout = f
-                            hypotheses[0].display()
-                            sys.stdout = oldout
-                            f.close()
-                            self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
-                            break
+                            if self.max_rand_steps>0:
+                                f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
+                                f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
+                                oldout = sys.stdout
+                                sys.stdout = f
+                                hypotheses[0].display()
+                                sys.stdout = oldout
+                                f.close()
+                                self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
+                                break
 
 
                         ended, win = self.rle._isDone()
