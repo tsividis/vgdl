@@ -117,7 +117,7 @@ p+geom_point()+geom_smooth()+ggtitle(game)
 ## this is weird when you plot by level_number and also when you plot by subject. looks like I took more actions
 ## even in the games where that's not really possible (like surprise)
 p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
-p=p+geom_histogram(binwidth=20,aes(y=..density..))+facet_wrap(~game_name)
+p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,1000)
 p
 
 
