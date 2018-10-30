@@ -96,7 +96,7 @@ hyperparameter_sets = [
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, init_hypothesis=None):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, init_hypothesis=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.outpath = None ## set in playCurriculum and then used in outputlesionsnapshot for writing all the theories learned in a particular run of playCurriculum into a single folder.
@@ -115,6 +115,7 @@ class Agent:
         self.IW_k = IW_k
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
+        self.epsilon_greedy = epsilon_greedy
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
@@ -857,6 +858,9 @@ class Agent:
 
                 ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
 
+                if self.epsilon_greedy:
+                    print "found epsilon_greedy"
+                    embed()
                 ## Initialize planner
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
