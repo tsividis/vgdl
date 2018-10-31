@@ -30,7 +30,7 @@ game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_
 'watergame', 'variant_watergame_1', 'variant_watergame_2'] #90 total
 
 
-
+## what you didn't run was array 80-89.
 # variant_boulderdash_2
 # plaqueattack variants...
 # watergame and variants
