@@ -117,7 +117,7 @@ class Agent:
         self.extra_atom = False
         self.epsilon_greedy = epsilon_greedy
         self.hybrid = False
-        self.switch_to_exploit_step = 500
+        self.switch_to_exploit_step = 2000
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
