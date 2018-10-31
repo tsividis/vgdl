@@ -12,11 +12,38 @@ library("RColorBrewer")
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
-date = c('oct31')
-path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
-data=read.csv(path, header=TRUE, na.strings='NA')
+dates = c('oct26', 'oct31')
+data = list()
+for (date in dates){
+  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
+  d=read.csv(path, header=TRUE, na.strings='NA')
+  
+  if ('exploration_burn_ins' %in% names(d)){
+    d$exploration_burn_ins = as.numeric(d$exploration_burn_ins) ## you might want to make this as.numeric()
+  }else{
+    d$exploration_burn_ins = NA
+  }
+  
+  if(length(data)==0){
+    data = d
+  }
+  else{
+    for(colname in names(d)){
+      if (!(colname %in% names(data))){
+        d[,colname] = NA
+      }
+    }
+    for(colname in names(data)){
+      if(!(colname %in% names(d))){
+        data[,colname]=NA
+      }
+    }
+    data = rbind(data,d)
+  }
+}
+# path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
+# data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
-#data = na.omit(data)
 data$modelrun_ID = as.factor(data$modelrun_ID)
 data$timestep = as.numeric(as.character(data$timestep))
 data$cumulative_steps = as.numeric(as.character(data$cumulative_timestep))
@@ -24,12 +51,7 @@ data$local_score = as.numeric(as.character(data$score))
 data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
-if ('exploration_burn_ins' %in% names(data)){
-  data$exploration_burn_ins = as.factor(data$exploration_burn_ins) ## you might want to make this as.numeric()
-}
-else{
-  data$exploration_burn_ins = NA
-}
+
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
@@ -153,60 +175,6 @@ remove_string_from_name = function(name){
 }
 
 
-## TODO: normalize score by max_score for that game.
-## TODO: bind specific colors to specific models so that it looks the way you want.
-## TODO: find a good layout for all the games. for now, pretend you have data for more games than you do so you can make the plots??
-
-## you'll need to specify the game order manually anyway, because otherwise the layout will break the games up.
-## one page with 4s, 3s, and 2s
-## one page with 5s
-##
-# all_game_names = c('aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
-#                    'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
-#                    'bait', 'variant_bait_1', 'variant_bait_2',
-#                    'bees_and_birds','variant_bees_and_birds_1',  
-#                    'boulderchase', 'variant_boulderchase_1',
-#                    'boulderdash', 'variant_boulderdash_1',
-#                    'butterflies', 'variant_butterflies_1', 'variant_butterflies_2',
-#                    'chase', 'variant_chase_1', 'variant_chase_2', 'variant_chase_3',
-#                    'closing_gates', 'variant_closing_gates_1',
-#                    'corridor','variant_corridor_1', 
-#                    'expt_antagonist', 'variant_expt_antagonist_1','variant_expt_antagonist_2',
-#                    'expt_ee', 'variant_expt_ee_1', 'variant_expt_ee_2', 'variant_expt_ee_3', 
-#                    'expt_helper', 'variant_expt_helper_1', 'variant_expt_helper_2',
-#                    'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_preconditions_2',
-#                    'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2',
-#                    'expt_relational', 'variant_expt_relational_1', 'variant_expt_relational_2',
-#                    'frogs', 'variant_frogs_1', 'variant_frogs_2', 'variant_frogs_3',
-#                    'jaws', 'variant_jaws_1', 'variant_jaws_2',
-#                    'lemmings', 'variant_lemmings_1',  'variant_lemmings_2', 'variant_lemmings_3',
-#                    'missilecommand', 'variant_missilecommand_1', 'variant_missilecommand_2', 'variant_missilecommand_3', 'variant_missilecommand_4',
-#                    'myAliens', 'variant_myAliens_1', 'variant_myAliens_2',
-#                    'portals', 'variant_portals_1', 'variant_portals_2',
-#                    'plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3',
-#                    'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
-#                    'surprise', 'variant_surprise_1', 'variant_surprise_2',
-#                    'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
-#                    'watergame', 'variant_watergame_1', 'variant_watergame_2',
-#                    'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3')
-# 
-# existing_games = list()
-# missing_games = list()
-# j=1
-# k=1
-# for (i in 1:length(all_game_names)){
-#   if (all_game_names[i] %in% game_names){
-#     existing_games[j] = all_game_names[i] 
-#     j = j+1
-#   }
-#   else{
-#     missing_games[k] = all_game_names[i]
-#     k = k+1
-#   }
-# }
-
-## Make plots.
-
 ## plot scores
 plots = list()
 for (i in 1:length(levels(data$game_name))){
@@ -316,15 +284,38 @@ colors = c('firebrick2', 'steelblue1', 'salmon',
            'palegreen3', 'seagreen3','darkolivegreen1',  
            'purple2', 'mediumorchid2', 
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+data$fburn_ins = as.factor(data$exploration_burn_ins)
+
+for(game in levels(data$game_name)){
+  d = subset(data,game_name==game)
+  print(game)
+  print(unique(d$exploration_burn_ins))
+}
+
+
+game = levels(data$game_name)[1]
+d = subset(data,game_name==game)
+# names(colors)=levels(data$exploration_burn_ins)
+# colorScale = scale_color_manual(name="exploration_burn_ins", values=colors)
+p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=as.factor(exploration_burn_ins)))
+p=p+geom_point() +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)#+theme(legend.position="none")
+p
+
++
+  scale_color_manual(values=colors) + theme(legend.position="none")+
+  ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+p
+
+
+data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
 
 names(colors)=levels(data$exploration_burn_ins)
 colorScale = scale_color_manual(name="exploration_burn_ins", values=colors)
 
-
-p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=exploration_burn_ins))
-p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-  scale_color_manual(values=colors) + theme(legend.position="none")+
-  ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+## you're plotting based on the interaction but that gives you a discrete color scale, so you'd have to specify it manually. Maybe the thing
+## to do is make up a segmentation of some color spectrum (after you've seen the various points of the theory values).
+p=ggplot(data, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+p=p+geom_point() +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)
 p
 
 #####
@@ -478,8 +469,8 @@ m = multiplot(plotlist = plantimeplots, layout=layout)
 
 
 
-
-
+####
+####
 model_run1 = '2018-10-15_'
 model_run2 = '2018-10-18_'
 plot_overlap = function(plantimedata, model_run1, model_run2){
