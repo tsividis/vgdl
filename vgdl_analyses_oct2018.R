@@ -10,7 +10,8 @@ library("RColorBrewer")
 
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
-date = c('oct26')
+## oct26: IW1 vs IW2, with lha2, mN=50k
+date = c('oct31')
 path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
 data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
@@ -22,7 +23,12 @@ data$local_score = as.numeric(as.character(data$score))
 data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
-data$exploration_burn_ins = as.factor(data$exploration_burn_ins) ## you might want to make this as.numeric()
+if ('exploration_burn_ins' %in% names(data)){
+  data$exploration_burn_ins = as.factor(data$exploration_burn_ins) ## you might want to make this as.numeric()
+}
+else{
+  data$exploration_burn_ins = NA
+}
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
