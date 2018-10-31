@@ -6,6 +6,7 @@ from vgdl.util import str2bool
 import cPickle
 import os
 from shutil import copy2
+import numpy as np
 
 
 ## python -m vgdl --date oct6
@@ -36,9 +37,7 @@ def process_model_run(data, modelrun_ID):
 	## you want to end up with one csv per game. if you want to look at things across games, you just have to merge those csvs, but this is the cleanest way to do it
 	## and to avoid loading huge csv files.
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
-	# modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
-	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):]
-
+	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
  	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 	# data_path = '{}/{}'.format(date, 'csv_data')
@@ -48,7 +47,7 @@ def process_model_run(data, modelrun_ID):
 	if 'merged_data' not in os.listdir(data_path):
 		g = open('{}/merged_data'.format(data_path), 'w+')
 		mergedfilewriter = csv.writer(g)
-		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
 							'sparse_score', 'level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		g = open('{}/merged_data'.format(data_path), 'a+')	
@@ -59,15 +58,20 @@ def process_model_run(data, modelrun_ID):
 	if game_name not in os.listdir(data_path):
 		f = open('{}/{}'.format(data_path, game_name), 'w+') #newfile and write
 		gamefilewriter = csv.writer(f)
-		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
 							'sparse_score','level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		f = open('{}/{}'.format(data_path, game_name), 'a+') #append and read
 		gamefilewriter = csv.writer(f)
 	
 	agent_type = data['modelParams']
-	# if modelrun_ID in ['2018-10-11_',  '2018-10-15_', '2018-10-18_']:
-		# agent_type = modelrun_ID
+	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 'NA'
+	# if 'exploration_burn_ins' in data.keys():
+	# 	agent_type = 'lesion'
+	# else:
+	# 	agent_type = 'normal'
+	# print "you've modified agent_type to test a single thing, but you need to remove this modification"
+	# embed()
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
@@ -116,14 +120,17 @@ def process_model_run(data, modelrun_ID):
 				if win:
 					accumulated_score = accumulated_score + score
 					level_accumulated_score = accumulated_score
-				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
-				row = (agent_type, agent_type, modelrun_ID, condition, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
-						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				cumulative_timestep += 1
 
-				prev_level_number = level_number
+				mean_burn_in = np.mean(exploration_burn_ins) if type(exploration_burn_ins)==list else 'NA'
+				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
+				row = (agent_type, agent_type, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
+						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				gamefilewriter.writerow(row)
 				mergedfilewriter.writerow(row)
+
+				prev_level_number = level_number
+
 	f.close()
 	g.close()
 
