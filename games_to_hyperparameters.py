@@ -29,7 +29,7 @@
 # 'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
 # 'watergame', 'variant_watergame_1', 'variant_watergame_2'] #90 total
 
-game_names = ['small_zelda','large_small_zelda']
+game_names = ['watergame','variant_watergame_1','variant_watergame_2', 'plaqueattack','variant_plaqueattack_1','variant_plaqueattack_2','variant_plaqueattack_3']
 
 ## what you didn't run was array 80-89.
 # variant_boulderdash_2

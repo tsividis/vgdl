@@ -22,7 +22,7 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
 # from line_profiler import LineProfiler
 
-MAX_STEPS = 200
+MAX_STEPS = 5000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -117,7 +117,7 @@ class Agent:
         self.extra_atom = False
         self.epsilon_greedy = epsilon_greedy
         self.hybrid = False
-        self.switch_to_exploit_step = 150#500
+        self.switch_to_exploit_step = 1000
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
@@ -439,7 +439,7 @@ class Agent:
             pass
 
         if self.record_states:
-            dirname = "results2/{}/{}/".format(self.param_ID, self.gameFilename)
+            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
