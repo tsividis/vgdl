@@ -771,7 +771,8 @@ class Agent:
             quitting = False
 
             ## MARK, EXPLORATION
-            print "Random mode True/False:", (self.max_rand_steps > 0)
+            if self.max_rand_steps > 0:
+                print "Collecting burn-in data."
             if self.max_rand_steps > 0:
                 print "Still in Random Phase", self.total_game_steps+steps < self.max_rand_steps
 
