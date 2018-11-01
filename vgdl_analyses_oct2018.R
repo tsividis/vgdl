@@ -12,7 +12,7 @@ library("RColorBrewer")
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
-dates = c('oct26', 'oct31')
+dates = c('oct26', 'nov1')
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -228,14 +228,13 @@ plots = list()
 q=list()
 for (i in 1:length(levels(data$game_name))){
   game = levels(data$game_name)[i]
-  d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=False")
+  d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lr=False")
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-    #colorScale+ 
-    # scale_color_manual(values=colors)+
+    colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
-    scale_color_manual(values=colors) + theme(legend.position="none")+
+    scale_color_manual(values=colors) + #theme(legend.position="none")+
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
   
   p=p+ylim(0,5)#+theme(legend.position='none')
