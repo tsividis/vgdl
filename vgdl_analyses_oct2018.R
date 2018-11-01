@@ -239,7 +239,7 @@ for (i in 1:length(levels(data$game_name))){
   
   p=p+ylim(0,5)#+theme(legend.position='none')
   
-  p
+  # p
   if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
     if (grepl('expt_ee',game)){
       p=p+ylim(0,6)
@@ -268,7 +268,6 @@ for (i in 1:length(levels(data$game_name))){
     legend = g_legend(p) 
     grid.newpage()
     q[[1]]=ggdraw(legend)
-    #q[[1]] = grid.draw(legend)
   }
   #title = paste('~/Projects/atari/vgdl/',date,'/plots/levels_won_', game, '.png', sep='')
   #ggsave(title, plot=p, width=15, height=10)
