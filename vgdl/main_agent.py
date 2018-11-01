@@ -22,7 +22,7 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
 # from line_profiler import LineProfiler
 
-MAX_STEPS = 5000
+MAX_STEPS = 200
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -117,7 +117,7 @@ class Agent:
         self.extra_atom = False
         self.epsilon_greedy = epsilon_greedy
         self.hybrid = False
-        self.switch_to_exploit_step = 500
+        self.switch_to_exploit_step = 150#500
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
@@ -130,7 +130,7 @@ class Agent:
         else:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
-        self.shortHorizonRandomChoice = [200,500,1000]
+        self.shortHorizonRandomChoice = [200,500]#,1000]
         self.allow_long_range = False ## for the exploration lesion we want to optionally disable long-range planning
         self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
                 self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.switch_to_exploit_step, 
@@ -757,7 +757,7 @@ class Agent:
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             updateTermins = True
-            if self.init_hypothesis or (not self.hybrid and not drew_random_action):
+            if self.init_hypothesis or (self.epsilon_greedy and not self.hybrid and not drew_random_action):
                 print "removing noveltyTerminations from the theory"
                 ## Remove noveltyTerminations from the theory.
                 def is_not_novelty_rule(rule):
@@ -775,6 +775,8 @@ class Agent:
                 print "Collecting burn-in data."
             if self.max_rand_steps > 0:
                 print "Still in Random Phase", self.total_game_steps+steps < self.max_rand_steps
+
+            print "{} steps this episode. {} steps across all episodes".format(steps, self.total_game_steps+steps)
 
 
             ##############################
@@ -820,7 +822,6 @@ class Agent:
                 ########### STORE CURRENT HYPOTHESIS #########
                 ###############################################
 
-                print "{} steps this episode".format(steps)
                 if theory_change_flag:
                     self.hypotheses = hypotheses
                     print 'theory changed'
@@ -863,7 +864,7 @@ class Agent:
                 ## noveltyTerminations after the random step phase.
                 ## This flag is passed to the planner.
                 filter_novelty = False
-                if self.max_rand_steps > 0 or self.init_hypothesis is not None or (not self.hybrid and not drew_random_action):
+                if self.max_rand_steps > 0 or self.init_hypothesis is not None or (self.epsilon_greedy and not self.hybrid and not drew_random_action):
                     filter_novelty = True
                     print "filter novelty", filter_novelty
 
