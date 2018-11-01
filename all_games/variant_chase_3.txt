@@ -17,6 +17,7 @@ BasicGame
         carcass missile > transformTo stype=angry
         missile goat > nothing
         goat missile > nothing
+        missile avatar > changeScore value=1
         missile avatar > transformTo stype=carcass
         avatar missile > nothing
         goatgate goat > nothing
