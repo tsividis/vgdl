@@ -10,12 +10,40 @@ library("RColorBrewer")
 
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
-## oct_18_local has model results for small_zelda
-date = c('oct30_local')
-path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
-data=read.csv(path, header=TRUE, na.strings='NA')
+## oct26: IW1 vs IW2, with lha2, mN=50k
+## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
+dates = c('oct26', 'nov1')
+data = list()
+for (date in dates){
+  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
+  d=read.csv(path, header=TRUE, na.strings='NA')
+  
+  if ('exploration_burn_ins' %in% names(d)){
+    d$exploration_burn_ins = as.numeric(d$exploration_burn_ins) ## you might want to make this as.numeric()
+  }else{
+    d$exploration_burn_ins = NA
+  }
+  
+  if(length(data)==0){
+    data = d
+  }
+  else{
+    for(colname in names(d)){
+      if (!(colname %in% names(data))){
+        d[,colname] = NA
+      }
+    }
+    for(colname in names(data)){
+      if(!(colname %in% names(d))){
+        data[,colname]=NA
+      }
+    }
+    data = rbind(data,d)
+  }
+}
+# path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
+# data=read.csv(path, header=TRUE, na.strings='NA')
 game_names = c(levels(data$game_name))
-#data = na.omit(data)
 data$modelrun_ID = as.factor(data$modelrun_ID)
 data$timestep = as.numeric(as.character(data$timestep))
 data$cumulative_steps = as.numeric(as.character(data$cumulative_timestep))
@@ -24,14 +52,105 @@ data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
 
-#data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
 ## remove 'variant_' from names
-data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_variant_from_name)))
+data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
 # data = transform(data,game_name=factor(game_name, levels=all_game_names))
 
-## figure out how to add the two data frames so we can plot everything together
+## load human data
+humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full')
+date='oct28_local'
+humandata = list()
+for (humandatapath in humandatapaths){
+  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
+  d=read.csv(path, header=TRUE, na.strings='NA')
+  if (length(humandata)==0){
+    humandata = d
+  }
+  else{
+    humandata = rbind(humandata,d)
+  }
+}
+
+humandata$agent_type=as.factor('human')
+humandata$subject_ID = as.factor(humandata$subject)
+humandata$subject = NULL ## drop old name
+humandata$modelrun_ID = as.factor('oct29')
+humandata$condition = as.factor('full')
+humandata$game_name = as.factor(humandata$gameName)
+humandata$gameName = NULL
+humandata$level_number = humandata$gameLevel
+humandata$gameLevel = NULL
+humandata$cumulative_wins = humandata$levels_won
+humandata$levels_won = NULL
+humandata$exploration_burn_ins = as.factor(0)
+humandata$timestep = humandata$steps
+humandata$steps = NULL
+humandata$levelscore=humandata$score
+humandata$score=0
+
+humandata$levels_lost = NULL ##idk what this is; we don't need it
+humandata$group = NULL ## drop this for now. it refers to the groupings of the games we gave to people
+humandata$gameNumber = NULL
+humandata$gameRound = NULL
+
+## fix cumulative_timesteps
+humandata$cumulative_timestep = 1
+for (i in 2:length(humandata$timestep)){
+  prevrow = humandata[i-1,]
+  row = humandata[i,]
+  if (row$subject_ID==prevrow$subject_ID & row$game_name==prevrow$game_name){
+    humandata[i,]$cumulative_timestep = prevrow$cumulative_timestep + 1
+    if (row$level_number==prevrow$level_number){
+      humandata[i,]$score = prevrow$score + (row$levelscore-prevrow$levelscore)
+    }
+    else if (row$level_number > prevrow$level_number){
+      humandata[i,]$score = prevrow$score
+    }
+  }
+}
+##remove first part of game string from humandata names
+humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
+humandata$levelscore = NULL
+humandata$level_number = as.factor(humandata$level)
+## now make sure that humandata has all the column names that data has.
+for (colname in names(data)){
+  if (!(colname %in% names(humandata))){
+    humandata[,colname] = NA
+    print(colname)
+  }
+}
+
+## and vice-versa
+for (colname in names(humandata)){
+  if (!(colname %in% names(data))){
+    data[,colname] = NA
+    print(colname)
+  }
+}
+
+## make a single dataframe
+alldata = rbind(data, humandata)
+
+##example plot for one game
+game = levels(humandata$game_name)[6]
+p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
+p+geom_point()+geom_smooth()+ggtitle(game)
+
+game=levels(humandata$game_name)[2]
+p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=score,color=agent_type))
+p+geom_point()+geom_smooth()+ggtitle(game)
+
+
+## this is weird when you plot by level_number and also when you plot by subject. looks like I took more actions
+## even in the games where that's not really possible (like surprise)
+p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
+p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,1000)
+p
+
+
+
 
 g_legend <- function(a.gplot){ 
   tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
@@ -39,71 +158,22 @@ g_legend <- function(a.gplot){
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
 
-
-remove_variant_from_name = function(name){
-  if (grepl('variant', name)){
-    keep = substr(name, nchar('variant_')+1, nchar(name))
+##finish this
+remove_string_from_name = function(name){
+  strings_to_remove = c('gvgai_variant','expt_variant', 'variant','gvgai')
+  for (i in 1:length(strings_to_remove)){
+    string_to_remove = strings_to_remove[i]
+    if (grepl(string_to_remove, name)){
+      keep = substr(name, nchar(string_to_remove)+2, nchar(name))
+      return(keep)
+    }
+    else{
+      keep=name
+    }
   }
-  else{
-    keep=name
-  }
-  return(keep)
+  return(name)
 }
 
-
-## TODO: normalize score by max_score for that game.
-## TODO: bind specific colors to specific models so that it looks the way you want.
-## TODO: find a good layout for all the games. for now, pretend you have data for more games than you do so you can make the plots??
-
-## you'll need to specify the game order manually anyway, because otherwise the layout will break the games up.
-## one page with 4s, 3s, and 2s
-## one page with 5s
-##
-# all_game_names = c('aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
-#                    'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
-#                    'bait', 'variant_bait_1', 'variant_bait_2',
-#                    'bees_and_birds','variant_bees_and_birds_1',  
-#                    'boulderchase', 'variant_boulderchase_1',
-#                    'boulderdash', 'variant_boulderdash_1',
-#                    'butterflies', 'variant_butterflies_1', 'variant_butterflies_2',
-#                    'chase', 'variant_chase_1', 'variant_chase_2', 'variant_chase_3',
-#                    'closing_gates', 'variant_closing_gates_1',
-#                    'corridor','variant_corridor_1', 
-#                    'expt_antagonist', 'variant_expt_antagonist_1','variant_expt_antagonist_2',
-#                    'expt_ee', 'variant_expt_ee_1', 'variant_expt_ee_2', 'variant_expt_ee_3', 
-#                    'expt_helper', 'variant_expt_helper_1', 'variant_expt_helper_2',
-#                    'expt_preconditions', 'variant_expt_preconditions_1', 'variant_expt_preconditions_2',
-#                    'expt_push_boulders', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2',
-#                    'expt_relational', 'variant_expt_relational_1', 'variant_expt_relational_2',
-#                    'frogs', 'variant_frogs_1', 'variant_frogs_2', 'variant_frogs_3',
-#                    'jaws', 'variant_jaws_1', 'variant_jaws_2',
-#                    'lemmings', 'variant_lemmings_1',  'variant_lemmings_2', 'variant_lemmings_3',
-#                    'missilecommand', 'variant_missilecommand_1', 'variant_missilecommand_2', 'variant_missilecommand_3', 'variant_missilecommand_4',
-#                    'myAliens', 'variant_myAliens_1', 'variant_myAliens_2',
-#                    'portals', 'variant_portals_1', 'variant_portals_2',
-#                    'plaqueattack', 'variant_plaqueattack_1', 'variant_plaqueattack_2', 'variant_plaqueattack_3',
-#                    'sokoban', 'variant_sokoban_1', 'variant_sokoban_2',
-#                    'surprise', 'variant_surprise_1', 'variant_surprise_2',
-#                    'survivezombies', 'variant_survivezombies_1', 'variant_survivezombies_2',
-#                    'watergame', 'variant_watergame_1', 'variant_watergame_2',
-#                    'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3')
-# 
-# existing_games = list()
-# missing_games = list()
-# j=1
-# k=1
-# for (i in 1:length(all_game_names)){
-#   if (all_game_names[i] %in% game_names){
-#     existing_games[j] = all_game_names[i] 
-#     j = j+1
-#   }
-#   else{
-#     missing_games[k] = all_game_names[i]
-#     k = k+1
-#   }
-# }
-
-## Make plots.
 
 ## plot scores
 plots = list()
@@ -158,19 +228,18 @@ plots = list()
 q=list()
 for (i in 1:length(levels(data$game_name))){
   game = levels(data$game_name)[i]
-  d=subset(data, game_name==game)
+  d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lr=False")
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-    #colorScale+ 
-    # scale_color_manual(values=colors)+
+    colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
-    scale_color_manual(values=colors) + theme(legend.position="none")+
+    scale_color_manual(values=colors) + #theme(legend.position="none")+
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
   
   p=p+ylim(0,5)#+theme(legend.position='none')
   
-  p
+  # p
   if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
     if (grepl('expt_ee',game)){
       p=p+ylim(0,6)
@@ -199,7 +268,6 @@ for (i in 1:length(levels(data$game_name))){
     legend = g_legend(p) 
     grid.newpage()
     q[[1]]=ggdraw(legend)
-    #q[[1]] = grid.draw(legend)
   }
   #title = paste('~/Projects/atari/vgdl/',date,'/plots/levels_won_', game, '.png', sep='')
   #ggsave(title, plot=p, width=15, height=10)
@@ -214,6 +282,28 @@ colors = c('firebrick2', 'steelblue1', 'salmon',
            'palegreen3', 'seagreen3','darkolivegreen1',  
            'purple2', 'mediumorchid2', 
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+data$fburn_ins = as.factor(data$exploration_burn_ins)
+
+for(game in levels(data$game_name)){
+  d = subset(data,game_name==game)
+  print(game)
+  print(unique(d$exploration_burn_ins))
+}
+
+
+game = levels(data$game_name)[1]
+d = subset(data,game_name==game)
+# names(colors)=levels(data$exploration_burn_ins)
+# colorScale = scale_color_manual(name="exploration_burn_ins", values=colors)
+p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=as.factor(exploration_burn_ins)))
+p=p+geom_point() +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)#+theme(legend.position="none")
+p
+
++
+  scale_color_manual(values=colors) + theme(legend.position="none")+
+  ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+p
+
 
 data$exploration_burn_ins = as.factor(data$exploration_burn_ins)
 
@@ -222,11 +312,9 @@ colorScale = scale_color_manual(name="exploration_burn_ins", values=colors)
 
 ## you're plotting based on the interaction but that gives you a discrete color scale, so you'd have to specify it manually. Maybe the thing
 ## to do is make up a segmentation of some color spectrum (after you've seen the various points of the theory values).
-p=ggplot(data, aes(x=cumulative_steps, y=cumulative_wins,color=interaction(agent_type,exploration_burn_ins)))
+p=ggplot(data, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
 p=p+geom_point() +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)
 p
-
-## try another way of plotting this once you have several games.
 
 #####
 #####
@@ -379,8 +467,8 @@ m = multiplot(plotlist = plantimeplots, layout=layout)
 
 
 
-
-
+####
+####
 model_run1 = '2018-10-15_'
 model_run2 = '2018-10-18_'
 plot_overlap = function(plantimedata, model_run1, model_run2){
