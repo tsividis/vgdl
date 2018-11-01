@@ -117,7 +117,7 @@ class Agent:
         self.extra_atom = False
         self.epsilon_greedy = epsilon_greedy
         self.hybrid = False
-        self.switch_to_exploit_step = 2000
+        self.switch_to_exploit_step = 500
         self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
         self.shortHorizonNodes = 500
@@ -439,7 +439,7 @@ class Agent:
             pass
 
         if self.record_states:
-            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
+            dirname = "results2/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
@@ -1061,7 +1061,7 @@ class Agent:
                                 sys.stdout = oldout
                                 f.close()
                                 self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
-                                break
+                            break
 
 
                         ended, win = self.rle._isDone()
