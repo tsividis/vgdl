@@ -63,7 +63,7 @@ BasicGame
         torpedo piranha > killSprite
 
         sharkFang avatar > collectResource 
-        sharkFang avatar > changeScore value=1000
+
         avatar shell > changeResource resource=shell value=5 
         shell avatar > killSprite
         shell avatar > changeScore value=1
