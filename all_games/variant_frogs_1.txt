@@ -6,7 +6,7 @@ BasicGame
             goal  > color=GREEN
         forestDense > SpawnPoint stype=log prob=.4  spawnCooldown=10 color=MPUYEI
         forestSparse > SpawnPoint stype=log prob=.1  spawnCooldown=5 color=MPUYEI
-        log    > Missile   orientation=LEFT  speed=.2 color=BROWN
+        log    > Missile   orientation=LEFT  speed=.1 color=BROWN
         truck  >
             rightTruck  > Missile   orientation=RIGHT
                 fastRtruck  > speed=0.7  color=ORANGE

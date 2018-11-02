@@ -269,8 +269,10 @@ for (i in 1:length(levels(data$game_name))){
     grid.newpage()
     q[[1]]=ggdraw(legend)
   }
-  #title = paste('~/Projects/atari/vgdl/',date,'/plots/levels_won_', game, '.png', sep='')
-  #ggsave(title, plot=p, width=15, height=10)
+  newdir=paste('~/Projects/atari/vgdl/',date,'/plots',sep='')
+  dir.create(newdir, showWarnings = FALSE)
+  title = paste('~/Projects/atari/vgdl/',date,'/plots/e_greedy_', game, '.png', sep='')
+  ggsave(title, plot=p, width=15, height=10)
 }
 
 
