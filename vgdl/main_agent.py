@@ -654,6 +654,7 @@ class Agent:
         emptyPlans = 0
         while not ended:
 
+            embed()
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle._game.score
                 quit_level = False
@@ -1051,6 +1052,21 @@ class Agent:
                 rleDict[s.ID] = s
         return regroundingFlag
 
+    def saveState(self):
+
+        ## TODO: figure out what's the necessary info from the 'unsaved' list.
+        filename = 'saved_state'
+        unsaved = ['rle', 'statesEncountered', 'rleHistory', 'bestSpriteTypeDict', 'spriteUpdateDict', 'rleCreateFunc', 'hypotheses', 'finalEventList', 'finalTimeStepList']
+
+        saved = {
+                'agentState': dict([(k,v) for k,v in self.__dict__.iteritems() if k not in unsaved]),
+                'gameState': self.rle._game.sprite_groups
+                }
+
+        with open(filename, 'wb') as f:
+            cPickle.dump(saved, f)
+        f.close()
+        return
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
         # event are the same as those in the novelty
