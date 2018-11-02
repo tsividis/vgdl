@@ -20,6 +20,7 @@ BasicGame
         avatar wall > stepBack
         avatar hole > killSprite
         box avatar > bounceForward
+        avatar box > nothing
         box wall > stepBack
         box box > stepBack
         box mushroom > stepBack
@@ -85,7 +86,6 @@ BasicGame
 
         hole avatar > nothing
         avatar mushroom > nothing
-        avatar box > nothing
         mushroom box > nothing
         wall avatar > nothing
         wall box > nothing
