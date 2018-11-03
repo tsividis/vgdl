@@ -1469,6 +1469,7 @@ class Agent:
                     self.seen_resources.append(resource)
                     hypotheses[0].resource_limits[resource] = limit
                     theory_change_flag = True
+                    print "theory_change_flag because of resource {} not in seen_resources".format(resource)
                     newEffects = True
                     self.finalEffectList = set()
 
@@ -1476,7 +1477,7 @@ class Agent:
                     self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
                     self.fakeInteractionRules = list(set(self.fakeInteractionRules))
                     self.seen_limits.append(resource)
-
+                    print "theory_change_flag because of resource {} not in seen_limits".format(resource)
                     theory_change_flag = True
                     newEffects = True
                     self.finalEffectList = set()
@@ -1488,8 +1489,8 @@ class Agent:
                 compactEvent = (e[0], e[1], e[2])
                 if compactEvent not in self.finalEffectList:
                     self.finalEffectList.add(compactEvent)
-                    if self.display_text:
-                        print "New event: {}".format(compactEvent)
+                    # if self.display_text:
+                    print "New event: {}".format(compactEvent)
                     newEffects = True
             # newEffects = True
         
@@ -1508,8 +1509,8 @@ class Agent:
 
         if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
-            if self.display_text:
-                print "new event", newEffects, "distributions changed", distributionsHaveChanged
+            # if self.display_text:
+            print "new event", newEffects, "distributions changed", distributionsHaveChanged
 
             ## Delete fake interaction rules for events that were witnessed in this time step.
             # oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
@@ -1539,6 +1540,7 @@ class Agent:
             # print "induction took {} seconds".format(time.time()-t1)
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
+                print "theory_change_flag because theory comparison failed."
 
 
         ## We need to update termination conditions even when we haven't seen a new event,
@@ -1549,10 +1551,10 @@ class Agent:
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
 
-        # if hypotheses[0].__dict__ != oldhypothesis.__dict__:
-        if set(hypotheses[0].terminationSet) != oldTerminationSet:
-            if self.display_text:
-                print "terminationSet Change"
+
+        if set([t for t in hypotheses[0].terminationSet if t.ruleType!='NoveltyRule']) != set([t for t in oldTerminationSet if t.ruleType!='NoveltyRule']):
+            # if self.display_text:
+            print "theory change flag because of terminationSet Change"
             theory_change_flag = True
             # embed()
 
