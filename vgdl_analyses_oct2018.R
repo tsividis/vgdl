@@ -12,8 +12,7 @@ library("RColorBrewer")
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
-# dates = c('oct26', 'nov1')
-dates = c('oct26', 'nov2')
+dates = c('oct26', 'nov3')
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -53,11 +52,20 @@ data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
 
+## TODO: once you're using human data, move this below and run it for all_data
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
-# data = transform(data,game_name=factor(game_name, levels=all_game_names))
+
+colors = c('firebrick2', 'tomato2', 'salmon', 
+           'steelblue3', 'steelblue1', 
+           'palegreen3', 'seagreen3','darkolivegreen1',  
+           'purple2', 'mediumorchid2', 
+           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+
+names(colors)=levels(data$agent_type)
+colorScale = scale_color_manual(name="agent_type", values=colors)
 
 ## load human data
 humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full')
@@ -105,7 +113,7 @@ for (i in 2:length(humandata$timestep)){
     humandata[i,]$cumulative_timestep = prevrow$cumulative_timestep + 1
     if (row$level_number==prevrow$level_number){
       humandata[i,]$score = prevrow$score + (row$levelscore-prevrow$levelscore)
-    }
+      }
     else if (row$level_number > prevrow$level_number){
       humandata[i,]$score = prevrow$score
     }
@@ -151,78 +159,6 @@ p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,
 p
 
 
-
-
-g_legend <- function(a.gplot){ 
-  tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
-  legend <- tmp$grobs[[leg]] 
-  return(legend)} 
-
-##finish this
-remove_string_from_name = function(name){
-  strings_to_remove = c('gvgai_variant','expt_variant', 'variant','gvgai')
-  for (i in 1:length(strings_to_remove)){
-    string_to_remove = strings_to_remove[i]
-    if (grepl(string_to_remove, name)){
-      keep = substr(name, nchar(string_to_remove)+2, nchar(name))
-      return(keep)
-    }
-    else{
-      keep=name
-    }
-  }
-  return(name)
-}
-
-
-## plot scores
-plots = list()
-for (i in 1:length(levels(data$game_name))){
-  game = levels(data$game_name)[i]
-  
-  p=ggplot(subset(data, (game_name==game) ), aes(x=cumulative_steps, y=level_accumulated_score, color=modelrun_ID)) ##color=agent_type
-  p=p+geom_point(size=1, position=position_jitter(width=.1,height=.1),color='steelblue3')+
-    geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5, color='steelblue3')+
-    #  scale_color_manual(values=colors) + #theme(legend.position="none")+
-    #
-    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
-  p
-  p=p+ylim(0,max(na.omit(filter(data, game_name==game)$level_accumulated_score)))
-  if (grepl('frogs', game)){
-    p=p+ylim(0,60)
-  }
-  if ( (grepl('bees', game) )| (grepl('corridor',game))| (grepl('closing',game)) | (grepl('surprise',game))){
-    p=p+ylim(0,40)
-  }
-  if (grepl('expt', game)){
-    if (grepl('expt_ee',game)){
-      p=p+ylim(0,60)
-    }
-    else{
-      p=p+ylim(0,40)
-    }
-  }
-  if (game%in%c('lemmings', 'lemmings_2','lemmings_3')){
-    p=p+ylim(min(na.omit(filter(data, game_name==game)$level_accumulated_score)),50)
-  }
-  
-  plots[[i]] = p
-  #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
-  #ggsave(title, plot=p, width=15, height=10)
-}
-
-
-
-colors = c('firebrick2', 'tomato2', 'salmon', 
-           'steelblue3', 'steelblue1', 
-           'palegreen3', 'seagreen3','darkolivegreen1',  
-           'purple2', 'mediumorchid2', 
-           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-
-names(colors)=levels(data$agent_type)
-colorScale = scale_color_manual(name="agent_type", values=colors)
-
 ## plot wins
 max_num_agents = 0
 plots = list()
@@ -260,6 +196,9 @@ for (i in 1:length(levels(data$game_name))){
     
     p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
     p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+      #colorScale+ 
+      # scale_color_manual(values=colors)+
+      # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
       scale_color_manual(values=colors) + theme(legend.position="right")+
       ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
     
@@ -269,9 +208,45 @@ for (i in 1:length(levels(data$game_name))){
   }
   newdir=paste('~/Projects/atari/vgdl/',date,'/plots',sep='')
   dir.create(newdir, showWarnings = FALSE)
-  
-  title = paste('~/Projects/atari/vgdl/',date,'/plots/e_greedy', game, '.png', sep='')
+  title = paste('~/Projects/atari/vgdl/',date,'/plots/e_greedy_', game, '.png', sep='')
   ggsave(title, plot=p, width=15, height=10)
+}
+
+
+## plot scores
+plots = list()
+for (i in 1:length(levels(data$game_name))){
+  game = levels(data$game_name)[i]
+  
+  p=ggplot(subset(data, (game_name==game) ), aes(x=cumulative_steps, y=level_accumulated_score, color=modelrun_ID)) ##color=agent_type
+  p=p+geom_point(size=1, position=position_jitter(width=.1,height=.1),color='steelblue3')+
+    geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5, color='steelblue3')+
+    #  scale_color_manual(values=colors) + #theme(legend.position="none")+
+    #
+    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+  p
+  p=p+ylim(0,max(na.omit(filter(data, game_name==game)$level_accumulated_score)))
+  if (grepl('frogs', game)){
+    p=p+ylim(0,60)
+  }
+  if ( (grepl('bees', game) )| (grepl('corridor',game))| (grepl('closing',game)) | (grepl('surprise',game))){
+    p=p+ylim(0,40)
+  }
+  if (grepl('expt', game)){
+    if (grepl('expt_ee',game)){
+      p=p+ylim(0,60)
+    }
+    else{
+      p=p+ylim(0,40)
+    }
+  }
+  if (game%in%c('lemmings', 'lemmings_2','lemmings_3')){
+    p=p+ylim(min(na.omit(filter(data, game_name==game)$level_accumulated_score)),50)
+  }
+  
+  plots[[i]] = p
+  #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
+  #ggsave(title, plot=p, width=15, height=10)
 }
 
 
@@ -531,6 +506,31 @@ get_diff = function(diffdata, model_run1, model_run2){
 }
 
 
+
+
+
+###
+### load helper functions
+g_legend <- function(a.gplot){ 
+  tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
+  legend <- tmp$grobs[[leg]] 
+  return(legend)} 
+
+remove_string_from_name = function(name){
+  strings_to_remove = c('gvgai_variant','expt_variant', 'variant','gvgai')
+  for (i in 1:length(strings_to_remove)){
+    string_to_remove = strings_to_remove[i]
+    if (grepl(string_to_remove, name)){
+      keep = substr(name, nchar(string_to_remove)+2, nchar(name))
+      return(keep)
+    }
+    else{
+      keep=name
+    }
+  }
+  return(name)
+}
 
 
 # Multiple plot function
