@@ -654,7 +654,6 @@ class Agent:
         emptyPlans = 0
         while not ended:
 
-            embed()
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle._game.score
                 quit_level = False
