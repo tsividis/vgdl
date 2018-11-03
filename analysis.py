@@ -171,5 +171,5 @@ def merge_results(date):
 							copy2('../{}/results/{}/'.format(date, mod)+d+'/'+r,target)
 
 ## take things out one level; should be in results/all, rather than results/all/all
-# make_csvs(path, game)
-embed()
+merge_results(date)
+make_csvs(path)
