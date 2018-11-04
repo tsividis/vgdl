@@ -108,13 +108,13 @@ class Agent:
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
+        self.timestamp = False
         self.annealingFactor = 1.
         self.shortHorizon = self.hyperparameters['short_horizon']#False
         self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
-
         self.epsilon_greedy = False
         self.hybrid = False
         self.switch_to_exploit_step = 1000
@@ -349,14 +349,19 @@ class Agent:
                 self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         newHypotheses = []
-        for hypothesis in self.hypotheses:
-            newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
+        try:
+            for hypothesis in self.hypotheses:
+                newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
+        except:
+            print "failed in addNewObjectsToTheory"
+            embed()
         self.hypotheses = newHypotheses
 
 
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
+        
         starttime = time.time()
         if not level_game_pairs:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
@@ -366,7 +371,7 @@ class Agent:
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
-
+        self.timestamp = timestamp
         if self.record_states:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
@@ -381,12 +386,25 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
+        loadedState = False
+        if 'saved_state' in os.listdir('.'):
+            print "found saved state"
+            loadedState = self.loadState('saved_state')
+            n_level, within_level_iteration = loadedState['n_level'], loadedState['within_level_iteration']
+            level_game_pairs = level_game_pairs[n_level:]
+            embed()
+
         j=0
         flexible_goals = False
         fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
+            if n_level == 1:
+                print "about to play level 1. quit here so you can test loading state after this point."
+                embed()
+            if loadedState:
+                n_level = loadedState['n_level'] ## have to overwrite this index since we're using the contracted level_game_pairs list
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
@@ -400,20 +418,15 @@ class Agent:
             first_time_playing_level = True
             quit_level = False
             while not win and not quit_level and i<15:
+                self.n_level = n_level
+                self.within_level_iteration = i
                 gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
-                
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
-                # write progressively to file
-                # output = {'modelType':self.param_ID,
-                #             'gameName': self.gameFilename,
-                #             'condition': 'normal',
-                #             'episodes' : [episode_results]}
-                # # write_to_csv('hyperparameter_idx_'+str(self.hyperparameters['idx']), str(self.gameFilename)+'.csv', output)
-                # write_to_csv('',str(self.gameFilename)+'.csv', output)
+                self.saveState()
 
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
@@ -694,6 +707,9 @@ class Agent:
             else:
                 solution = []
 
+            if self.n_level==1:
+                print "just planned"
+                embed()
             if not solution:
                 ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
@@ -797,12 +813,6 @@ class Agent:
                         score = self.rle._game.score
                         quit_level = False
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
-
-
-
-            # if K_SPACE in solution:
-                # embed()
-
             
             self.actionSeqLength += len(solution)
 
@@ -1053,19 +1063,91 @@ class Agent:
 
     def saveState(self):
 
-        ## TODO: figure out what's the necessary info from the 'unsaved' list.
-        filename = 'saved_state'
-        unsaved = ['rle', 'statesEncountered', 'rleHistory', 'bestSpriteTypeDict', 'spriteUpdateDict', 'rleCreateFunc', 'hypotheses', 'finalEventList', 'finalTimeStepList']
+        ## You also need to save where in playCurriculum() you where...
+        ## or maybe just save 
 
+        filename = 'saved_state'
+        unsaved = ['rle', 'statesEncountered', 'rleHistory', 'bestSpriteTypeDict', 'spriteUpdateDict', 'rleCreateFunc', 'hypotheses', 'finalTimeStepList', 'finalEventList']
+
+        MAPHypothesis = dict()
+        MAPHypothesis['resource_limits'] = dict([(k,v) for k,v in self.hypotheses[0].resource_limits.iteritems()])
+        MAPHypothesis['classes'] = self.hypotheses[0].classes
+        MAPHypothesis['spriteObjects'] = self.hypotheses[0].spriteObjects
+        MAPHypothesis['spriteSet'] = self.hypotheses[0].spriteSet
+        MAPHypothesis['interactionSet'] = self.hypotheses[0].interactionSet
+        MAPHypothesis['terminationSet'] = self.hypotheses[0].terminationSet
+        MAPHypothesis['falsified'] = self.hypotheses[0].falsified
+        MAPHypothesis['multi_falsified'] = self.hypotheses[0].multi_falsified
+
+        saveableTimeStepList = []
+        print "WARNING: you're not saving Timestep.rle or Timestep.t because it doesn't seem like those get used"
+        for t in self.finalTimeStepList:
+            saveableTimeStep = {'agentAction':t.agentAction,
+                                'agentState': dict([(k,v) for k,v in t.agentState.iteritems()]),
+                                'events': t.events,
+                                'gameState': None,
+                                'rle': None
+                                }
+            saveableTimeStepList.append(saveableTimeStep)
+        
         saved = {
                 'agentState': dict([(k,v) for k,v in self.__dict__.iteritems() if k not in unsaved]),
-                'gameState': self.rle._game.sprite_groups
+                'sprite_groups': self.rle._game.sprite_groups,
+                'bestSpriteTypeDict': dict([(k,v) for k,v in self.bestSpriteTypeDict.iteritems()]),
+                'spriteUpdateDict': dict([(k,v) for k,v in self.spriteUpdateDict.iteritems()]),
+                'hypotheses': [MAPHypothesis],
+                'finalTimeStepList': saveableTimeStepList,
+                'n_level':1,
+                'within_level_iteration':self.within_level_iteration
                 }
 
         with open(filename, 'wb') as f:
             cPickle.dump(saved, f)
         f.close()
         return
+
+
+    def loadState(self, filename):
+        ## need to initialize rleCreateFunc?
+        with open(filename, 'r') as f:
+            loadedState = cPickle.load(f)
+        f.close()
+        
+        ## initialize all the defaultdicts and then fill in their contents.
+        self.bestSpriteTypeDict = defaultdict(lambda : {})
+        self.spriteUpdateDict = defaultdict(lambda : 0)
+        for k,v in loadedState['bestSpriteTypeDict'].items():
+            self.bestSpriteTypeDict[k] = v
+        for k,v in loadedState['spriteUpdateDict'].items():
+            self.spriteUpdateDict[k] = v
+        
+        ## Set all the straightforward aspects of the Agent state
+        for k,v in loadedState['agentState'].items():
+            self.__dict__[k] = v
+        
+        # print "in loadState"
+        # embed()
+        # ## initialize Theory, then initialize its fields.
+        ## hypothesis: the source. theory: the target. bad naming, but don't want to type long variable names.
+        hypothesis = loadedState['hypotheses'][0]
+
+        gameObject = Game(spriteInductionResult=hypothesis['spriteObjects'])
+        theory = Theory(gameObject)
+        theory.spriteObjects = hypothesis['spriteObjects']
+        theory.spriteSet = hypothesis['spriteSet']
+        theory.classes = hypothesis['classes']
+        theory.interactionSet = hypothesis['interactionSet']
+        theory.terminationSet = hypothesis['terminationSet']
+        theory.falsified = hypothesis['falsified']
+        theory.multi_falsified = hypothesis['multi_falsified']
+        resource_limits = defaultdict(lambda:1)
+        for k,v in hypothesis['resource_limits'].items():
+            resource_limits[k] = v 
+        theory.resource_limits = resource_limits
+        self.hypotheses = [theory]
+        return loadedState
+
+
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
         # event are the same as those in the novelty
