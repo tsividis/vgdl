@@ -373,7 +373,7 @@ class Agent:
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
         self.timestamp = timestamp
         if self.record_states:
-            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
+            dirname = "results2/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
@@ -386,13 +386,13 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
-        loadedState = False
-        if 'saved_state' in os.listdir('.'):
-            print "found saved state"
-            loadedState = self.loadState('saved_state')
-            n_level, within_level_iteration = loadedState['n_level'], loadedState['within_level_iteration']
-            level_game_pairs = level_game_pairs[n_level:]
-            embed()
+        # loadedState = False
+        # if 'saved_state' in os.listdir('.'):
+        #     print "found saved state"
+        #     loadedState = self.loadState('saved_state')
+        #     n_level, within_level_iteration = loadedState['n_level'], loadedState['within_level_iteration']
+        #     level_game_pairs = level_game_pairs[n_level:]
+        #     embed()
 
         j=0
         flexible_goals = False
@@ -400,11 +400,11 @@ class Agent:
         for n_level, level_game in enumerate(level_game_pairs):
 
             print("Playing level {}".format(n_level))
-            if n_level == 1:
-                print "about to play level 1. quit here so you can test loading state after this point."
-                embed()
-            if loadedState:
-                n_level = loadedState['n_level'] ## have to overwrite this index since we're using the contracted level_game_pairs list
+            # if n_level == 1:
+                # print "about to play level 1. quit here so you can test loading state after this point."
+                # embed()
+            # if loadedState:
+                # n_level = loadedState['n_level'] ## have to overwrite this index since we're using the contracted level_game_pairs list
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
@@ -426,7 +426,7 @@ class Agent:
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
-                self.saveState()
+                # self.saveState()
 
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
@@ -707,9 +707,9 @@ class Agent:
             else:
                 solution = []
 
-            if self.n_level==1:
-                print "just planned"
-                embed()
+            # if self.n_level==1:
+                # print "just planned"
+                # embed()
             if not solution:
                 ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
