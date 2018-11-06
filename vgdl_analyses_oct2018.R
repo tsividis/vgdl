@@ -12,7 +12,7 @@ library("RColorBrewer")
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
-dates = c('oct26', 'nov1')
+dates = c('oct26')#, 'nov5')
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -51,21 +51,45 @@ data$local_score = as.numeric(as.character(data$score))
 data$all_score = as.numeric(as.character(data$cumulative_max_score))
 data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
-
 ## TODO: once you're using human data, move this below and run it for all_data
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
+
+
 plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 dir.create(plotpath)
 
-colors = c('firebrick2', 'tomato2', 'salmon', 
-           'steelblue3', 'steelblue1', 
-           'palegreen3', 'seagreen3','darkolivegreen1',  
+colors = c('steelblue3', 'steelblue1', 
+           'palegreen3', 'seagreen3','darkolivegreen1',
+           'firebrick2', 'tomato2', 'salmon', 
            'purple2', 'mediumorchid2', 
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
+# colors = c('firebrick2', 'tomato2', 'salmon', 
+#            'steelblue3', 'steelblue1', 
+#            'palegreen3', 'seagreen3','darkolivegreen1',  
+#            'purple2', 'mediumorchid2', 
+#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+
 names(colors)=levels(data$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
+
+## load dqn data
+dqnpath = 'dqn'
+dqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
+dqndata = list()
+
+for (game in dqngames){
+  
+  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
+  d=read.csv(path, header=TRUE, na.strings='NA')
+  
+  if(length(dqndata)==0){
+    dqndata = d
+  }
+  else{
+  }
+}
 
 ## load human data
 humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full')
@@ -113,7 +137,7 @@ for (i in 2:length(humandata$timestep)){
     humandata[i,]$cumulative_timestep = prevrow$cumulative_timestep + 1
     if (row$level_number==prevrow$level_number){
       humandata[i,]$score = prevrow$score + (row$levelscore-prevrow$levelscore)
-      }
+    }
     else if (row$level_number > prevrow$level_number){
       humandata[i,]$score = prevrow$score
     }
@@ -171,8 +195,8 @@ for (i in 1:length(levels(data$game_name))){
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
-    scale_color_manual(values=colors) + #theme(legend.position="none")+
-    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
+    scale_color_manual(values=colors) + theme(legend.position="none")+
+    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5))
   
   p=p+ylim(0,5)#+theme(legend.position='none')
   
@@ -206,9 +230,11 @@ for (i in 1:length(levels(data$game_name))){
     grid.newpage()
     q[[1]]=ggdraw(legend)
   }
-  newdir=paste('~/Projects/atari/vgdl/',date,'/plots',sep='')
+  newdir=paste('~/Projects/atari/vgdl/',date,'/plots/levels_won/',sep='')
+  # newdir=paste('~/Projects/atari/vgdl/',date,'/plots/e_greedy/',sep='')
   dir.create(newdir, showWarnings = FALSE)
-  title = paste('~/Projects/atari/vgdl/',date,'/plots/e_greedy_', game, '.png', sep='')
+  title = paste('~/Projects/atari/vgdl/',date,'/plots/levels_won/', game, '.png', sep='')
+  # title = paste('~/Projects/atari/vgdl/',date,'/plots/e_greedy_/', game, '.png', sep='')
   ggsave(title, plot=p, width=15, height=10)
 }
 
@@ -218,14 +244,14 @@ plots = list()
 for (i in 1:length(levels(data$game_name))){
   game = levels(data$game_name)[i]
   
-  p=ggplot(subset(data, (game_name==game) ), aes(x=cumulative_steps, y=level_accumulated_score, color=modelrun_ID)) ##color=agent_type
-  p=p+geom_point(size=1, position=position_jitter(width=.1,height=.1),color='steelblue3')+
-    geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5, color='steelblue3')+
-    #  scale_color_manual(values=colors) + #theme(legend.position="none")+
-    #
+  p=ggplot(subset(data, (game_name==game) ), aes(x=cumulative_steps, y=level_accumulated_score, color=agent_type)) ##color=agent_type
+  p=p+geom_point(size=1, position=position_jitter(width=.1,height=.1))+
+    geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+    scale_color_manual(values=colors) + theme(legend.position="right")+
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) # try geom_smooth(method='loess')
-  p
+  # p
   p=p+ylim(0,max(na.omit(filter(data, game_name==game)$level_accumulated_score)))
+  
   if (grepl('frogs', game)){
     p=p+ylim(0,60)
   }
@@ -245,8 +271,10 @@ for (i in 1:length(levels(data$game_name))){
   }
   
   plots[[i]] = p
-  #title = paste('~/Projects/atari/vgdl/',date,'/plots/modelcomp_', game, '.png', sep='')
-  #ggsave(title, plot=p, width=15, height=10)
+  newdir=paste('~/Projects/atari/vgdl/',date,'/plots/score/',sep='')
+  dir.create(newdir, showWarnings = FALSE)
+  title = paste('~/Projects/atari/vgdl/',date,'/plots/score/', game, '.png', sep='')
+  ggsave(title, plot=p, width=15, height=10)  
 }
 
 
@@ -302,7 +330,7 @@ w[[1]] = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type)) 
                                                                                                                            text = element_blank(),
                                                                                                                            title = element_blank())
 layout = matrix(c(1:96), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = c(plots[1:91],q[1]), layout=layout)
+m = multiplot(plotlist = c(plots[1:90],q[1]), layout=layout)
 
 ## Making two plots for now because multiplot refuses to make the first 4 plots if
 ## you make the whole grid at once.
