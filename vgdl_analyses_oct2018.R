@@ -80,15 +80,35 @@ dqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
 dqndata = list()
 
 for (game in dqngames){
-  
-  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
+  filename=paste(game,'_1win.csv',sep='')
+  path = paste('~/Projects/atari/vgdl/dqn/',filename, sep='')
   d=read.csv(path, header=TRUE, na.strings='NA')
-  
+  d$game_name = as.factor(game)
+  d$score = as.numeric(d$ep_reward)
+  d$ep_reward = NULL
+  d$cumulative_wins = as.numeric(0)
+  for (i in 2:length(d$level)){
+    if (d$level[i]>d$level[i-1]){
+      d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
+    }
+    else{
+      d$cumulative_wins[i] = d$cumulative_wins[i-1]
+    }
+  }
   if(length(dqndata)==0){
     dqndata = d
   }
   else{
+    dqndata = rbind(dqndata,d)
   }
+}
+
+## make dqn/MEP plots:
+plots = list()
+for (i in 1:length(dqngames)){
+  game = levels(dqngames)[i]
+  p = ggplot()
+  plots[[i]]
 }
 
 ## load human data
