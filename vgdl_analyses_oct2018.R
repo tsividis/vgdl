@@ -56,23 +56,8 @@ data$score = as.numeric(as.character(data$sparse_score))
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 
 
-plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
-dir.create(plotpath)
-
-colors = c('steelblue3', 'steelblue1', 
-           'palegreen3', 'seagreen3','darkolivegreen1',
-           'firebrick2', 'tomato2', 'salmon', 
-           'purple2', 'mediumorchid2', 
-           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-
-# colors = c('firebrick2', 'tomato2', 'salmon', 
-#            'steelblue3', 'steelblue1', 
-#            'palegreen3', 'seagreen3','darkolivegreen1',  
-#            'purple2', 'mediumorchid2', 
-#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-
-names(colors)=levels(data$agent_type)
-colorScale = scale_color_manual(name="agent_type", values=colors)
+# plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
+# dir.create(plotpath)
 
 ## load dqn data
 dqnpath = 'dqn'
@@ -85,7 +70,10 @@ for (game in dqngames){
   d=read.csv(path, header=TRUE, na.strings='NA')
   d$game_name = as.factor(game)
   d$score = as.numeric(d$ep_reward)
+  d$agent_type = as.factor("DDQN")
   d$ep_reward = NULL
+  d$cumulative_steps = as.numeric(d$steps)
+  d$steps = NULL
   d$cumulative_wins = as.numeric(0)
   for (i in 2:length(d$level)){
     if (d$level[i]>d$level[i-1]){
@@ -103,13 +91,83 @@ for (game in dqngames){
   }
 }
 
+for (colname in names(data)){
+  if (!(colname %in% names(dqndata))){
+    dqndata[,colname] = NA
+    print(colname)
+  }
+}
+for (colname in names(dqndata)){
+  if (!(colname %in% names(data))){
+    data[,colname] = NA
+    print(colname)
+  }
+}
+
+data = rbind(data, dqndata)
+
+colors = c('steelblue3', 'steelblue1', 
+           'firebrick2', 'tomato2', 'salmon', 
+           'palegreen3', 'seagreen3','darkolivegreen1',
+           'purple2', 'mediumorchid2', 
+           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+
+# colors = c('firebrick2', 'tomato2', 'salmon', 
+#            'steelblue3', 'steelblue1', 
+#            'palegreen3', 'seagreen3','darkolivegreen1',  
+#            'purple2', 'mediumorchid2', 
+#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+
+names(colors)=levels(data$agent_type)
+colorScale = scale_color_manual(name="agent_type", values=colors)
 ## make dqn/MEP plots:
 plots = list()
-for (i in 1:length(dqngames)){
-  game = levels(dqngames)[i]
-  p = ggplot()
-  plots[[i]]
+q=list()
+max_num_agents = 0
+for (i in 1:length(levels(dqndata$game_name))){
+  game = levels(dqndata$game_name)[i]
+  d = subset(data, game_name==game)
+  d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lr=False")
+  
+  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+  p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+    colorScale+ 
+    # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
+    scale_color_manual(values=colors) + theme(legend.position="none")+
+    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5))
+  
+  p=p+ylim(0,5)+xlim(0,30000)#+theme(legend.position='none')
+  
+  # p
+  if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
+    if (grepl('expt_ee',game)){
+      p=p+ylim(0,6)
+    }
+    else if (grepl('surprise', game)){
+      p=p+ylim(0,5)
+    }
+    else{
+      p=p+ylim(0,4)
+    }
+  }
+  plots[[i]]=p
+  num_agents = length(unique(d$agent_type))
+  if (num_agents>max_num_agents){
+    max_num_agents = num_agents
+    
+    p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+    p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+      scale_color_manual(values=colors) + theme(legend.position="right")+
+      ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5))
+    
+    legend = g_legend(p) 
+    grid.newpage()
+    q[[1]]=ggdraw(legend)
+  }
 }
+layout = matrix(c(1:4), ncol=4, byrow=TRUE)
+m = multiplot(plotlist = plots[1:4], layout=layout)
+
 
 ## load human data
 humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full')
