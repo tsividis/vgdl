@@ -7,7 +7,7 @@
 #SBATCH --time=840
 #SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
-#SBATCH --mem=16G
+#SBATCH --mem=8G
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
 # if i'm using qos=tenenbaum i shouldn't exceed 30.
@@ -25,11 +25,11 @@ SRC=""
 DST=""
 
 # Figure out which game and hyperparameter
-# N_GAMES=14
+N_GAMES=90
 # N_PARAMS=3
-# GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
+GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
 # HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
-GAME_NUMBER=$SLURM_ARRAY_TASK_ID
+# GAME_NUMBER=$SLURM_ARRAY_TASK_ID
 
 # if we are running on OpenMind, add the singularity module
 . /etc/os-release
@@ -45,5 +45,5 @@ fi
 
 # finally, run the model
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index $HYPER_IDX
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --make_movie False
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
