@@ -11,7 +11,7 @@ import WBP
 import importlib
 import numpy as np
 import random
-import cPickle
+import cPickle, cloudpickle
 import time
 from datetime import datetime
 import copy
@@ -96,7 +96,7 @@ hyperparameter_sets = [
 
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, task_ID=0):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -105,6 +105,7 @@ class Agent:
         self.display_states = True
         self.record_states = True
         self.record_video_info = True
+        self.saveMidEpisode = False
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -113,6 +114,7 @@ class Agent:
         self.shortHorizon = self.hyperparameters['short_horizon']#False
         self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k
+        self.task_ID = task_ID
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.extra_atom = False
         self.epsilon_greedy = False
@@ -386,36 +388,45 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
-        # loadedState = False
-        # if 'saved_state' in os.listdir('.'):
-        #     print "found saved state"
-        #     loadedState = self.loadState('saved_state')
-        #     n_level, within_level_iteration = loadedState['n_level'], loadedState['within_level_iteration']
-        #     level_game_pairs = level_game_pairs[n_level:]
-        #     embed()
+        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.task_ID
+        loadedState = False
+        loaded_n_level=0
+        if curriculumSaveFile in os.listdir('.'):
+            print "found saved state"
+            loadedState = self.loadState(curriculumSaveFile)
+            loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
+            self = loadedState['agent'] ## load saved agent
 
         j=0
         flexible_goals = False
         fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
 
+            if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
+                continue
             print("Playing level {}".format(n_level))
             # if n_level == 1:
                 # print "about to play level 1. quit here so you can test loading state after this point."
                 # embed()
-            # if loadedState:
-                # n_level = loadedState['n_level'] ## have to overwrite this index since we're using the contracted level_game_pairs list
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
             win = False
             gameObject = None
+            
             i=0
+            if loadedState:
+                i=loadedState['agent'].within_level_iteration
+                episodeCompactStates = loadedState['episodeCompactStates']
             levelEffectsEncountered = []
             allStatesEncountered = []
             allCompactStates = []
             t1 = time.time()
-            first_time_playing_level = True
+            # first_time_playing_level = True
+            if i==0:
+                first_time_playing_level = True
+            else:
+                first_time_playing_level = False
             quit_level = False
             while not win and not quit_level and i<15:
                 self.n_level = n_level
@@ -426,8 +437,6 @@ class Agent:
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
 
-                # self.saveState()
-
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
                     self.makeImages()
@@ -435,13 +444,17 @@ class Agent:
                 if self.record_video_info:
                     allStatesEncountered.extend(statesEncountered)
 
-                first_time_playing_level = False
+                # first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
 
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
+                if win:
+                    self.n_level += 1
+                    self.within_level_iteration = 0
 
+                self.saveCurriculumState(curriculumSaveFile, episodeCompactStates)
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
@@ -465,6 +478,12 @@ class Agent:
                 if self.total_game_steps > MAX_STEPS:
                     print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
 
+                if self.saveMidEpisode:
+                    # ## if the episode ends, delete the mid-episode file we were saving.
+                    episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+                    os.remove(episodeSaveFile)
+                    print "finished an episode; removing episodeSaveFile"
+
             # if heatmap:
             #     self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
             #         # self.gameFilename[self.gameFilename.find('expt'):],
@@ -477,6 +496,7 @@ class Agent:
             # j+=1
             # if j>0:
             #     flexible_goals=True
+
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
                 print "in main_agent; playing with flexible_goals"
@@ -603,6 +623,7 @@ class Agent:
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
 
+        episodeSaveTime = time.time() ## in seconds
         quit_level = False
         ## Initialize external environment
         self.initializeEnvironment()
@@ -646,6 +667,23 @@ class Agent:
             if not flexible_goals:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
+        if self.saveMidEpisode:
+            ## if we get a loadedState, do things with it here.
+            episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+            if episodeSaveFile in os.listdir('.'):
+                try:
+                    loadedState = self.loadState(episodeSaveFile)
+                except:
+                    print "failed to load episode state"
+                    embed()
+                self = loadedState['agent']
+                # embed()
+                effectsEncountered = loadedState['effectsEncountered']
+                statesEncountered = loadedState['statesEncountered']
+                compactStates = loadedState['compactStates']
+                annealing = loadedState['annealing']
+                print "just loaded episode state"
+
 
         ## Do beginning-of-episode resource-management.
         resources = self.rle._game.getAvatars()[0].resources
@@ -667,9 +705,23 @@ class Agent:
         emptyPlans = 0
         while not ended:
 
+            ## if more than 20 minutes have passed, save state.
+            # if (time.time()-episodeSaveTime)/60 > 20:
+            # if len(statesEncountered)%2==0:
+                # print "about to save episodeState"
+                # embed()
+            if self.saveMidEpisode:
+                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                self.episodeSaveTime = time.time()
+            # print "just saved episode state. quit now to see if you can reload it."
+            # embed()
+
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle._game.score
                 quit_level = False
+                if self.saveMidEpisode:
+                    self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                    self.episodeSaveTime = time.time()
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             self.max_nodes = self.stored_max_nodes
@@ -812,6 +864,9 @@ class Agent:
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle._game.score
                         quit_level = False
+                        if self.saveMidEpisode:
+                            self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                            self.episodeSaveTime = time.time()
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
             
             self.actionSeqLength += len(solution)
@@ -848,6 +903,9 @@ class Agent:
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle._game.score
                         quit_level = False
+                        if self.saveMidEpisode:
+                            self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                            self.episodeSaveTime = time.time()
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
                     if self.display_text:
@@ -934,6 +992,10 @@ class Agent:
                     quit_level = True
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
+                if self.saveMidEpisode:
+                    self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                    self.episodeSaveTime = time.time()
+
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored("Quitting", 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
@@ -1061,91 +1123,119 @@ class Agent:
                 rleDict[s.ID] = s
         return regroundingFlag
 
+    def saveCurriculumState(self, filename, episodeCompactStates):
+        savedState = {'agent':self,
+                      'episodeCompactStates': episodeCompactStates}
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+        f.close()
+
+    def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
+        savedState = {'agent':self,
+                      'effectsEncountered': effectsEncountered,
+                      'statesEncountered': statesEncountered,
+                      'compactStates': compactStates,
+                      'annealing': annealing
+                      }
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+        f.close()
+
+    def loadState(self, filename):
+        with open(filename, 'r') as f:
+            loadedState = cloudpickle.load(f)
+        f.close()
+        return loadedState
+
+
     def saveState(self):
 
         ## You also need to save where in playCurriculum() you where...
         ## or maybe just save 
-
+        # print "in savestate"
+        # embed()
         filename = 'saved_state'
-        unsaved = ['rle', 'statesEncountered', 'rleHistory', 'bestSpriteTypeDict', 'spriteUpdateDict', 'rleCreateFunc', 'hypotheses', 'finalTimeStepList', 'finalEventList']
+        # unsaved = ['rle', 'statesEncountered', 'rleHistory', 'bestSpriteTypeDict', 'spriteUpdateDict', 'rleCreateFunc', 'hypotheses', 'finalTimeStepList', 'finalEventList']
 
-        MAPHypothesis = dict()
-        MAPHypothesis['resource_limits'] = dict([(k,v) for k,v in self.hypotheses[0].resource_limits.iteritems()])
-        MAPHypothesis['classes'] = self.hypotheses[0].classes
-        MAPHypothesis['spriteObjects'] = self.hypotheses[0].spriteObjects
-        MAPHypothesis['spriteSet'] = self.hypotheses[0].spriteSet
-        MAPHypothesis['interactionSet'] = self.hypotheses[0].interactionSet
-        MAPHypothesis['terminationSet'] = self.hypotheses[0].terminationSet
-        MAPHypothesis['falsified'] = self.hypotheses[0].falsified
-        MAPHypothesis['multi_falsified'] = self.hypotheses[0].multi_falsified
+        # MAPHypothesis = dict()
+        # MAPHypothesis['resource_limits'] = dict([(k,v) for k,v in self.hypotheses[0].resource_limits.iteritems()])
+        # MAPHypothesis['classes'] = self.hypotheses[0].classes
+        # MAPHypothesis['spriteObjects'] = self.hypotheses[0].spriteObjects
+        # MAPHypothesis['spriteSet'] = self.hypotheses[0].spriteSet
+        # MAPHypothesis['interactionSet'] = self.hypotheses[0].interactionSet
+        # MAPHypothesis['terminationSet'] = self.hypotheses[0].terminationSet
+        # MAPHypothesis['falsified'] = self.hypotheses[0].falsified
+        # MAPHypothesis['multi_falsified'] = self.hypotheses[0].multi_falsified
 
-        saveableTimeStepList = []
-        print "WARNING: you're not saving Timestep.rle or Timestep.t because it doesn't seem like those get used"
-        for t in self.finalTimeStepList:
-            saveableTimeStep = {'agentAction':t.agentAction,
-                                'agentState': dict([(k,v) for k,v in t.agentState.iteritems()]),
-                                'events': t.events,
-                                'gameState': None,
-                                'rle': None
-                                }
-            saveableTimeStepList.append(saveableTimeStep)
+        # saveableTimeStepList = []
+        # print "WARNING: you're not saving Timestep.rle or Timestep.t because it doesn't seem like those get used"
+        # for t in self.finalTimeStepList:
+        #     saveableTimeStep = {'agentAction':t.agentAction,
+        #                         'agentState': dict([(k,v) for k,v in t.agentState.iteritems()]),
+        #                         'events': t.events,
+        #                         'gameState': None,
+        #                         'rle': None
+        #                         }
+        #     saveableTimeStepList.append(saveableTimeStep)
         
-        saved = {
-                'agentState': dict([(k,v) for k,v in self.__dict__.iteritems() if k not in unsaved]),
-                'sprite_groups': self.rle._game.sprite_groups,
-                'bestSpriteTypeDict': dict([(k,v) for k,v in self.bestSpriteTypeDict.iteritems()]),
-                'spriteUpdateDict': dict([(k,v) for k,v in self.spriteUpdateDict.iteritems()]),
-                'hypotheses': [MAPHypothesis],
-                'finalTimeStepList': saveableTimeStepList,
-                'n_level':1,
-                'within_level_iteration':self.within_level_iteration
-                }
+        # saved = {
+        #         'agentState': dict([(k,v) for k,v in self.__dict__.iteritems() if k not in unsaved]),
+        #         'sprite_groups': self.rle._game.sprite_groups,
+        #         'bestSpriteTypeDict': dict([(k,v) for k,v in self.bestSpriteTypeDict.iteritems()]),
+        #         'spriteUpdateDict': dict([(k,v) for k,v in self.spriteUpdateDict.iteritems()]),
+        #         'hypotheses': [MAPHypothesis],
+        #         'finalTimeStepList': saveableTimeStepList,
+        #         'n_level':1,
+        #         'within_level_iteration':self.within_level_iteration
+        #         }
+
+
 
         with open(filename, 'wb') as f:
-            cPickle.dump(saved, f)
+            cloudpickle.dump(self, f)
         f.close()
         return
 
 
-    def loadState(self, filename):
-        ## need to initialize rleCreateFunc?
-        with open(filename, 'r') as f:
-            loadedState = cPickle.load(f)
-        f.close()
+    # def loadState(self, filename):
+    #     ## need to initialize rleCreateFunc?
+    #     with open(filename, 'r') as f:
+    #         loadedState = cPickle.load(f)
+    #     f.close()
         
-        ## initialize all the defaultdicts and then fill in their contents.
-        self.bestSpriteTypeDict = defaultdict(lambda : {})
-        self.spriteUpdateDict = defaultdict(lambda : 0)
-        for k,v in loadedState['bestSpriteTypeDict'].items():
-            self.bestSpriteTypeDict[k] = v
-        for k,v in loadedState['spriteUpdateDict'].items():
-            self.spriteUpdateDict[k] = v
+    #     ## initialize all the defaultdicts and then fill in their contents.
+    #     self.bestSpriteTypeDict = defaultdict(lambda : {})
+    #     self.spriteUpdateDict = defaultdict(lambda : 0)
+    #     for k,v in loadedState['bestSpriteTypeDict'].items():
+    #         self.bestSpriteTypeDict[k] = v
+    #     for k,v in loadedState['spriteUpdateDict'].items():
+    #         self.spriteUpdateDict[k] = v
         
-        ## Set all the straightforward aspects of the Agent state
-        for k,v in loadedState['agentState'].items():
-            self.__dict__[k] = v
+    #     ## Set all the straightforward aspects of the Agent state
+    #     for k,v in loadedState['agentState'].items():
+    #         self.__dict__[k] = v
         
-        # print "in loadState"
-        # embed()
-        # ## initialize Theory, then initialize its fields.
-        ## hypothesis: the source. theory: the target. bad naming, but don't want to type long variable names.
-        hypothesis = loadedState['hypotheses'][0]
+    #     # print "in loadState"
+    #     # embed()
+    #     # ## initialize Theory, then initialize its fields.
+    #     ## hypothesis: the source. theory: the target. bad naming, but don't want to type long variable names.
+    #     hypothesis = loadedState['hypotheses'][0]
 
-        gameObject = Game(spriteInductionResult=hypothesis['spriteObjects'])
-        theory = Theory(gameObject)
-        theory.spriteObjects = hypothesis['spriteObjects']
-        theory.spriteSet = hypothesis['spriteSet']
-        theory.classes = hypothesis['classes']
-        theory.interactionSet = hypothesis['interactionSet']
-        theory.terminationSet = hypothesis['terminationSet']
-        theory.falsified = hypothesis['falsified']
-        theory.multi_falsified = hypothesis['multi_falsified']
-        resource_limits = defaultdict(lambda:1)
-        for k,v in hypothesis['resource_limits'].items():
-            resource_limits[k] = v 
-        theory.resource_limits = resource_limits
-        self.hypotheses = [theory]
-        return loadedState
+    #     gameObject = Game(spriteInductionResult=hypothesis['spriteObjects'])
+    #     theory = Theory(gameObject)
+    #     theory.spriteObjects = hypothesis['spriteObjects']
+    #     theory.spriteSet = hypothesis['spriteSet']
+    #     theory.classes = hypothesis['classes']
+    #     theory.interactionSet = hypothesis['interactionSet']
+    #     theory.terminationSet = hypothesis['terminationSet']
+    #     theory.falsified = hypothesis['falsified']
+    #     theory.multi_falsified = hypothesis['multi_falsified']
+    #     resource_limits = defaultdict(lambda:1)
+    #     for k,v in hypothesis['resource_limits'].items():
+    #         resource_limits[k] = v 
+    #     theory.resource_limits = resource_limits
+    #     self.hypotheses = [theory]
+    #     return loadedState
 
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):

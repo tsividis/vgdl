@@ -12,7 +12,9 @@ library("RColorBrewer")
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
-dates = c('oct26')#, 'nov5')
+## nov5: e-greedy
+## nov8: IW2
+dates = c('oct26','nov8')#, 'nov5')
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -308,6 +310,9 @@ for (i in 1:length(levels(data$game_name))){
     grid.newpage()
     q[[1]]=ggdraw(legend)
   }
+  newdir=paste('~/Projects/atari/vgdl/',date,'/plots/',sep='')
+  dir.create(newdir, showWarnings = FALSE)
+  
   newdir=paste('~/Projects/atari/vgdl/',date,'/plots/levels_won/',sep='')
   # newdir=paste('~/Projects/atari/vgdl/',date,'/plots/e_greedy/',sep='')
   dir.create(newdir, showWarnings = FALSE)
