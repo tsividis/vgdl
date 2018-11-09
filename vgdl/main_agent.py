@@ -375,7 +375,7 @@ class Agent:
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
         self.timestamp = timestamp
         if self.record_states:
-            dirname = "results2/{}/{}/".format(self.param_ID, self.gameFilename)
+            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
@@ -388,12 +388,16 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
+        curriculumDir = 'savedCurricula'
+        if curriculumDir not in os.listdir('.'):
+            os.makedirs(curriculumDir)
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.task_ID
         loadedState = False
         loaded_n_level=0
-        if curriculumSaveFile in os.listdir('.'):
+        # embed()
+        if curriculumSaveFile in os.listdir(curriculumDir):
             print "found saved state"
-            loadedState = self.loadState(curriculumSaveFile)
+            loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
             loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
             self = loadedState['agent'] ## load saved agent
 
@@ -454,7 +458,7 @@ class Agent:
                     self.n_level += 1
                     self.within_level_iteration = 0
 
-                self.saveCurriculumState(curriculumSaveFile, episodeCompactStates)
+                self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}

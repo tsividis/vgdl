@@ -2,10 +2,10 @@
 
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-90%30
+#SBATCH --array=0-90
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=840
-#SBATCH --qos=tenenbaum
+#SBATCH --qos=normal
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=8G
 
@@ -27,9 +27,10 @@ DST=""
 # Figure out which game and hyperparameter
 N_GAMES=90
 # N_PARAMS=3
-GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
+# GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
+# IW=$((($SLURM_ARRAY_TASK_ID % 2)+1))
 # HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
-# GAME_NUMBER=$SLURM_ARRAY_TASK_ID
+GAME_NUMBER=$SLURM_ARRAY_TASK_ID
 
 # if we are running on OpenMind, add the singularity module
 . /etc/os-release
@@ -45,5 +46,5 @@ fi
 
 # finally, run the model
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index $HYPER_IDX
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW IW --extra_atom_allowed True --task_ID 0 --make_movie False
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
