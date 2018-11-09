@@ -105,7 +105,7 @@ class Agent:
         self.display_states = True
         self.record_states = True
         self.record_video_info = True
-        self.saveMidEpisode = False
+        self.saveMidEpisode = True
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -396,10 +396,16 @@ class Agent:
         loaded_n_level=0
         # embed()
         if curriculumSaveFile in os.listdir(curriculumDir):
-            print "found saved state"
-            loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
-            loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
-            self = loadedState['agent'] ## load saved agent
+            try:
+                print "found saved curriculum state"
+                loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
+                loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
+                self = loadedState['agent'] ## load saved agent
+                print "loaded curriculum state"
+            except:
+                os.remove(curriculumDir+'/'+episodeSaveFile)
+                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+                embed()
 
         j=0
         flexible_goals = False
@@ -469,7 +475,7 @@ class Agent:
                     # embed()
                     with open(filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
-                    f.close()
+                    # f.close()
 
                 ## will write video data at the end of each episode
                 if self.record_video_info:
@@ -478,14 +484,14 @@ class Agent:
                     fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
                     with open(videofilename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
-                    f.close()
+                    # f.close()
                 if self.total_game_steps > MAX_STEPS:
                     print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
 
                 if self.saveMidEpisode:
                     # ## if the episode ends, delete the mid-episode file we were saving.
                     episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-                    os.remove(episodeSaveFile)
+                    os.remove(curriculumDir+'/'+episodeSaveFile)
                     print "finished an episode; removing episodeSaveFile"
 
             # if heatmap:
@@ -674,19 +680,23 @@ class Agent:
         if self.saveMidEpisode:
             ## if we get a loadedState, do things with it here.
             episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-            if episodeSaveFile in os.listdir('.'):
+            curriculumDir = 'savedCurricula'
+            if episodeSaveFile in os.listdir(curriculumDir):
                 try:
-                    loadedState = self.loadState(episodeSaveFile)
+                    loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
+                    self = loadedState['agent']
+                    # embed()
+                    effectsEncountered = loadedState['effectsEncountered']
+                    statesEncountered = loadedState['statesEncountered']
+                    compactStates = loadedState['compactStates']
+                    annealing = loadedState['annealing']
+                    print "just loaded episode state"
                 except:
-                    print "failed to load episode state"
+                    os.remove(curriculumDir+'/'+episodeSaveFile)
+                    print "failed to load episode state. Deleting the corrupted file and continuing with this episode as though we hadn't saved anything."
                     embed()
-                self = loadedState['agent']
-                # embed()
-                effectsEncountered = loadedState['effectsEncountered']
-                statesEncountered = loadedState['statesEncountered']
-                compactStates = loadedState['compactStates']
-                annealing = loadedState['annealing']
-                print "just loaded episode state"
+
+
 
 
         ## Do beginning-of-episode resource-management.
@@ -1132,23 +1142,27 @@ class Agent:
                       'episodeCompactStates': episodeCompactStates}
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
-        f.close()
+        # f.close()
 
     def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
+        print "starting to save episode state"
         savedState = {'agent':self,
                       'effectsEncountered': effectsEncountered,
                       'statesEncountered': statesEncountered,
                       'compactStates': compactStates,
                       'annealing': annealing
                       }
-        with open(filename, 'wb') as f:
+        filepath = 'savedCurricula/'+filename
+        with open(filepath, 'wb') as f:
             cloudpickle.dump(savedState, f)
-        f.close()
+        print "done saving state"
+        # embed()
+        # f.close()
 
     def loadState(self, filename):
         with open(filename, 'r') as f:
             loadedState = cloudpickle.load(f)
-        f.close()
+        # f.close()
         return loadedState
 
 
@@ -1197,7 +1211,7 @@ class Agent:
 
         with open(filename, 'wb') as f:
             cloudpickle.dump(self, f)
-        f.close()
+        # f.close()
         return
 
 
