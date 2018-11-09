@@ -63,12 +63,12 @@ data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove
 
 ## load dqn data
 dqnpath = 'dqn'
-dqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
+oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
 dqndata = list()
 
-for (game in dqngames){
+for (game in oldformatdqngames){
   filename=paste(game,'_1win.csv',sep='')
-  path = paste('~/Projects/atari/vgdl/dqn/',filename, sep='')
+  path = paste('~/Projects/atari/vgdl/dqn/old_format/',filename, sep='')
   d=read.csv(path, header=TRUE, na.strings='NA')
   d$game_name = as.factor(game)
   d$score = as.numeric(d$ep_reward)
@@ -93,6 +93,16 @@ for (game in dqngames){
   }
 }
 
+path = '~/Projects/atari/vgdl/dqn/new_format/'
+list.files(path)
+for (gamefile in list.files(path)){
+  filename = paste(path,gamefile,sep='')
+  d=read.csv(filename, header=TRUE, na.strings='NA')
+  dqndata = rbind(dqndata,d)
+}
+  
+  
+
 for (colname in names(data)){
   if (!(colname %in% names(dqndata))){
     dqndata[,colname] = NA
@@ -107,6 +117,8 @@ for (colname in names(dqndata)){
 }
 
 data = rbind(data, dqndata)
+
+
 
 colors = c('steelblue3', 'steelblue1', 
            'firebrick2', 'tomato2', 'salmon', 
