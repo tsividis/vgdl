@@ -9,3 +9,4 @@ gdata
 joblib
 psutil
 ffmpeg
+cloudpickle
