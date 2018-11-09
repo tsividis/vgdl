@@ -7,7 +7,7 @@ library(plyr)
 library("dplyr")
 library("colorspace")
 library("RColorBrewer")
-
+dates=c('nov8_local')
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
