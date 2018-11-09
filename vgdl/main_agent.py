@@ -405,7 +405,6 @@ class Agent:
             except:
                 os.remove(curriculumDir+'/'+episodeSaveFile)
                 print "failed to load curriculum state. deleting corrupted file and starting from scratch"
-                embed()
 
         j=0
         flexible_goals = False
@@ -694,10 +693,6 @@ class Agent:
                 except:
                     os.remove(curriculumDir+'/'+episodeSaveFile)
                     print "failed to load episode state. Deleting the corrupted file and continuing with this episode as though we hadn't saved anything."
-                    embed()
-
-
-
 
         ## Do beginning-of-episode resource-management.
         resources = self.rle._game.getAvatars()[0].resources
