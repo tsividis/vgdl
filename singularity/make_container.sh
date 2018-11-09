@@ -2,7 +2,7 @@
 
 
 CONTNAME="pyenv.simg"
-DEFFILE="Singularity"
+DEFFILE="Singularity.pyenv"
 
 # copy over the python requirements for automation
 if [ ! -f "requirements.txt" ]; then
