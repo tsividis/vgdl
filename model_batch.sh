@@ -27,10 +27,10 @@ DST=""
 # Figure out which game and hyperparameter
 # N_GAMES=90
 # N_PARAMS=3
-# GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
+GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
 # IW=$(($SLURM_ARRAY_TASK_ID / 90 + 1))
 # HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
-GAME_NUMBER=$SLURM_ARRAY_TASK_ID
+# GAME_NUMBER=$SLURM_ARRAY_TASK_ID
 
 # if we are running on OpenMind, add the singularity module
 . /etc/os-release
