@@ -547,11 +547,21 @@ for (i in 1:length(levels(plantimedata$game_name))){
 
 }
 
-## you're unable to make colors show up on this. why??
-p = ggplot(subset(plantimedata, (agent_type%in%c(levels(plantimedata$agent_type)[4],'DDQN')) & !is.na(score_efficiency)), 
-           aes(x=reorder(game_name,score_efficiency), y=score_efficiency))+
-    geom_bar(position='dodge', stat='identity')+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+## you're unable to get both models on this plot. why??
+s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & !is.na(score_efficiency))
+colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
+           'firebrick2', 'tomato2', 'salmon',
+           'purple2', 'mediumorchid2', 
+           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+
+names(colors)=levels(s$agent_type)
+colorScale = scale_color_manual(name="agent_type", values=colors)
+
+p = ggplot(s, aes(x=reorder(game_name,score_efficiency), y=score_efficiency, fill=agent_type))+
+    geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
+  colorScale+
+  scale_fill_manual(values=colors) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("max_score / steps")+xlab('game name')
 p+coord_flip()
 
 
