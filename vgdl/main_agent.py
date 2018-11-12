@@ -388,7 +388,7 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
-        curriculumDir = 'savedCurricula4'
+        curriculumDir = 'savedCurricula3'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.task_ID
@@ -679,7 +679,7 @@ class Agent:
         if self.saveMidEpisode:
             ## if we get a loadedState, do things with it here.
             episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-            curriculumDir = 'savedCurricula4'
+            curriculumDir = 'savedCurricula3'
             if episodeSaveFile in os.listdir(curriculumDir):
                 try:
                     loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
@@ -1147,7 +1147,7 @@ class Agent:
                       'compactStates': compactStates,
                       'annealing': annealing
                       }
-        filepath = 'savedCurricula4/'+filename
+        filepath = 'savedCurricula3/'+filename
         with open(filepath, 'wb') as f:
             cloudpickle.dump(savedState, f)
         print "done saving state"
