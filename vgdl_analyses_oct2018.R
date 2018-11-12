@@ -14,7 +14,7 @@ library("RColorBrewer")
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
 ## nov5: e-greedy
 ## nov8: IW2
-dates = c('oct26','nov8')#, 'nov5')
+dates = c('oct26','nov8', 'nov12')#, 'nov5')
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -57,7 +57,7 @@ data$score = as.numeric(as.character(data$sparse_score))
 ## remove 'variant_' from names
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 
-
+alldata = data
 # plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 # dir.create(plotpath)
 
@@ -133,10 +133,10 @@ for (colname in names(dqndata)){
 
 data = rbind(data, dqndata)
 
-colors = c('steelblue1', 'steelblue2', 'steelblue3', 'steelblue4',
+colors = c('purple2', #'mediumorchid2', 
+          'steelblue1',# 'steelblue2',# 'steelblue3', 'steelblue4',
            # 'palegreen3', 'seagreen3','darkolivegreen1',
            'firebrick2', 'tomato2', 'salmon', 
-           'purple2', 'mediumorchid2', 
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
 # colors = c('firebrick2', 'tomato2', 'salmon', 
@@ -303,13 +303,13 @@ plots = list()
 q=list()
 for (i in 1:length(levels(data$game_name))){
   game = levels(data$game_name)[i]
-  d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lr=False")
+  d=subset(data, game_name==game)
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
-    scale_color_manual(values=colors) + theme(legend.position="none")+
+    scale_color_manual(values=colors) + #theme(legend.position="none")+
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5))
   
   p=p+ylim(0,5)#+theme(legend.position='none')
@@ -533,14 +533,16 @@ for (i in 1:length(levels(data$agent_type))){
 # p
 ## save as 6x72
 
+savedplantimedata=plantimedata
 ## To see roughly what this plot'll look like, fill in a fake score_efficiency column
 for (i in 1:length(levels(plantimedata$game_name))){
   game = levels(plantimedata$game_name)[i]
   if(length(filter(plantimedata, agent_type==levels(data$agent_type)[4] & game_name==game))){
+    se=0.005+runif(1,-0.005,.005)
     new = data.frame(game_name=game, agent_type='DDQN', max_score=NA, 
                      max_steps=NA, planning_time=NA, 
                      max_levels_won=NA,level_percentage=NA,
-                     level_num=5, score_efficiency=0.001)
+                     level_num=5, score_efficiency=se)
     plantimedata = rbind(plantimedata, new)    
   }
 
@@ -548,7 +550,7 @@ for (i in 1:length(levels(plantimedata$game_name))){
 }
 
 ## you're unable to get both models on this plot. why??
-s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & !is.na(score_efficiency))
+s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & (!is.na(score_efficiency)|score_efficiency>0.005 ))
 colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
            'firebrick2', 'tomato2', 'salmon',
            'purple2', 'mediumorchid2', 
