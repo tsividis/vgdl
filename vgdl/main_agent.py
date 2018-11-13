@@ -105,7 +105,7 @@ class Agent:
         self.display_states = True
         self.record_states = True
         self.record_video_info = True
-        self.saveMidEpisode = False
+        self.saveMidEpisode = True
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]

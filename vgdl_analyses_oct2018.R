@@ -14,7 +14,7 @@ library("RColorBrewer")
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
 ## nov5: e-greedy
 ## nov8: IW2
-dates = c('oct26','nov8', 'nov12')#, 'nov5')
+dates = c('nov8', 'nov12')#, 'nov5')
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -139,13 +139,9 @@ colors = c('purple2', #'mediumorchid2',
            'firebrick2', 'tomato2', 'salmon', 
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
-# colors = c('firebrick2', 'tomato2', 'salmon', 
-#            'steelblue3', 'steelblue1', 
-#            'palegreen3', 'seagreen3','darkolivegreen1',  
-#            'purple2', 'mediumorchid2', 
-#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-
 names(colors)=levels(data$agent_type)
+inversecolors = levels(data$agent_type)
+names(inversecolors) = colors[1:length(levels(data$agent_type))]
 colorScale = scale_color_manual(name="agent_type", values=colors)
 
 games = c("aliens", "avoidgeorge", "plaqueattack", "expt_push_boulders", "expt_relational", "frogs", "portals", "sokoban")
@@ -206,8 +202,8 @@ m = multiplot(plotlist = plots[1:8], layout=layout)
 # }
 
 ## load human data
-humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full')
-date='oct28_local'
+humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full', 'pilot_Nov12th_Full')
+date='humandata'
 humandata = list()
 for (humandatapath in humandatapaths){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
@@ -260,6 +256,7 @@ for (i in 2:length(humandata$timestep)){
 ##remove first part of game string from humandata names
 humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
 humandata$levelscore = NULL
+humandata$cumulative_steps = humandata$cumulative_timestep
 humandata$level_number = as.factor(humandata$level)
 ## now make sure that humandata has all the column names that data has.
 for (colname in names(data)){
@@ -279,15 +276,77 @@ for (colname in names(humandata)){
 
 ## make a single dataframe
 alldata = rbind(data, humandata)
+colors = c('purple2', #'mediumorchid2', 
+           'steelblue1',# 'steelblue2',# 'steelblue3', 'steelblue4',
+           'firebrick2',# 'tomato2', 'salmon', 
+           'palegreen3',# 'seagreen3','darkolivegreen1',
+           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
-##example plot for one game
-game = levels(humandata$game_name)[6]
-p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
-p+geom_point()+geom_smooth()+ggtitle(game)
+names(colors)=levels(alldata$agent_type)
+inversecolors = levels(alldata$agent_type)
+names(inversecolors) = colors[1:length(levels(alldata$agent_type))]
+colorScale = scale_color_manual(name="agent_type", values=colors)
 
-game=levels(humandata$game_name)[2]
-p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=score,color=agent_type))
-p+geom_point()+geom_smooth()+ggtitle(game)
+
+## plotting all agents/models
+plots = list()
+for (i in 1:length(levels(humandata$game_name))){
+  game = levels(humandata$game_name)[i]
+  p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=agent_type))
+  p=p+geom_point()+geom_smooth()+ggtitle(game)+colorScale+scale_color_manual(values=colors)+theme(legend.position="none")
+  plots[[i]] = p
+}
+
+
+d = filter(alldata, game_name=='zelda_3')
+p = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')
+p
+
+
+s = filter(alldata,game_name==game)
+## the problem with the geometric mean idea is that we have no good instances to show where the DDQN does better in the way that alphago zero did.
+## as in, our model is strictly better.
+## but it's still a good idea.
+
+## you need to figure out how to get values for where geom_smooth() hasn't interpolated.
+
+
+AUC = data.frame(game_name=as.character(), agent_type=as.character(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric())
+
+##TODO: you want to be able to specify some timescale, and then get the AUC up to that timescale.
+df = ggplot_build(p)$data[[2]]
+relevantrows = filter(df,colour=='palegreen3')
+x = relevantrows$x
+y = relevantrows$y
+id = order(x)
+AUC <- sum(diff(x[id])*rollmean(y[id],2))
+
+cutoff = max(x)
+modelrows = filter(df, colour=='firebrick2')
+x = modelrows$x
+modelcutoff = which.min(abs(x-cutoff)) ## point that is closest to the agent x cutoff
+x = x[1:modelcutoff]
+y = modelrows$y[1:modelcutoff]
+id = order(x)
+AUC <- sum(diff(x[id])*rollmean(y[id],2))
+
+## first try the easy version: on the human timescale, compare AUCs.
+
+## then to the other, where you extend the human version to calculate the larger AUC.
+
+## assume first element is 0??
+
+## calculate mean subject
+## then get AUC
+
+x = 0:10
+y = 1*x
+df = data.frame(x=x,y=y)
+p = ggplot(df, aes(x=x,y=y))
+p+geom_point()
+id = order(x)
+AUC <- sum(diff(x[id])*rollmean(y[id],2))
 
 
 ## this is weird when you plot by level_number and also when you plot by subject. looks like I took more actions
