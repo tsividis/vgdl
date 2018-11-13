@@ -105,7 +105,7 @@ class Agent:
         self.display_states = True
         self.record_states = True
         self.record_video_info = True
-        self.saveMidEpisode = True
+        self.saveMidEpisode = False
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -375,7 +375,7 @@ class Agent:
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
         self.timestamp = timestamp
         if self.record_states:
-            dirname = "results2/{}/{}/".format(self.param_ID, self.gameFilename)
+            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
@@ -390,7 +390,7 @@ class Agent:
 
         print "timestamp", self.timestamp
         print "param_ID", self.param_ID
-        curriculumDir = 'savedCurricula3'
+        curriculumDir = 'savedCurricula'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.task_ID
@@ -681,7 +681,7 @@ class Agent:
         if self.saveMidEpisode:
             ## if we get a loadedState, do things with it here.
             episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-            curriculumDir = 'savedCurricula3'
+            curriculumDir = 'savedCurricula'
             if episodeSaveFile in os.listdir(curriculumDir):
                 try:
                     loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
@@ -1149,7 +1149,7 @@ class Agent:
                       'compactStates': compactStates,
                       'annealing': annealing
                       }
-        filepath = 'savedCurricula3/'+filename
+        filepath = 'savedCurricula/'+filename
         with open(filepath, 'wb') as f:
             cloudpickle.dump(savedState, f)
         print "done saving state"
