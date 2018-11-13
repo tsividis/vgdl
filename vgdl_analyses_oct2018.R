@@ -10,6 +10,8 @@ library("RColorBrewer")
 library(purrr)
 library(zoo)
 library(EnvStats)
+library(grid)
+
 
 # dates=c('nov8_local')
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
@@ -325,47 +327,105 @@ define_timescale = function(agent, game, quantiles){
   if(length(d$cumulative_wins)==0){
     print(paste("Can't determine quantiles. You don't have data for agent: ", agent, ", game: ", game, sep=''))
   }
-  quantile_ys = c(quantile(d$cumulative_wins, quantiles, names=FALSE), max(d$cumulative_wins))
+  ## find y values (cumulative_wins) that are in the quantiles you asked for
+  quantile_ys = c(round(quantile(d$cumulative_wins, quantiles, names=FALSE)), max(d$cumulative_wins))
+  ## find indices that correspond to these
   quantile_indices = map(quantile_ys, function(x) get_middle_element(which(grepl(x,d$cumulative_wins)))[1])
   quantile_xs = map(quantile_indices, function(x) d$cumulative_steps[x])
-  print(quantile_xs)
   if(any(is.na(quantile_xs))){
     print(paste('WARNING -- you have at least one NA in quantile values in define_timescale for game: ',game,', agent: ',agent,', quantiles: ',quantiles, sep=''))
   }
   return(unlist(quantile_xs))
 }
 
-get_corresponding_val = function(agent, game, xval){
+get_corresponding_val = function(agent, game, xval, df){
   ## if the interpolation for (agent,game) exists, return the yval that corresponds to the nearest xval
   ## if it doesn't (because the agent's curve finishes well before the requested xval), return the max yval
   
   ## grab rows of the interpolation data frame that corresponds to the agent we want
   relevantrows = filter(df,colour==colors[agent])
-  print(xval)
   if (xval < max(relevantrows$x)){
     idx = which.min(abs(relevantrows$x-xval))
-    return(relevantrows$y[idx])
-  }
+    # return(max(0.0000000001,relevantrows$y[idx]))
+    return(max(0,relevantrows$y[idx]))
+    
+      }
   else{
-    return(max(relevantrows$y))
+    # return(max(0.0000000001,max(relevantrows$y)))
+    return(max(0,max(relevantrows$y)))
   }
 }
 
-get_corresponding_vals = function(agent, game, xvals){
-  return(unlist(map(xvals, function(x) get_corresponding_val(agent, game, x))))
+get_corresponding_vals = function(agent, game, xvals, df){
+  return(unlist(map(xvals, function(x) get_corresponding_val(agent, game, x, df))))
 }
 
 ##reference_agent: the agent whose timescale we care about
-quantiles = c(.25,.5,.75)
-agent1 = 'human'
+quantiles = c(.75)
+# agent1 = 'human'
+agent1 = levels(alldata$agent_type)[2]
 agent2 = 'DDQN'
 
-timescales = define_timescale(reference_agent,game,quantiles) ##also includes xval of max(y)
-vals1 = as.vector(get_corresponding_vals(agent1, game, timescales))
-vals2 = as.vector(get_corresponding_vals(agent2, game, timescales))
+agent_timescale_geom_ratio = function(game, reference_agent, agent1, agent2, agent1_name, agent2_name){
+  
+  p = ggplot(filter(alldata,game_name==game & agent_type%in%c(agent1, agent2)), aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+  p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
+  
+  df = ggplot_build(p)$data[[2]]
+  
+  ##MEP timescale
+  reference_agent = agent1
+  timescales = define_timescale(reference_agent, game, quantiles) ##also includes xval of max(y)
+  vals1 = as.vector(get_corresponding_vals(agent1, game, timescales, df))
+  vals2 = as.vector(get_corresponding_vals(agent2, game, timescales, df))
+  gm_agent1_scale = geoMean(vals1/vals2)
+  
+  ##dqn timescale
+  reference_agent = agent2
+  timescales = define_timescale(reference_agent, game, quantiles) ##also includes xval of max(y)
+  vals1 = as.vector(get_corresponding_vals(agent1, game, timescales, df))
+  vals2 = as.vector(get_corresponding_vals(agent2, game, timescales, df))
+  gm_agent2_scale = geoMean(vals1/vals2)
+  
+  
+  # txt = atop(paste("MEP scale = ", gm_agent1_scale, sep=''),paste("DDQN scale = ", gm_agent2_scale, sep='')
+  txt1 = paste(agent1_name, " scale  = ", gm_agent1_scale, sep='')
+  grob1 = grobTree(textGrob(txt1, x=0.1,  y=0.95, hjust=0,
+                            gp=gpar(col="black", fontsize=13)))
+  
+  txt2 = paste(agent2_name, " scale = ", gm_agent2_scale, sep='')
+  grob2 = grobTree(textGrob(txt2, x=0.1,  y=0.90, hjust=0,
+                            gp=gpar(col="black", fontsize=13)))
+  p = p+annotation_custom(grob1)+annotation_custom(grob2)
+  return(p) ## the mean of the ratios of the values at the supplied quantiles.
+}
 
-geoMean(vals1/vals2) ## the mean of the ratios of the values at the supplied quantiles.
 
+### MEP vs DQN
+agent1 = levels(alldata$agent_type)[2]
+agent2 = 'DDQN'
+plots = list()
+for (i in 1:length(levels(dqndata$game_name))){
+  game = levels(dqndata$game_name)[i]
+  p = agent_timescale_geom_ratio(game, agent1, agent1, agent2, 'MEP', 'DDQN')
+  plots[[i]] = p
+}
+
+layout = matrix(c(1:8), ncol=4, byrow=TRUE)
+m = multiplot(plotlist = c(plots[1:3],plots[5:9]), layout=layout)
+
+### human vs MEP
+agent1 = 'human'
+agent2 = levels(alldata$agent_type)[2]
+plots = list()
+for (i in 1:length(levels(humandata$game_name))){
+  game = levels(humandata$game_name)[i]
+  p = agent_timescale_geom_ratio(game, agent1, agent1, agent2, 'human', 'MEP')
+  plots[[i]] = p
+}
+
+layout = matrix(c(1:16), ncol=4, byrow=TRUE)
+m = multiplot(plotlist = plots, layout=layout)
 
 
 
