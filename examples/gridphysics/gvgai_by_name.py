@@ -69,6 +69,6 @@ if __name__ == "__main__":
         win=False
         while not win:
             VGDLParser.playGame(*level)
-            data = np.load("temp_data.npy")
-            win = data[2]
+            # data = np.load("temp_data.npy")
+            # win = data[2]
 
