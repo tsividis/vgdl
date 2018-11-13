@@ -7,6 +7,10 @@ library(plyr)
 library("dplyr")
 library("colorspace")
 library("RColorBrewer")
+library(purrr)
+library(zoo)
+library(EnvStats)
+
 # dates=c('nov8_local')
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
@@ -15,6 +19,7 @@ library("RColorBrewer")
 ## nov5: e-greedy
 ## nov8: IW2
 dates = c('nov8', 'nov12')#, 'nov5')
+## warning: don't plot frogs from anything before nov13b
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -298,13 +303,72 @@ for (i in 1:length(levels(humandata$game_name))){
 }
 
 
-d = filter(alldata, game_name=='zelda_3')
+d = filter(alldata, game_name=='avoidgeorge')
 p = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
 p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')
 p
 
+## build data frame that corresponds to the game we care about
+p = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
+p
 
-s = filter(alldata,game_name==game)
+df = ggplot_build(p)$data[[2]]
+
+get_middle_element = function(lst){
+  return(lst[round(0.1+length(lst)/2.0)])
+}
+define_timescale = function(agent, game, quantiles){
+  ## agent, e.g., 'DDQN'
+  ## quantiles have to be specified as c(.25,.5,...). Also returns x value of max(y)
+  d = filter(alldata, agent_type==agent & game_name==game)
+  if(length(d$cumulative_wins)==0){
+    print(paste("Can't determine quantiles. You don't have data for agent: ", agent, ", game: ", game, sep=''))
+  }
+  quantile_ys = c(quantile(d$cumulative_wins, quantiles, names=FALSE), max(d$cumulative_wins))
+  quantile_indices = map(quantile_ys, function(x) get_middle_element(which(grepl(x,d$cumulative_wins)))[1])
+  quantile_xs = map(quantile_indices, function(x) d$cumulative_steps[x])
+  print(quantile_xs)
+  if(any(is.na(quantile_xs))){
+    print(paste('WARNING -- you have at least one NA in quantile values in define_timescale for game: ',game,', agent: ',agent,', quantiles: ',quantiles, sep=''))
+  }
+  return(unlist(quantile_xs))
+}
+
+get_corresponding_val = function(agent, game, xval){
+  ## if the interpolation for (agent,game) exists, return the yval that corresponds to the nearest xval
+  ## if it doesn't (because the agent's curve finishes well before the requested xval), return the max yval
+  
+  ## grab rows of the interpolation data frame that corresponds to the agent we want
+  relevantrows = filter(df,colour==colors[agent])
+  print(xval)
+  if (xval < max(relevantrows$x)){
+    idx = which.min(abs(relevantrows$x-xval))
+    return(relevantrows$y[idx])
+  }
+  else{
+    return(max(relevantrows$y))
+  }
+}
+
+get_corresponding_vals = function(agent, game, xvals){
+  return(unlist(map(xvals, function(x) get_corresponding_val(agent, game, x))))
+}
+
+##reference_agent: the agent whose timescale we care about
+quantiles = c(.25,.5,.75)
+agent1 = 'human'
+agent2 = 'DDQN'
+
+timescales = define_timescale(reference_agent,game,quantiles) ##also includes xval of max(y)
+vals1 = as.vector(get_corresponding_vals(agent1, game, timescales))
+vals2 = as.vector(get_corresponding_vals(agent2, game, timescales))
+
+geoMean(vals1/vals2) ## the mean of the ratios of the values at the supplied quantiles.
+
+
+
+
 ## the problem with the geometric mean idea is that we have no good instances to show where the DDQN does better in the way that alphago zero did.
 ## as in, our model is strictly better.
 ## but it's still a good idea.
