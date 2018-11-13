@@ -388,6 +388,8 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
+        print "timestamp", self.timestamp
+        print "param_ID", self.param_ID
         curriculumDir = 'savedCurricula3'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)

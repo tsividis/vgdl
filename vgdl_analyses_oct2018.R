@@ -368,7 +368,7 @@ for (i in 1:length(levels(data$game_name))){
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
-    scale_color_manual(values=colors) + #theme(legend.position="none")+
+    scale_color_manual(values=colors) + theme(legend.position="none")+
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5))
   
   p=p+ylim(0,5)#+theme(legend.position='none')
