@@ -381,7 +381,7 @@ class Agent:
                 try:
                     os.makedirs(dirname)
                 except:
-                    continue
+                    print "failed  to make dir"
         if self.record_video_info:
             dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(dirname):
