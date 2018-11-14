@@ -209,11 +209,13 @@ m = multiplot(plotlist = plots[1:8], layout=layout)
 # }
 
 ## load human data
-humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full', 'pilot_Nov12th_Full')
+# humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full', 'pilot_Nov12th_Full')
+
+humandatapaths = list.files("~/Projects/atari/vgdl/humandata/csv_data")
 date='humandata'
 humandata = list()
 for (humandatapath in humandatapaths){
-  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
+  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath, sep='')
   d=read.csv(path, header=TRUE, na.strings='NA')
   if (length(humandata)==0){
     humandata = d

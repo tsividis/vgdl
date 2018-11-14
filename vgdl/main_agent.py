@@ -378,7 +378,10 @@ class Agent:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
-                os.makedirs(dirname)
+                try:
+                    os.makedirs(dirname)
+                except:
+                    continue
         if self.record_video_info:
             dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(dirname):

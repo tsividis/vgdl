@@ -1912,7 +1912,7 @@ if __name__ == "__main__":
 		gameFilename = game_name
 
 	else:
-		gameFilename = "examples.gridphysics.theory_files_frogs"
+		gameFilename = "examples.gridphysics.theory_variant_frogs_2"
 		gameString, levelString = defInputGame(gameFilename, randomize=True)
 		rleCreateFunc = lambda: createRLInputGame(gameFilename)
 		rle = rleCreateFunc()
@@ -1923,7 +1923,7 @@ if __name__ == "__main__":
 	max_nodes = 500 if hyperparameters['short_horizon'] else 10000
 	
 	# p = WBP(rle, 'sokoban', hyperparameters=planner_hyperparameters, extra_atom=True, IW_k=2)
-	# embed()
+	embed()
 
 	# max_nodes = 10
 	## Initialize planner

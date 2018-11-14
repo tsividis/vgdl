@@ -1634,7 +1634,7 @@ def changeResource(sprite, partner, resourceColor, game, resource, value=1, limi
     sprite.resources[resource] = max(-1, min(sprite.resources[resource]+value, game.resources_limits[resource]))
     # NOTE: partner is the color of the resource (see _eventHandling() in core.py)
     args = {'resource':resource, 'value':value, 'limit':game.resources_limits[resource]}
-    # print args
+    # print sprite, partner, resource, args
     return ('changeResource', sprite.ID, partner.ID, args)
 
 def changeScore(sprite, partner, game, value):

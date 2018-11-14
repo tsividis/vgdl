@@ -68,7 +68,8 @@ if __name__ == "__main__":
     for index, level in enumerate(level_game_pairs):
         win=False
         while not win:
-            VGDLParser.playGame(*level)
+            g = VGDLParser.playGame(*level)
+            win = g.win
             # data = np.load("temp_data.npy")
             # win = data[2]
 
