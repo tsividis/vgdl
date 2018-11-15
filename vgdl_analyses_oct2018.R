@@ -19,7 +19,7 @@ library(grid)
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
 ## nov5: e-greedy
 ## nov8: IW2
-dates = c('nov8', 'nov12')#, 'nov5')
+dates = c('nov8', 'nov12', 'nov15')
 ## warning: don't plot frogs from anything before nov13b
 data = list()
 for (date in dates){
@@ -61,6 +61,7 @@ data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
 ## TODO: once you're using human data, move this below and run it for all_data
 ## remove 'variant_' from names
+
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 
 MEPdata = data
@@ -225,6 +226,7 @@ p
 date='humandata'
 # humandatapaths = c('pilot_Oct29th_Full.csv','pilot_Oct30th_Full.csv', 'pilot_Nov12th_Full.csv')
 humandatapaths = list.files("~/Projects/atari/vgdl/humandata/csv_data")
+humandatapaths = list.files("~/Projects/atari/vgdl/humandata_new/csv_data")
 
 humandata = list()
 for (humandatapath in humandatapaths){
@@ -261,6 +263,8 @@ humandata$group = NULL ## drop this for now. it refers to the groupings of the g
 humandata$gameNumber = NULL
 humandata$gameRound = NULL
 
+## for new-format humandata:
+humandata$cumulative_steps = humandata$timestep
 ## fix cumulative_timesteps
 humandata$cumulative_timestep = 1
 for (i in 2:length(humandata$timestep)){
@@ -277,7 +281,7 @@ for (i in 2:length(humandata$timestep)){
   }
 }
 ##remove first part of game string from humandata names
-humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), from_name)))
+humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
 humandata$levelscore = NULL
 humandata$cumulative_steps = humandata$cumulative_timestep
 humandata$level_number = as.factor(humandata$level)
@@ -309,6 +313,13 @@ names(colors)=levels(alldata$agent_type)
 inversecolors = levels(alldata$agent_type)
 names(inversecolors) = colors[1:length(levels(alldata$agent_type))]
 colorScale = scale_color_manual(name="agent_type", values=colors)
+
+for (i in 1:length(levels(humandata$game_name))){
+  game = levels(humandata$game_name)[i]
+  p = ggplot(filter(humandata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID))
+  p=p+geom_point()+geom_smooth()+ggtitle(game)+theme(legend.position="none")#+colorScale+scale_color_manual(values=colors)+theme(legend.position="none")
+  plots[[i]] = p
+}
 
 
 ## plotting all agents/models
@@ -391,7 +402,6 @@ agent_timescale_geom_ratio = function(game, reference_agent, agent1, agent2, age
   p = ggplot(filtered, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
   
-  length(filter(filtered, agent_type==agent1)$cumulative_wins)>0 & length(filter(alldata,game_name==game & agent_type%in%c(agent1, agent2)))>0
   df = ggplot_build(p)$data[[2]]
   
   ##MEP timescale
@@ -450,30 +460,53 @@ agent_timescale_geom_ratio = function(game, reference_agent, agent1, agent2, age
 
 
 
-##score/max_score (for that game) * score/steps_to_your_max
-game = 'bees_and_birds'
+## function that returns a dataframe row for the particular game, agent1, agent2 combination. agent2 should just be renamed reference_agent 
+## and will eventually be humans, but for now make it MEP as you have the most data for that.
+## outer loop can append these rows to a larger dataframe and then you can use that to get the histogram you want.
+get_log_ratio = function(game, agent1, agent2){
+  filtered=filter(alldata,game_name==game & agent_type%in%c(agent1, agent2))
+  p = ggplot(filtered, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+  p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
+  
+  df = ggplot_build(p)$data[[2]]
+  
+  all_agent_max = max(df$y)
+  
+  relevantrows = filter(df,colour==colors[agent1])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent1_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  agent1_pt1 = agent_max/all_agent_max
+  agent1_pt2 = agent_max/steps_to_agent_max
+  
+  relevantrows = filter(df,colour==colors[agent2])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent2_pt1 = agent_max/all_agent_max
+  agent2_pt2 = agent_max/steps_to_agent_max
+  
+  agent2_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  
+  score_ratio = agent1_pt1/agent2_pt1
+  slope_ratio = agent1_pt2/agent2_pt2
+  
+  composite_ratio = score_ratio*slope_ratio
+  log_composite_ratio = log(composite_ratio)
+  return(c(agent1, game, log_composite_ratio))
+}
 
-d = subset(alldata, game_name==game)
-max_cumulative_wins = max(d$cumulative_wins)
+
+log_odds_dataframe = list()
+for (i in 1:length(levels(dqndata$game_name))){
+  game = levels(dqndata$game_name)[i]
+  get_log_ratio(game, agent1, agent2)
+  ## continue here.
+}
 
 
-agent = levels(alldata$agent_type)[2] ## MEP for now
 
-p = ggplot(filter(alldata,game_name==game & agent_type%in%c(agent1, agent2)), aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
-p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
 
-df = ggplot_build(p)$data[[2]]
-all_agent_max = max(df$y)
 
-relevantrows = filter(df,colour==colors[agent1])
-agent_max = max(relevantrows$y)
-steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
-agent1_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
-
-relevantrows = filter(df,colour==colors[agent2])
-agent_max = max(relevantrows$y)
-steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
-agent2_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
 
 
 
@@ -954,6 +987,21 @@ g_legend <- function(a.gplot){
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
+
+
+# newdataframe = subset(data, game_name==levels(dataframe$game_name)[1])
+# for (i in 2:length(levels(dataframe$game_name))){
+#   name = levels(dataframe$game_name)[i]
+#   s = subset(data, game_name==levels(dataframe$game_name)[i])
+#   for (j in 1:length(strings_to_remove)){
+#     string_to_remove = strings_to_remove[j]
+#     if (grepl(string_to_remove, name)){
+#       newname = substr(name, nchar(string_to_remove)+2, nchar(name))
+#       s$game_name = as.factor(newname)
+#     }
+#     newdataframe = rbind(newdataframe, s)
+#   }
+# }
 
 remove_string_from_name = function(name){
   strings_to_remove = c('gvgai_variant','expt_variant', 'variant','gvgai', 'expt')
