@@ -45,5 +45,5 @@ if [ ! -d "${ROOT}/slurm_logs/main" ]; then
 fi
 
 # finally, run the model
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 1 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
 # echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --IW ${IW}"
