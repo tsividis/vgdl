@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
 parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
+parser.add_argument('--metacontroller_index', type=int, default=0, help='metacontroller_index')
 parser.add_argument('--IW_k', type=int, default=2, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
 parser.add_argument('--task_ID', type=int, default=0, help='task_ID')
@@ -20,6 +21,7 @@ args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
+metacontroller_index = args.metacontroller_index
 IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
 task_ID = str(args.task_ID)
@@ -129,7 +131,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
 
-    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
+    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
 
     ##then pass this down for multiple episodes
     gameObject = None

@@ -95,8 +95,26 @@ hyperparameter_sets = [
 ]
 
 
+## Metacontroller params:
+metacontroller_sets = [
+    {'idx': 0,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': False,
+    'noNewObjectNum': 55,
+    'objectLocationTrackingLimit': 8,
+    'safeDistance': 3,
+    'longHorizonObservationLimit': 2,
+    'objectNumberTrackingLimit': 200}
+]
+
+
+
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, task_ID=0):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -118,42 +136,42 @@ class Agent:
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.epsilon_greedy = False
         self.hybrid = False
-        self.switch_to_exploit_step = 1000
-        self.absolute_max_nodes = 50000
-        
-
-        self.random_steps_on_plan_failure = 5
+        self.switch_to_exploit_step = 1000 ## only used for e-greedy lesion
+        self.absolute_max_nodes = 50000 ## just a convenience parameter
         self.shortHorizonNodes = 500 ## this isn't used. but you need to clean the code up a bit to actually delete it.
-        self.longHorizonNodes = 1000
         self.shortHorizonAnnealing = 1.05 ## this isn't used, either. but you need to clean the code up a bit to actually delete it.
-        self.longhorizonAnnealing = 2.
+        # self.emptyPlansLimit = 5 ## not used
+
+        self.metacontroller_params = metacontroller_sets[metacontroller_index]
+        ## Metacontroller parameters
+        self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
+        self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
+        self.longhorizonAnnealing = self.metacontroller_params['longhorizonAnnealing']
+        self.shortHorizonRandomChoice = self.metacontroller_params['shortHorizonRandomChoice']
+        self.conservative_max_nodes = self.metacontroller_params['conservative_max_nodes']
+        self.extra_atom = self.metacontroller_params['extra_atom']
+        self.noNewObjectNum = self.metacontroller_params['noNewObjectNum']
+        self.objectLocationTrackingLimit = self.metacontroller_params['objectLocationTrackingLimit']
+        self.safeDistance = self.metacontroller_params['safeDistance']
+        self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
+        self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
+
         if self.shortHorizon == True:
             self.starting_max_nodes = self.shortHorizonNodes
             self.max_nodes_annealing = self.shortHorizonAnnealing
         else:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
-        self.shortHorizonRandomChoice = [200,500,1000]
-        
-        self.conservative_max_nodes = 50
-        self.extra_atom = False
-        self.noNewObjectNum = 55
-        self.objectNumberTrackingLimit = 200
-        self.objectLocationTrackingLimit = 8
-        ## add extra_atom to param string
-
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
+        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
                 self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, self.absolute_max_nodes, 
-                self.allow_long_range, self.epsilon_greedy, self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, self.objectLocationTrackingLimit)
+                self.allow_long_range, self.epsilon_greedy, self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit)
 
         self.conservative = False
         self.regrounding = 1
-        self.selective_regrounding = True
-        self.reground_for_npcs = False
-        self.safeDistance = 3
-        self.emptyPlansLimit = 5
-        self.longHorizonObservationLimit = 2
+        # self.selective_regrounding = True ## not used
+        self.reground_for_npcs = False ## delete this and the code that checks it, since you haven't used it in ages.
+
         self.hypotheses = []
         self.symbolDict = None
         self.finalEventList = []
@@ -867,15 +885,9 @@ class Agent:
                 if p.exhausted_novelty and self.extra_atom_allowed:
                     print "turning on extra atom"
                     self.extra_atom = True
-                if self.longHorizonObservations<self.longHorizonObservationLimit:
-                    # if self.display_text:
-                    # print "Didn't get solution. Observing, then replanning."
+                if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with idx_3 you'll plan conservatively. you only get here if you're in idx_1 and don't find a plan.
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
                     plannerNodes = p.total_nodes_opened
-                    # action = 0
-                    # hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
-                        # run_induction = not flexible_goals)
-                    # self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                     for i in range(self.random_steps_on_plan_failure):
                         solution.append(random.choice(legalActions))

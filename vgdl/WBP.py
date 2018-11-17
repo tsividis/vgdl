@@ -74,7 +74,7 @@ class WBP():
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		# self.allowRollouts = True
+		self.allowRollouts = True
 		self.quitting = False
 		# self.exhausted_novelty = True
 		self.extra_atom = extra_atom
