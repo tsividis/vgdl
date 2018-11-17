@@ -7,6 +7,7 @@ SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheor
 generateTheoryFromGame
 import os, subprocess, shutil
 from collections import defaultdict
+from hyperparameters import hyperparameter_sets, metacontroller_sets
 import WBP
 import importlib
 import numpy as np
@@ -35,83 +36,6 @@ def playCurriculum(agent, level_game_pairs):
     agent.playCurriculum(level_game_pairs)
     end_time = time() - start_time
     return end_time
-
-hyperparameter_sets = [
-    {'idx'           : 0,
-     'short_horizon' : False,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 1,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 2,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 3,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 4,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 10,
-     }
-]
-
-
-## Metacontroller params:
-metacontroller_sets = [
-    {'idx': 0,
-    'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 1000,
-    'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [200,500,1000],
-    'conservative_max_nodes': 50,
-    'extra_atom': False,
-    'noNewObjectNum': 55,
-    'objectLocationTrackingLimit': 8,
-    'safeDistance': 3,
-    'longHorizonObservationLimit': 2,
-    'objectNumberTrackingLimit': 200}
-]
-
-
 
 class Agent:
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0):
@@ -155,7 +79,11 @@ class Agent:
         self.safeDistance = self.metacontroller_params['safeDistance']
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
-
+        if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
+            self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
+        else:
+            self.objectsWhoseLocationWeIgnore = ['Flicker', 'Random']
+        self.objectsWhoseLocationWeIgnoreString = ''.join([s[0] for s in self.objectsWhoseLocationWeIgnore]) if self.objectsWhoseLocationWeIgnore else 'None'
         if self.shortHorizon == True:
             self.starting_max_nodes = self.shortHorizonNodes
             self.max_nodes_annealing = self.shortHorizonAnnealing
@@ -163,9 +91,12 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
-                self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, self.absolute_max_nodes, 
-                self.allow_long_range, self.epsilon_greedy, self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit)
+        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
+                self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
+                self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
+                self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
+                self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
+                self.objectsWhoseLocationWeIgnoreString)
 
         self.conservative = False
         self.regrounding = 1

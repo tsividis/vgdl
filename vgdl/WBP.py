@@ -44,7 +44,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, objectNumberTrackingLimit=200, objectLocationTrackingLimit=8, display=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, objectNumberTrackingLimit=200, objectLocationTrackingLimit=8, objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
@@ -70,7 +70,7 @@ class WBP():
 		self.objectLocationTrackingLimit = objectLocationTrackingLimit#8
 		self.max_nodes = max_nodes
 		# self.small_max_nodes = 100
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
+		self.objectsWhoseLocationsWeIgnore = objectsWhoseLocationsWeIgnore#['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []

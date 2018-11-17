@@ -25,9 +25,11 @@ SRC=""
 DST=""
 
 # Figure out which game and hyperparameter
-N_GAMES=90
+N_GAMES=20
 # N_PARAMS=3
 GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
+META_IDX=$(($SLURM_ARRAY_TASK_ID / $N_GAMES))
+
 # IW=$(($SLURM_ARRAY_TASK_ID / 90 + 1))
 # HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
 # GAME_NUMBER=$SLURM_ARRAY_TASK_ID
@@ -45,5 +47,5 @@ if [ ! -d "${ROOT}/slurm_logs/main" ]; then
 fi
 
 # finally, run the model
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
-# echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --IW ${IW}"
+# singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
+echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --metacontroller_index ${META_IDX}"
