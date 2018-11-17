@@ -93,18 +93,17 @@ class WBP():
 			movingTypesInGame = True
 		else:
 			movingTypesInGame = False
-
-		self.position_score_multiplier = -5		
-		# if self.hyperparameter_index == 1:
-		# 	if movingTypesInGame:
-		# 		self.position_score_multiplier = -10
-		# 	else:
-		# 		self.position_score_multiplier = -1
-		# elif self.hyperparameter_index == 3:
-		# 	self.position_score_multiplier = -10
-		# else:
-		# 	print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
-		# 	self.position_score_multiplier = -10
+		
+		if self.hyperparameter_index == 1:
+			if movingTypesInGame:
+				self.position_score_multiplier = -10
+			else:
+				self.position_score_multiplier = -1
+		elif self.hyperparameter_index == 3:
+			self.position_score_multiplier = -10
+		else:
+			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
+			self.position_score_multiplier = -10
 
 		#################
 		#################

@@ -4,7 +4,7 @@
 #SBATCH --array=0-450
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1680
-#SBATCH --qos=tenenbaum
+#SBATCH --qos=normal
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --requeue
