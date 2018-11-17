@@ -54,29 +54,29 @@ class WBP():
 		self.trueAtoms = defaultdict(lambda:0) #set() ## set of atoms that have been true at some point thus far in the planner.
 		self.objectTypes = rle._game.sprite_groups.keys()
 		self.objectTypes.sort()
-		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
+		# self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
 		self.seen_limits = seen_limits
 		self.IW_k = IW_k
 		self.objIDs = {}
 		self.solution = None
-		self.trackTokens = False
+		# self.trackTokens = False
 		self.vecSize = None
 		self.addWaitAction = True
-		self.safeDistance = 3
+		# self.safeDistance = 3
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
 		self.objectNumberTrackingLimit = 200#50
 		self.objectLocationTrackingLimit = 8
 		self.max_nodes = max_nodes
-		self.small_max_nodes = 100
+		# self.small_max_nodes = 100
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
-		self.allowRollouts = True
+		# self.allowRollouts = True
 		self.quitting = False
-		self.exhausted_novelty = True
+		# self.exhausted_novelty = True
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -484,7 +484,7 @@ class WBP():
 				self.object_positions_array = object_positions_array[::-1]
 
 				self.quitting = True
-				self.exhausted_novelty = True
+				# self.exhausted_novelty = True
 				if self.display:
 					print "was in None or PickMaxNode"
 				# embed()
