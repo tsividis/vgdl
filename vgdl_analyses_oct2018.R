@@ -19,7 +19,7 @@ library(grid)
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
 ## nov5: e-greedy
 ## nov8: IW2
-dates = c('nov8', 'nov12', 'nov15')
+dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
 data = list()
 for (date in dates){
