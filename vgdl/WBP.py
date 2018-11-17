@@ -44,7 +44,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, display=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, objectNumberTrackingLimit=200, objectLocationTrackingLimit=8, display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
@@ -66,8 +66,8 @@ class WBP():
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
-		self.objectNumberTrackingLimit = 200#50
-		self.objectLocationTrackingLimit = 8
+		self.objectNumberTrackingLimit = objectNumberTrackingLimit#200#50
+		self.objectLocationTrackingLimit = objectLocationTrackingLimit#8
 		self.max_nodes = max_nodes
 		# self.small_max_nodes = 100
 		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']

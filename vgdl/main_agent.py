@@ -116,15 +116,16 @@ class Agent:
         self.IW_k = IW_k
         self.task_ID = task_ID
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
-        self.extra_atom = False
         self.epsilon_greedy = False
         self.hybrid = False
         self.switch_to_exploit_step = 1000
-        self.random_steps_on_plan_failure = 5
         self.absolute_max_nodes = 50000
-        self.shortHorizonNodes = 500
+        
+
+        self.random_steps_on_plan_failure = 5
+        self.shortHorizonNodes = 500 ## this isn't used. but you need to clean the code up a bit to actually delete it.
         self.longHorizonNodes = 1000
-        self.shortHorizonAnnealing = 1.05
+        self.shortHorizonAnnealing = 1.05 ## this isn't used, either. but you need to clean the code up a bit to actually delete it.
         self.longhorizonAnnealing = 2.
         if self.shortHorizon == True:
             self.starting_max_nodes = self.shortHorizonNodes
@@ -133,10 +134,18 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.shortHorizonRandomChoice = [200,500,1000]
+        
+        self.conservative_max_nodes = 50
+        self.extra_atom = False
+        self.noNewObjectNum = 55
+        self.objectNumberTrackingLimit = 200
+        self.objectLocationTrackingLimit = 8
+        ## add extra_atom to param string
+
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
-                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.switch_to_exploit_step, 
-                self.hybrid)
+        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
+                self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, self.absolute_max_nodes, 
+                self.allow_long_range, self.epsilon_greedy, self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, self.objectLocationTrackingLimit)
 
         self.conservative = False
         self.regrounding = 1
@@ -755,11 +764,12 @@ class Agent:
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
             ## also, you commented out the bottom part of the planner, where it will still return a high-reward sequence in shortHorizon. This could have a very detrimental effect on short-horizon games...
-
             ## Initialize planner
             p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
+                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
+                extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+                objectLocationTrackingLimit=self.objectLocationTrackingLimit)
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
@@ -800,10 +810,10 @@ class Agent:
                         scoreChange = True
                     # if self.display_text:
                     print "moving types: {}".format(movingTypes)
-                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
+                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
                     print "scoreChange: {}".format(scoreChange)
                     # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
-                    if self.noNewObjectsInAWhile(self.rle, 55) and \
+                    if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
                             (not movingTypes or (movingTypes and not scoreChange)):
                             # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                         # if self.display_text:
@@ -820,7 +830,7 @@ class Agent:
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = True
                         self.stored_max_nodes = self.max_nodes ##taking annealing into account
-                        self.max_nodes = 50
+                        self.max_nodes = self.conservative_max_nodes
                 else:
                     conservative = False
                 # embed()
@@ -833,7 +843,9 @@ class Agent:
                     ## Replan in new mode
                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                        firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, extra_atom=self.extra_atom, IW_k=self.IW_k)
+                        firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
+                        extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+                        objectLocationTrackingLimit=self.objectLocationTrackingLimit)
                     p_quitting = p.quitting
                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
                     self.total_planner_steps += p.total_nodes_opened

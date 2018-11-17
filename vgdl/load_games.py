@@ -128,17 +128,6 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
-# def play_trainset(hyperparameters_sets, hyperparameter_index):
-#     start_time = time.time()
-
-#     gvgname = "./{}/{}".format(gameFileString,game_name)
-#     gameString = read_gvgai_game('{}.txt'.format(gvgname))
-#     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
-#     print game_levels
-#     level_game_pairs = []
-#     for level_number in range(len(game_levels)):
-#     	with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-#     		level_game_pairs.append([gameString, level.read()])
 
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
 
