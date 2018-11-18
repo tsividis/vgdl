@@ -21,6 +21,9 @@ library(grid)
 ## nov8: IW2
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
+# dates = list('nov17')
+dates = c('nov18')
+saveddata = data
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -63,6 +66,9 @@ data$score = as.numeric(as.character(data$sparse_score))
 ## remove 'variant_' from names
 
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
+
+##
+data$agent_type='MEP_wo_position_score'
 
 MEPdata = data
 
@@ -305,6 +311,9 @@ for (colname in names(humandata)){
   }
 }
 
+
+savedalldata = alldata
+alldata = rbind(alldata, data)
 ## make a single dataframe
 alldata = rbind(data, humandata)
 colors = c('purple2', #'mediumorchid2', 
@@ -596,20 +605,12 @@ p = ggplot(log_odds_dataframe, aes(x=reorder(game_name,log_ratio), y=log_ratio, 
 p+coord_flip()
 
 
-normalized_by_MEP = efficiency_dataframe
-p = ggplot(normalized_by_MEP, aes(x=reorder(game_name,composite_ratio), y=composite_ratio, fill=agent))+
-  geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
-  # ylim(-10,10)+
-  colorScale+
-  scale_fill_manual(values=colors) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab('game name')
-p+coord_flip()
 
 
 
 ### MEP vs DQN
-agent2 = 'DDQN'
-agent1 = levels(alldata$agent_type)[2]
+agent1 = 'DDQN'
+agent2 = levels(alldata$agent_type)[2]
 plots = list()
 efficiency_dataframe = data.frame(game_name=as.character(), agent=as.character(), 
                  score_ratio=as.numeric(), slope_ratio=as.numeric(),
@@ -617,15 +618,31 @@ efficiency_dataframe = data.frame(game_name=as.character(), agent=as.character()
 
 for (i in 1:length(levels(dqndata$game_name))){
   game = levels(dqndata$game_name)[i]
-  efficiency_dataframe = build_efficiency_dataframe(game, agent2, agent1, agent2,'MEP', 'DDQN', efficiency_dataframe)
+  efficiency_dataframe = build_efficiency_dataframe(game, agent2, agent1, agent2,'DDQN', 'MEP', efficiency_dataframe)
 }
 agent1 = 'human'
 for (i in 1:length(levels(humandata$game_name))){
   game = levels(humandata$game_name)[i]
   efficiency_dataframe = build_efficiency_dataframe(game, agent2, agent1, agent2,'human', 'DDQN', efficiency_dataframe)
 }
+agent1 = 'MEP_wo_position_score'
+for (i in 1:length(levels(data$game_name))){
+  game = levels(data$game_name)[i]
+  efficiency_dataframe = build_efficiency_dataframe(game, agent2, agent1, agent2, agent1, 'MEP', efficiency_dataframe)
+}
+
 efficiency_dataframe = subset(efficiency_dataframe, game_name!='sokoban') ## TODO: remove this once you have sokoban.
 
+normalized_by_MEP = efficiency_dataframe
+
+
+p = ggplot(normalized_by_MEP, aes(x=reorder(game_name,composite_ratio-1), y=composite_ratio-1, fill=agent))+
+  geom_bar(stat='identity',position='dodge')+#theme(legend.position="none")+
+  # ylim(-10,10)+
+  colorScale+
+  scale_fill_manual(values=colors) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab('game name')+ggtitle('Composite perf. relative to IW2 w/ default params')
+p+coord_flip()
 
 
 
@@ -703,9 +720,9 @@ p
 max_num_agents = 0
 plots = list()
 q=list()
-for (i in 1:length(levels(data$game_name))){
-  game = levels(data$game_name)[i]
-  d=subset(data, game_name==game)
+for (i in 1:length(levels(alldata$game_name))){
+  game = levels(alldata$game_name)[i]
+  d=subset(alldata, game_name==game)
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
@@ -882,14 +899,17 @@ for (i in 1:length(levels(data$game_name))){
 plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
                           max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
                           level_num=as.numeric())
-for (j in 1:length(levels(data$agent_type))){
-  agent = levels(data$agent_type)[j]
+for (j in 1:length(levels(alldata$agent_type))){
+  agent = levels(alldata$agent_type)[j]
   # if (length(unique(subset(data, agent_type==agent)$game_name))<80){
   #   print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
   # }
   # else{
-    for (i in 1:length(levels(data$game_name))){
-      s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
+    for (i in 1:length(levels(alldata$game_name))){
+      g = subset(alldata, game_name==levels(alldata$game_name)[i])
+      max_level = max(g$levels_won)
+      s = subset(alldata, ((game_name==levels(alldata$game_name)[i]) & (agent_type==levels(alldata$agent_type)[j])) )
+      print(i)
       if (length(s$level_max_score)>0){
         ## the row we want
         r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
@@ -897,7 +917,8 @@ for (j in 1:length(levels(data$agent_type))){
         new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
                         max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
                        max_levels_won=max(r$cumulative_wins),
-                       level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels)
+                       level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels,
+                       all_agent_max_levels=max_level)
       plantimedata = rbind(plantimedata, new)
     }
   }
@@ -908,11 +929,12 @@ for (j in 1:length(levels(data$agent_type))){
 # plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
 plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
 plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
+
 plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
 
 ## summary plot of overall results -- easy to look at.
-p = ggplot(subset(plantimedata, game_name!='boulderchase_1'), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
+p = ggplot(subset(plantimedata), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
   geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -935,7 +957,6 @@ for (i in 1:length(levels(data$agent_type))){
 # p
 ## save as 6x72
 
-savedplantimedata=plantimedata
 ## To see roughly what this plot'll look like, fill in a fake score_efficiency column
 for (i in 1:length(levels(plantimedata$game_name))){
   game = levels(plantimedata$game_name)[i]
