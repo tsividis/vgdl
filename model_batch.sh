@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-50
+#SBATCH --array=0-740
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1680
-#SBATCH --qos=tenenbaum
+#SBATCH --qos=normal
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --requeue
@@ -47,5 +47,5 @@ if [ ! -d "${ROOT}/slurm_logs/main" ]; then
 fi
 
 # finally, run the model
-# singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
-echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --metacontroller_index ${META_IDX}"
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
+# echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --metacontroller_index ${META_IDX}"
