@@ -81,7 +81,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
-		# self.frameSkipN = 4
+
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -504,8 +504,6 @@ class WBP():
 				# embed()
 				pass
 
-			## FRAMESKIPPING:
-			# if current.rle._game.time % self.frameSkipN == 0:
 			current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
 			visited.append(current)
@@ -551,12 +549,6 @@ class WBP():
 					print actionDict[current.actionSeq[-1]]
 				print current.rle.show()
 
-			## TODO: if you try to make the agent only step() every N actions, do this,
-			## but also you'll need to change when/how novelty is calculated. Otherwise
-			## it'll just immediately return no plan in games where things don't move.
-			## FRAMESKIPPING
-			# if current.rle._game.time%self.frameSkipN!= 0:
-			# 	current_actions = [0]
 			for a in current_actions:
 				skipAction = False
 				if not skipAction:
@@ -639,10 +631,12 @@ class WBP():
 							# embed()
 					else:
 						if not (child.terminal and not child.win):
-							## FRAMESKIPPING
-							# if child.rle._game.time%self.frameSkipN==0:
 							QNovelty.append(child)
 							QReward.append(child)
+					# if current.rle._game.time==0 and self.killer_types:
+						# print child.rle.show()
+						# print child.terminal, child.win
+						# embed()
 			i+=1
 			self.total_nodes_selected = i
 			self.total_nodes_opened += len(current_actions)
@@ -1697,8 +1691,6 @@ class Node():
 
 		self.updateObjIDs(self.rle)
 
-		## FRAMESKIPPING
-		# if self.rle._game.time % self.WBP.frameSkipN == 0:
 		self.state = self.WBP.calculateAtoms(self.rle)
 
 		for i in range(1,self.WBP.IW_k+1):
