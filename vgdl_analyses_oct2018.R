@@ -771,7 +771,7 @@ for (i in 1:length(levels(alldata$game_name))){
   game = levels(alldata$game_name)[i]
   d=subset(alldata, game_name==game)
   
-  p=ggplot(d, aes(x=cumulative_frames, y=cumulative_wins,color=agent_type))
+  p=ggplot(d, aes(x=steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
@@ -1142,8 +1142,23 @@ plot_overlap = function(plantimedata, model_run1, model_run2){
 
 ######
 ######
+path = '~/Projects/atari/vgdl/humandata_ratings/ratings'
+ratingpaths = list.files(path)
 
+ratings = list()
+for (rating in ratingpaths){
+  ratingpath = paste(path, '/', rating, '.csv', sep='')
+  r=read.csv(rating, header=TRUE, na.strings='NA')
+  if (length(ratings)==0){
+    ratings = r
+  }
+  else{
+    ratings = rbind(ratings,r)
+  }
+}
 
+######
+######
 diffdata = data.frame(game_name=as.character(), agent_type=as.character(), model_run = as.character(), max_score=as.numeric(), 
                       max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
 for (i in 1:length(levels(data$game_name))){

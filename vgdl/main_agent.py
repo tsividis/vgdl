@@ -48,6 +48,7 @@ class Agent:
         self.record_states = True
         self.record_video_info = True
         self.saveMidEpisode = False
+        self.frameSkipN = 4
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -76,7 +77,7 @@ class Agent:
         self.extra_atom = self.metacontroller_params['extra_atom']
         self.noNewObjectNum = self.metacontroller_params['noNewObjectNum']
         self.objectLocationTrackingLimit = self.metacontroller_params['objectLocationTrackingLimit']
-        self.safeDistance = self.metacontroller_params['safeDistance']
+        self.safeDistance = 5#self.metacontroller_params['safeDistance']
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
@@ -91,7 +92,7 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
+        self.param_ID = "FS={}_IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.frameSkipN, self.IW_k, self.extra_atom_allowed, self.extra_atom, 
                 self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
                 self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
                 self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
@@ -905,12 +906,13 @@ class Agent:
                     ## Make sure you're far enough from unpredictable dangerous objects.
                     # Check for disparities between plan and reality
                     # (e.g. stochastic effects)
-                    if (i+1)%self.regrounding==0:
+                    ## FRAMESKIPPING
+                    if (i+1)%self.regrounding==0 and self.rle._game.time % self.frameSkipN == 0:
 
                         if (not takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
                             break
 
-                    if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
+                    if self.reground_for_npcs and self.rle._game.time % self.frameSkipN == 0: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
                         try:
                             random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
                             random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]

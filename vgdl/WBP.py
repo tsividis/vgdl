@@ -81,7 +81,7 @@ class WBP():
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
-		# self.frameSkipN = 4
+		self.frameSkipN = 4
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -505,8 +505,10 @@ class WBP():
 				pass
 
 			## FRAMESKIPPING:
-			# if current.rle._game.time % self.frameSkipN == 0:
-			current.updateNoveltyDict(QNovelty, QReward)
+			print current.rle._game.time
+			if current.rle._game.time % self.frameSkipN == 0:
+				print "calling updatenoveltydict"
+				current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
 			visited.append(current)
 
@@ -555,8 +557,10 @@ class WBP():
 			## but also you'll need to change when/how novelty is calculated. Otherwise
 			## it'll just immediately return no plan in games where things don't move.
 			## FRAMESKIPPING
-			# if current.rle._game.time%self.frameSkipN!= 0:
-			# 	current_actions = [0]
+			starttime = current.rle._game.time
+			if starttime % self.frameSkipN!= 0:
+				current_actions = [0]
+			print current.rle._game.time, current_actions
 			for a in current_actions:
 				skipAction = False
 				if not skipAction:
@@ -640,7 +644,7 @@ class WBP():
 					else:
 						if not (child.terminal and not child.win):
 							## FRAMESKIPPING
-							# if child.rle._game.time%self.frameSkipN==0:
+							# if starttime % self.frameSkipN==0:
 							QNovelty.append(child)
 							QReward.append(child)
 			i+=1
@@ -1692,22 +1696,24 @@ class Node():
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
+		starttime = self.rle._game.time
 
 		self.rle, self.terminal, self.win = self.getToCurrentState()
 
 		self.updateObjIDs(self.rle)
 
 		## FRAMESKIPPING
-		# if self.rle._game.time % self.WBP.frameSkipN == 0:
-		self.state = self.WBP.calculateAtoms(self.rle)
+		if starttime % self.WBP.frameSkipN == 0:
+			print "updating novelty etc"
+			self.state = self.WBP.calculateAtoms(self.rle)
 
-		for i in range(1,self.WBP.IW_k+1):
-			for c in itertools.combinations(self.state, i):
-				c = tuple(sorted(c))
-				if self.WBP.trueAtoms[c] == 0:
-					self.candidates.add(c)
+			for i in range(1,self.WBP.IW_k+1):
+				for c in itertools.combinations(self.state, i):
+					c = tuple(sorted(c))
+					if self.WBP.trueAtoms[c] == 0:
+						self.candidates.add(c)
 
-		self.updateNovelty()
+			self.updateNovelty()
 
 		## Try rollouts for aliens?
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:

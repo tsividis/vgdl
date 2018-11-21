@@ -73,7 +73,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 200,
     'objectLocationTrackingLimit': 8,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
     ## Simplifying: removing objectnumbertrackinglimit, objectLocationTrackingLimit, extraAtom always on
@@ -87,7 +87,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
     {'idx': 2,
@@ -100,7 +100,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
 
@@ -114,7 +114,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
 
@@ -129,7 +129,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
 
@@ -143,7 +143,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
 
@@ -158,7 +158,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 10
     },
     ##KEEP
@@ -172,7 +172,7 @@ metacontroller_sets = [
     'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 10
     },
 
@@ -186,7 +186,7 @@ metacontroller_sets = [
     'noNewObjectNum': 220,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
 
@@ -200,7 +200,7 @@ metacontroller_sets = [
     'noNewObjectNum': 220,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
     {'idx': 10,
@@ -213,7 +213,7 @@ metacontroller_sets = [
     'noNewObjectNum': 220,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
+    'safeDistance': 5,
     'longHorizonObservationLimit': 10
     }
 ]
