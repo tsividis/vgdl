@@ -420,7 +420,7 @@ define_timescale = function(agent, game, quantiles){
   # quantile_ys = c(round(quantile(d$cumulative_wins, quantiles, names=FALSE)), max(d$cumulative_wins))
   quantile_ys = round(quantile(d$cumulative_wins, quantiles, names=FALSE))
   
-    ## find indices that correspond to these
+  ## find indices that correspond to these
   quantile_indices = map(quantile_ys, function(x) get_middle_element(which(grepl(x,d$cumulative_wins)))[1])
   quantile_xs = map(quantile_indices, function(x) d$cumulative_steps[x])
   if(any(is.na(quantile_xs))){
@@ -1144,11 +1144,10 @@ plot_overlap = function(plantimedata, model_run1, model_run2){
 ######
 path = '~/Projects/atari/vgdl/humandata_ratings/ratings'
 ratingpaths = list.files(path)
-
 ratings = list()
 for (rating in ratingpaths){
-  ratingpath = paste(path, '/', rating, '.csv', sep='')
-  r=read.csv(rating, header=TRUE, na.strings='NA')
+  ratingpath = paste(path, '/', rating, sep='')
+  r=read.csv(ratingpath, header=TRUE, na.strings='NA')
   if (length(ratings)==0){
     ratings = r
   }
@@ -1156,7 +1155,64 @@ for (rating in ratingpaths){
     ratings = rbind(ratings,r)
   }
 }
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+find_source_game = function(name){
+  if (substrRight(name,1)%in%c("1","2","3","4")){
+    return(substr(name,0,nchar(name)-2))
+  }
+  else{
+    return(name)}
+}
+find_variant_number = function(name){
+  lastchar = substrRight(name,1)
+  if (lastchar%in%c("1","2","3","4")){
+    return(lastchar)
+  }
+  else{
+    return('0')
+  }
+}
+ratings$game_name = as.factor(ratings$gameName)
+ratings$source_game_name = as.factor(as.character(lapply(as.vector(ratings$game_name), find_source_game)))
+ratings$variant_number = as.factor(as.character(lapply(as.vector(ratings$game_name), find_variant_number)))
+for (i in 1:length(ratings$difficulty)){
+  if (!is.na(ratings$difficulty[i]) & ratings$difficulty[i]=="None"){
+    ratings$difficulty[i]=NA
+  }
+  if (ratings$interestingness[i]=="None"){
+    ratings$interestingness[i]=NA
+  }
+}
+ratings$difficulty = as.numeric(ratings$difficulty)
+ratings$interestingness = as.numeric(ratings$interestingness)
+## you also have enjoyability
 
+s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
+p  
+##save 12x6
+
+s = summarySE(ratings, measurevar="interestingness", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=interestingness)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=interestingness-ci, ymax=interestingness+ci))+
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
+p  
+##save 12x6
+
+
+##for playing around with format
+# p = ggplot(subset(s, source_game_name%in%c('push_boulders','relational')), aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty))+
+  # geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
+  # facet_wrap(~source_game_name)
+# p
+
+              
 ######
 ######
 diffdata = data.frame(game_name=as.character(), agent_type=as.character(), model_run = as.character(), max_score=as.numeric(), 
@@ -1292,4 +1348,48 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
                                       layout.pos.col = matchidx$col))
     }
   }
+}
+
+
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  # datac$measurevar = datac$mean
+  colnames(datac)[colnames(datac)=="mean"] <- measurevar
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
 }
