@@ -22,7 +22,7 @@ library(grid)
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
 # dates = list('nov17')
-dates = c('nov18')
+# dates = c('nov19')
 saveddata = data
 data = list()
 for (date in dates){
@@ -67,9 +67,6 @@ data$score = as.numeric(as.character(data$sparse_score))
 
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 
-##
-data$agent_type='MEP_wo_position_score'
-
 MEPdata = data
 
 alldata = data
@@ -79,21 +76,21 @@ alldata = data
 # dir.create(plotpath)
 
 ## load dqn data
-dqnpath = 'dqn'
-oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
-dqndata = list()
-
-for (game in oldformatdqngames){
-  filename=paste(game,'_1win.csv',sep='')
-  path = paste('~/Projects/atari/vgdl/dqn/old_format/',filename, sep='')
-  d=read.csv(path, header=TRUE, na.strings='NA')
-  d$game_name = as.factor(game)
-  d$score = as.numeric(d$ep_reward)
-  d$agent_type = as.factor("DDQN")
-  d$ep_reward = NULL
-  d$cumulative_steps = as.numeric(d$steps)
-  d$criteria = as.factor(1)
-  d$steps = NULL
+# dqnpath = 'dqn'
+# oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
+# dqndata = list()
+# 
+# for (game in oldformatdqngames){
+#   filename=paste(game,'_1win.csv',sep='')
+#   path = paste('~/Projects/atari/vgdl/dqn/old_format/',filename, sep='')
+#   d=read.csv(path, header=TRUE, na.strings='NA')
+#   d$game_name = as.factor(game)
+#   d$score = as.numeric(d$ep_reward)
+#   d$agent_type = as.factor("DDQN")
+#   d$ep_reward = NULL
+#   d$cumulative_steps = as.numeric(d$steps)
+#   d$criteria = as.factor(1)
+#   d$steps = NULL
   d$cumulative_wins = as.numeric(0)
   for (i in 2:length(d$level)){
     if (d$level[i]>d$level[i-1]){
@@ -109,22 +106,39 @@ for (game in oldformatdqngames){
   else{
     dqndata = rbind(dqndata,d)
   }
-}
+# }
+dqndata = list()
+path = '~/Projects/atari/vgdl/dqn/'
+oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
 
-path = '~/Projects/atari/vgdl/dqn/new_format/'
 list.files(path)
 for (gamefile in list.files(path)){
   filename = paste(path,gamefile,sep='')
-  gamenamestart = unlist(gregexpr('new_format/',filename))+nchar('new_format/')
+  gamenamestart = unlist(gregexpr('dqn/',filename))+nchar('dqn/')
   gamenameend = unlist(gregexpr('_reward', filename))-1
   game = substr(filename, gamenamestart, gamenameend)
   d=read.csv(filename, header=TRUE, na.strings='NA')
+  
+  # if (game %in% oldformatdqngames){
+  # d$cumulative_wins = as.numeric(0)
+  # for (i in 2:length(d$level)){
+  #   if (d$level[i]>d$level[i-1]){
+  #     d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
+  #   }
+  #   else{
+  #     d$cumulative_wins[i] = d$cumulative_wins[i-1]
+  #   }
+  # }
+  # }
+  
+  
   d$score = d$ep_reward
-  d$game_name = game
+  d$game_name = as.factor(remove_string_from_name(game))
   d$ep_reward = NULL
   d$criteria = as.factor(1)
   d$cumulative_steps = d$steps
   d$agent_type = as.factor("DDQN")
+  d$subject_ID = as.factor("DDQN")
   d$steps = NULL
   d$win = NULL
   d$cumulative_wins = as.numeric(0)
@@ -139,7 +153,9 @@ for (gamefile in list.files(path)){
   dqndata = rbind(dqndata,d)
 }
   
-dqndata$game_name = as.factor(as.character(lapply(as.vector(dqndata$game_name), remove_string_from_name)))
+# dqndata$game_name = as.factor(as.character(lapply(as.vector(dqndata$game_name), remove_string_from_name)))
+
+
 for (colname in names(data)){
   if (!(colname %in% names(dqndata))){
     dqndata[,colname] = NA
@@ -152,8 +168,7 @@ for (colname in names(dqndata)){
     print(colname)
   }
 }
-
-data = rbind(data, dqndata)
+alldata = rbind(alldata, dqndata)
 
 colors = c('purple2', #'mediumorchid2', 
           'steelblue1',# 'steelblue2',# 'steelblue3', 'steelblue4',
@@ -229,17 +244,15 @@ p
 
 ## load human data
 
+# date='humandata_new'
+# humandatapaths = list.files("~/Projects/atari/vgdl/humandata_new/csv_data")
+
 date='humandata'
-# humandatapaths = c('pilot_Oct29th_Full.csv','pilot_Oct30th_Full.csv', 'pilot_Nov12th_Full.csv')
-humandatapaths = list.files("~/Projects/atari/vgdl/humandata/csv_data")
-
-
-date='humandata_new'
-humandatapaths = list.files("~/Projects/atari/vgdl/humandata_new/csv_data")
+humandatapaths = list.files("~/Projects/atari/vgdl/humandata")
 
 humandata = list()
 for (humandatapath in humandatapaths){
-  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath, sep='')
+  path = paste('~/Projects/atari/vgdl/',date, '/', humandatapath, sep='')
   d=read.csv(path, header=TRUE, na.strings='NA')
   if (length(humandata)==0){
     humandata = d
@@ -290,7 +303,7 @@ for (i in 2:length(humandata$timestep)){
   }
 }
 ##remove first part of game string from humandata names
-humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
+# humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
 
 humandata$levelscore = NULL
 # humandata$cumulative_steps = humandata$cumulative_timestep
@@ -318,14 +331,24 @@ alldata = rbind(alldata, data)
 alldata = rbind(data, humandata)
 colors = c('purple2', #'mediumorchid2', 
            'steelblue1',# 'steelblue2',# 'steelblue3', 'steelblue4',
-           'firebrick2',# 'tomato2', 'salmon', 
-           'palegreen3',# 'seagreen3','darkolivegreen1',
+           'palegreen3',# 'tomato2', 'salmon', 
+           'firebrick2',# 'seagreen3','darkolivegreen1',
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
 names(colors)=levels(alldata$agent_type)
 inversecolors = levels(alldata$agent_type)
 names(inversecolors) = colors[1:length(levels(alldata$agent_type))]
 colorScale = scale_color_manual(name="agent_type", values=colors)
+
+
+MEPcolors = c('steelblue3', 'steelblue1')
+humancolors = rep('palegreen3', length(unique(humandata$subject_ID)))
+dqncolors = 'grey50'
+colors = c(MEPcolors, humancolors, dqncolors)
+names(colors)=levels(alldata$subject_ID)
+colorScale = scale_color_manual(name="subject_ID", values=colors)
+
+## change this once you have more agents?
 
 for (i in 1:length(levels(humandata$game_name))){
   game = levels(humandata$game_name)[i]
@@ -335,18 +358,42 @@ for (i in 1:length(levels(humandata$game_name))){
 }
 
 
+games_to_show = c('aliens_2', 'missilecommand', 'butterflies_1', 'plaqueattack_1', 'portals')
 ## plotting all agents/models
 plots = list()
-for (i in 1:length(levels(humandata$game_name))){
-  game = levels(humandata$game_name)[i]
-  p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=agent_type))
-  p=p+geom_point()+geom_smooth()+ggtitle(game)+colorScale+scale_color_manual(values=colors)+theme(legend.position="none")
+# for (i in 1:length(games_to_show)){
+for (i in 1:length(levels(alldata$game_name))){
+  game = levels(alldata$game_name)[i]
+  # game = games_to_show[i]
+  p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
+  p=p+geom_point()+geom_smooth(se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,0.6,1))
+  # p=p+xlim(0,1000000)
+  p=p+xlim(0,100000)
+  # p=p+xlim(0,10000)
+  
   plots[[i]] = p
 }
-layout = matrix(c(1:20), ncol=4, byrow=TRUE)
+
+# layout = matrix(c(1:5), ncol=5, byrow=TRUE)
+layout = matrix(c(1:90), ncol=9, byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
+## save as 30x50?
 
 
+alldata = rbind(humandata, dqndata, data)
+## another problem: intermediate points are missing for DQN and that breaks smoothing function. mostly a problem for games where dying is hard
+
+## good for zoomed-in plots
+p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
+p=p+geom_point()+geom_smooth(se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,0.6,1))
+p=p+xlim(0,10000)
+p
+
+## good for non-zoomed-in plots
+p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
+p=p+geom_point()+geom_smooth(se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,1.5,1))
+p=p+xlim(0,1000000)
+p
 
 d = filter(alldata, game_name=='avoidgeorge')
 p = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
@@ -724,8 +771,8 @@ for (i in 1:length(levels(alldata$game_name))){
   game = levels(alldata$game_name)[i]
   d=subset(alldata, game_name==game)
   
-  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
-  p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+  p=ggplot(d, aes(x=cumulative_frames, y=cumulative_wins,color=agent_type))
+  p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
     scale_color_manual(values=colors) + theme(legend.position="none")+
@@ -877,70 +924,94 @@ layout = matrix(c(c(1:45),46,46,47), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = c(plots[47:length(plots)], q[1]), layout=layout)
 
 ###
-games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
-for (i in 1:length(levels(data$game_name))){
-  game_name=levels(data$game_name)[i]
-  num_levels = 5
-  if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
-       (grepl('closing',game_name)) ){
-    num_levels=4
-  }
-  if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
-    num_levels=6
-  }
-  if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
-    num_levels=5
-  }
-  new = data.frame(game_name=game_name, num_levels=num_levels)
-  games_to_levels = rbind(games_to_levels, new)
-}
 
-## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
-plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
-                          max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
-                          level_num=as.numeric())
-for (j in 1:length(levels(alldata$agent_type))){
-  agent = levels(alldata$agent_type)[j]
-  # if (length(unique(subset(data, agent_type==agent)$game_name))<80){
-  #   print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
-  # }
-  # else{
-    for (i in 1:length(levels(alldata$game_name))){
-      g = subset(alldata, game_name==levels(alldata$game_name)[i])
-      max_level = max(g$levels_won)
-      s = subset(alldata, ((game_name==levels(alldata$game_name)[i]) & (agent_type==levels(alldata$agent_type)[j])) )
-      print(i)
+make_plantimedata = function(dataframe){
+
+  games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
+  for (i in 1:length(levels(dataframe$game_name))){
+    game_name=levels(dataframe$game_name)[i]
+    num_levels = 5
+    if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
+         (grepl('closing',game_name)) ){
+      num_levels=4
+    }
+    if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
+      num_levels=6
+    }
+    if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
+      num_levels=5
+    }
+    new = data.frame(game_name=game_name, num_levels=num_levels)
+    games_to_levels = rbind(games_to_levels, new)
+  }
+  
+  
+  
+    ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
+  plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
+                            max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
+                            level_num=as.numeric(), all_agent_max_levels=as.numeric())
+  
+  
+  for (j in 1:length(levels(dataframe$agent_type))){
+    agent = levels(dataframe$agent_type)[j]
+    # if (length(unique(subset(data, agent_type==agent)$game_name))<80){
+    #   print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
+    # }
+    # else{
+    print(agent)
+    for (i in 1:length(levels(dataframe$game_name))){
+      g = subset(dataframe, game_name==levels(dataframe$game_name)[i])
+      print(levels(dataframe$game_name)[i])
+      max_level = max(g$cumulative_wins)
+      s = subset(g, agent_type==agent)
       if (length(s$level_max_score)>0){
         ## the row we want
-        r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+        r = filter(s, cumulative_steps==max(cumulative_steps))[1,]
         ## take only the relevant columns and put them in the new data frame
         new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
-                        max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
-                       max_levels_won=max(r$cumulative_wins),
-                       level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels,
-                       all_agent_max_levels=max_level)
-      plantimedata = rbind(plantimedata, new)
+                         max_steps=r$cumulative_steps, planning_time=r$cumulative_planner_nodes, 
+                         max_levels_won=max(r$cumulative_wins),
+                         level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels,
+                         all_agent_max_levels=as.numeric(max_level))
+        plantimedata = rbind(plantimedata, new)
+      }
     }
+    # }
   }
-  # }
+  ## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
+  ## so they're naturally alphabetized.
+  # plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
+  plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
+  plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
+  plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*score_efficiency)
+  plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
+  plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+  
+  return(plantimedata)
 }
-## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
-## so they're naturally alphabetized.
-# plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
-plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
-plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
 
-plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
-plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+
+# data = rbind(data, olddataframe)
+# plantimedata = make_plantimedata(data)
+
+plantimedata = make_plantimedata(alldata)
 
 ## summary plot of overall results -- easy to look at.
 p = ggplot(subset(plantimedata), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
   geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())+scale_fill_manual(values=colors)
+        axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
 p
 ## save as 10x16
+
+p = ggplot(subset(plantimedata), aes(x=agent_type, y=composite_ratio, fill=factor(agent_type))) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+#facet_wrap(~game_name)+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
+p
 
 ## plot idx_1 vs idx_3
 for (i in 1:length(levels(data$agent_type))){
@@ -949,6 +1020,18 @@ for (i in 1:length(levels(data$agent_type))){
   p=p+geom_histogram(breaks=c(0.5,1.5,2.5,3.5,4.5),aes(y=..density..))+facet_wrap(~game_name)
   p
 }
+
+
+colors = c('palegreen3', 'firebrick2', 'steelblue1','steelblue3')
+names(colors)=levels(alldata$agent_type)
+colorScale = scale_color_manual(name="agent_type", values=colors)
+p = ggplot(plantimedata, aes(x=reorder(game_name,composite_ratio), y=composite_ratio, fill=agent_type))+
+  geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
+  colorScale+
+  scale_fill_manual(values=colors) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("composite ratio")+xlab('game name')
+p=p+coord_flip()
+
 
 ## same thing but not grouped by game. not easy to read.
 # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +

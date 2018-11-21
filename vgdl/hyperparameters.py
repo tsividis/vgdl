@@ -118,6 +118,7 @@ metacontroller_sets = [
     'longHorizonObservationLimit': 2
     },
 
+    ## KEEP
     {'idx': 4,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
@@ -146,6 +147,7 @@ metacontroller_sets = [
     'longHorizonObservationLimit': 2
     },
 
+    ##KEEP
     {'idx': 6,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
@@ -159,7 +161,7 @@ metacontroller_sets = [
     'safeDistance': 3,
     'longHorizonObservationLimit': 10
     },
-
+    ##KEEP
     {'idx': 7,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 10000,
