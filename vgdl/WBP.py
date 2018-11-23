@@ -505,7 +505,6 @@ class WBP():
 				pass
 
 			## FRAMESKIPPING:
-			print current.rle._game.time
 			if current.rle._game.time % self.frameSkipN == 0:
 				print "calling updatenoveltydict"
 				current.updateNoveltyDict(QNovelty, QReward)
@@ -560,7 +559,6 @@ class WBP():
 			starttime = current.rle._game.time
 			if starttime % self.frameSkipN!= 0:
 				current_actions = [0]
-			print current.rle._game.time, current_actions
 			for a in current_actions:
 				skipAction = False
 				if not skipAction:
@@ -1704,7 +1702,6 @@ class Node():
 
 		## FRAMESKIPPING
 		if starttime % self.WBP.frameSkipN == 0:
-			print "updating novelty etc"
 			self.state = self.WBP.calculateAtoms(self.rle)
 
 			for i in range(1,self.WBP.IW_k+1):
