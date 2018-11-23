@@ -22,7 +22,7 @@ library(grid)
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
 # dates = list('nov17')
-# dates = c('nov19')
+dates = c('nov22')
 saveddata = data
 data = list()
 for (date in dates){
@@ -344,7 +344,7 @@ colorScale = scale_color_manual(name="agent_type", values=colors)
 MEPcolors = c('steelblue3', 'steelblue1')
 humancolors = rep('palegreen3', length(unique(humandata$subject_ID)))
 dqncolors = 'grey50'
-colors = c(MEPcolors, humancolors, dqncolors)
+colors = c(humancolors, dqncolors, MEPcolors)
 names(colors)=levels(alldata$subject_ID)
 colorScale = scale_color_manual(name="subject_ID", values=colors)
 
@@ -358,22 +358,27 @@ for (i in 1:length(levels(humandata$game_name))){
 }
 
 
-games_to_show = c('aliens_2', 'missilecommand', 'butterflies_1', 'plaqueattack_1', 'portals')
+# games_to_show = c('aliens_2', 'missilecommand', 'butterflies_1', 'plaqueattack_1', 'portals')
+
+games_to_show = c('aliens','avoidgeorge', 'plaqueattack', 'push_boulders', 'relational', 'frogs', 'portals', 'ee', 'zelda', 'butterflies', 'bees_and_birds', 'closing_gates')
+games_to_show = c('missilecommand', 'aliens', '')
 ## plotting all agents/models
 plots = list()
-# for (i in 1:length(games_to_show)){
-for (i in 1:length(levels(alldata$game_name))){
-  game = levels(alldata$game_name)[i]
-  # game = games_to_show[i]
+for (i in 1:length(games_to_show)){
+# for (i in 1:length(levels(alldata$game_name))){
+  # game = levels(alldata$game_name)[i]
+  game = games_to_show[i]
   p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
   p=p+geom_point()+geom_smooth(se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,0.6,1))
-  # p=p+xlim(0,1000000)
-  p=p+xlim(0,100000)
+  p=p+xlim(0,20000)
+  p
+    # p=p+xlim(0,1000000)
+  # p=p+xlim(0,100000)
   # p=p+xlim(0,10000)
   
   plots[[i]] = p
 }
-
+layout = matrix(c(1:12), ncol=4, byrow=TRUE)
 # layout = matrix(c(1:5), ncol=5, byrow=TRUE)
 layout = matrix(c(1:90), ncol=9, byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
@@ -771,7 +776,7 @@ for (i in 1:length(levels(alldata$game_name))){
   game = levels(alldata$game_name)[i]
   d=subset(alldata, game_name==game)
   
-  p=ggplot(d, aes(x=steps, y=cumulative_wins,color=agent_type))
+  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
@@ -999,7 +1004,7 @@ plantimedata = make_plantimedata(alldata)
 
 ## summary plot of overall results -- easy to look at.
 p = ggplot(subset(plantimedata), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
-  geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+
+  geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+colorScale+scale_fill_manual(values=colors)+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
@@ -1022,7 +1027,7 @@ for (i in 1:length(levels(data$agent_type))){
 }
 
 
-colors = c('palegreen3', 'firebrick2', 'steelblue1','steelblue3')
+colors = c('palegreen3', 'grey50', 'steelblue1','steelblue3')
 names(colors)=levels(alldata$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
 p = ggplot(plantimedata, aes(x=reorder(game_name,composite_ratio), y=composite_ratio, fill=agent_type))+
@@ -1192,7 +1197,7 @@ ratings$interestingness = as.numeric(ratings$interestingness)
 s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
 p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
   geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
-  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Difficulty')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
 #+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
 p  
 ##save 12x6
@@ -1200,7 +1205,7 @@ p
 s = summarySE(ratings, measurevar="interestingness", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
 p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=interestingness)) +
   geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=interestingness-ci, ymax=interestingness+ci))+
-  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Interestingness') +scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
 #+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
 p  
 ##save 12x6

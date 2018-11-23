@@ -813,7 +813,8 @@ class Agent:
                 # exhausted the number of nodes you can visit or because you
                 # ran out of novelty. In the first case, you only wait longer,
                 # in the second case, you also add a new atom to IW
-                if p.exhausted_novelty and self.extra_atom_allowed:
+                # if p.exhausted_novelty and self.extra_atom_allowed:
+                if self.extra_atom_allowed    
                     print "turning on extra atom"
                     self.extra_atom = True
                 if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with idx_3 you'll plan conservatively. you only get here if you're in idx_1 and don't find a plan.
