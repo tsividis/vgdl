@@ -170,6 +170,10 @@ for (colname in names(dqndata)){
 }
 alldata = rbind(alldata, dqndata)
 
+# colors = c('orange','steelblue1','steelblue3')
+# names(colors) = levels(MEPdata2$agent_type)
+# colorScale = scale_color_manual(name='agent_type',values=colors)
+
 colors = c('purple2', #'mediumorchid2', 
            'steelblue1',# 'steelblue2',# 'steelblue3', 'steelblue4',
            # 'palegreen3', 'seagreen3','darkolivegreen1',
@@ -767,6 +771,10 @@ p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
 p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,1000)
 p
 
+colors=c('palegreen3','orange')
+names(colors) = levels(alldata2$agent_type)
+colorScale = scale_color_manual(name='agent_type',values=colors)
+alldata2=rbind(humandata,data)
 
 ## plot wins
 max_num_agents = 0
@@ -785,7 +793,8 @@ for (i in 1:length(levels(alldata$game_name))){
   
   p=p+ylim(0,5)#+theme(legend.position='none')
   
-  # p
+  p
+  
   if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
     if (grepl('expt_ee',game)){
       p=p+ylim(0,6)
@@ -950,13 +959,10 @@ make_plantimedata = function(dataframe){
     games_to_levels = rbind(games_to_levels, new)
   }
   
-  
-  
   ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
   plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
                             max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
                             level_num=as.numeric(), all_agent_max_levels=as.numeric())
-  
   
   for (j in 1:length(levels(dataframe$agent_type))){
     agent = levels(dataframe$agent_type)[j]
@@ -972,7 +978,7 @@ make_plantimedata = function(dataframe){
       s = subset(g, agent_type==agent)
       if (length(s$level_max_score)>0){
         ## the row we want
-        r = filter(s, cumulative_steps==max(cumulative_steps))[1,]
+        r = subset(s, cumulative_steps==max(cumulative_steps))[1,]
         ## take only the relevant columns and put them in the new data frame
         new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
                          max_steps=r$cumulative_steps, planning_time=r$cumulative_planner_nodes, 
@@ -988,17 +994,27 @@ make_plantimedata = function(dataframe){
   ## so they're naturally alphabetized.
   # plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
   plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
-  plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
-  plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*score_efficiency)
+  plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
+  plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
   plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
   plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+  plantimedata$human_normed_level_efficiency=NA
+  ##norm by human level_efficiency
+  for (i in 1:length(levels(plantimedata$game_name))){
+    game = levels(plantimedata$game_name)[i]
+    human_efficiency = filter(plantimedata, agent_type=='human' & game_name==game)$level_efficiency
+    for (agent in levels(plantimedata$agent_type)){
+      row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
+      plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_level_efficiency = row$level_efficiency/human_efficiency
+    }
+  }
   
   return(plantimedata)
 }
 
 
-# data = rbind(data, olddataframe)
-# plantimedata = make_plantimedata(data)
+
+# plantimedata2 = make_plantimedata(MEPdata2)
 
 plantimedata = make_plantimedata(alldata)
 
@@ -1018,25 +1034,66 @@ p = ggplot(subset(plantimedata), aes(x=agent_type, y=composite_ratio, fill=facto
         axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
 p
 
-## plot idx_1 vs idx_3
-for (i in 1:length(levels(data$agent_type))){
-  agent = levels(data$agent_type)[i]
-  p = ggplot(subset(data, agent_type==agent), aes(x=planner_settings))
-  p=p+geom_histogram(breaks=c(0.5,1.5,2.5,3.5,4.5),aes(y=..density..))+facet_wrap(~game_name)
-  p
-}
 
 
 colors = c('palegreen3', 'grey50', 'steelblue1','steelblue3')
 names(colors)=levels(alldata$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
-p = ggplot(plantimedata, aes(x=reorder(game_name,composite_ratio), y=composite_ratio, fill=agent_type))+
-  geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
+
+s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4])
+ordered_names = s[order(log(s$human_normed_level_efficiency)),]$game_name
+
+p = ggplot(subset(plantimedata, agent_type!='human'), aes(x=game_name, y=log(human_normed_level_efficiency), fill=agent_type))+
+  scale_x_discrete(limits=ordered_names)+
+    geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
   colorScale+
   scale_fill_manual(values=colors) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("composite ratio")+xlab('game name')
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("human-normed composite ratio")+xlab('game name')
 p=p+coord_flip()
+p
 
+
+s = subset(plantimedata, !(agent_type %in% c('human','DDQN')))
+levels(s$agent_type)
+p = ggplot() +
+  geom_bar(data=s, aes(x=game_name, y=log(human_normed_level_efficiency)), 
+           fill=as.factor(agent_type),stat='identity',position='dodge')+theme(legend.position="none")+
+  scale_x_discrete(limits=ordered_names)+
+    colorScale+
+  scale_fill_manual(values=colors) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("human-normed composite ratio")+xlab('game name')
+p=p+coord_flip()
+p
+
+
+#### MAIN FIGURE ###
+p = ggplot()+
+  geom_bar(data=subset(plantimedata, agent_type!='human' & (log(human_normed_level_efficiency)>-3)),
+           aes(x=game_name, y=log(human_normed_level_efficiency), fill=as.factor(agent_type)), stat='identity',position='dodge')+
+  geom_point(data=subset(plantimedata, agent_type!='human' & !(log(human_normed_level_efficiency)>-3)),
+             aes(x=game_name, y=log(human_normed_level_efficiency), color=agent_type), stat='identity',position='dodge', shape='|', size=3)+
+  scale_x_discrete(limits=ordered_names)+
+  # theme(legend.position="none")+
+  colorScale+
+  # scale_fill_manual(values=colors) +
+  # scale_fill_discrete(name="Model",
+                      # breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
+                      # labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed composite ratio")+xlab('Game name')+ylim(-10,4)
+tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,1,10,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p + scale_fill_manual(values=colors,name="Model",
+                       breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
+                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)")) + scale_color_manual(values=colors,name="Model",
+                                                                                         breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
+                                                                                         labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))
+
+
+
+## change -Inf to something readable so that plots come out.
+
+## idea is to plot the logs but then set the tick marks to non-log.
 
 ## same thing but not grouped by game. not easy to read.
 # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
