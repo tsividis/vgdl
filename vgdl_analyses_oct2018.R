@@ -362,10 +362,12 @@ for (i in 1:length(levels(humandata$game_name))){
 }
 
 
+
+### MAIN LEARNING-CURVE PLOTS"""
 # games_to_show = c('aliens_2', 'missilecommand', 'butterflies_1', 'plaqueattack_1', 'portals')
 
 games_to_show = c('aliens','avoidgeorge', 'plaqueattack', 'push_boulders', 'relational', 'frogs', 'portals', 'ee', 'zelda', 'butterflies', 'bees_and_birds', 'closing_gates')
-games_to_show = c('missilecommand', 'aliens', '')
+games_to_show = c('missilecommand', 'aliens')
 ## plotting all agents/models
 plots = list()
 for (i in 1:length(games_to_show)){
@@ -373,8 +375,10 @@ for (i in 1:length(games_to_show)){
   # game = levels(alldata$game_name)[i]
   game = games_to_show[i]
   p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
-  p=p+geom_point()+geom_smooth(se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,0.6,1))
-  p=p+xlim(0,20000)
+  p=p+geom_point()+geom_smooth(method='loess',se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,0.6,1))
+  p=p+xlim(0,10000)#+scale_color_manual(values=colors,name="Model",
+                                       breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
+                                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))
   p
     # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
@@ -966,17 +970,32 @@ make_plantimedata = function(dataframe){
   
   for (j in 1:length(levels(dataframe$agent_type))){
     agent = levels(dataframe$agent_type)[j]
-    # if (length(unique(subset(data, agent_type==agent)$game_name))<80){
-    #   print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
-    # }
-    # else{
     print(agent)
     for (i in 1:length(levels(dataframe$game_name))){
       g = subset(dataframe, game_name==levels(dataframe$game_name)[i])
       print(levels(dataframe$game_name)[i])
-      max_level = max(g$cumulative_wins)
       s = subset(g, agent_type==agent)
       if (length(s$level_max_score)>0){
+        
+        ## TODO: do this for MEPdata, too, once you've added subjectID
+        ## grab each subject's max_steps and max_wins.
+        if agent=='human'{
+          human_level_maxes = list()
+          human_cumulative_step_maxes = list()
+          idx=1
+          for (k in 1:length(unique(s$subject_ID))){
+            subject = levels(s$subject_ID)[k]
+            subjectdata = s[which(s$subject_ID==subject),]
+            if (length(subjectdata$cumulative_steps)>0){
+            human_level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+            human_cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+            idx = idx+1
+            }
+          }
+        }
+        ##mean of vector of ratios
+        mean(as.numeric(as.vector(human_level_maxes))/as.numeric(as.vector(human_cumulative_step_maxes)))
+        
         ## the row we want
         r = subset(s, cumulative_steps==max(cumulative_steps))[1,]
         ## take only the relevant columns and put them in the new data frame
@@ -988,7 +1007,6 @@ make_plantimedata = function(dataframe){
         plantimedata = rbind(plantimedata, new)
       }
     }
-    # }
   }
   ## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
   ## so they're naturally alphabetized.
@@ -1036,37 +1054,13 @@ p
 
 
 
+#### MAIN FIGURE ###
 colors = c('palegreen3', 'grey50', 'steelblue1','steelblue3')
 names(colors)=levels(alldata$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
 
 s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4])
 ordered_names = s[order(log(s$human_normed_level_efficiency)),]$game_name
-
-p = ggplot(subset(plantimedata, agent_type!='human'), aes(x=game_name, y=log(human_normed_level_efficiency), fill=agent_type))+
-  scale_x_discrete(limits=ordered_names)+
-    geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
-  colorScale+
-  scale_fill_manual(values=colors) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("human-normed composite ratio")+xlab('game name')
-p=p+coord_flip()
-p
-
-
-s = subset(plantimedata, !(agent_type %in% c('human','DDQN')))
-levels(s$agent_type)
-p = ggplot() +
-  geom_bar(data=s, aes(x=game_name, y=log(human_normed_level_efficiency)), 
-           fill=as.factor(agent_type),stat='identity',position='dodge')+theme(legend.position="none")+
-  scale_x_discrete(limits=ordered_names)+
-    colorScale+
-  scale_fill_manual(values=colors) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("human-normed composite ratio")+xlab('game name')
-p=p+coord_flip()
-p
-
-
-#### MAIN FIGURE ###
 p = ggplot()+
   geom_bar(data=subset(plantimedata, agent_type!='human' & (log(human_normed_level_efficiency)>-3)),
            aes(x=game_name, y=log(human_normed_level_efficiency), fill=as.factor(agent_type)), stat='identity',position='dodge')+
@@ -1075,10 +1069,6 @@ p = ggplot()+
   scale_x_discrete(limits=ordered_names)+
   # theme(legend.position="none")+
   colorScale+
-  # scale_fill_manual(values=colors) +
-  # scale_fill_discrete(name="Model",
-                      # breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
-                      # labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed composite ratio")+xlab('Game name')+ylim(-10,4)
 tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,1,10,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
@@ -1117,22 +1107,22 @@ for (i in 1:length(levels(plantimedata$game_name))){
   
 }
 
-## you're unable to get both models on this plot. why??
-s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & (!is.na(score_efficiency)|score_efficiency>0.005 ))
-colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
-           'firebrick2', 'tomato2', 'salmon',
-           'purple2', 'mediumorchid2', 
-           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-
-names(colors)=levels(s$agent_type)
-colorScale = scale_color_manual(name="agent_type", values=colors)
-
-p = ggplot(s, aes(x=reorder(game_name,score_efficiency), y=score_efficiency, fill=agent_type))+
-  geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
-  colorScale+
-  scale_fill_manual(values=colors) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("max_score / steps")+xlab('game name')
-p+coord_flip()
+# ## you're unable to get both models on this plot. why??
+# s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & (!is.na(score_efficiency)|score_efficiency>0.005 ))
+# colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
+#            'firebrick2', 'tomato2', 'salmon',
+#            'purple2', 'mediumorchid2', 
+#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+# 
+# names(colors)=levels(s$agent_type)
+# colorScale = scale_color_manual(name="agent_type", values=colors)
+# 
+# p = ggplot(s, aes(x=reorder(game_name,score_efficiency), y=score_efficiency, fill=agent_type))+
+#   geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
+#   colorScale+
+#   scale_fill_manual(values=colors) +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("max_score / steps")+xlab('game name')
+# p+coord_flip()
 
 
 # p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_type))) +
