@@ -506,7 +506,6 @@ class WBP():
 
 			## FRAMESKIPPING:
 			if current.rle._game.time % self.frameSkipN == 0:
-				print "calling updatenoveltydict"
 				current.updateNoveltyDict(QNovelty, QReward)
 			# embed()
 			visited.append(current)
