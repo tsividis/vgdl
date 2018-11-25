@@ -7,11 +7,12 @@ SpriteCounterRule, MultiSpriteCounterRule, NoveltyRule, ruleCluster, Theory, Gam
 generateTheoryFromGame
 import os, subprocess, shutil
 from collections import defaultdict
+from hyperparameters import hyperparameter_sets, metacontroller_sets
 import WBP
 import importlib
 import numpy as np
 import random
-import cPickle, pickle
+import cPickle, cloudpickle
 import time
 from datetime import datetime
 import copy
@@ -36,67 +37,8 @@ def playCurriculum(agent, level_game_pairs):
     end_time = time() - start_time
     return end_time
 
-hyperparameter_sets = [
-    {'idx'           : 0,
-     'short_horizon' : False,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 1,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 2,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 3,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 4,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 10,
-     }
-]
-
-
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, init_hypothesis=None):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, init_hypothesis=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.outpath = None ## set in playCurriculum and then used in outputlesionsnapshot for writing all the theories learned in a particular run of playCurriculum into a single folder.
@@ -106,43 +48,63 @@ class Agent:
         self.display_states = True
         self.record_states = True
         self.record_video_info = False
+        self.saveMidEpisode = False
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
+        self.timestamp = False
         self.annealingFactor = 1.
         self.shortHorizon = self.hyperparameters['short_horizon']#False
         self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k
+        self.task_ID = task_ID
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
-        self.extra_atom = False
-        self.epsilon_greedy = epsilon_greedy
-        self.hybrid = False
-        self.switch_to_exploit_step = 2000
-        self.random_steps_on_plan_failure = 5
-        self.absolute_max_nodes = 50000
-        self.shortHorizonNodes = 500
-        self.longHorizonNodes = 1000
-        self.shortHorizonAnnealing = 1.05
-        self.longhorizonAnnealing = 2.
+
+        self.switch_to_exploit_step = 1000 ## only used for e-greedy lesion
+        self.absolute_max_nodes = 50000 ## just a convenience parameter
+        self.shortHorizonNodes = 500 ## this isn't used. but you need to clean the code up a bit to actually delete it.
+        self.shortHorizonAnnealing = 1.05 ## this isn't used, either. but you need to clean the code up a bit to actually delete it.
+        # self.emptyPlansLimit = 5 ## not used
+
+        self.metacontroller_params = metacontroller_sets[metacontroller_index]
+        ## Metacontroller parameters
+        self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
+        self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
+        self.longhorizonAnnealing = self.metacontroller_params['longhorizonAnnealing']
+        self.shortHorizonRandomChoice = self.metacontroller_params['shortHorizonRandomChoice']
+        self.conservative_max_nodes = self.metacontroller_params['conservative_max_nodes']
+        self.extra_atom = self.metacontroller_params['extra_atom']
+        self.noNewObjectNum = self.metacontroller_params['noNewObjectNum']
+        self.objectLocationTrackingLimit = self.metacontroller_params['objectLocationTrackingLimit']
+        self.safeDistance = self.metacontroller_params['safeDistance']
+        self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
+        self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
+        if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
+            self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
+        else:
+            self.objectsWhoseLocationWeIgnore = ['Flicker', 'Random']
+        self.objectsWhoseLocationWeIgnoreString = ''.join([s[0] for s in self.objectsWhoseLocationWeIgnore]) if self.objectsWhoseLocationWeIgnore else 'None'
+
         if self.shortHorizon == True:
             self.starting_max_nodes = self.shortHorizonNodes
             self.max_nodes_annealing = self.shortHorizonAnnealing
         else:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
-        self.shortHorizonRandomChoice = [200,500]#,1000]
-        self.allow_long_range = False ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}".format(self.IW_k, self.extra_atom_allowed, self.shortHorizonNodes, self.longHorizonNodes, 
-                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.switch_to_exploit_step, 
-                self.hybrid)
+        
+        self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
+        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
+                self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
+                self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
+                self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
+                self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
+                self.objectsWhoseLocationWeIgnoreString)
         print self.param_ID
         self.conservative = False
         self.regrounding = 1
-        self.selective_regrounding = True
+        # self.selective_regrounding = True ## not used
         self.reground_for_npcs = False
-        self.safeDistance = 3
-        self.emptyPlansLimit = 5
-        self.longHorizonObservationLimit = 2
+
         self.hypotheses = []
         self.symbolDict = None
         self.finalEventList = []
@@ -417,9 +379,6 @@ class Agent:
         allEffectsEncountered = []
         self.make_movie = make_movie
 
-        ## used for time-stamping data related to this particular run of the model.
-        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')
-
         gamepath = './lesions/rand_exploration/{}'.format(self.gameFilename)
         # pickles the theory and saves it in the gameName folder as {s}steps{n}
         # where s=steps and n=a counter so we don't overwrite earlier runs
@@ -438,11 +397,17 @@ class Agent:
             # already exists, yay
             pass
 
+        ## used for time-stamping data related to this particular run of the model.
+        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')+self.task_ID
+        self.timestamp = timestamp
         if self.record_states:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
-                os.makedirs(dirname)
+                try:
+                    os.makedirs(dirname)
+                except:
+                    print "failed  to make dir"
         if self.record_video_info:
             dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(dirname):
@@ -452,10 +417,33 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
+        print "timestamp", self.timestamp
+        print "param_ID", self.param_ID
+        curriculumDir = 'savedCurricula'
+        if curriculumDir not in os.listdir('.'):
+            os.makedirs(curriculumDir)
+        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.task_ID
+        loadedState = False
+        loaded_n_level=0
+        # embed()
+        if curriculumSaveFile in os.listdir(curriculumDir):
+            try:
+                print "found saved curriculum state"
+                loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
+                loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
+                self = loadedState['agent'] ## load saved agent
+                print "loaded curriculum state"
+            except:
+                os.remove(curriculumDir+'/'+episodeSaveFile)
+                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+
         j=0
         flexible_goals = False
         fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
+
+            if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
+                continue
 
             print("Playing level {}".format(n_level))
             (self.gameString, self.levelString) = level_game
@@ -463,16 +451,25 @@ class Agent:
             self.stored_max_nodes = self.max_nodes
             win = False
             gameObject = None
+
             i=0
+            if loadedState:
+                i=loadedState['agent'].within_level_iteration
+                episodeCompactStates = loadedState['episodeCompactStates']
             levelEffectsEncountered = []
             allStatesEncountered = []
             allCompactStates = []
             t1 = time.time()
-            first_time_playing_level = True
+            # first_time_playing_level = True
+            if i==0:
+                first_time_playing_level = True
+            else:
+                first_time_playing_level = False
             quit_level = False
             while not win and not quit_level and i<15:
+                self.n_level = n_level
+                self.within_level_iteration = i
                 gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
-                
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
@@ -506,22 +503,26 @@ class Agent:
                 if self.record_video_info:
                     allStatesEncountered.extend(statesEncountered)
 
-                first_time_playing_level = False
+                # first_time_playing_level = False
                 i += 1
                 print "Finished in ", time.time() - t1
 
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
-
+                if win:
+                    self.n_level += 1
+                    self.within_level_iteration = 0
+                self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
                 ## will write all previous episodes to the file at the end of each episode, after the random-exploration phase
                 if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps < self.max_rand_steps):
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     print "n_level", n_level
-                    print len(episodeList)
+                    print "recording episode. check planning_nodes for this episode"
+                    print "total nodes across all episodes for this level:", sum([item['planner_nodes'] for sublist in allCompactStates for item in sublist])
                     with open(filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_ins':self.exploration_burn_ins, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
-                    f.close()
+                    # f.close()
 
                 ## will write video data at the end of each episode
                 if self.record_video_info:
@@ -535,6 +536,12 @@ class Agent:
                 if self.init_hypothesis and self.total_game_steps>MAX_STEPS:
                     print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
                     return
+
+                if self.saveMidEpisode:
+                    # ## if the episode ends, delete the mid-episode file we were saving.
+                    episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+                    os.remove(curriculumDir+'/'+episodeSaveFile)
+                    print "finished an episode; removing episodeSaveFile"
 
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
@@ -665,6 +672,7 @@ class Agent:
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
 
+        episodeSaveTime = time.time() ## in seconds
         quit_level = False
         ## Initialize external environment
         self.initializeEnvironment()
@@ -710,6 +718,24 @@ class Agent:
             if not flexible_goals:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
+        if self.saveMidEpisode:
+            ## if we get a loadedState, do things with it here.
+            episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+            curriculumDir = 'savedCurricula'
+            if episodeSaveFile in os.listdir(curriculumDir):
+                try:
+                    loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
+                    self = loadedState['agent']
+                    # embed()
+                    effectsEncountered = loadedState['effectsEncountered']
+                    statesEncountered = loadedState['statesEncountered']
+                    compactStates = loadedState['compactStates']
+                    annealing = loadedState['annealing']
+                    print "just loaded episode state"
+                except:
+                    os.remove(curriculumDir+'/'+episodeSaveFile)
+                    print "failed to load episode state. Deleting the corrupted file and continuing with this episode as though we hadn't saved anything."
+
         ## Do beginning-of-episode resource-management.
         resources = self.rle._game.getAvatars()[0].resources
         for resource, val in resources.items():
@@ -734,6 +760,10 @@ class Agent:
         #######################################
         while not ended:
 
+            if self.saveMidEpisode:
+                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                self.episodeSaveTime = time.time()
+
             drew_random_action = False
             
             ### flip here. or take a random step. by doing this here you can leverage all the other stuff you've built
@@ -754,6 +784,9 @@ class Agent:
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle._game.score
                 quit_level = False
+                if self.saveMidEpisode:
+                    self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                    self.episodeSaveTime = time.time()
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             updateTermins = True
@@ -797,7 +830,21 @@ class Agent:
                 t1 = time.time()
                 hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                     run_induction = not flexible_goals)
-                print "execute step took {} seconds".format(time.time()-t1)
+
+                steps +=1
+
+                if self.total_game_steps+steps > MAX_STEPS:
+                    score = self.rle._game.score
+                    quit_level = False
+                    if self.saveMidEpisode:
+                        self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                        self.episodeSaveTime = time.time()
+                    return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+                
+                if self.display_text:
+                    print "executeStep took {} seconds".format(time.time()-t1)
+                sys.stdout.flush()
+
                 ##############################################
                 ##### STORE EFFECTS OF TAKING STEP ###########
                 ##############################################
@@ -815,7 +862,6 @@ class Agent:
                 # ID = [k for k in self.rle._game.all_objects.keys() if self.rle._game.all_objects[k]['sprite'].colorName=='BROWN']
 
                 effectsEncountered.extend(effects)
-                steps +=1
                 
 
                 ###############################################
@@ -884,10 +930,12 @@ class Agent:
                 p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                     seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                     firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
-                    extra_atom=self.extra_atom, IW_k=self.IW_k, filter_novelty=filter_novelty)
+                    extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+                    objectLocationTrackingLimit=self.objectLocationTrackingLimit, filter_novelty=filter_novelty)
                 p_quitting = p.quitting
                 bestNode, gameStringArray, objectPositionsArray = p.BFS()
                 self.total_planner_steps += p.total_nodes_opened
+                print "total planner steps in main_agent:", self.total_planner_steps
 
                 if bestNode is not None:
                     solution = p.solution
@@ -902,7 +950,7 @@ class Agent:
                     ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                     if self.checkForRepeatedDeaths(self.episodeRecord, 2):
                         if self.hyperparameter_index == 1:
-                            new_index = 1
+                            new_index = 1 ## don't switch away from idx_1
                             conservative = False
                         elif self.hyperparameter_index == 3:
                             if self.allow_long_range:
@@ -925,9 +973,8 @@ class Agent:
                         print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
                         print "scoreChange: {}".format(scoreChange)
                         # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
-                        if self.noNewObjectsInAWhile(self.rle, 55) and \
+                        if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
                                 (not movingTypes or (movingTypes and not scoreChange)):
-                                # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
                             # if self.display_text:
                             
                             if self.allow_long_range:
@@ -960,7 +1007,8 @@ class Agent:
                         p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                             seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                             firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
-                            extra_atom=self.extra_atom, IW_k=self.IW_k, filter_novelty=filter_novelty)
+                            extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+                            objectLocationTrackingLimit=self.objectLocationTrackingLimit, filter_novelty=filter_novelty)
                         p_quitting = p.quitting
                         bestNode, gameStringArray, objectPositionsArray = p.BFS()
                         self.total_planner_steps += p.total_nodes_opened
@@ -978,13 +1026,12 @@ class Agent:
                     # exhausted the number of nodes you can visit or because you
                     # ran out of novelty. In the first case, you only wait longer,
                     # in the second case, you also add a new atom to IW
-                    if p.exhausted_novelty and self.extra_atom_allowed:
+                    if self.extra_atom_allowed:
                         print "turning on extra atom"
                         self.extra_atom = True
                     if self.longHorizonObservations<self.longHorizonObservationLimit:
-                        # if self.display_text:
-                        print "Didn't get solution. Taking random steps."
-                        # self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates)
+                        print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
+                        plannerNodes = p.total_nodes_opened
                         solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                         for i in range(self.random_steps_on_plan_failure):
                             solution.append(random.choice(legalActions))
@@ -994,12 +1041,16 @@ class Agent:
                         plannerNodes = p.total_nodes_opened
                         action = 0
                         hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
-                        run_induction = not flexible_goals)
+                            run_induction = not flexible_goals)
+                        quitting = True
                         if self.total_game_steps+steps> MAX_STEPS:
                             score = self.rle._game.score
                             quit_level = False
+                            if self.saveMidEpisode:
+                                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                                self.episodeSaveTime = time.time()
+
                             return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
-                        quitting = True
                 
                 self.actionSeqLength += len(solution)
 
@@ -1026,10 +1077,15 @@ class Agent:
                         plannerNodes = p.total_nodes_opened if i==0 else 0
                         hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                             run_induction = not flexible_goals)
-                        
+
+                        steps +=1
+
                         if self.total_game_steps+steps> MAX_STEPS:
                             score = self.rle._game.score
                             quit_level = False
+                            if self.saveMidEpisode:
+                                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                                self.episodeSaveTime = time.time()
                             return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
                         if self.display_text:
@@ -1047,7 +1103,6 @@ class Agent:
                         self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
 
                         effectsEncountered.extend(effects)
-                        steps +=1
 
                         ## MARK, EXPLORATION
                         if theory_change_flag:
@@ -1121,6 +1176,9 @@ class Agent:
                         quit_level = True
                     win, effects = False, []
                     self.episodeRecord.insert(0, (win, effects))
+                    if self.saveMidEpisode:
+                        self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                        self.episodeSaveTime = time.time()
                     print colored('________________________________________________________________', 'white', 'on_red')
                     print colored("Quitting", 'white', 'on_red')
                     print colored('________________________________________________________________', 'white', 'on_red')
@@ -1247,6 +1305,41 @@ class Agent:
                     break
                 rleDict[s.ID] = s
         return regroundingFlag
+
+    def saveCurriculumState(self, filename, episodeCompactStates):
+        savedState = {'agent':self,
+                      'episodeCompactStates': episodeCompactStates}
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+        # f.close()
+
+    def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
+        print "starting to save episode state"
+        savedState = {'agent':self,
+                      'effectsEncountered': effectsEncountered,
+                      'statesEncountered': statesEncountered,
+                      'compactStates': compactStates,
+                      'annealing': annealing
+                      }
+        filepath = 'savedCurricula/'+filename
+        with open(filepath, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+        print "done saving state"
+        # embed()
+        # f.close()
+
+    def loadState(self, filename):
+        with open(filename, 'r') as f:
+            loadedState = cloudpickle.load(f)
+        # f.close()
+        return loadedState
+
+
+    def saveState(self):
+        filename = 'saved_state'
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(self, f)
+        return
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
