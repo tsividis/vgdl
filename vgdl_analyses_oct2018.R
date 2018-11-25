@@ -1,4 +1,3 @@
-install.packages("cowplot")
 library(cowplot)
 library("ggplot2")
 library("zoom")
@@ -7,6 +6,12 @@ library(plyr)
 library("dplyr")
 library("colorspace")
 library("RColorBrewer")
+library(purrr)
+library(zoo)
+library(EnvStats)
+library(grid)
+
+
 # dates=c('nov8_local')
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
@@ -14,7 +19,11 @@ library("RColorBrewer")
 ## oct31: burn_in lesions, but only partial. lots of models haven't finished running yet; lots haven't even started.
 ## nov5: e-greedy
 ## nov8: IW2
-dates = c('oct26','nov8')#, 'nov5')
+dates = c('nov8', 'nov12', 'nov15', 'nov16')
+## warning: don't plot frogs from anything before nov13b
+# dates = list('nov17')
+dates = c('nov24')
+saveddata = data
 data = list()
 for (date in dates){
   path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
@@ -55,54 +64,81 @@ data$agent_type = as.factor(data$agent_type)
 data$score = as.numeric(as.character(data$sparse_score))
 ## TODO: once you're using human data, move this below and run it for all_data
 ## remove 'variant_' from names
+
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
+
+MEPdata = data
+
+alldata = data
 
 
 # plotpath = paste('~/Projects/atari/vgdl/',date,'/plots', sep='')
 # dir.create(plotpath)
 
 ## load dqn data
-dqnpath = 'dqn'
-oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
-dqndata = list()
-
-for (game in oldformatdqngames){
-  filename=paste(game,'_1win.csv',sep='')
-  path = paste('~/Projects/atari/vgdl/dqn/old_format/',filename, sep='')
-  d=read.csv(path, header=TRUE, na.strings='NA')
-  d$game_name = as.factor(game)
-  d$score = as.numeric(d$ep_reward)
-  d$agent_type = as.factor("DDQN")
-  d$ep_reward = NULL
-  d$cumulative_steps = as.numeric(d$steps)
-  d$criteria = as.factor(1)
-  d$steps = NULL
-  d$cumulative_wins = as.numeric(0)
-  for (i in 2:length(d$level)){
-    if (d$level[i]>d$level[i-1]){
-      d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
-    }
-    else{
-      d$cumulative_wins[i] = d$cumulative_wins[i-1]
-    }
-  }
-  if(length(dqndata)==0){
-    dqndata = d
+# dqnpath = 'dqn'
+# oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
+# dqndata = list()
+# 
+# for (game in oldformatdqngames){
+#   filename=paste(game,'_1win.csv',sep='')
+#   path = paste('~/Projects/atari/vgdl/dqn/old_format/',filename, sep='')
+#   d=read.csv(path, header=TRUE, na.strings='NA')
+#   d$game_name = as.factor(game)
+#   d$score = as.numeric(d$ep_reward)
+#   d$agent_type = as.factor("DDQN")
+#   d$ep_reward = NULL
+#   d$cumulative_steps = as.numeric(d$steps)
+#   d$criteria = as.factor(1)
+#   d$steps = NULL
+d$cumulative_wins = as.numeric(0)
+for (i in 2:length(d$level)){
+  if (d$level[i]>d$level[i-1]){
+    d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
   }
   else{
-    dqndata = rbind(dqndata,d)
+    d$cumulative_wins[i] = d$cumulative_wins[i-1]
   }
 }
+if(length(dqndata)==0){
+  dqndata = d
+}
+else{
+  dqndata = rbind(dqndata,d)
+}
+# }
+dqndata = list()
+path = '~/Projects/atari/vgdl/dqn/'
+oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
 
-path = '~/Projects/atari/vgdl/dqn/new_format/'
 list.files(path)
 for (gamefile in list.files(path)){
   filename = paste(path,gamefile,sep='')
+  gamenamestart = unlist(gregexpr('dqn/',filename))+nchar('dqn/')
+  gamenameend = unlist(gregexpr('_reward', filename))-1
+  game = substr(filename, gamenamestart, gamenameend)
   d=read.csv(filename, header=TRUE, na.strings='NA')
+  
+  # if (game %in% oldformatdqngames){
+  # d$cumulative_wins = as.numeric(0)
+  # for (i in 2:length(d$level)){
+  #   if (d$level[i]>d$level[i-1]){
+  #     d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
+  #   }
+  #   else{
+  #     d$cumulative_wins[i] = d$cumulative_wins[i-1]
+  #   }
+  # }
+  # }
+  
+  
   d$score = d$ep_reward
+  d$game_name = as.factor(remove_string_from_name(game))
   d$ep_reward = NULL
+  d$criteria = as.factor(1)
   d$cumulative_steps = d$steps
   d$agent_type = as.factor("DDQN")
+  d$subject_ID = as.factor("DDQN")
   d$steps = NULL
   d$win = NULL
   d$cumulative_wins = as.numeric(0)
@@ -116,8 +152,10 @@ for (gamefile in list.files(path)){
   }
   dqndata = rbind(dqndata,d)
 }
-  
-  
+
+# dqndata$game_name = as.factor(as.character(lapply(as.vector(dqndata$game_name), remove_string_from_name)))
+
+
 for (colname in names(data)){
   if (!(colname %in% names(dqndata))){
     dqndata[,colname] = NA
@@ -130,31 +168,30 @@ for (colname in names(dqndata)){
     print(colname)
   }
 }
+alldata = rbind(alldata, dqndata)
 
-data = rbind(data, dqndata)
+# colors = c('orange','steelblue1','steelblue3')
+# names(colors) = levels(MEPdata2$agent_type)
+# colorScale = scale_color_manual(name='agent_type',values=colors)
 
-colors = c('steelblue1', 'steelblue2', 'steelblue3', 'steelblue4',
+colors = c('purple2', #'mediumorchid2', 
+           'steelblue1',# 'steelblue2',# 'steelblue3', 'steelblue4',
            # 'palegreen3', 'seagreen3','darkolivegreen1',
            'firebrick2', 'tomato2', 'salmon', 
-           'purple2', 'mediumorchid2', 
            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
-# colors = c('firebrick2', 'tomato2', 'salmon', 
-#            'steelblue3', 'steelblue1', 
-#            'palegreen3', 'seagreen3','darkolivegreen1',  
-#            'purple2', 'mediumorchid2', 
-#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-
 names(colors)=levels(data$agent_type)
+inversecolors = levels(data$agent_type)
+names(inversecolors) = colors[1:length(levels(data$agent_type))]
 colorScale = scale_color_manual(name="agent_type", values=colors)
 
-games = c("aliens", "avoidgeorge", "plaqueattack", "expt_push_boulders", "expt_relational", "frogs", "portals", "sokoban")
+# games = c("aliens", "avoidgeorge", "plaqueattack", "expt_push_boulders", "expt_relational", "frogs", "portals", "sokoban")
 ## make dqn/MEP learning-curve plots:
 plots = list()
 q=list()
 max_num_agents = 0
-for (i in 1:length(games)){
-  game = games[i]
+for (i in 1:length(levels(dqndata$game_name))){
+  game = levels(dqndata$game_name)[i]
   d = subset(data, game_name==game)
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
@@ -164,7 +201,7 @@ for (i in 1:length(games)){
     scale_color_manual(values=colors) + theme(legend.position="none")+
     ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5))
   
-  p=p+ylim(0,5)+xlim(0,30000)#+theme(legend.position='none')
+  p=p+ylim(0,5)#+xlim(0,30000)#+theme(legend.position='none')
   
   # p
   if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
@@ -193,8 +230,12 @@ for (i in 1:length(games)){
     q[[1]]=ggdraw(legend)
   }
 }
-layout = matrix(c(1:8), ncol=4, byrow=TRUE)
+layout = matrix(c(1:26), ncol=4, byrow=TRUE)
 m = multiplot(plotlist = plots[1:8], layout=layout)
+
+p = ggplot(filter(data, game%in%levels(dqndata$game_name)), aes(x=cumulative_steps,y=cumulative_wins, color=agent_type))
+p=p+geom_point()+geom_smooth()+facet_wrap(~game_name)+theme(legend.position="none")
+p
 
 
 # stand_in_dqn = list()
@@ -206,11 +247,16 @@ m = multiplot(plotlist = plots[1:8], layout=layout)
 # }
 
 ## load human data
-humandatapaths = c('pilot_Oct29th_Full','pilot_Oct30th_Full')
-date='oct28_local'
+
+# date='humandata_new'
+# humandatapaths = list.files("~/Projects/atari/vgdl/humandata_new/csv_data")
+
+date='humandata'
+humandatapaths = list.files("~/Projects/atari/vgdl/humandata")
+
 humandata = list()
 for (humandatapath in humandatapaths){
-  path = paste('~/Projects/atari/vgdl/',date, '/csv_data/', humandatapath,'.csv', sep='')
+  path = paste('~/Projects/atari/vgdl/',date, '/', humandatapath, sep='')
   d=read.csv(path, header=TRUE, na.strings='NA')
   if (length(humandata)==0){
     humandata = d
@@ -219,6 +265,7 @@ for (humandatapath in humandatapaths){
     humandata = rbind(humandata,d)
   }
 }
+
 
 humandata$agent_type=as.factor('human')
 humandata$subject_ID = as.factor(humandata$subject)
@@ -232,16 +279,18 @@ humandata$gameLevel = NULL
 humandata$cumulative_wins = humandata$levels_won
 humandata$levels_won = NULL
 humandata$exploration_burn_ins = as.factor(0)
-humandata$timestep = humandata$steps
-humandata$steps = NULL
-humandata$levelscore=humandata$score
-humandata$score=0
+# humandata$timestep = humandata$steps
+# humandata$steps = NULL
+# humandata$levelscore=humandata$score
+# humandata$score=0
 
 humandata$levels_lost = NULL ##idk what this is; we don't need it
 humandata$group = NULL ## drop this for now. it refers to the groupings of the games we gave to people
 humandata$gameNumber = NULL
 humandata$gameRound = NULL
 
+## for new-format humandata:
+# humandata$cumulative_steps = humandata$timestep
 ## fix cumulative_timesteps
 humandata$cumulative_timestep = 1
 for (i in 2:length(humandata$timestep)){
@@ -258,8 +307,10 @@ for (i in 2:length(humandata$timestep)){
   }
 }
 ##remove first part of game string from humandata names
-humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
+# humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
+
 humandata$levelscore = NULL
+# humandata$cumulative_steps = humandata$cumulative_timestep
 humandata$level_number = as.factor(humandata$level)
 ## now make sure that humandata has all the column names that data has.
 for (colname in names(data)){
@@ -277,17 +328,445 @@ for (colname in names(humandata)){
   }
 }
 
+
+savedalldata = alldata
+alldata = rbind(alldata, data)
 ## make a single dataframe
 alldata = rbind(data, humandata)
+colors = c('purple2', #'mediumorchid2', 
+           'steelblue1',# 'steelblue2',# 'steelblue3', 'steelblue4',
+           'palegreen3',# 'tomato2', 'salmon', 
+           'firebrick2',# 'seagreen3','darkolivegreen1',
+           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
 
-##example plot for one game
-game = levels(humandata$game_name)[6]
-p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=cumulative_wins,color=agent_type))
-p+geom_point()+geom_smooth()+ggtitle(game)
+names(colors)=levels(alldata$agent_type)
+inversecolors = levels(alldata$agent_type)
+names(inversecolors) = colors[1:length(levels(alldata$agent_type))]
+colorScale = scale_color_manual(name="agent_type", values=colors)
 
-game=levels(humandata$game_name)[2]
-p = ggplot(subset(alldata,game_name==game), aes(x=cumulative_timestep,y=score,color=agent_type))
-p+geom_point()+geom_smooth()+ggtitle(game)
+
+MEPcolors = c('steelblue3', 'steelblue1')
+humancolors = rep('palegreen3', length(unique(humandata$subject_ID)))
+dqncolors = 'grey50'
+colors = c(humancolors, dqncolors, MEPcolors)
+names(colors)=levels(alldata$subject_ID)
+colorScale = scale_color_manual(name="subject_ID", values=colors)
+
+## change this once you have more agents?
+
+for (i in 1:length(levels(humandata$game_name))){
+  game = levels(humandata$game_name)[i]
+  p = ggplot(filter(humandata,game_name==game), aes(x=cumulative_frames,y=cumulative_wins,color=subject_ID))
+  p=p+geom_point()+geom_smooth()+ggtitle(game)+theme(legend.position="none")#+colorScale+scale_color_manual(values=colors)+theme(legend.position="none")
+  plots[[i]] = p
+}
+
+
+
+### MAIN LEARNING-CURVE PLOTS"""
+# games_to_show = c('aliens_2', 'missilecommand', 'butterflies_1', 'plaqueattack_1', 'portals')
+
+games_to_show = c('aliens','avoidgeorge', 'plaqueattack', 'push_boulders', 'relational', 'frogs', 'portals', 'ee', 'zelda', 'butterflies', 'bees_and_birds', 'closing_gates')
+games_to_show = c('missilecommand', 'aliens')
+## plotting all agents/models
+plots = list()
+for (i in 1:length(games_to_show)){
+# for (i in 1:length(levels(alldata$game_name))){
+  # game = levels(alldata$game_name)[i]
+  game = games_to_show[i]
+  p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
+  p=p+geom_point()+geom_smooth(method='loess',se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,0.6,1))
+  p=p+xlim(0,10000)#+scale_color_manual(values=colors,name="Model",
+                                       breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
+                                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))
+  p
+    # p=p+xlim(0,1000000)
+  # p=p+xlim(0,100000)
+  # p=p+xlim(0,10000)
+  
+  plots[[i]] = p
+}
+layout = matrix(c(1:12), ncol=4, byrow=TRUE)
+# layout = matrix(c(1:5), ncol=5, byrow=TRUE)
+layout = matrix(c(1:90), ncol=9, byrow=TRUE)
+m = multiplot(plotlist = plots, layout=layout)
+## save as 30x50?
+
+
+alldata = rbind(humandata, dqndata, data)
+## another problem: intermediate points are missing for DQN and that breaks smoothing function. mostly a problem for games where dying is hard
+
+## good for zoomed-in plots
+p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
+p=p+geom_point()+geom_smooth(se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,0.6,1))
+p=p+xlim(0,10000)
+p
+
+## good for non-zoomed-in plots
+p = ggplot(filter(alldata,game_name==game), aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
+p=p+geom_point()+geom_smooth(se=FALSE)+ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(1,1,1.5,1))
+p=p+xlim(0,1000000)
+p
+
+d = filter(alldata, game_name=='avoidgeorge')
+p = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')
+p
+
+## build data frame that corresponds to the game we care about
+p = ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
+p
+
+
+get_middle_element = function(lst){
+  return(lst[round(0.1+length(lst)/2.0)])
+}
+define_timescale = function(agent, game, quantiles){
+  ## agent, e.g., 'DDQN'
+  ## quantiles have to be specified as c(.25,.5,...). Also returns x value of max(y)
+  d = filter(alldata, agent_type==agent & game_name==game)
+  if(length(d$cumulative_wins)==0){
+    print(paste("Can't determine quantiles. You don't have data for agent: ", agent, ", game: ", game, sep=''))
+  }
+  ## find y values (cumulative_wins) that are in the quantiles you asked for
+  # quantile_ys = c(round(quantile(d$cumulative_wins, quantiles, names=FALSE)), max(d$cumulative_wins))
+  quantile_ys = round(quantile(d$cumulative_wins, quantiles, names=FALSE))
+  
+  ## find indices that correspond to these
+  quantile_indices = map(quantile_ys, function(x) get_middle_element(which(grepl(x,d$cumulative_wins)))[1])
+  quantile_xs = map(quantile_indices, function(x) d$cumulative_steps[x])
+  if(any(is.na(quantile_xs))){
+    print(paste('WARNING -- you have at least one NA in quantile values in define_timescale for game: ',game,', agent: ',agent,', quantiles: ',quantiles, sep=''))
+  }
+  return(unlist(quantile_xs))
+}
+
+get_corresponding_val = function(agent, game, xval, df){
+  ## if the interpolation for (agent,game) exists, return the yval that corresponds to the nearest xval
+  ## if it doesn't (because the agent's curve finishes well before the requested xval), return the max yval
+  
+  ## grab rows of the interpolation data frame that corresponds to the agent we want
+  relevantrows = filter(df,colour==colors[agent])
+  if (xval < max(relevantrows$x)){
+    idx = which.min(abs(relevantrows$x-xval))
+    # return(max(0.0000000001,relevantrows$y[idx]))
+    return(max(0,relevantrows$y[idx]))
+    
+  }
+  else{
+    # return(max(0.0000000001,max(relevantrows$y)))
+    return(max(0,max(relevantrows$y)))
+  }
+}
+
+get_corresponding_vals = function(agent, game, xvals, df){
+  return(unlist(map(xvals, function(x) get_corresponding_val(agent, game, x, df))))
+}
+
+##reference_agent: the agent whose timescale we care about
+quantiles = c(.9)
+# agent1 = 'human'
+agent1 = levels(alldata$agent_type)[2]
+agent2 = 'DDQN'
+
+agent_timescale_geom_ratio = function(game, reference_agent, agent1, agent2, agent1_name, agent2_name){
+  filtered=filter(alldata,game_name==game & agent_type%in%c(agent1, agent2))
+  p = ggplot(filtered, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+  p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
+  
+  df = ggplot_build(p)$data[[2]]
+  
+  ##MEP timescale
+  reference_agent = agent1
+  timescales = define_timescale(reference_agent, game, quantiles) ##also includes xval of max(y)
+  vals1 = as.vector(get_corresponding_vals(agent1, game, timescales, df))
+  vals2 = as.vector(get_corresponding_vals(agent2, game, timescales, df))
+  gm_agent1_scale = geoMean(vals1/vals2)
+  
+  ##dqn timescale
+  reference_agent = agent2
+  timescales = define_timescale(reference_agent, game, quantiles) ##also includes xval of max(y)
+  vals1 = as.vector(get_corresponding_vals(agent1, game, timescales, df))
+  vals2 = as.vector(get_corresponding_vals(agent2, game, timescales, df))
+  gm_agent2_scale = geoMean(vals1/vals2)
+  
+  txt1 = paste(agent1_name, " scale  = ", sprintf("%.2f",gm_agent1_scale), sep='')
+  grob1 = grobTree(textGrob(txt1, x=0.1,  y=0.95, hjust=0,
+                            gp=gpar(col="black", fontsize=13)))
+  
+  txt2 = paste(agent2_name, " scale = ", sprintf("%.2f",gm_agent2_scale), sep='')
+  grob2 = grobTree(textGrob(txt2, x=0.1,  y=0.90, hjust=0,
+                            gp=gpar(col="black", fontsize=13)))
+  
+  
+  ## now calculate the other scale
+  all_agent_max = max(df$y)
+  
+  relevantrows = filter(df,colour==colors[agent1])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent1_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  agent1_pt1 = agent_max/all_agent_max
+  agent1_pt2 = agent_max/steps_to_agent_max
+  
+  relevantrows = filter(df,colour==colors[agent2])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent2_pt1 = agent_max/all_agent_max
+  agent2_pt2 = agent_max/steps_to_agent_max
+  
+  agent2_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  
+  score_ratio = agent1_pt1/agent2_pt1
+  slope_ratio = agent1_pt2/agent2_pt2
+  
+  composite_ratio = score_ratio*slope_ratio
+  
+  row = data.frame(game_name=as.character(game), agent=as.character(agent_type), 
+                   score_ratio=as.numeric(score_ratio), slope_ratio=as.numeric(slope_ratio),
+                   composite_ratio=as.numeric(composite_ratio), log_composite_ratio=as.numeric(log(composite_ratio)))
+  efficiency_dataframe = rbind(efficiency_dataframe,row)
+  txt3 = paste("score_ratio = ", sprintf("%.2f",score_ratio), ". slope_ratio = ", sprintf("%.2f",slope_ratio), ". composite ratio = ", sprintf("%.2f",composite_ratio), sep='')
+  grob3 = grobTree(textGrob(txt3, x=0.1,  y=0.85, hjust=0,
+                            gp=gpar(col="black", fontsize=13)))
+  
+  p = p+annotation_custom(grob1)+annotation_custom(grob2)+annotation_custom(grob3)
+  return(p) ## the mean of the ratios of the values at the supplied quantiles.
+}
+
+build_efficiency_dataframe = function(game, reference_agent, agent1, agent2, agent1_name, agent2_name, efficiency_dataframe){
+  filtered=filter(alldata,game_name==game & agent_type%in%c(agent1, agent2))
+  p = ggplot(filtered, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+  p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
+  
+  df = ggplot_build(p)$data[[2]]
+  
+  ##MEP timescale
+  reference_agent = agent1
+  timescales = define_timescale(reference_agent, game, quantiles) ##also includes xval of max(y)
+  vals1 = as.vector(get_corresponding_vals(agent1, game, timescales, df))
+  vals2 = as.vector(get_corresponding_vals(agent2, game, timescales, df))
+  gm_agent1_scale = geoMean(vals1/vals2)
+  
+  ##dqn timescale
+  reference_agent = agent2
+  timescales = define_timescale(reference_agent, game, quantiles) ##also includes xval of max(y)
+  vals1 = as.vector(get_corresponding_vals(agent1, game, timescales, df))
+  vals2 = as.vector(get_corresponding_vals(agent2, game, timescales, df))
+  gm_agent2_scale = geoMean(vals1/vals2)
+  
+  ## now calculate the other scale
+  all_agent_max = max(df$y)
+  
+  relevantrows = filter(df,colour==colors[agent1])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent1_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  agent1_pt1 = agent_max/all_agent_max
+  agent1_pt2 = agent_max/steps_to_agent_max
+  
+  relevantrows = filter(df,colour==colors[agent2])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent2_pt1 = agent_max/all_agent_max
+  agent2_pt2 = agent_max/steps_to_agent_max
+  
+  agent2_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  
+  score_ratio = agent1_pt1/agent2_pt1
+  slope_ratio = agent1_pt2/agent2_pt2
+  
+  composite_ratio = score_ratio*slope_ratio
+  
+  row = data.frame(game_name=as.character(game), agent=as.character(agent1), 
+                   score_ratio=as.numeric(score_ratio), slope_ratio=as.numeric(slope_ratio),
+                   composite_ratio=as.numeric(composite_ratio), log_composite_ratio=as.numeric(log(composite_ratio)))
+  efficiency_dataframe = rbind(efficiency_dataframe,row)
+  
+  return(efficiency_dataframe) 
+}
+
+
+## function that returns a dataframe row for the particular game, agent1, agent2 combination. agent2 should just be renamed reference_agent 
+## and will eventually be humans, but for now make it MEP as you have the most data for that.
+## outer loop can append these rows to a larger dataframe and then you can use that to get the histogram you want.
+get_log_ratio = function(game, agent1, agent2){
+  filtered=filter(alldata,game_name==game & agent_type%in%c(agent1, agent2))
+  p = ggplot(filtered, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+  p=p+geom_point()+ggtitle(game)+stat_smooth()+theme(legend.position='none')+colorScale+scale_color_manual(values=colors)
+  
+  df = ggplot_build(p)$data[[2]]
+  
+  all_agent_max = max(df$y)
+  
+  relevantrows = filter(df,colour==colors[agent1])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent1_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  agent1_pt1 = agent_max/all_agent_max
+  agent1_pt2 = agent_max/steps_to_agent_max
+  
+  relevantrows = filter(df,colour==colors[agent2])
+  agent_max = max(relevantrows$y)
+  steps_to_agent_max = relevantrows$x[which(grepl(agent_max,relevantrows$y))[1]]
+  agent2_pt1 = agent_max/all_agent_max
+  agent2_pt2 = agent_max/steps_to_agent_max
+  
+  agent2_composite = (agent_max/all_agent_max)*(agent_max/steps_to_agent_max)
+  
+  score_ratio = agent1_pt1/agent2_pt1
+  slope_ratio = agent1_pt2/agent2_pt2
+  
+  composite_ratio = score_ratio*slope_ratio
+  log_composite_ratio = log(composite_ratio)
+  return(c(agent1, game, log_composite_ratio))
+}
+
+
+log_odds_dataframe = data.frame(agent=as.character(), game_name=as.character(), log_ratio=as.numeric())
+agent1='DDQN'
+for (i in 1:length(levels(dqndata$game_name))){
+  game = levels(dqndata$game_name)[i]
+  res = get_log_ratio(game, agent1, agent2)
+  if (res[3]==-Inf){
+    res[3] = -100
+  }
+  row = data.frame(agent=res[1], game_name=res[2], log_ratio=res[3])
+  log_odds_dataframe = rbind(log_odds_dataframe, row)
+  ## continue here.
+}
+d1 = log_odds_dataframe
+agent1='human'
+for (i in 1:length(levels(humandata$game_name))){
+  game = levels(humandata$game_name)[i]
+  res = get_log_ratio(game, agent1, agent2)
+  if (res[3]==-Inf){
+    res[3] = -100
+  }
+  row = data.frame(agent=res[1], game_name=res[2], log_ratio=res[3])
+  log_odds_dataframe = rbind(log_odds_dataframe, row)
+}
+log_odds_dataframe = subset(log_odds_dataframe, game_name!='sokoban') ## put this back once you have sokoban data.
+
+
+df = subset(log_odds_dataframe,game_name%in%c('aliens','antagonist','surprise_1'))
+df = rbind(df, data.frame(agent=as.character('human'), game_name=as.character('samplegame'), log_ratio="100"))
+
+log_odds_dataframe$log_ratio = as.double(as.character((log_odds_dataframe$log_ratio)))
+
+p = ggplot(log_odds_dataframe, aes(x=reorder(game_name,log_ratio), y=log_ratio, fill=agent))+
+  geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
+  # ylim(-10,10)+
+  geom_hline(yintercept=0, linetype='dotted')+
+  colorScale+
+  scale_fill_manual(values=colors) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab('game name')
+p+coord_flip()
+
+
+
+
+
+### MEP vs DQN
+agent1 = 'DDQN'
+agent2 = levels(alldata$agent_type)[2]
+plots = list()
+efficiency_dataframe = data.frame(game_name=as.character(), agent=as.character(), 
+                                  score_ratio=as.numeric(), slope_ratio=as.numeric(),
+                                  composite_ratio=as.numeric(), log_composite_ratio=as.numeric())
+
+for (i in 1:length(levels(dqndata$game_name))){
+  game = levels(dqndata$game_name)[i]
+  efficiency_dataframe = build_efficiency_dataframe(game, agent2, agent1, agent2,'DDQN', 'MEP', efficiency_dataframe)
+}
+agent1 = 'human'
+for (i in 1:length(levels(humandata$game_name))){
+  game = levels(humandata$game_name)[i]
+  efficiency_dataframe = build_efficiency_dataframe(game, agent2, agent1, agent2,'human', 'DDQN', efficiency_dataframe)
+}
+agent1 = 'MEP_wo_position_score'
+for (i in 1:length(levels(data$game_name))){
+  game = levels(data$game_name)[i]
+  efficiency_dataframe = build_efficiency_dataframe(game, agent2, agent1, agent2, agent1, 'MEP', efficiency_dataframe)
+}
+
+efficiency_dataframe = subset(efficiency_dataframe, game_name!='sokoban') ## TODO: remove this once you have sokoban.
+
+normalized_by_MEP = efficiency_dataframe
+
+
+p = ggplot(normalized_by_MEP, aes(x=reorder(game_name,composite_ratio-1), y=composite_ratio-1, fill=agent))+
+  geom_bar(stat='identity',position='dodge')+#theme(legend.position="none")+
+  # ylim(-10,10)+
+  colorScale+
+  scale_fill_manual(values=colors) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+xlab('game name')+ggtitle('Composite perf. relative to IW2 w/ default params')
+p+coord_flip()
+
+
+
+
+layout = matrix(c(1:28), ncol=4, byrow=TRUE)
+m = multiplot(plotlist = plots, layout=layout)
+
+### human vs MEP
+agent1 = 'human'
+agent2 = levels(alldata$agent_type)[2]
+plots = list()
+for (i in 1:length(levels(humandata$game_name))){
+  game = levels(humandata$game_name)[i]
+  p = agent_timescale_geom_ratio(game, agent1, agent1, agent2, 'human', 'MEP')
+  plots[[i]] = p
+}
+
+layout = matrix(c(1:20), ncol=4, byrow=TRUE)
+m = multiplot(plotlist = plots, layout=layout)
+
+
+
+## the problem with the geometric mean idea is that we have no good instances to show where the DDQN does better in the way that alphago zero did.
+## as in, our model is strictly better.
+## but it's still a good idea.
+
+## you need to figure out how to get values for where geom_smooth() hasn't interpolated.
+
+
+AUC = data.frame(game_name=as.character(), agent_type=as.character(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric())
+
+##TODO: you want to be able to specify some timescale, and then get the AUC up to that timescale.
+df = ggplot_build(p)$data[[2]]
+relevantrows = filter(df,colour=='palegreen3')
+x = relevantrows$x
+y = relevantrows$y
+id = order(x)
+AUC <- sum(diff(x[id])*rollmean(y[id],2))
+
+cutoff = max(x)
+modelrows = filter(df, colour=='firebrick2')
+x = modelrows$x
+modelcutoff = which.min(abs(x-cutoff)) ## point that is closest to the agent x cutoff
+x = x[1:modelcutoff]
+y = modelrows$y[1:modelcutoff]
+id = order(x)
+AUC <- sum(diff(x[id])*rollmean(y[id],2))
+
+## first try the easy version: on the human timescale, compare AUCs.
+
+## then to the other, where you extend the human version to calculate the larger AUC.
+
+## assume first element is 0??
+
+## calculate mean subject
+## then get AUC
+
+x = 0:10
+y = 1*x
+df = data.frame(x=x,y=y)
+p = ggplot(df, aes(x=x,y=y))
+p+geom_point()
+id = order(x)
+AUC <- sum(diff(x[id])*rollmean(y[id],2))
 
 
 ## this is weird when you plot by level_number and also when you plot by subject. looks like I took more actions
@@ -296,17 +775,21 @@ p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
 p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,1000)
 p
 
-
+colors=c('palegreen3', 'orange')
+names(colors) = levels(alldata2$agent_type)
+colorScale = scale_color_manual(name='agent_type',values=colors)
+alldata2=rbind(humandata,data)
+alldata3=rbind(humandata, MEPdata)
 ## plot wins
 max_num_agents = 0
 plots = list()
 q=list()
-for (i in 1:length(levels(data$game_name))){
-  game = levels(data$game_name)[i]
-  d=subset(data, game_name==game & agent_type!="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lr=False")
+for (i in 1:length(levels(alldata2$game_name))){
+  game = levels(alldata2$game_name)[i]
+  d=subset(alldata2, game_name==game)
   
-  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
-  p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+  p=ggplot(d, aes(x=cumulative_frames, y=cumulative_wins,color=agent_type))
+  p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
     scale_color_manual(values=colors) + theme(legend.position="none")+
@@ -314,7 +797,8 @@ for (i in 1:length(levels(data$game_name))){
   
   p=p+ylim(0,5)#+theme(legend.position='none')
   
-  # p
+  p
+  
   if ((grepl('expt', game)) | (grepl('surprise',game)) | (grepl('bees', game))| (grepl('corridor',game))| (grepl('closing',game))){
     if (grepl('expt_ee',game)){
       p=p+ylim(0,6)
@@ -457,74 +941,150 @@ m = multiplot(plotlist = c(plots[1:46],w[1],q[1]), layout=layout)
 layout = matrix(c(c(1:45),46,46,47), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = c(plots[47:length(plots)], q[1]), layout=layout)
 
+normaldataframe = dataframe
 ###
-games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
-for (i in 1:length(levels(data$game_name))){
-  game_name=levels(data$game_name)[i]
-  num_levels = 5
-  if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
-       (grepl('closing',game_name)) ){
-    num_levels=4
+dataframe = rbind(humandata, dqndata, data)
+make_plantimedata = function(dataframe){
+  
+  games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
+  for (i in 1:length(levels(dataframe$game_name))){
+    game_name=levels(dataframe$game_name)[i]
+    num_levels = 5
+    if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
+         (grepl('closing',game_name)) ){
+      num_levels=4
+    }
+    if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
+      num_levels=6
+    }
+    if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
+      num_levels=5
+    }
+    new = data.frame(game_name=game_name, num_levels=num_levels)
+    games_to_levels = rbind(games_to_levels, new)
   }
-  if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
-    num_levels=6
-  }
-  if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
-    num_levels=5
-  }
-  new = data.frame(game_name=game_name, num_levels=num_levels)
-  games_to_levels = rbind(games_to_levels, new)
-}
-
-## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
-plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
-                          max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
-                          level_num=as.numeric())
-for (j in 1:length(levels(data$agent_type))){
-  agent = levels(data$agent_type)[j]
-  # if (length(unique(subset(data, agent_type==agent)$game_name))<80){
-  #   print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
-  # }
-  # else{
-    for (i in 1:length(levels(data$game_name))){
-      s = subset(data, ((game_name==levels(data$game_name)[i]) & (agent_type==levels(data$agent_type)[j])) )
+  
+  ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
+  plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
+                            max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
+                            level_num=as.numeric(), all_agent_max_levels=as.numeric())
+  
+  for (j in 1:length(levels(dataframe$agent_type))){
+    agent = levels(dataframe$agent_type)[j]
+    print(agent)
+    for (i in 1:length(levels(dataframe$game_name))){
+      g = subset(dataframe, game_name==levels(dataframe$game_name)[i])
+      print(levels(dataframe$game_name)[i])
+      s = subset(g, agent_type==agent)
       if (length(s$level_max_score)>0){
+        
+        ## TODO: do this for MEPdata, too, once you've added subjectID
+        ## grab each subject's max_steps and max_wins.
+        if agent=='human'{
+          human_level_maxes = list()
+          human_cumulative_step_maxes = list()
+          idx=1
+          for (k in 1:length(unique(s$subject_ID))){
+            subject = levels(s$subject_ID)[k]
+            subjectdata = s[which(s$subject_ID==subject),]
+            if (length(subjectdata$cumulative_steps)>0){
+            human_level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+            human_cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+            idx = idx+1
+            }
+          }
+        }
+        ##mean of vector of ratios
+        mean(as.numeric(as.vector(human_level_maxes))/as.numeric(as.vector(human_cumulative_step_maxes)))
+        
         ## the row we want
-        r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+        r = subset(s, cumulative_steps==max(cumulative_steps))[1,]
         ## take only the relevant columns and put them in the new data frame
         new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
-                        max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, 
-                       max_levels_won=max(r$cumulative_wins),
-                       level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels)
-      plantimedata = rbind(plantimedata, new)
+                         max_steps=r$cumulative_steps, planning_time=r$cumulative_planner_nodes, 
+                         max_levels_won=max(r$cumulative_wins),
+                         level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels,
+                         all_agent_max_levels=as.numeric(max_level))
+        plantimedata = rbind(plantimedata, new)
+      }
     }
   }
-  # }
+  ## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
+  ## so they're naturally alphabetized.
+  # plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
+  plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
+  plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
+  plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
+  plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
+  plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+  plantimedata$human_normed_level_efficiency=NA
+  ##norm by human level_efficiency
+  for (i in 1:length(levels(plantimedata$game_name))){
+    game = levels(plantimedata$game_name)[i]
+    human_efficiency = filter(plantimedata, agent_type=='human' & game_name==game)$level_efficiency
+    for (agent in levels(plantimedata$agent_type)){
+      row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
+      plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_level_efficiency = row$level_efficiency/human_efficiency
+    }
+  }
+  
+  return(plantimedata)
 }
-## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
-## so they're naturally alphabetized.
-# plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
-plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
-plantimedata = mutate(plantimedata, score_efficiency=max_score/max_steps)
-plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
-plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+
+
+
+# plantimedata2 = make_plantimedata(MEPdata2)
+
+plantimedata = make_plantimedata(alldata)
 
 ## summary plot of overall results -- easy to look at.
-p = ggplot(subset(plantimedata, game_name!='boulderchase_1'), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
-  geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+
+p = ggplot(subset(plantimedata), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
+  geom_bar(position='dodge', stat='identity')+facet_wrap(~game_name)+colorScale+scale_fill_manual(values=colors)+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())+scale_fill_manual(values=colors)
+        axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
 p
 ## save as 10x16
 
-## plot idx_1 vs idx_3
-for (i in 1:length(levels(data$agent_type))){
-  agent = levels(data$agent_type)[i]
-  p = ggplot(subset(data, agent_type==agent), aes(x=planner_settings))
-  p=p+geom_histogram(breaks=c(0.5,1.5,2.5,3.5,4.5),aes(y=..density..))+facet_wrap(~game_name)
-  p
-}
+p = ggplot(subset(plantimedata), aes(x=agent_type, y=composite_ratio, fill=factor(agent_type))) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+#facet_wrap(~game_name)+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
+p
+
+
+
+#### MAIN FIGURE ###
+colors = c('palegreen3', 'grey50', 'steelblue1','steelblue3')
+names(colors)=levels(alldata$agent_type)
+colorScale = scale_color_manual(name="agent_type", values=colors)
+
+s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4])
+ordered_names = s[order(log(s$human_normed_level_efficiency)),]$game_name
+p = ggplot()+
+  geom_bar(data=subset(plantimedata, agent_type!='human' & (log(human_normed_level_efficiency)>-3)),
+           aes(x=game_name, y=log(human_normed_level_efficiency), fill=as.factor(agent_type)), stat='identity',position='dodge')+
+  geom_point(data=subset(plantimedata, agent_type!='human' & !(log(human_normed_level_efficiency)>-3)),
+             aes(x=game_name, y=log(human_normed_level_efficiency), color=agent_type), stat='identity',position='dodge', shape='|', size=3)+
+  scale_x_discrete(limits=ordered_names)+
+  # theme(legend.position="none")+
+  colorScale+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed composite ratio")+xlab('Game name')+ylim(-10,4)
+tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,1,10,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p + scale_fill_manual(values=colors,name="Model",
+                       breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
+                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)")) + scale_color_manual(values=colors,name="Model",
+                                                                                         breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
+                                                                                         labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))
+
+
+
+## change -Inf to something readable so that plots come out.
+
+## idea is to plot the logs but then set the tick marks to non-log.
 
 ## same thing but not grouped by game. not easy to read.
 # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
@@ -537,32 +1097,33 @@ for (i in 1:length(levels(data$agent_type))){
 for (i in 1:length(levels(plantimedata$game_name))){
   game = levels(plantimedata$game_name)[i]
   if(length(filter(plantimedata, agent_type==levels(data$agent_type)[4] & game_name==game))){
+    se=0.005+runif(1,-0.005,.005)
     new = data.frame(game_name=game, agent_type='DDQN', max_score=NA, 
                      max_steps=NA, planning_time=NA, 
                      max_levels_won=NA,level_percentage=NA,
-                     level_num=5, score_efficiency=0.001)
+                     level_num=5, score_efficiency=se)
     plantimedata = rbind(plantimedata, new)    
   }
-
-
+  
+  
 }
 
-## you're unable to get both models on this plot. why??
-s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & !is.na(score_efficiency))
-colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
-           'firebrick2', 'tomato2', 'salmon',
-           'purple2', 'mediumorchid2', 
-           'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-
-names(colors)=levels(s$agent_type)
-colorScale = scale_color_manual(name="agent_type", values=colors)
-
-p = ggplot(s, aes(x=reorder(game_name,score_efficiency), y=score_efficiency, fill=agent_type))+
-    geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
-  colorScale+
-  scale_fill_manual(values=colors) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("max_score / steps")+xlab('game name')
-p+coord_flip()
+# ## you're unable to get both models on this plot. why??
+# s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & (!is.na(score_efficiency)|score_efficiency>0.005 ))
+# colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
+#            'firebrick2', 'tomato2', 'salmon',
+#            'purple2', 'mediumorchid2', 
+#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+# 
+# names(colors)=levels(s$agent_type)
+# colorScale = scale_color_manual(name="agent_type", values=colors)
+# 
+# p = ggplot(s, aes(x=reorder(game_name,score_efficiency), y=score_efficiency, fill=agent_type))+
+#   geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
+#   colorScale+
+#   scale_fill_manual(values=colors) +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("max_score / steps")+xlab('game name')
+# p+coord_flip()
 
 
 # p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_type))) +
@@ -634,8 +1195,79 @@ plot_overlap = function(plantimedata, model_run1, model_run2){
 
 ######
 ######
+path = '~/Projects/atari/vgdl/humandata_ratings/ratings'
+ratingpaths = list.files(path)
+ratings = list()
+for (rating in ratingpaths){
+  ratingpath = paste(path, '/', rating, sep='')
+  r=read.csv(ratingpath, header=TRUE, na.strings='NA')
+  if (length(ratings)==0){
+    ratings = r
+  }
+  else{
+    ratings = rbind(ratings,r)
+  }
+}
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+find_source_game = function(name){
+  if (substrRight(name,1)%in%c("1","2","3","4")){
+    return(substr(name,0,nchar(name)-2))
+  }
+  else{
+    return(name)}
+}
+find_variant_number = function(name){
+  lastchar = substrRight(name,1)
+  if (lastchar%in%c("1","2","3","4")){
+    return(lastchar)
+  }
+  else{
+    return('0')
+  }
+}
+ratings$game_name = as.factor(ratings$gameName)
+ratings$source_game_name = as.factor(as.character(lapply(as.vector(ratings$game_name), find_source_game)))
+ratings$variant_number = as.factor(as.character(lapply(as.vector(ratings$game_name), find_variant_number)))
+for (i in 1:length(ratings$difficulty)){
+  if (!is.na(ratings$difficulty[i]) & ratings$difficulty[i]=="None"){
+    ratings$difficulty[i]=NA
+  }
+  if (ratings$interestingness[i]=="None"){
+    ratings$interestingness[i]=NA
+  }
+}
+ratings$difficulty = as.numeric(ratings$difficulty)
+ratings$interestingness = as.numeric(ratings$interestingness)
+## you also have enjoyability
+
+s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Difficulty')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
+p  
+##save 12x6
+
+s = summarySE(ratings, measurevar="interestingness", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=interestingness)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=interestingness-ci, ymax=interestingness+ci))+
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Interestingness') +scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
+p  
+##save 12x6
 
 
+##for playing around with format
+# p = ggplot(subset(s, source_game_name%in%c('push_boulders','relational')), aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty))+
+# geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
+# facet_wrap(~source_game_name)
+# p
+
+
+######
+######
 diffdata = data.frame(game_name=as.character(), agent_type=as.character(), model_run = as.character(), max_score=as.numeric(), 
                       max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
 for (i in 1:length(levels(data$game_name))){
@@ -694,8 +1326,23 @@ g_legend <- function(a.gplot){
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
 
+
+# newdataframe = subset(data, game_name==levels(dataframe$game_name)[1])
+# for (i in 2:length(levels(dataframe$game_name))){
+#   name = levels(dataframe$game_name)[i]
+#   s = subset(data, game_name==levels(dataframe$game_name)[i])
+#   for (j in 1:length(strings_to_remove)){
+#     string_to_remove = strings_to_remove[j]
+#     if (grepl(string_to_remove, name)){
+#       newname = substr(name, nchar(string_to_remove)+2, nchar(name))
+#       s$game_name = as.factor(newname)
+#     }
+#     newdataframe = rbind(newdataframe, s)
+#   }
+# }
+
 remove_string_from_name = function(name){
-  strings_to_remove = c('gvgai_variant','expt_variant', 'variant','gvgai')
+  strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
   for (i in 1:length(strings_to_remove)){
     string_to_remove = strings_to_remove[i]
     if (grepl(string_to_remove, name)){
@@ -754,4 +1401,48 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
                                       layout.pos.col = matchidx$col))
     }
   }
+}
+
+
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  # datac$measurevar = datac$mean
+  colnames(datac)[colnames(datac)=="mean"] <- measurevar
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
 }
