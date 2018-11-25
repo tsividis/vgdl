@@ -7,6 +7,7 @@ import cPickle
 import os
 from shutil import copy2
 import numpy as np
+import random
 
 
 ## python -m vgdl --date oct6
@@ -38,6 +39,7 @@ def process_model_run(data, modelrun_ID):
 	## and to avoid loading huge csv files.
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
 	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
+	subject_ID = generate_subject_ID()
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
  	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 	# data_path = '{}/{}'.format(date, 'csv_data')
@@ -123,8 +125,7 @@ def process_model_run(data, modelrun_ID):
 				cumulative_timestep += 1
 
 				mean_burn_in = np.mean(exploration_burn_ins) if type(exploration_burn_ins)==list else 'NA'
-				## for a particular model, the subject_ID is just the agent_type, i.e., its parameters.
-				row = (agent_type, agent_type, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
+				row = (agent_type, subject_ID, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
 						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				gamefilewriter.writerow(row)
 				mergedfilewriter.writerow(row)
@@ -133,6 +134,13 @@ def process_model_run(data, modelrun_ID):
 
 	f.close()
 	g.close()
+
+def generate_subject_ID(length=7):
+	alphabet = "QWERTYUIOPASDFGHJKLZXCVBNM1234567890"
+	string = ''
+	for i in range(length):
+		string += random.choice(alphabet)
+	return string
 
 def make_csvs(path, game=None):
 	for folder in open_folder(path):

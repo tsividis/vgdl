@@ -12,7 +12,7 @@ import WBP
 import importlib
 import numpy as np
 import random
-import cPickle, cloudpickle
+import cPickle, cloudpickle, pickle
 import time
 from datetime import datetime
 import copy
@@ -38,7 +38,7 @@ def playCurriculum(agent, level_game_pairs):
     return end_time
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, init_hypothesis=None):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, init_hypothesis=None, task_ID=0):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.outpath = None ## set in playCurriculum and then used in outputlesionsnapshot for writing all the theories learned in a particular run of playCurriculum into a single folder.
@@ -59,8 +59,9 @@ class Agent:
         self.IW_k = IW_k
         self.task_ID = task_ID
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
-
-        self.switch_to_exploit_step = 1000 ## only used for e-greedy lesion
+        self.epsilon_greedy = epsilon_greedy
+        self.hybrid = False
+        self.switch_to_exploit_step = 20 ## only used for e-greedy lesion
         self.absolute_max_nodes = 50000 ## just a convenience parameter
         self.shortHorizonNodes = 500 ## this isn't used. but you need to clean the code up a bit to actually delete it.
         self.shortHorizonAnnealing = 1.05 ## this isn't used, either. but you need to clean the code up a bit to actually delete it.

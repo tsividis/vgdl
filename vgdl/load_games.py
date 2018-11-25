@@ -11,10 +11,10 @@ parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
 parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
+parser.add_argument('--metacontroller_index', type=int, default=0, help='metacontroller_index')
 parser.add_argument('--IW_k', type=int, default=2, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
 parser.add_argument('--task_ID', type=int, default=0, help='task_ID')
-
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
 parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
 parser.add_argument('--max_rand_steps',type=int,default=0,help='MAX STEPS')
@@ -25,6 +25,7 @@ args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
+metacontroller_index = args.metacontroller_index
 IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
 task_ID = str(args.task_ID)
