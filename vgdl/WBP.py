@@ -1914,33 +1914,34 @@ if __name__ == "__main__":
 	game_name = args.game_name
 	hyperparameter_index = args.hyperparameter_index
 	level_num = args.level
-	gvgname = "./{}/{}".format(gameFileString,game_name)
-	gameString = read_gvgai_game('{}.txt'.format(gvgname))
-	game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
-	print game_levels
-	level_game_pairs = []
-	for level_number in range(len(game_levels)):
-		with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
-			level_game_pairs.append([gameString, level.read()])
+
+	if game_name!=str(0):
+		gvgname = "./{}/{}".format(gameFileString,game_name)
+		gameString = read_gvgai_game('{}.txt'.format(gvgname))
+		game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
+		print game_levels
+		level_game_pairs = []
+		for level_number in range(len(game_levels)):
+			with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
+				level_game_pairs.append([gameString, level.read()])
+
+		gameString, levelString = level_game_pairs[level_num]
+		rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+		gameFilename = game_name
+
+	else:
+		gameFilename = "examples.gridphysics.theory_variant_frogs_2"
+		gameString, levelString = defInputGame(gameFilename, randomize=True)
+		rleCreateFunc = lambda: createRLInputGame(gameFilename)
+		rle = rleCreateFunc()
+
 
 	hyperparameters = hyperparameter_sets[hyperparameter_index]
 	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
-
-
-	gameString, levelString = level_game_pairs[level_num]
-	rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-	gameFilename = game_name
-
-	# gameFilename = "examples.gridphysics.theory_frogs"
-	# gameString, levelString = defInputGame(gameFilename, randomize=True)
-	# rleCreateFunc = lambda: createRLInputGame(gameFilename)
-	rle = rleCreateFunc()
-
-	# embed()
 	max_nodes = 500 if hyperparameters['short_horizon'] else 10000
 	
 	# p = WBP(rle, 'sokoban', hyperparameters=planner_hyperparameters, extra_atom=True, IW_k=2)
-	# embed()
+	embed()
 
 	# max_nodes = 10
 	## Initialize planner
