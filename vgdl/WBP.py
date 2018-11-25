@@ -76,7 +76,7 @@ class WBP():
 		self.classesWhosePresenceWeIgnore = []
 		self.allowRollouts = True
 		self.quitting = False
-		self.exhausted_novelty = True
+		# self.exhausted_novelty = True
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -154,7 +154,7 @@ class WBP():
 		if self.display and self.killer_types:
 			print 'killer types', self.killer_types
 
-		self.short_horizon = shortHorizon
+		self.short_horizon = shortHorizon ##NOTE: this does nothing...
 		self.conservative = conservative
 		self.winning_states = []
 		self.total_nodes_opened, self.total_nodes_selected = 0, 0
@@ -498,7 +498,7 @@ class WBP():
 				self.object_positions_array = object_positions_array[::-1]
 
 				self.quitting = True
-				self.exhausted_novelty = True
+
 				if self.display:
 					print "was in None or PickMaxNode"
 				# embed()
@@ -940,8 +940,8 @@ class Node():
 		# print sum(rolloutArray)
 		# embed()
 		if win:
-			if self.WBP.display:
-				print "rolloutwin"
+			# if self.WBP.display:
+				# print "rolloutwin"
 			# embed()
 			self.terminal = terminal
 			self.win = win
