@@ -1,13 +1,13 @@
 #!/bin/bash
 
-
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-90%30
+#SBATCH --array=0-220
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
-#SBATCH --time=720
+#SBATCH --time=1680
 #SBATCH --qos=normal
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=16G
+#SBATCH --requeue
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
 # if i'm using qos=tenenbaum i shouldn't exceed 30.
@@ -25,11 +25,10 @@ SRC=""
 DST=""
 
 # Figure out which game and hyperparameter
-# N_GAMES=14
+N_GAMES=90
 # N_PARAMS=3
-# GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
-# HYPER_IDX=$(($SLURM_ARRAY_TASK_ID % $N_PARAMS))
-GAME_NUMBER=$SLURM_ARRAY_TASK_ID
+GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
+META_IDX=$(($SLURM_ARRAY_TASK_ID / $N_GAMES))
 
 # if we are running on OpenMind, add the singularity module
 . /etc/os-release
@@ -45,10 +44,10 @@ fi
 
 # finally, run the model
 ## to run exploration
-# singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --make_movie False --max_rand_steps 1000
+# singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --max_rand_steps 1000
 ## to run conditioned on some exploration
-# singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --make_movie False --pickled_theory_path 1
+# singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --pickled_theory_path 1
 ## to run epsilon-greedy
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --IW 2 --extra_atom_allowed True --make_movie False --epsilon_greedy True
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --epsilon_greedy True
 
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
