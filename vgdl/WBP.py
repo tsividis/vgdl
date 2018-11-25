@@ -44,7 +44,8 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, display=False, filter_novelty=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, objectNumberTrackingLimit=200, objectLocationTrackingLimit=8, objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], 
+		display=False, filter_novelty=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
@@ -54,23 +55,22 @@ class WBP():
 		self.trueAtoms = defaultdict(lambda:0) #set() ## set of atoms that have been true at some point thus far in the planner.
 		self.objectTypes = rle._game.sprite_groups.keys()
 		self.objectTypes.sort()
-		self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
+		# self.phiSize = sum([len(rle._game.sprite_groups[k]) for k in rle._game.sprite_groups.keys() if k not in ['wall', 'avatar']])
 		self.seen_limits = seen_limits
 		self.IW_k = IW_k
 		self.objIDs = {}
 		self.solution = None
-		self.trackTokens = False
+		# self.trackTokens = False
 		self.vecSize = None
 		self.addWaitAction = True
-		self.safeDistance = 3
+		# self.safeDistance = 3
 		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions
-		self.objectNumberTrackingLimit = 200#50
-		self.objectLocationTrackingLimit = 8
+		self.objectNumberTrackingLimit = objectNumberTrackingLimit
+		self.objectLocationTrackingLimit = objectLocationTrackingLimit
 		self.max_nodes = max_nodes
-		self.small_max_nodes = 100
-		self.objectsWhoseLocationsWeIgnore = ['Flicker', 'Random']
+		self.objectsWhoseLocationsWeIgnore = objectsWhoseLocationsWeIgnore
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
 		self.classesWhosePresenceWeIgnore = []
