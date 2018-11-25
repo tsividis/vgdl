@@ -13,6 +13,8 @@ parser.add_argument('--game_name', type=str, default=str(0), help='game name')
 parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
 parser.add_argument('--IW_k', type=int, default=2, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
+parser.add_argument('--task_ID', type=int, default=0, help='task_ID')
+
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
 parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickled theory path')
 parser.add_argument('--max_rand_steps',type=int,default=0,help='MAX STEPS')
@@ -25,6 +27,7 @@ game_name = args.game_name
 hyperparameter_index = args.hyperparameter_index
 IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
+task_ID = str(args.task_ID)
 make_movie = args.make_movie
 pickled_theory_path = args.pickled_theory_path
 max_rand_steps = args.max_rand_steps
@@ -140,8 +143,8 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, e
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
-    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
-            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, epsilon_greedy=epsilon_greedy)
+    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, 
+            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, epsilon_greedy=epsilon_greedy, task_ID=task_ID)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -197,8 +200,8 @@ def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_inde
                     t.burn_ins.append(a[1])
     print [t.burn_ins for t in set_theories]
     for i,t in enumerate(set_theories):
-        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, IW_k=IW_k, 
-                extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, init_hypothesis=t)
+        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, 
+                extra_atom_allowed=extra_atom_allowed, task_ID=task_ID, max_rand_steps=max_rand_steps, init_hypothesis=t)
         ##then pass this down for multiple episodes
         gameObject = None
         print "running curriculum for theory number {} of {}".format(i, len(set_theories))
