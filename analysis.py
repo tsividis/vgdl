@@ -7,6 +7,7 @@ import cPickle
 import os
 from shutil import copy2
 import numpy as np
+import random
 
 
 ## python -m vgdl --date oct6
@@ -151,6 +152,13 @@ def make_csvs(path, game=None):
 							embed()
 						o.close()
 					# embed()
+
+def generate_subject_ID(length=7):
+	alphabet = "QWERTYUIOPASDFGHJKLZXCVBNM1234567890"
+	string = ''
+	for i in range(length):
+		string += random.choice(alphabet)
+	return string
 
 def merge_results(date):
 	## converts structure from
