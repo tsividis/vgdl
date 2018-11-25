@@ -806,7 +806,6 @@ class Agent:
             ## MARK, EXPLORATION
             if self.max_rand_steps > 0:
                 print "Collecting burn-in data."
-            if self.max_rand_steps > 0:
                 print "Still in Random Phase", self.total_game_steps+steps < self.max_rand_steps
 
             print "{} steps this episode. {} steps across all episodes".format(steps, self.total_game_steps+steps)
