@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-220
+#SBATCH --array=0-359
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1680
-#SBATCH --qos=normal
+#SBATCH --qos=use-everything
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --requeue
@@ -25,7 +25,7 @@ SRC=""
 DST=""
 
 # Figure out which game and hyperparameter
-N_GAMES=20
+N_GAMES=90
 # N_PARAMS=3
 GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
 META_IDX=$(($SLURM_ARRAY_TASK_ID / $N_GAMES))
