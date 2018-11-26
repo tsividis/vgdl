@@ -477,9 +477,12 @@ class Agent:
         endtime = time.time()
 
     def compactify(self, rle, planner_nodes=0):
+        current_time = time.time()
         gameObject = rle._game
         ended, win = rle._isDone()
+        print "time elapsed: {}".format(current_time - self.last_recorded_time)
         state = {'timestep': gameObject.time,
+                 'time_elapsed': current_time - self.last_recorded_time,
                  'score': gameObject.score,
                  'planner_settings': self.hyperparameter_index,
                  'planner_nodes': planner_nodes, ## how many nodes were searched to determine this particular action? 0 if this is resulting from a cached plan.
@@ -488,6 +491,7 @@ class Agent:
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
                         for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list]
                  }
+        self.last_recorded_time = current_time
         return state
 
     def makeHeatmap(self, statesEncountered, filename):
@@ -617,6 +621,7 @@ class Agent:
         if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle._game.getFullState())
         
+        self.last_recorded_time = time.time()
         if self.record_states:
             compactStates.append(self.compactify(self.rle))
         ## Initialize memory of object positions
@@ -814,7 +819,7 @@ class Agent:
                 # ran out of novelty. In the first case, you only wait longer,
                 # in the second case, you also add a new atom to IW
                 # if p.exhausted_novelty and self.extra_atom_allowed:
-                if self.extra_atom_allowed    
+                if self.extra_atom_allowed:
                     print "turning on extra atom"
                     self.extra_atom = True
                 if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with idx_3 you'll plan conservatively. you only get here if you're in idx_1 and don't find a plan.
