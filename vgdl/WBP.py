@@ -336,13 +336,15 @@ class WBP():
 
 	def rewardSelection(self, QReward, QNovelty):
 		## Use this for IW lesion
-		# acceptableNodes = QReward
-		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
-
-		# ## Always use novelty to filter. 
-		acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-		# # # ## sort max to min for pop()
-		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+		if self.lesion == 'IW':
+			acceptableNodes = QReward
+			acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
+			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward))
+		else:
+			# ## Always use novelty to filter. 
+			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+			# # # ## sort max to min for pop()
+			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		
 		try:
 			

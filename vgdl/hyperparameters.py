@@ -62,34 +62,7 @@ hyperparameter_sets = [
 
 ## Metacontroller params:
 metacontroller_sets = [
-    ## Original
-    {'idx': 0,
-    'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 1000,
-    'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [200,500,1000],
-    'conservative_max_nodes': 50,
-    'extra_atom': False,
-    'noNewObjectNum': 55,
-    'objectNumberTrackingLimit': 200,
-    'objectLocationTrackingLimit': 8,
-    'safeDistance': 3,
-    'longHorizonObservationLimit': 2
-    },
-    ## Simplifying: removing objectnumbertrackinglimit, objectLocationTrackingLimit, extraAtom always on
-    {'idx': 1,
-    'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 1000,
-    'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [200,500,1000],
-    'conservative_max_nodes': 50,
-    'extra_atom': True,
-    'noNewObjectNum': 55,
-    'objectNumberTrackingLimit': 1000,
-    'objectLocationTrackingLimit': 1000,
-    'safeDistance': 3,
-    'longHorizonObservationLimit': 2
-    },
+    ### AGH lesions ###
     {'idx': 2,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
@@ -131,6 +104,49 @@ metacontroller_sets = [
     'safeDistance': 3,
     'longHorizonObservationLimit': 2,
     'planner_lesion': 'AGH3'
+    },
+    {'idx': 2,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 3,
+    'longHorizonObservationLimit': 2,
+    'planner_lesion': 'IW'
+    },
+    ## End of planner lesions ##
+    ## Original
+    {'idx': 0,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': False,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 200,
+    'objectLocationTrackingLimit': 8,
+    'safeDistance': 3,
+    'longHorizonObservationLimit': 2
+    },
+    ## Simplifying: removing objectnumbertrackinglimit, objectLocationTrackingLimit, extraAtom always on
+    {'idx': 1,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 3,
+    'longHorizonObservationLimit': 2
     },
     {'idx': 2,
     'random_steps_on_plan_failure': 5,
