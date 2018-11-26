@@ -335,27 +335,11 @@ class WBP():
 		# acceptableNodes = QReward
 		#acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 
-
 		# ## Always use novelty to filter. 
 		acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
 		# # # ## sort max to min for pop()
 		bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 		
-		## Use novelty only in normal mode. For conservative mode just try to return as many nodes as possible.
-		# # normal mode
-		# if not self.conservative:
-		# 	acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-		# 	## sort max to min for pop()
-		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		# else:
-		# 	acceptableNodes = QReward
-		# 	## sort max to min for pop()
-		# 	bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, len(n.actionSeq)))
-		# 	print "in conservative mode in reward selection"
-		# 	# embed()
-
-
-
 		try:
 			
 			current = bestNodes.pop(0)
@@ -376,14 +360,6 @@ class WBP():
 			# embed()
 			return 'pickMaxNode'
 		
-		# try:
-		# 	for k,v in self.rle._game.getAvatars()[0].resources.items():
-		# 		if v>3:
-		# 			# print self.rle.show()
-		# 			embed()
-		# except:
-		# 	pass
-
 		QReward.remove(current)
 		try:
 			QNovelty.remove(current)
