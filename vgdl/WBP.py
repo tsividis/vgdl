@@ -44,7 +44,8 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, objectNumberTrackingLimit=200, objectLocationTrackingLimit=8, objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], display=False):
+		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, objectNumberTrackingLimit=200, objectLocationTrackingLimit=8, 
+		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=None, display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
@@ -77,6 +78,7 @@ class WBP():
 		self.allowRollouts = True
 		self.quitting = False
 		# self.exhausted_novelty = True
+		self.lesion = lesion
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -107,7 +109,7 @@ class WBP():
 
 		#################
 		#################
-		self.display = False
+		self.display = True
 
 		if self.display:
 			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
@@ -1449,6 +1451,11 @@ class Node():
 		sprite_second_alpha=100, sprite_negative_mult=.1,
 		multisprite_first_alpha=10000, multisprite_second_alpha=100,
 		novelty_first_alpha=1000, novelty_second_alpha=10, time_alpha=10):
+		
+		##AGH lesion
+		if self.WBP.lesion=='AGH':
+			return 0.
+
 		if rle==None:
 			rle = self.rle
 		# print rle.show()
@@ -1687,6 +1694,7 @@ class Node():
 			# print "in rollout"
 
 		self.heuristicVal = self.heuristics(**self.WBP.hyperparameters)
+		print "heuristicVal", self.heuristicVal
 
 		## Old ways of incorporating rollout; keeping for reference.
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()
