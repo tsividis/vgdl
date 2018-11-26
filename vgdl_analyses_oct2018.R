@@ -788,7 +788,7 @@ for (i in 1:length(levels(data$game_name))){
   game = levels(data$game_name)[i]
   d=subset(data, game_name==game)
   
-  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=subject_ID))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     # colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
@@ -967,7 +967,7 @@ make_plantimedata = function(dataframe){
   ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
   plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
                             max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
-                            level_num=as.numeric(), all_agent_max_levels=as.numeric())
+                            level_num=as.numeric(), level_efficiency=as.numeric())
   
   for (j in 1:length(levels(dataframe$agent_type))){
     agent = levels(dataframe$agent_type)[j]
@@ -977,25 +977,24 @@ make_plantimedata = function(dataframe){
       print(levels(dataframe$game_name)[i])
       s = subset(g, agent_type==agent)
       if (length(s$level_max_score)>0){
-        
-        ## TODO: do this for MEPdata, too, once you've added subjectID
         ## grab each subject's max_steps and max_wins.
-        if agent=='human'{
-          human_level_maxes = list()
-          human_cumulative_step_maxes = list()
+          level_maxes = list()
+          cumulative_step_maxes = list()
           idx=1
           for (k in 1:length(unique(s$subject_ID))){
             subject = levels(s$subject_ID)[k]
             subjectdata = s[which(s$subject_ID==subject),]
             if (length(subjectdata$cumulative_steps)>0){
-            human_level_maxes[[idx]] = max(subjectdata$cumulative_wins)
-            human_cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+            level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+            cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
             idx = idx+1
             }
           }
-        }
+        
+        ## calculate the metric you want here. You can normalize it later.
+          
         ##mean of vector of ratios
-        mean(as.numeric(as.vector(human_level_maxes))/as.numeric(as.vector(human_cumulative_step_maxes)))
+        l_e = mean(as.numeric(as.vector(human_level_maxes))/as.numeric(as.vector(human_cumulative_step_maxes)))
         
         ## the row we want
         r = subset(s, cumulative_steps==max(cumulative_steps))[1,]
@@ -1004,7 +1003,7 @@ make_plantimedata = function(dataframe){
                          max_steps=r$cumulative_steps, planning_time=r$cumulative_planner_nodes, 
                          max_levels_won=max(r$cumulative_wins),
                          level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels,
-                         all_agent_max_levels=as.numeric(max_level))
+                         level_efficiency=l_e)
         plantimedata = rbind(plantimedata, new)
       }
     }
@@ -1013,18 +1012,19 @@ make_plantimedata = function(dataframe){
   ## so they're naturally alphabetized.
   # plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
   plantimedata = mutate(plantimedata, level_percentage=max_levels_won/level_num)
-  plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
-  plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
+  plantimedata = mutate(plantimedata, composite_ratio = level_percentage*level_efficiency)
+  # plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
+  # plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
   plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
   plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
-  plantimedata$human_normed_level_efficiency=NA
+  plantimedata$human_normed_composite_ratio=NA
   ##norm by human level_efficiency
   for (i in 1:length(levels(plantimedata$game_name))){
     game = levels(plantimedata$game_name)[i]
-    human_efficiency = filter(plantimedata, agent_type=='human' & game_name==game)$level_efficiency
+    human_composite_ratio = filter(plantimedata, agent_type=='human' & game_name==game)$composite_ratio
     for (agent in levels(plantimedata$agent_type)){
       row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
-      plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_level_efficiency = row$level_efficiency/human_efficiency
+      plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_composite_ratio = row$composite_ratio/human_composite_ratio
     }
   }
   
@@ -1035,7 +1035,7 @@ make_plantimedata = function(dataframe){
 
 # plantimedata2 = make_plantimedata(MEPdata2)
 
-plantimedata = make_plantimedata(alldata)
+# plantimedata = make_plantimedata(alldata)
 
 ## summary plot of overall results -- easy to look at.
 p = ggplot(subset(plantimedata), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
@@ -1046,7 +1046,7 @@ p = ggplot(subset(plantimedata), aes(x=agent_type, y=level_percentage, fill=fact
 p
 ## save as 10x16
 
-p = ggplot(subset(plantimedata), aes(x=agent_type, y=composite_ratio, fill=factor(agent_type))) +
+p = ggplot(subset(plantimedata), aes(x=agent_type, y=log(human_normed_composite_ratio), fill=factor(agent_type))) +
   geom_bar(position='dodge', stat='summary', fun.y='mean')+#facet_wrap(~game_name)+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -1061,14 +1061,14 @@ names(colors)=levels(alldata$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
 
 s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4])
-ordered_names = s[order(log(s$human_normed_level_efficiency)),]$game_name
+ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
 p = ggplot()+
-  geom_bar(data=subset(plantimedata, agent_type!='human' & (log(human_normed_level_efficiency)>-3)),
-           aes(x=game_name, y=log(human_normed_level_efficiency), fill=as.factor(agent_type)), stat='identity',position='dodge')+
-  geom_point(data=subset(plantimedata, agent_type!='human' & !(log(human_normed_level_efficiency)>-3)),
-             aes(x=game_name, y=log(human_normed_level_efficiency), color=agent_type), stat='identity',position='dodge', shape='|', size=3)+
+  geom_bar(data=subset(plantimedata, agent_type!='human' & (log(human_normed_composite_ratio)>-3)),
+           aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity',position='dodge')+
+  geom_point(data=subset(plantimedata, agent_type!='human' & !(log(human_normed_composite_ratio)>-3)),
+             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity',position='dodge', shape='|', size=3)+
   scale_x_discrete(limits=ordered_names)+
-  # theme(legend.position="none")+
+  theme(legend.position="none")+
   colorScale+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed composite ratio")+xlab('Game name')+ylim(-10,4)
 tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,1,10,10e2,10e3,10e4)
