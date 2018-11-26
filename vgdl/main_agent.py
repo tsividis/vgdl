@@ -79,6 +79,8 @@ class Agent:
         self.safeDistance = self.metacontroller_params['safeDistance']
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
+        ##AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
+        self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else None
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
         else:
@@ -91,10 +93,10 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
+        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_PL={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
                 self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
                 self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
-                self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
+                self.switch_to_exploit_step, self.hybrid, self.planner_lesion, self.noNewObjectNum, self.objectNumberTrackingLimit, 
                 self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
                 self.objectsWhoseLocationWeIgnoreString)
 
@@ -480,7 +482,7 @@ class Agent:
         current_time = time.time()
         gameObject = rle._game
         ended, win = rle._isDone()
-        print "time elapsed: {}".format(current_time - self.last_recorded_time)
+        # print "time elapsed: {}".format(current_time - self.last_recorded_time)
         state = {'timestep': gameObject.time,
                  'time_elapsed': current_time - self.last_recorded_time,
                  'score': gameObject.score,
@@ -723,7 +725,7 @@ class Agent:
                 seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
-                objectLocationTrackingLimit=self.objectLocationTrackingLimit)
+                objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
@@ -799,7 +801,7 @@ class Agent:
                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                         firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
                         extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
-                        objectLocationTrackingLimit=self.objectLocationTrackingLimit)
+                        objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
                     p_quitting = p.quitting
                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
                     self.total_planner_steps += p.total_nodes_opened

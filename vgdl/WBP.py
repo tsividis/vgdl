@@ -79,6 +79,10 @@ class WBP():
 		self.quitting = False
 		# self.exhausted_novelty = True
 		self.lesion = lesion
+		# Compute starting number of each SpriteCounter stype
+		self.firstOrderHorizon = firstOrderHorizon
+		if self.lesion in ['AGH2', 'AGH3']:
+			self.firstOrderHorizon = False
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
@@ -178,8 +182,6 @@ class WBP():
 		if self.display:
 			print "ignoring presences for", self.classesWhosePresenceWeIgnore
 			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
-		# Compute starting number of each SpriteCounter stype
-		self.firstOrderHorizon = firstOrderHorizon
 		self.starting_stype_n = {}
 		for term in self.theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
@@ -1453,7 +1455,7 @@ class Node():
 		novelty_first_alpha=1000, novelty_second_alpha=10, time_alpha=10):
 		
 		##AGH lesion
-		if self.WBP.lesion=='AGH':
+		if self.WBP.lesion in ['AGH1', 'AGH3']:
 			return 0.
 
 		if rle==None:
@@ -1694,7 +1696,6 @@ class Node():
 			# print "in rollout"
 
 		self.heuristicVal = self.heuristics(**self.WBP.hyperparameters)
-		print "heuristicVal", self.heuristicVal
 
 		## Old ways of incorporating rollout; keeping for reference.
 		# print self.rle._game.score, self.heuristicVal, sum(self.rolloutArray), self.metabolic_cost, self.position_score()

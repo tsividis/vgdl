@@ -75,8 +75,11 @@ BasicGame
     goal sword > nothing
     sword key > nothing
     sword wall > nothing
+    wall sword > nothing
     sword avatar > nothing
     sword sword > nothing
+    box1 sword > nothing
+    sword box1 > nothing
 
   TerminationSet
     SpriteCounter stype=goal   win=True
