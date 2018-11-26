@@ -61,7 +61,6 @@ class Agent:
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.epsilon_greedy = epsilon_greedy
         self.hybrid = False
-        self.switch_to_exploit_step = 20 ## only used for e-greedy lesion
         self.absolute_max_nodes = 50000 ## just a convenience parameter
         self.shortHorizonNodes = 500 ## this isn't used. but you need to clean the code up a bit to actually delete it.
         self.shortHorizonAnnealing = 1.05 ## this isn't used, either. but you need to clean the code up a bit to actually delete it.
@@ -80,6 +79,11 @@ class Agent:
         self.safeDistance = self.metacontroller_params['safeDistance']
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
+        #N=Normal, DS=Delayed switch out of short-term planning (by changing self.noNewObjectNum), DF=delayed game forfeit after failure to plan in a level (by changing self.absolute_max_nodes)
+        ## Also note that changing nonewobjectnum will delay quitting, as only long-term planning anneals up such that you'd ever reach absolute_max_nodes.
+        self.epsilon_greedy_variant = self.metacontroller_params['epsilon_greedy_variant']
+        self.switch_to_exploit_step = self.metacontroller_params['switch_to_exploit_step'] ## only used for e-greedy lesion
+
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
         else:
@@ -94,13 +98,15 @@ class Agent:
             self.max_nodes_annealing = self.longhorizonAnnealing
         
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
-                self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
-                self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
+        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_egv={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, 
+                self.extra_atom_allowed, self.extra_atom, self.shortHorizonNodes, self.longHorizonNodes, 
+                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, 
+                self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.epsilon_greedy_variant,
                 self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
                 self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
                 self.objectsWhoseLocationWeIgnoreString)
         print self.param_ID
+
         self.conservative = False
         self.regrounding = 1
         # self.selective_regrounding = True ## not used
@@ -970,13 +976,11 @@ class Agent:
                             scoreChange = True
                         # if self.display_text:
                         print "moving types: {}".format(movingTypes)
-                        print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, 55))
+                        print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
                         print "scoreChange: {}".format(scoreChange)
                         # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                         if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
                                 (not movingTypes or (movingTypes and not scoreChange)):
-                            # if self.display_text:
-                            
                             if self.allow_long_range:
                                 print "switching to long-range planning"
                                 ## switch to long-range planning
@@ -1172,6 +1176,10 @@ class Agent:
                     if self.max_nodes > self.absolute_max_nodes:
                         print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.max_nodes/self.max_nodes_annealing)
                         self.max_nodes /= self.max_nodes_annealing
+                        ## for the delayed level forfeit variant, we should anneal longhorizon max nodes back to their original number
+                        ## because otherwise we'll always be one anneal away from quitting a level
+                        if 'DF' in self.epsilon_greedy_variant:
+                            self.max_nodes = self.starting_max_nodes
                         self.stored_max_nodes = self.max_nodes
                         quit_level = True
                     win, effects = False, []

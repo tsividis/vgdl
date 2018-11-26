@@ -11,8 +11,6 @@ library(zoo)
 library(EnvStats)
 library(grid)
 
-
-# dates=c('nov8_local')
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
@@ -22,7 +20,7 @@ library(grid)
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
 # dates = list('nov17')
-dates = c('nov24')
+dates = c('nov25_local')
 saveddata = data
 data = list()
 for (date in dates){
@@ -775,6 +773,8 @@ p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
 p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,1000)
 p
 
+
+data$cumulative_frames = data$cumulative_steps
 colors=c('palegreen3', 'orange')
 names(colors) = levels(alldata2$agent_type)
 colorScale = scale_color_manual(name='agent_type',values=colors)
@@ -784,11 +784,11 @@ alldata3=rbind(humandata, MEPdata)
 max_num_agents = 0
 plots = list()
 q=list()
-for (i in 1:length(levels(alldata2$game_name))){
-  game = levels(alldata2$game_name)[i]
-  d=subset(alldata2, game_name==game)
+for (i in 1:length(levels(data$game_name))){
+  game = levels(data$game_name)[i]
+  d=subset(data, game_name==game)
   
-  p=ggplot(d, aes(x=cumulative_frames, y=cumulative_wins,color=agent_type))
+  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
     colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+

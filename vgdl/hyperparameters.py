@@ -62,8 +62,104 @@ hyperparameter_sets = [
 
 ## Metacontroller params:
 metacontroller_sets = [
-    ## Original
+    ### begin e-greedy variants
+    #####
+    #####
     {'idx': 0,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 1000,
+    'epsilon_greedy_variant': 'N'
+    },
+    {'idx': 1,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 2000,
+    'epsilon_greedy_variant': 'N'
+    },
+    {'idx': 2,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 550,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 1000,
+    'epsilon_greedy_variant': 'DSDF'
+    },
+    {'idx': 3,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 550,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 2000,
+    'epsilon_greedy_variant': 'DSDF'
+    },
+    {'idx': 6,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 550,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 1000,
+    'epsilon_greedy_variant': 'DS'
+    },
+    {'idx': 7,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 1000,
+    'epsilon_greedy_variant': 'DF'
+    },
+    ### end e-greedy variants
+    #####
+    #####
+    ## Original
+    {'idx': 20,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
@@ -77,7 +173,7 @@ metacontroller_sets = [
     'longHorizonObservationLimit': 2
     },
     ## Simplifying: removing objectnumbertrackinglimit, objectLocationTrackingLimit, extraAtom always on
-    {'idx': 1,
+    {'idx': 21,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
@@ -90,36 +186,8 @@ metacontroller_sets = [
     'safeDistance': 5,
     'longHorizonObservationLimit': 2
     },
-    {'idx': 2,
-    'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 10000,
-    'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [200,500,1000],
-    'conservative_max_nodes': 50,
-    'extra_atom': True,
-    'noNewObjectNum': 55,
-    'objectNumberTrackingLimit': 1000,
-    'objectLocationTrackingLimit': 1000,
-    'safeDistance': 5,
-    'longHorizonObservationLimit': 2
-    },
-
-    {'idx': 3,
-    'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 1000,
-    'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [400,1000,2000],
-    'conservative_max_nodes': 50,
-    'extra_atom': True,
-    'noNewObjectNum': 55,
-    'objectNumberTrackingLimit': 1000,
-    'objectLocationTrackingLimit': 1000,
-    'safeDistance': 5,
-    'longHorizonObservationLimit': 2
-    },
-
     ## KEEP
-    {'idx': 4,
+    {'idx': 6,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
@@ -133,38 +201,10 @@ metacontroller_sets = [
     'longHorizonObservationLimit': 2
     },
 
-    {'idx': 5,
-    'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 10000,
-    'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [400,1000,2000],
-    'conservative_max_nodes': 50,
-    'extra_atom': True,
-    'noNewObjectNum': 55,
-    'objectNumberTrackingLimit': 1000,
-    'objectLocationTrackingLimit': 1000,
-    'safeDistance': 5,
-    'longHorizonObservationLimit': 2
-    },
-
-    ##KEEP
-    {'idx': 6,
-    'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 1000,
-    'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [200,500,1000],
-    'conservative_max_nodes': 50,
-    'extra_atom': True,
-    'noNewObjectNum': 55,
-    'objectNumberTrackingLimit': 1000,
-    'objectLocationTrackingLimit': 1000,
-    'safeDistance': 5,
-    'longHorizonObservationLimit': 10
-    },
     ##KEEP
     {'idx': 7,
     'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 10000,
+    'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
     'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
@@ -175,19 +215,19 @@ metacontroller_sets = [
     'safeDistance': 5,
     'longHorizonObservationLimit': 10
     },
-
+    ##KEEP
     {'idx': 8,
     'random_steps_on_plan_failure': 5,
-    'longHorizonNodes': 1000,
+    'longHorizonNodes': 10000,
     'longhorizonAnnealing': 2.,
     'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
-    'noNewObjectNum': 220,
+    'noNewObjectNum': 55,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
     'safeDistance': 5,
-    'longHorizonObservationLimit': 2
+    'longHorizonObservationLimit': 10
     },
 
     {'idx': 9,
@@ -215,5 +255,18 @@ metacontroller_sets = [
     'objectLocationTrackingLimit': 1000,
     'safeDistance': 5,
     'longHorizonObservationLimit': 10
+    },
+    {'idx': 11,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 100,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [20],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2
     }
 ]

@@ -474,6 +474,7 @@ class WBP():
 					# embed()
 					if QReward:
 						node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+						# embed()
 					else:
 						## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
 						## This is a plan of taking a single 'wait' action.
@@ -675,6 +676,7 @@ class WBP():
 				if self.display:
 					print "In short-horizon mode; selecting highest-reward longest sequence"
 				node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+				# embed()
 			else:
 				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
 				## This is a plan of taking a single 'wait' action.
@@ -1744,7 +1746,7 @@ class Node():
 		# 		pass
 
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score #+ resource_bonus
-
+		# print "heuristicVal {}, position_score {}".format(self.heuristicVal, self.position_score(self.WBP.position_score_multiplier))
 		## Debug printouts
 		# print("heuristicVal {}".format(self.heuristicVal))
 		# print("intrinsic_reward {}".format(self.intrinsic_reward))
@@ -1930,7 +1932,7 @@ if __name__ == "__main__":
 		gameFilename = game_name
 
 	else:
-		gameFilename = "examples.gridphysics.theory_variant_frogs_2"
+		gameFilename = "examples.gridphysics.theory_tiny_zelda"
 		gameString, levelString = defInputGame(gameFilename, randomize=True)
 		rleCreateFunc = lambda: createRLInputGame(gameFilename)
 		rle = rleCreateFunc()
@@ -1946,7 +1948,7 @@ if __name__ == "__main__":
 	# max_nodes = 10
 	## Initialize planner
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
-			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
+			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=True, 
 			hyperparameters=planner_hyperparameters, extra_atom=True)
 
 	## time pure steps per second in a game
