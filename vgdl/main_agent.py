@@ -83,6 +83,7 @@ class Agent:
         ## Also note that changing nonewobjectnum will delay quitting, as only long-term planning anneals up such that you'd ever reach absolute_max_nodes.
         self.epsilon_greedy_variant = self.metacontroller_params['epsilon_greedy_variant']
         self.switch_to_exploit_step = self.metacontroller_params['switch_to_exploit_step'] ## only used for e-greedy lesion
+        self.allow_long_range = self.metacontroller_params['allow_long_range'] ## for the exploration lesion we want to optionally disable long-range planning
 
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
@@ -97,7 +98,6 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         
-        self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
         self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_egv={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, 
                 self.extra_atom_allowed, self.extra_atom, self.shortHorizonNodes, self.longHorizonNodes, 
                 self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, 
