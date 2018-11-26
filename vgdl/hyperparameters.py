@@ -1,65 +1,3 @@
-
-## Planner hyperparameters
-hyperparameter_sets = [
-    {'idx'           : 0,
-     'short_horizon' : False,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 1,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 2,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 3,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 4,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 10,
-     }
-]
-
-
-
 ## Metacontroller params:
 metacontroller_sets = [
     ### begin e-greedy variants
@@ -69,7 +7,7 @@ metacontroller_sets = [
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [10],#[200,500,1000],
+    'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
     'noNewObjectNum': 55,
@@ -85,7 +23,7 @@ metacontroller_sets = [
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [10],#[200,500,1000],
+    'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
     'noNewObjectNum': 55,
@@ -101,7 +39,7 @@ metacontroller_sets = [
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [10],#[200,500,1000],
+    'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
     'noNewObjectNum': 550,
@@ -117,7 +55,7 @@ metacontroller_sets = [
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [10],#[200,500,1000],
+    'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
     'noNewObjectNum': 550,
@@ -134,7 +72,7 @@ metacontroller_sets = [
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [10],#[200,500,1000],
+    'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
     'noNewObjectNum': 550,
@@ -150,7 +88,7 @@ metacontroller_sets = [
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,
-    'shortHorizonRandomChoice': [10],#[200,500,1000],
+    'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
     'noNewObjectNum': 550,
@@ -175,6 +113,7 @@ metacontroller_sets = [
     'safeDistance': 5,
     'longHorizonObservationLimit': 2,
     'switch_to_exploit_step': 1000,
+    'allow_long_range': True,
     'epsilon_greedy_variant': 'DS'
     },
     {'idx': 7,
@@ -190,11 +129,28 @@ metacontroller_sets = [
     'safeDistance': 5,
     'longHorizonObservationLimit': 2,
     'switch_to_exploit_step': 1000,
+    'allow_long_range': True,
     'epsilon_greedy_variant': 'DF'
     },
     ### end e-greedy variants
     #####
     #####
+    {'idx': 20,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [10],#[200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': False,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 200,
+    'objectLocationTrackingLimit': 8,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 1000,
+    'allow_long_range': True,
+    'epsilon_greedy_variant': 'NA'
+    },
     ## Original
     {'idx': 20,
     'random_steps_on_plan_failure': 5,
@@ -207,7 +163,10 @@ metacontroller_sets = [
     'objectNumberTrackingLimit': 200,
     'objectLocationTrackingLimit': 8,
     'safeDistance': 5,
-    'longHorizonObservationLimit': 2
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 1000,
+    'allow_long_range': True,
+    'epsilon_greedy_variant': 'NA'
     },
     ## Simplifying: removing objectnumbertrackinglimit, objectLocationTrackingLimit, extraAtom always on
     {'idx': 21,
@@ -307,3 +266,64 @@ metacontroller_sets = [
     'longHorizonObservationLimit': 2
     }
 ]
+
+
+## Planner hyperparameters
+hyperparameter_sets = [
+    {'idx'           : 0,
+     'short_horizon' : False,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 1,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10.,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 2,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 3,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 4,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 10,
+     }
+]
+

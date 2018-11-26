@@ -20,7 +20,7 @@ library(grid)
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
 # dates = list('nov17')
-dates = c('nov25_local')
+dates = c('nov26')
 saveddata = data
 data = list()
 for (date in dates){
@@ -774,9 +774,9 @@ p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,
 p
 
 
-data$cumulative_frames = data$cumulative_steps
+
 colors=c('palegreen3', 'orange')
-names(colors) = levels(alldata2$agent_type)
+names(colors) = levels(data$agent_type)
 colorScale = scale_color_manual(name='agent_type',values=colors)
 alldata2=rbind(humandata,data)
 alldata3=rbind(humandata, MEPdata)
@@ -790,10 +790,10 @@ for (i in 1:length(levels(data$game_name))){
   
   p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
   p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
-    colorScale+ 
+    # colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
-    scale_color_manual(values=colors) + theme(legend.position="none")+
-    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5))
+    # scale_color_manual(values=colors) + theme(legend.position="none")+
+    ggtitle(as.character(game)) + theme(plot.title = element_text(hjust = 0.5)) +theme(legend.position='bottom')
   
   p=p+ylim(0,5)#+theme(legend.position='none')
   
