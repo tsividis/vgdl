@@ -1039,10 +1039,11 @@ make_plantimedata = function(dataframe){
   # plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
   plantimedata = mutate(plantimedata, level_percentage=mean_levels_won/level_num)
   plantimedata = mutate(plantimedata, composite_ratio = level_percentage*level_efficiency)
-  # plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
+  plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+  
+    # plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
   # plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
   plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
-  plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
   plantimedata$human_normed_composite_ratio=NA
   ##norm by human level_efficiency
   for (i in 1:length(levels(plantimedata$game_name))){
@@ -1154,12 +1155,11 @@ plantimedata$short_agent_type = as.factor(plantimedata$short_agent_type)
 
 
 
-
-lesions = c("ε-greedy DSDF, 1k","ε-greedy DSDF, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
+exploration_lesion_names = c("ε-greedy DSDF, 1k","ε-greedy DSDF, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
 colors = c('steelblue3', 'slateblue', 'slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
-lesions = c('No subgoals', 'No goal gradient', 'No subgoals + no gradient', 'No IW')
+planner_lesion_names = c('No subgoals', 'No goal gradient', 'No subgoals + no gradient', 'No IW')
 colors = c('steelblue3','goldenrod', 'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkseagreen3')
-
+lesions = planner_lesion_names
 s = subset(plantimedata, short_agent_type=='IW2')
 ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
 plots = list()
@@ -1193,10 +1193,56 @@ layout = matrix(c(1:4), ncol=4, byrow=TRUE)
 m = multiplot(plotlist = plots[1:4], layout=layout)
 ##10x20
 
+
+df = data.frame(game_name=as.character(), agent_type=as.character(), short_agent_type=as.character(), max_steps=as.numeric(), planning_time=as.numeric(), min_planning_time=as.numeric())
+IW2data = plantimedata[which(plantimedata$short_agent_type=='IW2'),]
+
+savedplantimedata=plantimedata
+plantimedata$normed_plan_nodes_per_step=NA
+for (i in 1:length(unique(plantimedata$game_name))){
+ game=unique(plantimedata$game_name)[i] 
+ min_nodes_per_step = min(plantimedata[which( (plantimedata$short_agent_type %in% c('IW2', planner_lesion_names)) & (plantimedata$game_name==game)),]$plan_nodes_per_step)
+ # MEP_nodes_per_step = plantimedata[which( (plantimedata$short_agent_type=='IW2')& (plantimedata$game_name==game)),]$plan_nodes_per_step
+ for (model in c('IW2', planner_lesion_names)){
+   row = plantimedata[which((plantimedata$short_agent_type==model)&(plantimedata$game_name==game)),]
+   plantimedata[which((plantimedata$short_agent_type==model)&(plantimedata$game_name==game)),]$normed_plan_nodes_per_step = min_nodes_per_step/row$plan_nodes_per_step
+   }
+}
+
+### Make plot of summarized planner efficiency
+models_to_plot = c('IW2', planner_lesion_names)
+colors = c('steelblue3','goldenrod1', 'goldenrod1', 'goldenrod1', 'indianred1')
+names(colors)=models_to_plot
+colorScale = scale_color_manual(name="short_agent_type", values=colors)
+
+s = summarySE(subset(plantimedata, short_agent_type%in%models_to_plot), 
+              measurevar="normed_plan_nodes_per_step", groupvars=c("short_agent_type"), na.rm=TRUE)
+p = ggplot(s, aes(x=short_agent_type, y=normed_plan_nodes_per_step, fill=short_agent_type)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=normed_plan_nodes_per_step-ci, ymax=normed_plan_nodes_per_step+ci))
+p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
+                                 breaks=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
+                                 labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'))+
+  scale_x_discrete(limits=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
+                   labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW')) + xlab('Lesion') + ylab('Planner efficiency')
+p
+
+plots = list()
+for (i in 1:length(models_to_plot)){
+  model = models_to_plot[i]
+  p = ggplot(subset(plantimedata, short_agent_type==model), 
+             aes(x=game_name, y=normed_plan_nodes_per_step, fill=game_name))+
+    geom_bar(position='dodge',stat='identity')+ylim(0,1)+ ylab("Planner efficiency")+theme(axis.title.x=element_blank(),
+                                                                axis.text.x=element_blank(),
+                                                                axis.ticks.x=element_blank())+theme(legend.position="none")+
+    scale_x_discrete(limits=unique(plantimedata$game_name))#+scale_fill_manual(name="Game", breaks=unique(plantimedata$game_name))
+  plots[[i]]=p
+}
+layout = matrix(c(1:length(models_to_plot)), ncol=1, byrow=TRUE)
+m = multiplot(plotlist = plots, layout=layout)
+## 10x24
+
 summarise(subset(plantimedata, short_agent_type%in%c('IW2', lesions), comp_ratio_mean=mean(human_normed_composite_ratio), comp_ratio_sd=sd(human_normed_composite_ratio))
 
-types_to_plot = c('IW2', 'No subgoals', 'No goal gradient', 'No subgoals + no gradient', 'No IW')
-colors = c('steelblue3', 'goldenrod', 'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkseagreen3')
 
 
 ## same thing but not grouped by game. not easy to read.
