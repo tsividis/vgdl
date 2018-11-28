@@ -1230,14 +1230,18 @@ plots = list()
 for (i in 1:length(models_to_plot)){
   model = models_to_plot[i]
   p = ggplot(subset(plantimedata, short_agent_type==model), 
-             aes(x=game_name, y=normed_plan_nodes_per_step, fill=game_name))+
+             aes(x=game_name, y=normed_plan_nodes_per_step, fill=short_agent_type))+
     geom_bar(position='dodge',stat='identity')+ylim(0,1)+ ylab("Planner efficiency")+theme(axis.title.x=element_blank(),
                                                                 axis.text.x=element_blank(),
-                                                                axis.ticks.x=element_blank())+theme(legend.position="none")+
+                                                                axis.ticks.x=element_blank())+colorScale+theme(legend.position="none")+
+    colorScale+scale_fill_manual(values=colors, name="",
+                                 breaks=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
+                                 labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'))+
     scale_x_discrete(limits=unique(plantimedata$game_name))#+scale_fill_manual(name="Game", breaks=unique(plantimedata$game_name))
+  p=p+coord_flip()
   plots[[i]]=p
 }
-layout = matrix(c(1:length(models_to_plot)), ncol=1, byrow=TRUE)
+layout = matrix(c(1:length(models_to_plot)), ncol=4, byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
 ## 10x24
 
