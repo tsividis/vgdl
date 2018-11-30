@@ -11,6 +11,11 @@ library(zoo)
 library(EnvStats)
 library(grid)
 
+original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_birds', 'boulderdash', 'butterflies',
+                   'chase', 'closing_gates', 'corridor', 'ee', 'frogs', 'helper', 'jaws', 
+                   'lemmings', 'missilecommand', 'myAliens', 'plaqueattack', 'portals', 'preconditions','push_boulders',
+                   'relational','sokoban', 'surprise', 'survivezombies', 'watergame','zelda')
+
 ## oct23 actually now contains runs from 10/20,10/21,10/24,10/25: this is:
 ## IW1 vs IW2, lha 2 vs 10, nF TF, and the beginnings of the absolute_max_nodes=50k
 ## oct26: IW1 vs IW2, with lha2, mN=50k
@@ -20,9 +25,11 @@ library(grid)
 ## nov12: 5x IW1, ix IW2, missing frogs.
 ## nov 15,16: frogs.
 ## nov 18, nov 19: informal sensitivity analysis
+## nov27: exploration and planner lesions
+## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('nov27')
+dates = list('nov15')
 saveddata = data
 data = list()
 for (date in dates){
@@ -101,19 +108,6 @@ for (gamefile in list.files(path)){
   game = substr(filename, gamenamestart, gamenameend)
   d=read.csv(filename, header=TRUE, na.strings='NA')
   
-  # if (game %in% oldformatdqngames){
-  # d$cumulative_wins = as.numeric(0)
-  # for (i in 2:length(d$level)){
-  #   if (d$level[i]>d$level[i-1]){
-  #     d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
-  #   }
-  #   else{
-  #     d$cumulative_wins[i] = d$cumulative_wins[i-1]
-  #   }
-  # }
-  # }
-  
-  
   d$score = d$ep_reward
   d$game_name = as.factor(remove_string_from_name(game))
   d$ep_reward = NULL
@@ -124,9 +118,13 @@ for (gamefile in list.files(path)){
   d$steps = NULL
   d$win = NULL
   d$cumulative_wins = as.numeric(0)
+  d$sparse_levels_won = NA
+  row = data.frame(level=0,score=0,game_name=game,criteria=as.factor(1),cumulative_steps=0,agent_type='DDQN',subject_ID='DDQN',cumulative_wins=0, sparse_levels_won=0)
+  
   for (i in 2:length(d$level)){
     if (d$level[i]>d$level[i-1]){
       d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
+      d$sparse_levels_won[i] = d$cumulative_wins[i]
     }
     else{
       d$cumulative_wins[i] = d$cumulative_wins[i-1]
@@ -136,7 +134,6 @@ for (gamefile in list.files(path)){
 }
 
 # dqndata$game_name = as.factor(as.character(lapply(as.vector(dqndata$game_name), remove_string_from_name)))
-
 
 for (colname in names(data)){
   if (!(colname %in% names(dqndata))){
@@ -248,47 +245,63 @@ for (humandatapath in humandatapaths){
   }
 }
 
+oldhumandata=humandata
 
 humandata$agent_type=as.factor('human')
-humandata$subject_ID = as.factor(humandata$subject)
-humandata$subject = NULL ## drop old name
+
 humandata$modelrun_ID = as.factor('oct29')
 humandata$condition = as.factor('full')
-humandata$game_name = as.factor(humandata$gameName)
-humandata$gameName = NULL
-humandata$level_number = humandata$gameLevel
-humandata$gameLevel = NULL
-humandata$cumulative_wins = humandata$levels_won
-humandata$levels_won = NULL
-humandata$exploration_burn_ins = as.factor(0)
-# humandata$timestep = humandata$steps
-# humandata$steps = NULL
-# humandata$levelscore=humandata$score
-# humandata$score=0
 
+humandata$game_name = as.factor(humandata$game_name)
+
+# humandata$subject_ID = as.factor(humandata$subject)
+# humandata$subject = NULL ## drop old name column
+# humandata$game_name = as.factor(humandata$gameName)
+# humandata$gameName = NULL
+# humandata$level_number = humandata$gameLevel
+# humandata$gameLevel = NULL
+# humandata$cumulative_wins = humandata$levels_won
+# humandata$levels_won = NULL
+
+humandata$exploration_burn_ins = as.factor(0)
 humandata$levels_lost = NULL ##idk what this is; we don't need it
 humandata$group = NULL ## drop this for now. it refers to the groupings of the games we gave to people
 humandata$gameNumber = NULL
 humandata$gameRound = NULL
 
+p = ggplot(subset(humandata, game_name=='ee_3' & subject_ID=='Sy4k9pvpm'), aes(x=cumulative_steps, y=sparse_levels_won, color=subject_ID))+geom_point()+geom_smooth(method='loess', span=1,se=FALSE)
+p = ggplot(subset(humandata, game_name=='push_boulders_2'), aes(x=cumulative_steps, y=sparse_levels_won, color=subject_ID))+geom_point()+geom_smooth(method='loess', span=1,se=FALSE)
+p = ggplot(subset(humandata, game_name=='plaqueattack_1'), aes(x=cumulative_steps, y=sparse_levels_won, fill='steelblue3'))+geom_point()+geom_smooth(method='loess',se=FALSE)
+
+p
+
 ## for new-format humandata:
 # humandata$cumulative_steps = humandata$timestep
 ## fix cumulative_timesteps
-humandata$cumulative_timestep = 1
-for (i in 2:length(humandata$timestep)){
-  prevrow = humandata[i-1,]
-  row = humandata[i,]
-  if (row$subject_ID==prevrow$subject_ID & row$game_name==prevrow$game_name){
-    humandata[i,]$cumulative_timestep = prevrow$cumulative_timestep + 1
-    if (row$level_number==prevrow$level_number){
-      humandata[i,]$score = prevrow$score + (row$levelscore-prevrow$levelscore)
-    }
-    else if (row$level_number > prevrow$level_number){
-      humandata[i,]$score = prevrow$score
-    }
+### I don't think you need to run this.
+# humandata$cumulative_timestep = 1
+# for (i in 2:length(humandata$timestep)){
+#   prevrow = humandata[i-1,]
+#   row = humandata[i,]
+#   if (row$subject_ID==prevrow$subject_ID & row$game_name==prevrow$game_name){
+#     humandata[i,]$cumulative_timestep = prevrow$cumulative_timestep + 1
+#     if (row$level_number==prevrow$level_number){
+#       humandata[i,]$score = prevrow$score + (row$levelscore-prevrow$levelscore)
+#     }
+#     else if (row$level_number > prevrow$level_number){
+#       humandata[i,]$score = prevrow$score
+#     }
+#   }
+# }
+
+s = subset(humandata, game_name==game)
+for (i in 1:length(unique(s$subject_ID))){
+  ID = unique(s$subject_ID)[i]
+  print(c(ID, length(filter(s, s$subject_ID==ID)$sparse_levels_won)))
+
   }
-}
-##remove first part of game string from humandata names
+
+##remove first part of game string from humandata names. no longer needed because csv files have the right names.
 # humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
 
 humandata$levelscore = NULL
@@ -350,9 +363,17 @@ for (i in 1:length(levels(humandata$game_name))){
 
 ### MAIN LEARNING-CURVE PLOTS"""
 # games_to_show = c('aliens_2', 'missilecommand', 'butterflies_1', 'plaqueattack_1', 'portals')
+## Find best DDQN games:
+## assuming you've made plantimedata already:
+df = subset(plantimedata, agent_type=='DDQN'&game_name%in%original_games)
+games_to_show = df[order(-df$level_percentage, -df$composite_ratio),][1:16,]$game_name
 
-games_to_show = c('aliens','avoidgeorge', 'plaqueattack', 'push_boulders', 'relational', 'frogs', 'portals', 'ee', 'zelda', 'butterflies', 'bees_and_birds', 'closing_gates')
-games_to_show = c('missilecommand', 'aliens')
+
+#games_to_show = c(as.character(games_to_show), as.character(df[order(df$level_percentage, df$composite_ratio),][1:4,]$game_name))
+
+# games_to_show = c('aliens','avoidgeorge', 'plaqueattack', 'push_boulders', 'relational', 'frogs', 'portals', 'ee', 'zelda', 'butterflies', 'bees_and_birds', 'closing_gates')
+games_to_show = c('myAliens', 'survivezombies','helper','avoidgeorge', 'missilecommand', 'antagonist', 'preconditions', 'closing_gates',
+                 'aliens','frogs', 'zelda', 'sokoban', 'butterflies', 'chase', 'bait', 'push_boulders')
 ## plotting all agents/models
 plots = list()
 for (i in 1:length(games_to_show)){
@@ -360,22 +381,23 @@ for (i in 1:length(games_to_show)){
   # game = levels(alldata$game_name)[i]
   # geom_smooth(method='loess',se=FALSE)
   game = games_to_show[i]
-  d = filter(alldata,game_name==game)
-  d$level_accumulated_score = d$score
+  d = subset(alldata, game_name==game)
+  # d$level_accumulated_score = d$score
   p = ggplot(d, aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
-  p=p+geom_point()+ geom_smooth(method='loess',se=FALSE)+#  geom_smooth(method='lm',formula=y~log(x-min(d$cumulative_steps)-1,se=FALSE))+
-    ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(.6,.6,0.6,.6))
+  p=p+geom_point()+ geom_smooth(method=loess,span=1,se=FALSE)+#geom_smooth(method=lm,se=FALSE)+
+    ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(.8,.8,1,1))#+scale_size_manual(values=c(.6,.6,0.6,.6))
   p=p+scale_color_manual(values=colors,name="Model",
                                        breaks=c("DDQN", levels(alldata$agent_type)[3], levels(alldata$agent_type)[4]),
-                                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))
+                                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))+
+    xlab('In-game steps')+ylab('Levels won')
     # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
-  p=p+xlim(0,3000)
+  p=p+xlim(0,10000)#+ylim(0,5)
   p
   
   plots[[i]] = p
 }
-layout = matrix(c(1:12), ncol=6, byrow=TRUE)
+layout = matrix(c(1:length(plots)), ncol=4, byrow=TRUE) ##16x20 for 16 games
 # layout = matrix(c(1:5), ncol=5, byrow=TRUE)
 layout = matrix(c(1:90), ncol=9, byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
@@ -387,6 +409,26 @@ df = data.frame(x=x,y=y)
 p=ggplot(df, aes(x=x,y=y))+geom_point()+  geom_smooth(method='loess',se = FALSE)
 p
 
+
+
+###return here
+s$weight=0.1
+# s[which(s$sparse_levels_won==0),]$weight=10
+s[which(s$cumulative_wins==max(s$cumulative_wins)),]$weight=1
+
+s=subset(d, agent_type!='human'&subject_ID=='5006QS5')
+s=subset(d, agent_type!='human'&subject_ID=='3F6GE42')
+
+p = ggplot(s, aes(x=cumulative_steps,y=sparse_levels_won,color=subject_ID, size=agent_type, weight=weight))
+p=p+geom_point()+ geom_smooth(method=loess,span=1,se=FALSE)+#geom_spline(w=c(1,1,1,5))+#geom_smooth(method='lm',span=5,se=FALSE)+
+  ggtitle(game)+scale_size_manual(values=c(.6,.6,0.6,.6))+theme(legend.position="bottom")
+p+xlim(0,3000)
+
+1
+50
+122
+2198
+###
 
 new_e = data.frame(agent_type=as.character(), subject_ID=as.character(), game_name=as.character(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric())
 points_to_add=200
@@ -789,7 +831,13 @@ p = ggplot(humandata, aes(x=real_time,fill=subject_ID))
 p=p+geom_histogram(binwidth=1,aes(y=..density..))+facet_wrap(~game_name)+xlim(0,1000)
 p
 
+dat = alldata
 
+# 
+# for (i in 1:length(unique(d$subject_ID))){
+#   f = filter(d, d$subject_ID==unique(d$subject_ID)[i])
+#   sum(f$sparse_levels_won)
+# }
 
 colors=c('palegreen3', 'orange')
 names(colors) = levels(data$agent_type)
@@ -800,12 +848,12 @@ alldata3=rbind(humandata, MEPdata)
 max_num_agents = 0
 plots = list()
 q=list()
-for (i in 1:length(levels(data$game_name))){
-  game = levels(data$game_name)[i]
-  d=subset(data, game_name==game)
+for (i in 1:length(levels(alldata$game_name))){
+  game = levels(alldata$game_name)[i]
+  d=subset(alldata, game_name==game & agent_type!='DDQN')
   
-  p=ggplot(d, aes(x=cumulative_steps, y=cumulative_wins,color=subject_ID))
-  p=p+geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+
+  p=ggplot(d, aes(x=cumulative_steps, y=sparse_levels_won,color=subject_ID))
+  p=p+geom_point()+ geom_smooth(span=1,se=FALSE)+ #geom_point(size=1,position=position_jitter(width=.05,height=.05), alpha=.5) + #geom_smooth(span=1, se=FALSE, size=1, alpha=0.5)+
     # colorScale+ 
     # p=p+geom_point(size=1,color='steelblue3') +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5,color='steelblue3')+
     # scale_color_manual(values=colors) + theme(legend.position="none")+
@@ -1118,6 +1166,9 @@ for (i in 1:length(plantimedata$agent_type)){
   if(agent=='human'){
     short_type = 'human'
   }
+  if(agent=='DDQN'){
+    short_type = 'DDQN'
+  }
   if(agent=="IW=2_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False"){
     short_type = 'IW2'
   }
@@ -1226,22 +1277,23 @@ p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
                    labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW')) + xlab('Lesion') + ylab('Planner efficiency')
 p
 
+models_to_plot
 plots = list()
 for (i in 1:length(models_to_plot)){
-  model = models_to_plot[i]
+  model = rev(models_to_plot)[i]## reversing list here so we get the plot that works when we flip 90 degrees
   p = ggplot(subset(plantimedata, short_agent_type==model), 
              aes(x=game_name, y=normed_plan_nodes_per_step, fill=short_agent_type))+
-    geom_bar(position='dodge',stat='identity')+ylim(0,1)+ ylab("Planner efficiency")+theme(axis.title.x=element_blank(),
+    geom_bar(position='dodge',stat='identity')+ylim(0,1)+xlab("Game name") +ylab("Planner efficiency")+theme(axis.title.x=element_blank(),
                                                                 axis.text.x=element_blank(),
                                                                 axis.ticks.x=element_blank())+colorScale+theme(legend.position="none")+
     colorScale+scale_fill_manual(values=colors, name="",
                                  breaks=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
                                  labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'))+
     scale_x_discrete(limits=unique(plantimedata$game_name))#+scale_fill_manual(name="Game", breaks=unique(plantimedata$game_name))
-  p=p+coord_flip()
+  # p=p+coord_flip()
   plots[[i]]=p
 }
-layout = matrix(c(1:length(models_to_plot)), ncol=4, byrow=TRUE)
+layout = matrix(c(1:length(models_to_plot)), ncol=1, byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
 ## 10x24
 

@@ -50,7 +50,7 @@ def process_model_run(data, modelrun_ID):
 		mergedfilewriter = csv.writer(g)
 		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 
 								'timestep', 'cumulative_timestep', 'time_elapsed', 'score', 'level_max_score', 'cumulative_max_score', 
-							'sparse_score', 'level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
+							'sparse_score', 'level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'sparse_levels_won', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		g = open('{}/merged_data'.format(data_path), 'a+')	
 		mergedfilewriter = csv.writer(g)
@@ -62,7 +62,7 @@ def process_model_run(data, modelrun_ID):
 		gamefilewriter = csv.writer(f)
 		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 
 								'timestep', 'cumulative_timestep', 'time_elapsed', 'score', 'level_max_score', 'cumulative_max_score', 
-								'sparse_score','level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
+								'sparse_score','level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'sparse_levels_won', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		f = open('{}/{}'.format(data_path, game_name), 'a+') #append and read
 		gamefilewriter = csv.writer(f)
@@ -88,6 +88,7 @@ def process_model_run(data, modelrun_ID):
 				timestep, score, planner_nodes, episode_end, win, planner_settings = state['timestep'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings']
 				time_elapsed = float("{0:6.3f}".format(state['time_elapsed'])) if 'time_elapsed' in state else 'NA'
 				score=round(score,2)
+				
 				## All this weird stuff needs to be done because we don't have a single-stream game.
 				if level_number > prev_level_number:
 					level_max_score = 0
@@ -125,12 +126,19 @@ def process_model_run(data, modelrun_ID):
 				if win:
 					accumulated_score = accumulated_score + score
 					level_accumulated_score = accumulated_score
+					sparse_levels_won = cumulative_wins
+				else:
+					## first level, first round: sparse_levels_won has to be 0
+					if level_number==0 and t==0:
+						sparse_levels_won = 0
+					else:
+						sparse_levels_won = 'NA'
 				cumulative_timestep += 1
 
 				mean_burn_in = np.mean(exploration_burn_ins) if type(exploration_burn_ins)==list else 'NA'
 
 				row = (agent_type, subject_ID, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, time_elapsed, score, level_max_score, cumulative_max_score,
-						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
+						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, sparse_levels_won, planner_settings, planner_nodes, cumulative_planner_nodes)
 				gamefilewriter.writerow(row)
 				mergedfilewriter.writerow(row)
 
