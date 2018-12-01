@@ -29,7 +29,7 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('nov15')
+dates = list('nov28')
 saveddata = data
 data = list()
 for (date in dates){
@@ -72,28 +72,36 @@ data$score = as.numeric(as.character(data$sparse_score))
 ## TODO: once you're using human data, move this below and run it for all_data
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 
+for (colname in names(dqndata)){
+  if (!(colname %in% names(data))){
+    data[,colname] = NA
+    print(colname)
+  }
+}
+
 exploration_lesions = subset(data, grepl('eG=True', agent_type))
 planner_lesions = subset(data, grepl('PL=', agent_type))
+
 
 MEPdatawoSubjectID=MEPdata
 MEPdata = data
 
-d$cumulative_wins = as.numeric(0)
-for (i in 2:length(d$level)){
-  if (d$level[i]>d$level[i-1]){
-    d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
-  }
-  else{
-    d$cumulative_wins[i] = d$cumulative_wins[i-1]
-  }
-}
-if(length(dqndata)==0){
-  dqndata = d
-}
-else{
-  dqndata = rbind(dqndata,d)
-}
+# d$cumulative_wins = as.numeric(0)
+# for (i in 2:length(d$level)){
+#   if (d$level[i]>d$level[i-1]){
+#     d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
+#   }
+#   else{
+#     d$cumulative_wins[i] = d$cumulative_wins[i-1]
+#   }
 # }
+# if(length(dqndata)==0){
+#   dqndata = d
+# }
+# else{
+#   dqndata = rbind(dqndata,d)
+# }
+# # }
 
 saveddqndata = dqndata
 dqndata = list()
@@ -1013,100 +1021,100 @@ dataframe = rbind(humandata, dqndata, data)
 
 dataframe = rbind(humandata, dqndata, MEPdata, exploration_lesions, planner_lesions)
 
-make_plantimedata = function(dataframe){
-  
-  games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
-  for (i in 1:length(levels(dataframe$game_name))){
-    game_name=levels(dataframe$game_name)[i]
-    num_levels = 5
-    if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
-         (grepl('closing',game_name)) ){
-      num_levels=4
-    }
-    if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
-      num_levels=6
-    }
-    if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
-      num_levels=5
-    }
-    new = data.frame(game_name=game_name, num_levels=num_levels)
-    games_to_levels = rbind(games_to_levels, new)
-  }
-  
-  ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
-  plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
-                            max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
-                            level_num=as.numeric(), level_efficiency=as.numeric())
-  
-  for (j in 1:length(levels(dataframe$agent_type))){
-    agent = levels(dataframe$agent_type)[j]
-    print(agent)
-    for (i in 1:length(levels(dataframe$game_name))){
-      g = subset(dataframe, game_name==levels(dataframe$game_name)[i])
-      print(levels(dataframe$game_name)[i])
-      s = subset(g, agent_type==agent)
-      if (length(s$level_max_score)>0){
-        ## grab each subject's max_steps and max_wins.
-          level_maxes = list()
-          cumulative_step_maxes = list()
-          idx=1
-          for (k in 1:length(unique(s$subject_ID))){
-            subject = unique(s$subject_ID)[k]
-            subjectdata = s[which(s$subject_ID==subject),]
-            if (length(subjectdata$cumulative_steps)>0){
-              if(max(subjectdata$cumulative_steps)>0){
-                level_maxes[[idx]] = max(subjectdata$cumulative_wins)
-                cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
-                idx = idx+1            
-              }
 
-            }
-          }
-        
-        ## calculate the metric you want here. You can normalize it later.
-          
-        ## mean vector of win numbers
-        mean_wins = mean(as.numeric(as.vector(level_maxes)))
-          
-        ##mean of vector steps-to-win ratios
-        l_e = mean(as.numeric(as.vector(level_maxes))/as.numeric(as.vector(cumulative_step_maxes)))
-        
-        
-        ## the row we want
-        r = subset(s, cumulative_steps==max(cumulative_steps))[1,]
-        ## take only the relevant columns and put them in the new data frame
-        new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
-                         max_steps=r$cumulative_steps, planning_time=r$cumulative_planner_nodes, 
-                         mean_levels_won=mean_wins,
-                         level_num=filter(games_to_levels, (game_name==r$game_name))$num_levels,
-                         level_efficiency=l_e)
-        plantimedata = rbind(plantimedata, new)
-      }
-    }
+
+games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
+for (i in 1:length(levels(dataframe$game_name))){
+  game_name=levels(dataframe$game_name)[i]
+  num_levels = 5
+  if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
+       (grepl('closing',game_name)) ){
+    num_levels=4
   }
-  ## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
-  ## so they're naturally alphabetized.
-  # plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
-  plantimedata = mutate(plantimedata, level_percentage=mean_levels_won/level_num)
-  plantimedata = mutate(plantimedata, composite_ratio = level_percentage*level_efficiency)
-  plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
-  
-    # plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
-  # plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
-  plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
-  plantimedata$human_normed_composite_ratio=NA
-  ##norm by human level_efficiency
-  for (i in 1:length(levels(plantimedata$game_name))){
-    game = levels(plantimedata$game_name)[i]
-    human_composite_ratio = filter(plantimedata, agent_type=='human' & game_name==game)$composite_ratio
-    for (agent in levels(plantimedata$agent_type)){
-      row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
-      plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_composite_ratio = row$composite_ratio/human_composite_ratio
-    }
+  if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
+    num_levels=6
   }
-  
-  return(plantimedata)
+  if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
+    num_levels=5
+  }
+  new = data.frame(game_name=game_name, num_levels=num_levels)
+  games_to_levels = rbind(games_to_levels, new)
 }
+
+## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
+plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
+                          max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
+                          level_num=as.numeric(), level_efficiency=as.numeric())
+
+for (j in 1:length(levels(dataframe$agent_type))){
+  agent = levels(dataframe$agent_type)[j]
+  print(agent)
+  for (i in 1:length(levels(dataframe$game_name))){
+    g = subset(dataframe, game_name==levels(dataframe$game_name)[i])
+    print(levels(dataframe$game_name)[i])
+    s = subset(g, agent_type==agent)
+    if (length(s$level_max_score)>0){
+      ## grab each subject's max_steps and max_wins.
+        level_maxes = list()
+        cumulative_step_maxes = list()
+        idx=1
+        for (k in 1:length(unique(s$subject_ID))){
+          subject = unique(s$subject_ID)[k]
+          subjectdata = s[which(s$subject_ID==subject),]
+          if (length(subjectdata$cumulative_steps)>0){
+            if(max(subjectdata$cumulative_steps)>0){
+              level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+              cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+              idx = idx+1            
+            }
+
+          }
+        }
+      
+      ## calculate the metric you want here. You can normalize it later.
+        
+      ## mean vector of win numbers
+      mean_wins = mean(as.numeric(as.vector(level_maxes)))
+        
+      ##mean of vector steps-to-win ratios
+      l_e = mean(as.numeric(as.vector(level_maxes))/as.numeric(as.vector(cumulative_step_maxes)))
+      
+      
+      ## the row we want
+      r = subset(s, cumulative_steps==max(cumulative_steps))[1,]
+      ## take only the relevant columns and put them in the new data frame
+      new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
+                       max_steps=r$cumulative_steps, planning_time=r$cumulative_planner_nodes, 
+                       mean_levels_won=mean_wins,
+                       level_num=subset(games_to_levels, (game_name==r$game_name))$num_levels,
+                       level_efficiency=l_e)
+      plantimedata = rbind(plantimedata, new)
+    }
+  }
+}
+## grouping by games and variants is no longer necessary, because you removed 'variant' from the game_names, 
+## so they're naturally alphabetized.
+# plantimedata = transform(plantimedata,game_name=factor(game_name, levels=all_game_names))
+plantimedata = mutate(plantimedata, level_percentage=mean_levels_won/level_num)
+plantimedata = mutate(plantimedata, composite_ratio = level_percentage*level_efficiency)
+plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
+
+  # plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
+# plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
+# plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
+plantimedata$human_normed_composite_ratio=NA
+##norm by human level_efficiency
+for (i in 1:length(levels(plantimedata$game_name))){
+  game = levels(plantimedata$game_name)[i]
+  human_composite_ratio = subset(plantimedata, agent_type=='human' & game_name==game)$composite_ratio
+  for (agent in levels(plantimedata$agent_type)){
+    row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
+    plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_composite_ratio = row$composite_ratio/human_composite_ratio
+  }
+}
+
+
+
 
 
 
@@ -1130,7 +1138,7 @@ p = ggplot(subset(plantimedata), aes(x=agent_type, y=log(human_normed_composite_
         axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
 p
 
-
+plantimesummary = summarySE(plantimedata, measurevar="human_normed_composite_ratio", groupvars=c("agent_type"), na.rm=TRUE)
 
 #### MAIN FIGURE ###
 colors = c('palegreen3', 'grey50', 'steelblue1','steelblue3')
@@ -1138,26 +1146,129 @@ names(colors)=levels(alldata$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
 main_plot_agent_types = c('DDQN', "IW=2_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False",
                           "IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False")
-s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[3])
+s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4]) ## ordered by IW1
 ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
 p = ggplot()+
-  geom_bar(data=subset(plantimedata, agent_type%in%main_plot_agent_types & (log(human_normed_composite_ratio)>-3)),
+  geom_bar(data=subset(plantimedata, agent_type%in%main_plot_agent_types & agent_type!='DDQN'),#(log(human_normed_composite_ratio)>-3)),
            aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
   geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
-             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3)+
+             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
   scale_x_discrete(limits=ordered_names)+
   # theme(legend.position="none")+
   colorScale+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed composite ratio")+xlab('Game name')+ylim(-10,10)
-tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,1,10,10e2,10e3,10e4)
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p + scale_fill_manual(values=colors,name="Model",
-                       breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
-                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)")) + scale_color_manual(values=colors,name="Model",
-                                                                                         breaks=c("DDQN", levels(plantimedata$agent_type)[3], levels(plantimedata$agent_type)[4]),
-                                                                                         labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))
+                       breaks=c(levels(plantimedata$agent_type)[4], levels(plantimedata$agent_type)[3], "DDQN"),
+                       labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN")) + scale_color_manual(values=colors,name="Model",
+                                                                                         breaks=c(levels(plantimedata$agent_type)[4], levels(plantimedata$agent_type)[3], "DDQN"),
+                                                                                         labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN"))
 ## 12x8
+
+
+#### use this to generate the legend, then cut/paste it in illustrator.
+main_plot_agent_types = c('DDQN', "IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False")
+s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4]) ## should be IW1
+ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
+p = ggplot()+
+  geom_bar(data=subset(plantimedata, (agent_type%in%main_plot_agent_types)),
+           aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
+             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  # theme(legend.position="none")+
+  colorScale+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p + scale_fill_manual(values=colors,name="Model",
+                      breaks=c(levels(plantimedata$agent_type)[4], "DDQN"),
+                      labels=c("EMPA (IW1)","DDQN")) +
+  scale_color_manual(values=colors,name="Model",
+                     breaks=c(levels(plantimedata$agent_type)[4],"DDQN"),
+                     labels=c("EMPA (IW1)","DDQN"))
+
+
+#### Plot IW1 alone
+##
+
+main_plot_agent_types = c('DDQN', "IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False")
+s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4]) ## should be IW1
+ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
+p = ggplot()+
+  geom_bar(data=subset(plantimedata, (agent_type%in%main_plot_agent_types & agent_type!='DDQN')),
+           aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
+             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  # theme(legend.position="none")+
+  colorScale+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p + scale_fill_manual(values=colors,name="Model",
+                      breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                      labels=c("DDQN", "EMPA (IW1)")) +
+                      scale_color_manual(values=colors,name="Model",
+                                         breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                                        labels=c("DDQN", "EMPA (IW1)"))
+
+
+#### mess with this to get error bars in main figure.
+
+p = ggplot()+
+  geom_bar(data=subset(plantimesummary, (agent_type%in%main_plot_agent_types & agent_type!='DDQN')),
+           aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge', fun.y='mean') #+
+  # p = ggplot(s, aes(x=short_agent_type, y=normed_plan_nodes_per_step, fill=short_agent_type)) +
+  # geom_bar(position='dodge', stat='summary', fun.y='mean')+
+  geom_linerange(aes(ymin=log(human_normed_composite_ratio-log(ci), ymax=human(human_normed_composite_ratio)+log(ci))))+
+
+# geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
+           # aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  # scale_x_discrete(limits=ordered_names)+
+
+  colorScale+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p + scale_fill_manual(values=colors,name="Model",
+                      breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                      labels=c("DDQN", "EMPA (IW1)")) +
+  scale_color_manual(values=colors,name="Model",
+                     breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                     labels=c("DDQN", "EMPA (IW1)"))
+
+
+#### Plot IW2 alone
+
+main_plot_agent_types = c('DDQN', "IW=2_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False")
+
+s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[3]) ## should be IW2
+ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
+p = ggplot()+
+  geom_bar(data=subset(plantimedata, (agent_type%in%main_plot_agent_types & agent_type!='DDQN')), #& (log(human_normed_composite_ratio)>-3)),
+           aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
+             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  # theme(legend.position="none")+
+  colorScale+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p + scale_fill_manual(values=colors,name="Model",
+                      breaks=c(levels(plantimedata$agent_type)[3], "DDQN"),
+                      labels=c("EMPA (IW2)","DDQN")) + scale_color_manual(values=colors,name="Model",
+                                                                                         breaks=c(levels(plantimedata$agent_type)[3],"DDQN"),
+                                                                                         labels=c("EMPA (IW2)", "DDQN"))
+
+## 14x10
 
 ## change -Inf to something readable so that plots come out.
 
@@ -1189,6 +1300,9 @@ for (i in 1:length(plantimedata$agent_type)){
   if(agent=="IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR"){
     short_type = 'No IW'
   }
+  if(agent=="IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW-AGH3_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR"){
+    short_type = 'No subgoals + no gradient + no IW'
+  }
   if (agent=="IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=DSDF_sTE=1000_hyb=False_nnon=550_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR"){
     short_type = 'ε-greedy DS, 1k'
   }
@@ -1210,15 +1324,16 @@ plantimedata$short_agent_type = as.factor(plantimedata$short_agent_type)
 
 exploration_lesion_names = c("ε-greedy DS, 1k","ε-greedy DS, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
 colors = c('steelblue3', 'slateblue', 'slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
-planner_lesion_names = c('No subgoals', 'No goal gradient', 'No subgoals + no gradient', 'No IW')
-colors = c('steelblue3','goldenrod', 'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkseagreen3')
+planner_lesion_names = c('IW1', 'No subgoals', 'No goal gradient', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')
+colors = c('steelblue3','goldenrod', 'goldenrod1', 'goldenrod2', 'darkslategray2', 'darkolivegreen3')
+names(colors) = planner_lesion_names
 lesions = planner_lesion_names
-s = subset(plantimedata, short_agent_type=='IW2')
+s = subset(plantimedata, short_agent_type=='IW1')
 ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
 plots = list()
 for (i in 1:length(lesions)){
-  types_to_plot = c('IW2', lesions[i])
-  names(colors)=types_to_plot
+  types_to_plot = c(lesions[i])#c('IW1')#, lesions[i])
+  # names(colors)=types_to_plot
   colorScale = scale_color_manual(name="short_agent_type", values=colors)
   p = ggplot()+
     geom_bar(data=subset(plantimedata, short_agent_type %in% types_to_plot),
@@ -1226,15 +1341,15 @@ for (i in 1:length(lesions)){
     scale_x_discrete(limits=ordered_names)+
     # theme(legend.position="none")+
     colorScale+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed composite ratio")+xlab('Game name')+ylim(-10,5)
-  tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,1,10,10e2,10e3,10e4)
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,5)
+  tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
   logtickmarks=(log(tickmarks))
   p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
   # p+scale_fill_manual(values=colors)
   
   p = p+ scale_fill_manual(values=colors,name="Model",
                         breaks=c(types_to_plot[1], types_to_plot[2]),
-                        labels=c("EMPA (IW2)", types_to_plot[2])) #+ scale_color_manual(values=colors,name="Model",
+                        labels=c("EMPA (IW1)", types_to_plot[2])) #+ scale_color_manual(values=colors,name="Model",
   # breaks=c("EMPA (IW2)", types_to_plot[1]),
   # labels=c("EMPA (IW2)", types_to_plot[1]))
   
