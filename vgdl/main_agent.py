@@ -80,7 +80,7 @@ class Agent:
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
         ##AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
-        self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else None
+        self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else []
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
         else:

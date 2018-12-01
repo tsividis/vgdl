@@ -114,7 +114,7 @@ class WBP():
 
 		#################
 		#################
-		self.display = True
+		self.display = False
 
 		if self.display:
 			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)

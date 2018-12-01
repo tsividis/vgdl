@@ -374,13 +374,15 @@ games_to_show = df[order(-df$level_percentage, -df$composite_ratio),][1:16,]$gam
 # games_to_show = c('aliens','avoidgeorge', 'plaqueattack', 'push_boulders', 'relational', 'frogs', 'portals', 'ee', 'zelda', 'butterflies', 'bees_and_birds', 'closing_gates')
 games_to_show = c('myAliens', 'survivezombies','helper','avoidgeorge', 'missilecommand', 'antagonist', 'preconditions', 'closing_gates',
                  'aliens','frogs', 'zelda', 'sokoban', 'butterflies', 'chase', 'bait', 'push_boulders')
+sorted_game_names = sort(as.vector(unique(alldata$game_name)))
 ## plotting all agents/models
 plots = list()
-for (i in 1:length(games_to_show)){
+for (i in 1:length(sorted_game_names)){
 # for (i in 1:length(levels(alldata$game_name))){
   # game = levels(alldata$game_name)[i]
   # geom_smooth(method='loess',se=FALSE)
-  game = games_to_show[i]
+  # game = games_to_show[i]
+  game = sorted_game_names[i]
   d = subset(alldata, game_name==game)
   # d$level_accumulated_score = d$score
   p = ggplot(d, aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
@@ -389,7 +391,7 @@ for (i in 1:length(games_to_show)){
   p=p+scale_color_manual(values=colors,name="Model",
                                        breaks=c("DDQN", levels(alldata$agent_type)[3], levels(alldata$agent_type)[4]),
                                        labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))+
-    xlab('In-game steps')+ylab('Levels won')
+    xlab('Steps taken by agent')+ylab('Levels won')
     # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
   p=p+xlim(0,10000)#+ylim(0,5)
@@ -399,7 +401,7 @@ for (i in 1:length(games_to_show)){
 }
 layout = matrix(c(1:length(plots)), ncol=4, byrow=TRUE) ##16x20 for 16 games
 # layout = matrix(c(1:5), ncol=5, byrow=TRUE)
-layout = matrix(c(1:90), ncol=9, byrow=TRUE)
+layout = matrix(c(1:90), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
 ## save as 30x50?
 
@@ -1188,10 +1190,10 @@ for (i in 1:length(plantimedata$agent_type)){
     short_type = 'No IW'
   }
   if (agent=="IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=DSDF_sTE=1000_hyb=False_nnon=550_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR"){
-    short_type = 'ε-greedy DSDF, 1k'
+    short_type = 'ε-greedy DS, 1k'
   }
   if (agent=="IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=DSDF_sTE=2000_hyb=False_nnon=550_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR"){
-    short_type = 'ε-greedy DSDF, 2k'
+    short_type = 'ε-greedy DS, 2k'
   }
   if (agent=="IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR"){
     short_type = 'ε-greedy, 1k'
@@ -1206,7 +1208,7 @@ plantimedata$short_agent_type = as.factor(plantimedata$short_agent_type)
 
 
 
-exploration_lesion_names = c("ε-greedy DSDF, 1k","ε-greedy DSDF, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
+exploration_lesion_names = c("ε-greedy DS, 1k","ε-greedy DS, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
 colors = c('steelblue3', 'slateblue', 'slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
 planner_lesion_names = c('No subgoals', 'No goal gradient', 'No subgoals + no gradient', 'No IW')
 colors = c('steelblue3','goldenrod', 'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkseagreen3')
