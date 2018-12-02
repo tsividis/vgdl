@@ -385,12 +385,13 @@ games_to_show = c('myAliens', 'survivezombies','helper','avoidgeorge', 'missilec
 sorted_game_names = sort(as.vector(unique(alldata$game_name)))
 ## plotting all agents/models
 plots = list()
-for (i in 1:length(sorted_game_names)){
+# for (i in 1:length(sorted_game_names)){
 # for (i in 1:length(levels(alldata$game_name))){
+for(i in 1:length(games_to_show)){
   # game = levels(alldata$game_name)[i]
   # geom_smooth(method='loess',se=FALSE)
-  # game = games_to_show[i]
-  game = sorted_game_names[i]
+  game = games_to_show[i]
+  # game = sorted_game_names[i]
   d = subset(alldata, game_name==game)
   # d$level_accumulated_score = d$score
   p = ggplot(d, aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
@@ -402,7 +403,7 @@ for (i in 1:length(sorted_game_names)){
     xlab('Steps taken by agent')+ylab('Levels won')
     # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
-  p=p+xlim(0,10000)#+ylim(0,5)
+  p=p+xlim(0,4000)#+ylim(0,5)
   p
   
   plots[[i]] = p
@@ -1157,7 +1158,8 @@ p = ggplot()+
   # theme(legend.position="none")+
   colorScale+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
-tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+# tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p + scale_fill_manual(values=colors,name="Model",
@@ -1165,7 +1167,27 @@ p + scale_fill_manual(values=colors,name="Model",
                        labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN")) + scale_color_manual(values=colors,name="Model",
                                                                                          breaks=c(levels(plantimedata$agent_type)[4], levels(plantimedata$agent_type)[3], "DDQN"),
                                                                                          labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN"))
-## 12x8
+## 14x10
+p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+ geom_histogram(stat='bin',bins=50, position='identity', alpha=.8) +scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
+  scale_color_manual(values=colors)+scale_fill_manual(values=colors,name="Model",
+                                                                                  breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                                                                                  labels=c("DDQN", 'EMPA')) +
+  scale_color_manual(values=colors,name="Model",
+                    breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                    labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Number of games")+ geom_vline(xintercept=0,linetype='dashed',size=.4)
+p ## 6x8 performance_distribution_histogram
+
+p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarklabels)+
+  scale_color_manual(values=colors)+scale_fill_manual(values=colors,name="Model",
+                                                      breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                                                      labels=c("DDQN", 'EMPA')) +
+  scale_color_manual(values=colors,name="Model",
+                     breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                     labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Density") + geom_vline(xintercept=0,linetype='dashed',size=.4)
+p ## 6x8 ## performance_distribution_density
+
 
 
 #### use this to generate the legend, then cut/paste it in illustrator.
@@ -1207,9 +1229,10 @@ p = ggplot()+
   # theme(legend.position="none")+
   colorScale+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
-tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+tickmarklabels = c("<10e8",10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
-p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarklabels)
 p + scale_fill_manual(values=colors,name="Model",
                       breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
                       labels=c("DDQN", "EMPA (IW1)")) +
@@ -1259,9 +1282,11 @@ p = ggplot()+
   # theme(legend.position="none")+
   colorScale+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
-tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+tickmarklabels = c("<10e-8",10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+
 logtickmarks=(log(tickmarks))
-p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarklabels)
 p + scale_fill_manual(values=colors,name="Model",
                       breaks=c(levels(plantimedata$agent_type)[3], "DDQN"),
                       labels=c("EMPA (IW2)","DDQN")) + scale_color_manual(values=colors,name="Model",
@@ -1321,6 +1346,11 @@ plantimedata$short_agent_type = as.factor(plantimedata$short_agent_type)
 ##plot exploration lesions
 
 
+for (i in 1:length(plantimedata$human_normed_composite_ratio)){
+  if (plantimedata$human_normed_composite_ratio[i]==0){
+    plantimedata$human_normed_composite_ratio[i]=10e-8
+  }
+}
 
 exploration_lesion_names = c("ε-greedy DS, 1k","ε-greedy DS, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
 colors = c('steelblue3', 'slateblue', 'slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
@@ -1342,16 +1372,18 @@ for (i in 1:length(lesions)){
     # theme(legend.position="none")+
     colorScale+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,5)
-  tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+  tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+  # tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
   logtickmarks=(log(tickmarks))
-  p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+  p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(log(10e-7), log(100)))
   # p+scale_fill_manual(values=colors)
   
   p = p+ scale_fill_manual(values=colors,name="Model",
-                        breaks=c(types_to_plot[1], types_to_plot[2]),
-                        labels=c("EMPA (IW1)", types_to_plot[2])) #+ scale_color_manual(values=colors,name="Model",
-  # breaks=c("EMPA (IW2)", types_to_plot[1]),
-  # labels=c("EMPA (IW2)", types_to_plot[1]))
+                           breaks=c(types_to_plot[1]),
+                           labels=c(types_to_plot[1]))
+    # scale_fill_manual(values=colors,name="Model",
+                        # breaks=c(types_to_plot[1], types_to_plot[2]),
+                        # labels=c("EMPA (IW1)", types_to_plot[2]))
   
   plots[[i]] = p
   
