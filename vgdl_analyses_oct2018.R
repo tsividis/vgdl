@@ -1202,6 +1202,9 @@ p + scale_fill_manual(values=colors,name="Model",
                                                                                          breaks=c(levels(plantimedata$agent_type)[4], levels(plantimedata$agent_type)[3], "DDQN"),
                                                                                          labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN"))
 ## 14x10
+
+tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
 p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
  geom_histogram(stat='bin',bins=50, position='identity', alpha=.8) +scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
   scale_color_manual(values=colors)+scale_fill_manual(values=colors,name="Model",
@@ -1212,21 +1215,13 @@ p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=l
                     labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Number of games")+ geom_vline(xintercept=0,linetype='dashed',size=.4)
 p ## 6x8 performance_distribution_histogram
 
-p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', exploration_lesion_names)), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
-  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarklabels)+
-  scale_color_manual(values=colors)+scale_fill_manual(values=colors,name="Model",
-                                                      breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
-                                                      labels=c("DDQN", 'EMPA')) +
-  scale_color_manual(values=colors,name="Model",
-                     breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
-                     labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Density") + geom_vline(xintercept=0,linetype='dashed',size=.4)
-
-
 
 ## Plot distribution of exploration scores.
 exploration_lesion_and_DQN_names = c("IW1","DDQN", "ε-greedy DS, 1k","ε-greedy DS, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
 colors = c('steelblue3',"grey50", 'slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
 names(colors) = exploration_lesion_and_DQN_names
+tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
 p = ggplot(subset(plantimedata, short_agent_type %in% exploration_lesion_and_DQN_names), aes(x=log(human_normed_composite_ratio), fill=short_agent_type, color=short_agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarklabels)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
@@ -1585,20 +1580,7 @@ summarise(subset(plantimedata, short_agent_type%in%c('IW2', lesions), comp_ratio
 # p
 ## save as 6x72
 
-## To see roughly what this plot'll look like, fill in a fake score_efficiency column
-for (i in 1:length(levels(plantimedata$game_name))){
-  game = levels(plantimedata$game_name)[i]
-  if(length(filter(plantimedata, agent_type==levels(data$agent_type)[4] & game_name==game))){
-    se=0.005+runif(1,-0.005,.005)
-    new = data.frame(game_name=game, agent_type='DDQN', max_score=NA, 
-                     max_steps=NA, planning_time=NA, 
-                     max_levels_won=NA,level_percentage=NA,
-                     level_num=5, score_efficiency=se)
-    plantimedata = rbind(plantimedata, new)    
-  }
-  
-  
-}
+
 
 # ## you're unable to get both models on this plot. why??
 # s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & (!is.na(score_efficiency)|score_efficiency>0.005 ))
