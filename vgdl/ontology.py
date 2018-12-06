@@ -755,7 +755,7 @@ class ShootAvatar(OrientedAvatar, SpriteProducer):
     """ Produces a sprite in front of it (e.g., Link using his sword). """
     ammo=None
 
-    def __init__(self, stype=None, limit=None, **kwargs):
+    def __init__(self, stype=None, **kwargs):
         self.stype = stype
         OrientedSprite.__init__(self, **kwargs)
 
