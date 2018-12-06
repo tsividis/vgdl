@@ -433,8 +433,8 @@ class BasicGame(object):
 
     def _createSprite(self, keys, pos):
         res = []
-
         for key in keys:
+
             if self.num_sprites > self.MAX_SPRITES:
                 print "Sprite limit reached."
                 return res
@@ -690,7 +690,6 @@ class BasicGame(object):
         self.effectList = []
         spriteLocationDict = defaultdict(lambda:[])
         dead = self.kill_list[:] # copy kill list
-
         # self.collision_eff.sort(key=lambda x:1 if x[2].__name__ in ['bounceForward','stepBack','wallStop']
         #         else 2 if x[2].__name__ in ['killSprite', 'killIfTooFast', 'collectResource']
         #         else 3 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']<=0))
@@ -1153,6 +1152,7 @@ class BasicGame(object):
         else 3.5 if (x[2].__name__ in ['changeScore', 'conveySprite', 'changeResource']  and ('value' not in x[3] or x[3]['value']>0))
         else 4 if x[2].__name__ in ['nothing']
         else 0), reverse=True)
+
         # ('ENDOFSCREEN' if x[1]=='EOS' else colorDict[str(self.alt_sprite_constr[x[1]][1]['color'])]) ), reverse=True)
         # x[1] ), reverse=True)
 

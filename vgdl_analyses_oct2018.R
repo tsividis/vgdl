@@ -29,7 +29,7 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('nov28')
+dates = list('dec3')
 saveddata = data
 data = list()
 for (date in dates){
@@ -79,8 +79,14 @@ for (colname in names(dqndata)){
   }
 }
 
+
+
+
 exploration_lesions = subset(data, grepl('eG=True', agent_type))
 planner_lesions = subset(data, grepl('PL=', agent_type))
+
+new_planner_lesions = subset(data, grepl('PL=', agent_type))
+planner_lesions = rbind(planner_lesions, new_planner_lesions)
 
 
 MEPdatawoSubjectID=MEPdata
@@ -350,12 +356,17 @@ colorScale = scale_color_manual(name="agent_type", values=colors)
 ### alldata has to be (humandata, dqndata, MEPdata)
 humancolors = rep('palegreen3', length(unique(humandata$subject_ID)))
 # MEPcolors = c('steelblue3', 'steelblue1')
-IW2subjs = length(unique(subset(MEPdata, agent_type==levels(MEPdata$agent_type)[1])$subject_ID))
-IW1subjs = length(unique(subset(MEPdata, agent_type==levels(MEPdata$agent_type)[2])$subject_ID))
-MEPcolors = c(rep('steelblue3', IW2subjs), rep('steelblue1', IW1subjs))
+IW1subjs = unique(subset(MEPdata, agent_type==levels(MEPdata$agent_type)[2])$subject_ID)
+IW2subjs = unique(subset(MEPdata, agent_type==levels(MEPdata$agent_type)[1])$subject_ID)
+IW1subj_length = length(IW1subjs)
+IW2subj_length = length(IW2subjs)
+MEPcolors = c(rep('steelblue1', IW1subj_length), rep('steelblue1', IW2subj_length)) ####this is broken -- will show both EMPA models in the same color.
 dqncolors = 'grey50'
 colors = c(humancolors, dqncolors, MEPcolors)
-names(colors)=levels(alldata$subject_ID)
+# names(colors) = c(unique(humandata$subject_ID), 'DDQN', IW1subjs)
+# names(colors) = c(unique(humandata$subject_ID), 'DDQN', IW1subjs, IW2subjs)
+# colors = c(humancolors, dqncolors, IW1colors)
+names(colors)=unique(alldata$subject_ID)
 colorScale = scale_color_manual(name="subject_ID", values=colors)
 
 ## change this once you have more agents?
@@ -379,40 +390,63 @@ games_to_show = df[order(-df$level_percentage, -df$composite_ratio),][1:16,]$gam
 
 #games_to_show = c(as.character(games_to_show), as.character(df[order(df$level_percentage, df$composite_ratio),][1:4,]$game_name))
 
-# games_to_show = c('aliens','avoidgeorge', 'plaqueattack', 'push_boulders', 'relational', 'frogs', 'portals', 'ee', 'zelda', 'butterflies', 'bees_and_birds', 'closing_gates')
 games_to_show = c('myAliens', 'survivezombies','helper','avoidgeorge', 'missilecommand', 'antagonist', 'preconditions', 'closing_gates',
                  'aliens','frogs', 'zelda', 'sokoban', 'butterflies', 'chase', 'bait', 'push_boulders')
+games_to_show = c('myAliens', 'avoidgeorge','survivezombies', 'antagonist', 'frogs','butterflies', 'zelda', 'bait')
+games_to_show = c('avoidgeorge','missilecommand','antagonist','butterflies','zelda','bait')
+
 sorted_game_names = sort(as.vector(unique(alldata$game_name)))
 ## plotting all agents/models
 plots = list()
-# for (i in 1:length(sorted_game_names)){
+for (i in 1:length(sorted_game_names)){
 # for (i in 1:length(levels(alldata$game_name))){
-for(i in 1:length(games_to_show)){
+# for(i in 1:length(games_to_show)){
   # game = levels(alldata$game_name)[i]
   # geom_smooth(method='loess',se=FALSE)
-  game = games_to_show[i]
-  # game = sorted_game_names[i]
-  d = subset(alldata, game_name==game)
+  # game = games_to_show[i]
+  game = sorted_game_names[i]
+  # if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies')){
+  #   max_x=3000
+  # }
+  # else{
+  #   max_x = 1000
+  # }
+  max_x = 10000
+  d = subset(alldata, game_name==game&agent_type %in% c('human', 'DDQN', levels(alldata$agent_type)[4]))
   # d$level_accumulated_score = d$score
   p = ggplot(d, aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
-  p=p+geom_point()+ geom_smooth(method=loess,span=1,se=FALSE)+#geom_smooth(method=lm,se=FALSE)+
-    ggtitle(game)+theme(legend.position="none")+colorScale+scale_color_manual(values=colors)+scale_size_manual(values=c(.8,.8,1,1))#+scale_size_manual(values=c(.6,.6,0.6,.6))
-  p=p+scale_color_manual(values=colors,name="Model",
-                                       breaks=c("DDQN", levels(alldata$agent_type)[3], levels(alldata$agent_type)[4]),
-                                       labels=c("DDQN", "EMPA (IW1)", "EMPA (IW2)"))+
+  p=p+geom_point()+ 
+    ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=colors)+colorScale+
+  # p=p+scale_color_manual(values=colors,name="Model",
+                                       # breaks=c("DDQN", levels(alldata$agent_type)[4],
+                                       # labels=c("DDQN", "EMPA")+
     xlab('Steps taken by agent')+ylab('Levels won')
     # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
-  p=p+xlim(0,4000)#+ylim(0,5)
+  # if(length(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)<3){
+  if ((length(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)==0) || 
+     (max(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)==0)){
+      p=p+geom_smooth(data=subset(d,agent_type %in% c('human', levels(alldata$agent_type)[4])),method=loess,span=1,se=FALSE)+
+      geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=subset(d,agent_type=='DDQN'),size=.7)
+  }
+  else{
+    p=p+geom_smooth(method=loess, span=1,se=FALSE)
+  }
+  p=p+xlim(0,max_x)#+ylim(0,5)
+  
   p
   
   plots[[i]] = p
 }
-layout = matrix(c(1:length(plots)), ncol=4, byrow=TRUE) ##16x20 for 16 games
+layout = matrix(c(1:length(plots)), ncol=4, byrow=TRUE) ##16x20 for 16 games ##10x20 for 12 games
 # layout = matrix(c(1:5), ncol=5, byrow=TRUE)
 layout = matrix(c(1:90), ncol=6, byrow=TRUE)
+layout = matrix(c(1:length(plots)), ncol=3, byrow=TRUE) ##9x12 for 6 games
+##6x8 for one game
 m = multiplot(plotlist = plots, layout=layout)
-## save as 30x50?
+multiplot_10k = m
+multiplot_1_mil = m
+## save as 50x30?
 
 y = c(0,0,0,0,0,0,1,1,2)
 x = c(0,1,3,6,8,10,12,20,25)
@@ -1178,7 +1212,7 @@ p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=l
                     labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Number of games")+ geom_vline(xintercept=0,linetype='dashed',size=.4)
 p ## 6x8 performance_distribution_histogram
 
-p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', exploration_lesion_names)), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarklabels)+
   scale_color_manual(values=colors)+scale_fill_manual(values=colors,name="Model",
                                                       breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
@@ -1186,8 +1220,18 @@ p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=l
   scale_color_manual(values=colors,name="Model",
                      breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
                      labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Density") + geom_vline(xintercept=0,linetype='dashed',size=.4)
-p ## 6x8 ## performance_distribution_density
 
+
+
+## Plot distribution of exploration scores.
+exploration_lesion_and_DQN_names = c("IW1","DDQN", "ε-greedy DS, 1k","ε-greedy DS, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
+colors = c('steelblue3',"grey50", 'slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
+names(colors) = exploration_lesion_and_DQN_names
+p = ggplot(subset(plantimedata, short_agent_type %in% exploration_lesion_and_DQN_names), aes(x=log(human_normed_composite_ratio), fill=short_agent_type, color=short_agent_type))+
+  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarklabels)+
+  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
+  geom_vline(xintercept=0,linetype='dashed',size=.4)
+p # 6x9
 
 
 #### use this to generate the legend, then cut/paste it in illustrator.
@@ -1351,11 +1395,16 @@ for (i in 1:length(plantimedata$human_normed_composite_ratio)){
     plantimedata$human_normed_composite_ratio[i]=10e-8
   }
 }
+plantimedata$log_human_normed_composite_ratio = log(plantimedata$human_normed_composite_ratio)
 
-exploration_lesion_names = c("ε-greedy DS, 1k","ε-greedy DS, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
-colors = c('steelblue3', 'slateblue', 'slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
+
+
+exploration_lesion_names = c("IW1", "ε-greedy DS, 1k","ε-greedy DS, 2k", "ε-greedy, 1k", "ε-greedy, 2k")
+colors = c('steelblue3','slateblue1', 'slateblue2', 'slateblue3', 'slateblue4')
+names(colors) = exploration_lesion_names
+lesions = exploration_lesion_names
 planner_lesion_names = c('IW1', 'No subgoals', 'No goal gradient', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')
-colors = c('steelblue3','goldenrod', 'goldenrod1', 'goldenrod2', 'darkslategray2', 'darkolivegreen3')
+colors = c('steelblue3','goldenrod1', 'goldenrod1', 'goldenrod1', 'darkslategray2', 'darkolivegreen3')
 names(colors) = planner_lesion_names
 lesions = planner_lesion_names
 s = subset(plantimedata, short_agent_type=='IW1')
@@ -1369,19 +1418,25 @@ for (i in 1:length(lesions)){
     geom_bar(data=subset(plantimedata, short_agent_type %in% types_to_plot),
              aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(short_agent_type)), stat='identity',position='dodge')+
     scale_x_discrete(limits=ordered_names)+
-    # theme(legend.position="none")+
+    theme(legend.position="none")+
     colorScale+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,5)
-  tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
-  # tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+  ylab("")+xlab("")+geom_hline(yintercept=0,size=.4)
+      # ylab("Human-normed performance")+xlab('Game name')+ylim(-10,5)
+
+        # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  # tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+  tickmarks = c(10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2)
   logtickmarks=(log(tickmarks))
-  p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(log(10e-7), log(100)))
+  p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(log(10e-4), log(100)))
+  p=p+theme(axis.line.y=element_blank(),axis.text.y=element_blank(), axis.ticks.y=element_blank())
+  
   # p+scale_fill_manual(values=colors)
   
   p = p+ scale_fill_manual(values=colors,name="Model",
                            breaks=c(types_to_plot[1]),
                            labels=c(types_to_plot[1]))
-    # scale_fill_manual(values=colors,name="Model",
+  p  
+  # scale_fill_manual(values=colors,name="Model",
                         # breaks=c(types_to_plot[1], types_to_plot[2]),
                         # labels=c("EMPA (IW1)", types_to_plot[2]))
   
@@ -1389,9 +1444,78 @@ for (i in 1:length(lesions)){
   
   }
 
-layout = matrix(c(1:4), ncol=4, byrow=TRUE)
-m = multiplot(plotlist = plots[1:4], layout=layout)
-##10x20
+layout = matrix(c(1:length(plots)), ncol=length(plots), byrow=TRUE)
+m = multiplot(plotlist = plots, layout=layout)
+##24x10
+
+
+
+##### planner lesion performance summary
+models_to_plot = planner_lesion_names
+s = summarySE(subset(plantimedata, short_agent_type%in%models_to_plot), 
+              measurevar="log_human_normed_composite_ratio", groupvars=c("short_agent_type"), na.rm=TRUE)
+
+tickmarks = c(10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2)
+logtickmarks = log(tickmarks)
+p = ggplot(s, aes(x=short_agent_type, y=log_human_normed_composite_ratio, fill=short_agent_type)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=log_human_normed_composite_ratio-ci, ymax=log_human_normed_composite_ratio+ci))
+p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
+                                 breaks=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
+                                 labels=c('EMPA', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')) #+
+  # scale_x_discrete(limits=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
+                   # labels=c('EMPA', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')) + xlab('Lesion') + ylab('Human-normed performance')
+p=p+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p ## 10x24
+
+
+
+###Exploration lesions -- barplot for all 90 games
+models_to_plot = exploration_lesion_and_DQN_names
+s = summarySE(subset(plantimedata, short_agent_type%in%models_to_plot), 
+              measurevar="log_human_normed_composite_ratio", groupvars=c("short_agent_type"), na.rm=TRUE)
+
+tickmarks = c(10e-7, 10e-6, 10e-5, 10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2)
+logtickmarks = log(tickmarks)
+xbreaks = c('DDQN','IW1', 'ε-greedy DS, 1k', 'ε-greedy DS, 2k', 'ε-greedy, 1k', 'ε-greedy, 2k')
+xlabels = c('DDQN','EMPA', 'ε-greedy DS, 1k', 'ε-greedy DS, 2k', 'ε-greedy, 1k', 'ε-greedy, 2k')
+p = ggplot(s, aes(x=short_agent_type, y=log_human_normed_composite_ratio, fill=short_agent_type)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=log_human_normed_composite_ratio-ci, ymax=log_human_normed_composite_ratio+ci))
+
+p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
+                                 breaks=xbreaks,
+                                 labels=xlabels)+
+ xlab('Lesion') + ylab('Human-normed performance')
+p=p+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)+scale_x_discrete(breaks=xbreaks, labels=xlabels)
+p ## 10x24
+
+
+
+## exploration lesions -- barplot only for games the models solved
+models_to_plot = exploration_lesion_and_DQN_names
+plantimedata_models = subset(plantimedata, short_agent_type%in%models_to_plot)
+nonzero_dataframe = c()
+for (game in unique(plantimedata_models$game_name)){
+  s = subset(plantimedata_models, game_name==game)
+  if (min(s$level_percentage)>0){
+    nonzero_dataframe = rbind(nonzero_dataframe, s)
+  }
+}
+##num_games that all models solved: length(unique(nonzero_dataframe)$game_name) (31)
+s = summarySE(nonzero_dataframe, 
+              measurevar="log_human_normed_composite_ratio", groupvars=c("short_agent_type"), na.rm=TRUE)
+
+tickmarks = c(10e-7, 10e-6, 10e-5, 10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2)
+logtickmarks = log(tickmarks)
+xbreaks = c('DDQN','IW1', 'ε-greedy DS, 1k', 'ε-greedy DS, 2k', 'ε-greedy, 1k', 'ε-greedy, 2k')
+xlabels = c('DDQN','EMPA', 'ε-greedy DS, 1k', 'ε-greedy DS, 2k', 'ε-greedy, 1k', 'ε-greedy, 2k')
+p = ggplot(s, aes(x=short_agent_type, y=log_human_normed_composite_ratio, fill=short_agent_type)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=log_human_normed_composite_ratio-ci, ymax=log_human_normed_composite_ratio+ci))
+p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
+                                 breaks=xbreaks,
+                                 labels=xlabels)+
+  xlab('Lesion') + ylab('Human-normed performance')
+p=p+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p ## 10x24
 
 
 df = data.frame(game_name=as.character(), agent_type=as.character(), short_agent_type=as.character(), max_steps=as.numeric(), planning_time=as.numeric(), min_planning_time=as.numeric())
@@ -1410,20 +1534,20 @@ for (i in 1:length(unique(plantimedata$game_name))){
 }
 
 ### Make plot of summarized planner efficiency
-models_to_plot = c('IW2', planner_lesion_names)
-colors = c('steelblue3','goldenrod1', 'goldenrod1', 'goldenrod1', 'indianred1')
-names(colors)=models_to_plot
-colorScale = scale_color_manual(name="short_agent_type", values=colors)
-
+# models_to_plot = c('IW2', planner_lesion_names)
+# colors = c('steelblue3','goldenrod1', 'goldenrod1', 'goldenrod1', 'indianred1')
+# names(colors)=models_to_plot
+# colorScale = scale_color_manual(name="short_agent_type", values=colors)
+models_to_plot = planner_lesion_names
 s = summarySE(subset(plantimedata, short_agent_type%in%models_to_plot), 
               measurevar="normed_plan_nodes_per_step", groupvars=c("short_agent_type"), na.rm=TRUE)
 p = ggplot(s, aes(x=short_agent_type, y=normed_plan_nodes_per_step, fill=short_agent_type)) +
   geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=normed_plan_nodes_per_step-ci, ymax=normed_plan_nodes_per_step+ci))
 p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
-                                 breaks=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
-                                 labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'))+
-  scale_x_discrete(limits=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
-                   labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW')) + xlab('Lesion') + ylab('Planner efficiency')
+                                 breaks=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
+                                 labels=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'))+
+  scale_x_discrete(limits=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
+                   labels=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')) + xlab('Lesion') + ylab('Planner efficiency')
 p
 
 models_to_plot
@@ -1435,10 +1559,14 @@ for (i in 1:length(models_to_plot)){
     geom_bar(position='dodge',stat='identity')+ylim(0,1)+xlab("Game name") +ylab("Planner efficiency")+theme(axis.title.x=element_blank(),
                                                                 axis.text.x=element_blank(),
                                                                 axis.ticks.x=element_blank())+colorScale+theme(legend.position="none")+
-    colorScale+scale_fill_manual(values=colors, name="",
-                                 breaks=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
-                                 labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'))+
-    scale_x_discrete(limits=unique(plantimedata$game_name))#+scale_fill_manual(name="Game", breaks=unique(plantimedata$game_name))
+    # colorScale+scale_fill_manual(values=colors, name="",
+    #                              breaks=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
+    #                              labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'))+
+    colorScale+scale_fill_manual(values=colors, name="Lesion",
+                                 breaks=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
+                                 labels=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'))+
+        scale_x_discrete(limits=unique(plantimedata$game_name))#+scale_fill_manual(name="Game", breaks=unique(plantimedata$game_name))
+  p
   # p=p+coord_flip()
   plots[[i]]=p
 }

@@ -755,7 +755,7 @@ class ShootAvatar(OrientedAvatar, SpriteProducer):
     """ Produces a sprite in front of it (e.g., Link using his sword). """
     ammo=None
 
-    def __init__(self, stype=None, **kwargs):
+    def __init__(self, stype=None, limit=None, **kwargs):
         self.stype = stype
         OrientedSprite.__init__(self, **kwargs)
 
@@ -1355,6 +1355,7 @@ def nothing(sprite, partner, game):
 def killSprite(sprite, partner, game):
     """ Kill command """
     game.kill_list.append(sprite)
+    # game.num_sprites -= 1
     sprite.deathage = game.time
     if not None in {sprite, partner}:
         return ("killSprite", sprite.ID, partner.ID) # partner = agent, sprite = what's being killed

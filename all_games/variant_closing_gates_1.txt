@@ -16,7 +16,7 @@ BasicGame
         wall bullet > nothing
         bullet goal > nothing
         goal bullet > nothing
-        boulder boulder > stepBack
+        boulder boulder > killSprite
         forcefield wall > nothing
         wall forcefield > nothing
         forcefield missile > nothing
