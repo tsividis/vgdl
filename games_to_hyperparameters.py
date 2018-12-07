@@ -1,5 +1,5 @@
 
-low memory -- 16gb
+# low memory -- 16gb
 game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
 'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 'bait', 'variant_bait_1', 'variant_bait_2',
