@@ -1,5 +1,5 @@
 
-# low memory -- 16gb
+low memory -- 16gb
 game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
 'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
 'bait', 'variant_bait_1', 'variant_bait_2',
@@ -28,7 +28,7 @@ game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_
 'watergame', 'variant_watergame_1', 'variant_watergame_2',
 'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3'] #90 total
 
-# game_names = ['tiny_zelda']
+# game_names = ['variant_boulderdash_2']
 # game_names = ['watergame','variant_watergame_1','variant_watergame_2', 'plaqueattack','variant_plaqueattack_1','variant_plaqueattack_2','variant_plaqueattack_3']
 
 ## what you didn't run was array 80-89.
