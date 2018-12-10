@@ -27,9 +27,9 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov 18, nov 19: informal sensitivity analysis
 ## nov27: exploration and planner lesions
 ## nov28: AGH+IW planner lesion
-dates = c('nov8', 'nov12', 'nov15', 'nov16')
+dates = c('nov8', 'nov12', 'nov15', 'nov16', 'dec4')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('dec3')
+dates = list('dec4')
 saveddata = data
 data = list()
 for (date in dates){
@@ -1054,9 +1054,7 @@ normaldataframe = dataframe
 ###
 dataframe = rbind(humandata, dqndata, data)
 
-dataframe = rbind(humandata, dqndata, MEPdata, exploration_lesions, planner_lesions)
-
-
+dataframe = rbind(humandata, dqndata, MEPdata, MEPdata2, exploration_lesions, planner_lesions)
 
 games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
 for (i in 1:length(levels(dataframe$game_name))){
@@ -1229,6 +1227,21 @@ p = ggplot(subset(plantimedata, short_agent_type %in% exploration_lesion_and_DQN
 p # 6x9
 
 
+## Plot a bit of each type of lesion (exploration and planning)
+# plan_and_exploration_lesion_names = c("IW1","DDQN", "ε-greedy DS, 1k", "ε-greedy, 1k", "No subgoals + no gradient" , "No IW", "No subgoals + no gradient + no IW")
+# colors = c('steelblue3',"grey50", 'slateblue1', 'slateblue3', 'goldenrod1','darkslategray2', 'darkolivegreen3')
+plan_and_exploration_lesion_names = c("IW1","DDQN", "No subgoals + no gradient" , "No IW", "No subgoals + no gradient + no IW")
+colors = c('steelblue3',"grey50", 'goldenrod1','darkslategray2', 'darkolivegreen3')
+names(colors) = plan_and_exploration_lesion_names
+tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+p = ggplot(subset(plantimedata, short_agent_type %in% plan_and_exploration_lesion_names), aes(x=log(human_normed_composite_ratio), fill=short_agent_type, color=short_agent_type))+
+  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarklabels)+
+  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
+  geom_vline(xintercept=0,linetype='dashed',size=.4)
+p # 6x9
+
+
 #### use this to generate the legend, then cut/paste it in illustrator.
 main_plot_agent_types = c('DDQN', "IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False")
 s = subset(plantimedata, agent_type==levels(plantimedata$agent_type)[4]) ## should be IW1
@@ -1350,6 +1363,9 @@ for (i in 1:length(plantimedata$agent_type)){
     short_type = 'IW2'
   }
   if(agent=="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False"){
+    short_type = 'IW1'
+  }
+  if(agent=="IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR"){
     short_type = 'IW1'
   }
   if(agent=="IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR"){
