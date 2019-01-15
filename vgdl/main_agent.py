@@ -504,7 +504,7 @@ class Agent:
         import numpy as np
 
         states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
-                  if s['objects']['avatar'].keys()]
+                  if (not s['observe_state']) and s['objects']['avatar'].keys()]
         width, height = self.rle._game.width, self.rle._game.height
         correction_factor = self.rle._game.screensize[0]/width
         corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
@@ -1308,7 +1308,7 @@ class Agent:
                 spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
-                    statesEncountered.append(self.rle._game.getFullState())
+                    statesEncountered.append(self.rle._game.getFullState(observe_state=True))
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
                 if display:
