@@ -8,6 +8,7 @@ generateTheoryFromGame
 import os, subprocess, shutil
 from collections import defaultdict
 from hyperparameters import hyperparameter_sets, metacontroller_sets
+from math import log
 import WBP
 import importlib
 import numpy as np
@@ -319,6 +320,43 @@ class Agent:
             embed()
         self.hypotheses = newHypotheses
 
+    def calculateEntropy(self, theory, spriteDistribution):
+        ## how do you deal with introduction of new objects in new levels? entropy automatically goes up.
+
+        ## calculates entropy of interaction and termination set, assuming:
+        ## prior is uniform over all interaction and termination rules
+        ## termination rules can be made for any item we think can be killed.
+        
+        ## Allowed predicates: picking just 20 for now.
+            ## TODO: decide how you're counting sub-rules with increments of values, etc.
+
+        num_predicates = 20
+        unknown_rules = sum([r.generic for r in theory.interactionSet])
+
+        ## if rule is generic you assume it's uniform over the allowed types
+        interaction_rule_space = num_predicates**unknown_rules
+        
+
+        ###TERMINATIONS
+        ## how do you update entropy when you do see actual evidence for a termination rule?
+        ## TODO: the below is wrong. you want to make the powerset of objects that are killable, not of
+        ## the number of unknown rules.
+        # termination_rule_space = 2**unknown_rules
+        termination_rule_space = 1
+
+        rule_space = interaction_rule_space*termination_rule_space
+        single_rule_p = 1./rule_space
+
+        return -log(single_rule_p,2)
+
+        ## TODO: you're not looking at internal consistency yet. as in, you're considering that a termination rule for an item
+        ## is possible as long as you haven't learned its rule, rather than thinking it's only possible for the particular hypotheses where you suppose
+        ## that the thing can be destroyed.
+
+        ## to include remaining space you probably just need to mulitply by the actual probability for each of the sprite types
+        ## as in, for each sprite hypothesis, take its prob and multiply it by the entire previous cross-product.
+
+        ## figure out when to run this calculation; it's expensive to run on every step.
 
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
@@ -525,6 +563,7 @@ class Agent:
             m[x, y] += 1
             Xs.append(x*block_size+block_size/2.)
             Ys.append(y*block_size+block_size/2.)
+
         # plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
         plt.imshow(m.T, cmap='viridis')
         plt.gca().set_axis_off()
@@ -1548,7 +1587,7 @@ class Agent:
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
 
-        # if hypotheses[0].__dict__ != oldhypothesis.__dict__:
+        print self.calculateEntropy(hypotheses[0], self.rle._game.spriteDistribution)
         if set(hypotheses[0].terminationSet) != oldTerminationSet:
             if self.display_text:
                 print "terminationSet Change"

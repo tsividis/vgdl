@@ -325,7 +325,7 @@ class Theory(object):
 		k = phi(numClasses, numRules, .5)
 
 		return negBin(k,5,.5)
-
+	
 
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
 		"""
