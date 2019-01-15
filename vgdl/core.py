@@ -576,7 +576,7 @@ class BasicGame(object):
                 obj_list[ob.ID] = {'sprite': sprite, 'position':(ob.rect.left, ob.rect.top), 'features':features, 'type': type_vector}
         return obj_list
 
-    def getFullState(self, as_string=False):
+    def getFullState(self, as_string=False, observe_state=False):
         """ Return a dictionary that allows full reconstruction of the game state,
         e.g. for the load/save functionality. """
         # TODO: make sure this list is complete/correct -- maybe a naming convention would be easier,
@@ -606,7 +606,8 @@ class BasicGame(object):
         fs = {'score': self.score,
               'ended': self.ended,
               'win': self.win,
-              'objects': obs}
+              'objects': obs,
+              'observe_state': observe_state}
         return fs
 
     def setFullState(self, fs, as_string=False):
