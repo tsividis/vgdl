@@ -20,6 +20,7 @@ parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickle
 parser.add_argument('--max_rand_steps',type=int,default=0,help='MAX STEPS')
 parser.add_argument('--use_pickled_theories',type=str2bool, default=False)
 parser.add_argument('--epsilon_greedy',type=str2bool, default=False)
+parser.add_argument('--heatmap',type=str2bool, default=False)
 
 args = parser.parse_args()
 game_number = args.game_number
@@ -34,6 +35,8 @@ pickled_theory_path = args.pickled_theory_path
 max_rand_steps = args.max_rand_steps
 use_pickled_theories = args.use_pickled_theories
 epsilon_greedy = args.epsilon_greedy
+heatmap = args.heatmap
+
 if use_pickled_theories:
     print "haven't implemented use_pickled_theories stuff in load_games.py"
     ## think about whether you want each run of vgdl.load_games to use a particular theory for each game,
@@ -151,7 +154,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, e
     gameObject = None
     print game_levels
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie)
+    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
 
     print game_levels
 
@@ -207,7 +210,7 @@ def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_inde
         gameObject = None
         print "running curriculum for theory number {} of {}".format(i, len(set_theories))
         print game_levels
-        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie)
+        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
         print game_levels
 
     total_time = time.time() - start_time
