@@ -550,8 +550,8 @@ class Agent:
                     os.remove(curriculumDir+'/'+episodeSaveFile)
                     print "finished an episode; removing episodeSaveFile"
 
-            if heatmap:
-                self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
+                if heatmap:
+                    self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
 
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
