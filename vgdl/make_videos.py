@@ -38,7 +38,7 @@ def makeMovie(param_ID, gameName, filename):
     os.makedirs("images/tmp/"+gameName)
     return
 
-# embed()
+embed()
 ## ## To convert all raw-video-data for 'scoretest' game:
 dirname = 'raw_video_info/params__IW=2__ea=True/scoretest'
 makeMovies(dirname)

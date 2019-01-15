@@ -458,11 +458,12 @@ class Agent:
                     os.remove(curriculumDir+'/'+episodeSaveFile)
                     print "finished an episode; removing episodeSaveFile"
 
-            # if heatmap:
-            #     self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
-            #         # self.gameFilename[self.gameFilename.find('expt'):],
-            #         gvgname[gvgname.find('set_1/')+6:],
-            #         self.modelType, n_level))
+            if heatmap:
+                self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
+                # self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
+                    # self.gameFilename[self.gameFilename.find('expt'):],
+                    # gvgname[gvgname.find('set_1/')+6:],
+                    # self.modelType, n_level))
 
             # allEffectsEncountered.append(levelEffectsEncountered)
 
@@ -510,19 +511,22 @@ class Agent:
 
         m = np.zeros((width, height))
         Xs, Ys = [],[]
-        im = plt.imread('flexible_goals.png')
-        implot = plt.imshow(im)
-        w, h = implot.get_extent()[1], implot.get_extent()[2]
-        block_size = w/width
+        # print "above imread"
+        # embed()
+        # im = plt.imread('flexible_goals.png')
+        # implot = plt.imshow(im)
+        # w, h = implot.get_extent()[1], implot.get_extent()[2]
+        # block_size = w/width
 
+        block_size=30
         for s in corrected_states:
             x = s[0]
             y = s[1]
             m[x, y] += 1
             Xs.append(x*block_size+block_size/2.)
             Ys.append(y*block_size+block_size/2.)
-        plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
-        # plt.imshow(m.T, cmap='viridis')
+        # plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
+        plt.imshow(m.T, cmap='viridis')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
             hspace = 0, wspace = 0)

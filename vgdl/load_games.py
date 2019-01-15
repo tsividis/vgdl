@@ -15,8 +15,9 @@ parser.add_argument('--metacontroller_index', type=int, default=0, help='metacon
 parser.add_argument('--IW_k', type=int, default=1, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')
 parser.add_argument('--task_ID', type=int, default=0, help='task_ID')
-
+parser.add_argument('--heatmap', type=str2bool, default=False, help='heatmap')
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
+
 args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
@@ -26,6 +27,7 @@ IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
 task_ID = str(args.task_ID)
 make_movie = args.make_movie
+heatmap = args.heatmap
 
 if game_name==str(0):
     game_name = game_names[game_number]
@@ -137,7 +139,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
     gameObject = None
     print game_levels
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie)
+    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
 
     print game_levels
 
