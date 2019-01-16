@@ -305,6 +305,7 @@ class BasicGame(object):
         self.lastAvatarResources = defaultdict(int)
         self.all_objects = {}
         self.new_sprites = []
+        self.H = None # entropy
         self.observation = None
         self.has_clonesprite = False
         self.isInternalEnv = False
@@ -606,6 +607,7 @@ class BasicGame(object):
         fs = {'score': self.score,
               'ended': self.ended,
               'win': self.win,
+              'entropy': self.H,
               'objects': obs,
               'observe_state':observe_state}
         return fs
