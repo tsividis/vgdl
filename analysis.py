@@ -49,7 +49,8 @@ def process_model_run(data, modelrun_ID):
 	if 'merged_data' not in os.listdir(data_path):
 		g = open('{}/merged_data'.format(data_path), 'w+')
 		mergedfilewriter = csv.writer(g)
-		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+		mergedfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 
+							'entropy', 'score', 'level_max_score', 'cumulative_max_score', 
 							'sparse_score', 'level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		g = open('{}/merged_data'.format(data_path), 'a+')	
@@ -60,7 +61,8 @@ def process_model_run(data, modelrun_ID):
 	if game_name not in os.listdir(data_path):
 		f = open('{}/{}'.format(data_path, game_name), 'w+') #newfile and write
 		gamefilewriter = csv.writer(f)
-		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 'score', 'level_max_score', 'cumulative_max_score', 
+		gamefilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'condition', 'exploration_burn_ins', 'game_name', 'level_number', 'timestep', 'cumulative_timestep', 
+							'entropy', 'score', 'level_max_score', 'cumulative_max_score', 
 							'sparse_score','level_accumulated_score', 'episode_end', 'win', 'cumulative_wins', 'planner_settings', 'planner_nodes', 'cumulative_planner_nodes'))
 	else:
 		f = open('{}/{}'.format(data_path, game_name), 'a+') #append and read
@@ -83,8 +85,9 @@ def process_model_run(data, modelrun_ID):
 		level_max_score = 0
 		for episode in level:
 			for t, state in enumerate(episode):
-				timestep, score, planner_nodes, episode_end, win, planner_settings = state['timestep'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings']
-				score=round(score,2)
+				timestep, entropy, score, planner_nodes, episode_end, win, planner_settings = state['timestep'], state['entropy'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings']
+				entropy = round(entropy,4) if entropy is not None else 'NA'
+				score = round(score,2)
 				## All this weird stuff needs to be done because we don't have a single-stream game.
 				if level_number > prev_level_number:
 					level_max_score = 0
@@ -125,7 +128,7 @@ def process_model_run(data, modelrun_ID):
 				cumulative_timestep += 1
 
 				mean_burn_in = np.mean(exploration_burn_ins) if type(exploration_burn_ins)==list else 'NA'
-				row = (agent_type, subject_ID, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, score, level_max_score, cumulative_max_score,
+				row = (agent_type, subject_ID, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, entropy, score, level_max_score, cumulative_max_score,
 						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
 				gamefilewriter.writerow(row)
 				mergedfilewriter.writerow(row)

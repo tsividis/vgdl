@@ -11,6 +11,7 @@ from hyperparameters import hyperparameter_sets, metacontroller_sets
 import WBP
 import importlib
 import numpy as np
+from math import log
 import random
 import cPickle, cloudpickle, pickle
 import time
@@ -335,9 +336,18 @@ class Agent:
         else:
             if learnSprites:
                 if not self.skipInduction:
-                    self.observe(self.rle, 15, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)
+                    ## need to run this for one step to get a theory so we can calculate initial entropy. Then we
+                    ## run it another 14 times.
+                    self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
+                    spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+                        self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
+                    self.rle._game.exceptedObjects = exceptedObjects
+                    gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+                    initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+
+                    self.observe(self.rle, 14, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
                 else:
-                    self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states)                
+                    self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)                
                 spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                     self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
                 self.rle._game.exceptedObjects = exceptedObjects
@@ -358,9 +368,9 @@ class Agent:
         previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         current_colors = [o['type']['color'] for o in allObjects.values()]
         if all([c in previous_colors for c in current_colors]):
-            self.observe(self.rle, 0, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+            self.observe(self.rle, 0, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
         else:
-            self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states) ## observe many steps so that you're not completely clueless about object movements for the new level
+            self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## observe many steps so that you're not completely clueless about object movements for the new level
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
         for k,v in self.rle._game.getObjects().items():
@@ -375,6 +385,58 @@ class Agent:
             newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
         self.hypotheses = newHypotheses
 
+    def entropy(self, k, dist):
+        ## returns entropy of a probability vector; normalizes it if it's not normalized.
+        if sum(dist)>1.1:
+            dist = [v/sum(dist) for v in dist]
+        ## entropy of join distribution of independent random variables: sum of the entropies.
+        return -sum([p*log(p) for p in dist])
+
+    def calculateEntropy(self, theory, spriteDistribution):
+        ## calculates entropy of interaction and termination set, assuming:
+        ## prior is uniform over all interaction and termination rules
+        ## termination rules can be made for any item we think can be killed.
+
+        ## excluding walls and avatar from distribution
+
+        ## figure out when to run this calculation; it's expensive to run on every step.
+        ## also you have to run it during the observation steps, as that's when
+        ## most of the entropy collapses for dynamic types
+
+        ## TODO: you're not looking at internal consistency yet. as in, you're considering that a termination rule for an item
+        ## is possible as long as you haven't learned its rule, rather than thinking it's only possible for the particular hypotheses where you suppose
+        ## that the thing can be destroyed.
+
+        ## how do you deal with introduction of new objects in new levels? entropy automatically goes up.
+        ## just generate plots for games that don't have this problem
+        ## and have a summary that's entropy reduction per level, for all models.
+        
+        ## Allowed predicates: picking just 20 for now.
+            ## TODO: decide how you're counting sub-rules with increments of values, etc.
+
+        num_predicates = 20
+        unknown_rules = sum([r.generic for r in theory.interactionSet])
+
+        ## if rule is generic you assume it's uniform over the allowed types
+        interaction_rule_space = num_predicates**unknown_rules
+        
+        ###TERMINATIONS
+        destroy_rules = ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'collectResource']
+        destroyable_types = set([r.slot1 for r in theory.interactionSet if ((r.generic or r.interaction in destroy_rules) and r.slot1 not in ['avatar', 'EOS'])])
+        unfalsified_termination_rules = 2**len(destroyable_types) ## all possible combinations of killable objects.
+        falsified_termination_rules = len([rule for rule in set(theory.falsified) if rule.termination.stype!='EOS']) + \
+        len([rule for rule in set(theory.multi_falsified) if 'EOS' not in rule.termination.stypes])
+        termination_rule_space = unfalsified_termination_rules - falsified_termination_rules
+
+        rule_space = interaction_rule_space*termination_rule_space
+        single_rule_p = 1./rule_space
+
+        rule_space_entropy = -log(single_rule_p,2)
+
+        sprite_distribution_entropy = sum([self.entropy(k, spriteDistribution[k].values()) for k in spriteDistribution.keys() if self.rle._game.all_objects[k]['features']['color']!='DARKBLUE'])
+
+        ## entropy of joint distribution of independent random variables: sum of the entropies.
+        return rule_space_entropy + sprite_distribution_entropy
 
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
@@ -572,6 +634,7 @@ class Agent:
                  'planner_nodes': planner_nodes, ## how many nodes were searched to determine this particular action? 0 if this is resulting from a cached plan.
                  'ended': ended,
                  'win': win,
+                 'entropy': rle._game.H,
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
                         for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list]
                  }
@@ -1428,7 +1491,7 @@ class Agent:
         lp.print_stats()
         return hypotheses, theory_change_flag, effects
     """
-    def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False):
+    def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False, hypothesis=None):
         if display:
             print "observing for {} steps".format(obsSteps)
         if obsSteps>0:
@@ -1455,9 +1518,15 @@ class Agent:
                         pass
                 rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
                 spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
+                if hypothesis:
+                    rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
+                    compactStates[-1]['entropy'] = rle._game.H
         else:
             spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
             spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+            if hypothesis:
+                rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
+                compactStates[-1]['entropy'] = rle._game.H
         return
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
@@ -1654,8 +1723,12 @@ class Agent:
         oldTerminationSet = set(hypotheses[0].terminationSet)
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
-
-
+        
+        self.rle._game.H = self.calculateEntropy(hypotheses[0], self.rle._game.spriteDistribution)
+        statesEncountered[-1]['entropy'] = self.rle._game.H
+        print "entropy", self.rle._game.H
+        # compactStates[-1]['entropy'] = self.rle._game.H
+        
         if set([t for t in hypotheses[0].terminationSet if t.ruleType!='NoveltyRule']) != set([t for t in oldTerminationSet if t.ruleType!='NoveltyRule']):
             # if self.display_text:
             print "theory change flag because of terminationSet Change"
