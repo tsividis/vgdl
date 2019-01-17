@@ -1398,6 +1398,10 @@ def triggerOnLanding(sprite, partner, game, strigger=None):
         args = {'strigger':strigger}
         return ("trigger", sprite.ID, partner.ID, args)
 
+def shieldFrom(sprite, partner, stype):
+    args = {'stype':stype}
+    return {"shieldFrom", sprite.ID, partner.ID, args}
+
 def stepBack(sprite, partner, game):
     """ Revert last move. """
     sprite.rect = sprite.lastrect
