@@ -436,7 +436,7 @@ class Agent:
         sprite_distribution_entropy = sum([self.entropy(k, spriteDistribution[k].values()) for k in spriteDistribution.keys() if self.rle._game.all_objects[k]['features']['color']!='DARKBLUE'])
 
         ## entropy of joint distribution of independent random variables: sum of the entropies.
-        return rule_space_entropy + sprite_distribution_entropy
+        return rule_space_entropy #+ sprite_distribution_entropy
 
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
