@@ -335,7 +335,7 @@ class Agent:
         if sum(dist)>1.1:
             dist = [v/sum(dist) for v in dist]
         ## entropy of join distribution of independent random variables: sum of the entropies.
-        return -sum([p*log(p) for p in dist])
+        return -sum([p*log(p) for p in dist if p!=0])
 
     def calculateEntropy(self, theory, spriteDistribution):
         ## calculates entropy of interaction and termination set, assuming:
