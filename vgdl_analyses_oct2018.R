@@ -1586,6 +1586,10 @@ m = multiplot(plotlist = plots, layout=layout)
 summarise(subset(plantimedata, short_agent_type%in%c('IW2', lesions), comp_ratio_mean=mean(human_normed_composite_ratio), comp_ratio_sd=sd(human_normed_composite_ratio))
 
 
+## Entropy-reduction plots
+p = ggplot(data, aes(x=cumulative_steps,y=entropy,color=agent_type))
+p=p+geom_point()+ theme(legend.position="none")+geom_smooth()
+p
 
 ## same thing but not grouped by game. not easy to read.
 # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +

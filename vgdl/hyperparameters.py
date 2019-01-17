@@ -15,7 +15,7 @@ metacontroller_sets = [
     'objectLocationTrackingLimit': 1000,
     'safeDistance': 5,
     'longHorizonObservationLimit': 2,
-    'switch_to_exploit_step': 500,
+    'switch_to_exploit_step': 1000,
     'allow_long_range': True,
     'epsilon_greedy_variant': 'N'
     },
