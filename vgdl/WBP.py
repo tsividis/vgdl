@@ -45,7 +45,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
 		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=2, objectNumberTrackingLimit=200, objectLocationTrackingLimit=8, objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], 
-		display=False, filter_novelty=False):
+		display=False, filter_novelty=False, filter_win_rules=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx']
@@ -82,6 +82,7 @@ class WBP():
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
 		self.filter_novelty = filter_novelty
+		self.filter_win_rules = filter_win_rules
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
@@ -102,6 +103,14 @@ class WBP():
 			def is_not_novelty_rule(rule):
 				return not isinstance(rule,NoveltyRule)
 			self.theory.terminationSet = filter(is_not_novelty_rule,self.theory.terminationSet)
+		
+		if self.filter_win_rules:
+			print "filtering win rules"
+			## TODO: fix this so that you don't remove loss rule.
+			embed()
+			def is_not_win_rule(rule):
+				return isinstance(rule,NoveltyRule)
+			self.theory.terminationSet = filter(is_not_win_rule,self.theory.terminationSet)
 
 		if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
 			movingTypesInGame = True

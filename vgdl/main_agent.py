@@ -81,6 +81,8 @@ class Agent:
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
         #N=Normal, DS=Delayed switch out of short-term planning (by changing self.noNewObjectNum), DF=delayed game forfeit after failure to plan in a level (by changing self.absolute_max_nodes)
+        #SN=smart-normal ('explore' step fulfills curiosity; 'exploit fulfills win'). 
+        #SS=smart-sequential. Same as above, but it's first explore everything, then exploit everything.
         ## Also note that changing nonewobjectnum will delay quitting, as only long-term planning anneals up such that you'd ever reach absolute_max_nodes.
         self.epsilon_greedy_variant = self.metacontroller_params['epsilon_greedy_variant']
         self.switch_to_exploit_step = self.metacontroller_params['switch_to_exploit_step'] ## only used for e-greedy lesion
@@ -848,7 +850,8 @@ class Agent:
                 else:
                     epsilon = 0.05
                 print "steps so far {}. epsilon {}".format(steps_so_far, epsilon)
-                if random.random()<epsilon:
+                if random.random()<epsilon: ## and lesion_type is....
+                                            ## if it's not, still call normal planner.
                     print "taking a random step"
                     drew_random_action = True
 
