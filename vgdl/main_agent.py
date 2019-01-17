@@ -1403,7 +1403,7 @@ class Agent:
             spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
             if hypothesis:
                 rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
-                compactStates[-1]['entropy'] = rle._game.H
+                # compactStates[-1]['entropy'] = rle._game.H
         return
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
