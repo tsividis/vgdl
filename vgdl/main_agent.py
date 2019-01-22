@@ -82,6 +82,12 @@ class Agent:
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
         ##AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
         self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else []
+        self.dynamic_type_lesion = self.metacontroller_params['dynamic_type_lesion'] if 'dynamic_type_lesion' in self.metacontroller_params else []
+        self.interaction_lesion = self.metacontroller_params['interaction_lesion'] if 'interaction_lesion' in self.metacontroller_params else []
+        self.interaction_lesion_replacement = self.metacontroller_params['interaction_lesion_replacement'] if 'interaction_lesion_replacement' in self.metacontroller_params else []
+        self.disallowed_events = self.interaction_lesion
+
+        # disallowed_events = ['bounceForward', 'transformTo', 'killSprite', 'cloneSprite', 'teleportToExit', 'pullWithIt']
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
         else:
@@ -94,10 +100,11 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
-        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_PL={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
+        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_PL={}_DTL={}_IL={}_ILR={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
                 self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
                 self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
-                self.switch_to_exploit_step, self.hybrid, self.planner_lesion, self.noNewObjectNum, self.objectNumberTrackingLimit, 
+                self.switch_to_exploit_step, self.hybrid, self.planner_lesion, self.dynamic_type_lesion, self.interaction_lesion, self.interaction_lesion_replacement,
+                self.noNewObjectNum, self.objectNumberTrackingLimit, 
                 self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
                 self.objectsWhoseLocationWeIgnoreString)
 
@@ -1374,8 +1381,8 @@ class Agent:
             print "observing for {} steps".format(obsSteps)
         if obsSteps>0:
             for i in range(obsSteps):
-                spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-                spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+                spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
                     statesEncountered.append(self.rle._game.getFullState(observe_state=True))
@@ -1399,11 +1406,10 @@ class Agent:
                     rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
                     compactStates[-1]['entropy'] = rle._game.H
         else:
-            spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-            spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+            spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+            spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             if hypothesis:
                 rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
-                # compactStates[-1]['entropy'] = rle._game.H
         return
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
@@ -1412,10 +1418,10 @@ class Agent:
 
         if not self.skipInduction:
             # t1 = time.time()
-            spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 1 took {} seconds.".format(time.time()-t1)
             t1 = time.time()
-            spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 2 took {} seconds".format(time.time()-t1)
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
@@ -1475,11 +1481,16 @@ class Agent:
         # print "sprite induction step 3: {}".format(time.time()-t1)
  
         # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+        ## First interaction-rule lesion:
         effects = self.rle._game.effectListByColor
-        # if effects:
-        #     print effects
-        #     print alternateEffects
-        #     embed()
+        if self.interaction_lesion_replacement == 'nothing':
+            for i,e in enumerate(effects):
+                if e[0] in self.disallowed_events:
+                    print "replacing", e
+                    effects[i] = ('nothing', e[1], e[2])
+                    print "with", effects[i]
+                    print ""
+                    # embed()
 
         if self.display_states:
             print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)

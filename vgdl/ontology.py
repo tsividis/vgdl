@@ -2069,14 +2069,24 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
         return {}, {}
 
-def initializeDistribution(sprite_types, objectColors):
+def initializeDistribution(sprite_types, objectColors, dynamic_type_lesion=[]):
     """
     Creates a uniform distribution over all parameter combinations
     """
     catch_all_prior = .000001
     outList = []
+    if 'Chaser' in dynamic_type_lesion:
+        try:
+            sprite_types.remove(Chaser)
+        except:
+            pass
+    if 'Missile' in dynamic_type_lesion:
+        try:
+            sprite_types.remove(Missile)
+        except:
+            pass
     for sprite_type in sprite_types:
-            paramList = initializeDistributionArgs(sprite_type, objectColors)
+            paramList = initializeDistributionArgs(sprite_type, objectColors, dynamic_type_lesion)
             for element in itertools.product(*paramList):
                 outList.append(tuple([('vgdlType', sprite_type)]+sorted(element)))
     # z = len(outList)
@@ -2085,7 +2095,7 @@ def initializeDistribution(sprite_types, objectColors):
     return initial_distribution
 
 
-def initializeDistributionArgs(sprite_type, objectColors):
+def initializeDistributionArgs(sprite_type, objectColors, dynamic_type_lesion=[]):
     """
     Given a sprite type, this returns a distribution over the kinds of args (parameters) belonging
     to that sprite type.
@@ -2093,8 +2103,10 @@ def initializeDistributionArgs(sprite_type, objectColors):
     """
 
     def initializeSpeed():
-        speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-        # speedValues = [0.2, 1.]
+        if 'speed' in dynamic_type_lesion:
+            speedValues = [0.2, 0.4, 0.6, 0.8, 1.]
+        else:
+            speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
         return [('speed', v) for v in speedValues]
 
     def initializeOrientation():
@@ -2132,7 +2144,7 @@ def initializeDistributionArgs(sprite_type, objectColors):
     return paramList
 
 
-def distributionInitSetup(game, sprite):
+def distributionInitSetup(game, sprite, dynamic_type_lesion=[]):
     """
     Does setup for initializing distribution
     'sprite' is an object ID
@@ -2148,7 +2160,7 @@ def distributionInitSetup(game, sprite):
     if 'DTIZDF' in objectColors:
         print "found DTIZDF"
         embed()
-    game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
+    game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
     # game.object_token_spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors) # Indexed by object ID
     if sprite not in game.all_objects.keys():
         game.all_objects[sprite] = game.getObjects()[sprite]
@@ -2717,7 +2729,7 @@ def getKL(spriteDistribution1, spriteDistribution2):
 #     return distributionsHaveChanged
 
 
-def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None):
+def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):
     """
     An explanation of important data structures used in this function:
     game = a BasicGame object
@@ -2739,7 +2751,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         objects = game.getObjects()
         for sprite in objects:
             if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
-                distributionInitSetup(game, sprite)
+                distributionInitSetup(game, sprite, dynamic_type_lesion)
     elif step==1:
         ## Sprite Induction Part 1:
         ## every time you act, make sure there aren't new objects
@@ -2753,7 +2765,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
             if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
                 spritestoupdate+=1
                 game.all_objects[sprite] = objects[sprite]
-                distributionInitSetup(game, sprite)
+                distributionInitSetup(game, sprite, dynamic_type_lesion)
         # print "sprites to update step 1:", spritestoupdate
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
