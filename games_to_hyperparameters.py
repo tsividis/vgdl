@@ -30,4 +30,5 @@
 
 
 ## games to run for lesion tests
-game_names = ['aliens', 'butterflies', 'chase', 'corridor', 'expt_helper', 'frogs', 'portals', 'sokoban', 'survivezombies', 'zelda']
+# game_names = ['aliens', 'butterflies', 'chase', 'corridor', 'expt_helper', 'frogs', 'portals', 'sokoban', 'survivezombies', 'zelda']
+game_names = ['representation_lesion']

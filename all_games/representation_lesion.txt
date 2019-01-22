@@ -1,0 +1,47 @@
+BasicGame
+    SpriteSet
+        cocoon > Immovable color=GREEN
+        avatar    > MovingAvatar color=DARKBLUE
+        butterfly > RandomNPC speed=0.6 color=PINK
+        box > Immovable color=RED
+        chaser > Chaser color=PURPLE stype=cocoon
+        wall > Immovable color=DARKGRAY
+
+    TerminationSet
+        SpriteCounter stype=butterfly win=True
+        SpriteCounter stype=cocoon    win=False
+
+    InteractionSet
+        avatar    wall   > stepBack
+	butterfly wall > stepBack
+	butterfly avatar > changeScore value=2
+        butterfly avatar > killSprite 
+        butterfly cocoon > cloneSprite
+        butterfly butterfly > nothing
+        avatar cocoon > nothing
+        butterfly wall > nothing
+        cocoon butterfly > killSprite
+        avatar box > nothing
+        box avatar > bounceForward
+        butterfly box > nothing
+        box butterfly > nothing
+        box wall > stepBack
+        wall box > stepBack
+	box box > stepBack
+	chaser wall > stepBack
+	wall chaser > nothing
+	chaser box > nothing
+	box chaser > nothing
+	chaser butterfly > nothing
+	butterfly chaser > nothing
+	chaser cocoon > nothing
+	cocoon chaser > nothing
+	chaser avatar > nothing
+	avatar chaser > nothing
+    LevelMapping
+        1 > butterfly
+	2 > chaser
+        0 > cocoon
+        w > wall
+	A > avatar
+        b > box
