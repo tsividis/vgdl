@@ -28,7 +28,8 @@ BasicGame
 
   InteractionSet
     avatar box1 > nothing
-    box1 avatar > transformTo stype=box3
+    #box1 avatar > transformTo stype=box3
+    box1 avatar > killSprite
     avatar box2 > nothing
     box2 avatar > killSprite
     avatar box3 > stepBack
