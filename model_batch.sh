@@ -8,7 +8,7 @@
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --requeue
-#SBATCH --output /dev/null
+##SBATCH --output /dev/null
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
 # if i'm using qos=tenenbaum i shouldn't exceed 30.
@@ -49,5 +49,5 @@ if [ ! -d "${ROOT}/slurm_logs/main" ]; then
 fi
 
 # finally, run the model
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 1 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie True
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 1 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
 # echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --metacontroller_index ${META_IDX}"
