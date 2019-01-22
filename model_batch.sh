@@ -4,7 +4,7 @@
 #SBATCH --array=0-9
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1680
-#SBATCH --qos=use-everything
+#SBATCH --qos=tenenbaum
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --requeue
@@ -14,6 +14,7 @@
 # if i'm using qos=tenenbaum i shouldn't exceed 30.
 # if i use qos normal i can run more. but then jobs might get taken down and will resume later.
 # given that I don't have safe states it's hard to do that well.
+# use qos=use-everything when running the large batches.
 
 # This is the root path of the repo
 ROOT="/om2/user/tsividis/vgdl"
