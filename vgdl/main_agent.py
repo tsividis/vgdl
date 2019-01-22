@@ -1475,11 +1475,15 @@ class Agent:
         # print "sprite induction step 3: {}".format(time.time()-t1)
  
         # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
+        ## First interaction-rule lesion:
+        disallowed_events = ['bounceForward', 'transformTo']
         effects = self.rle._game.effectListByColor
-        # if effects:
-        #     print effects
-        #     print alternateEffects
-        #     embed()
+        for i,e in enumerate(effects):
+            if e[0] in disallowed_events:
+                print "replacing", e
+                effects[i] = ('nothing', e[1], e[2])
+                print "with", effects[i]
+                print ""
 
         if self.display_states:
             print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
