@@ -141,7 +141,6 @@ def process_model_run(data, modelrun_ID):
 
 				row = (agent_type, subject_ID, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, time_elapsed, entropy, score, level_max_score, cumulative_max_score,
 						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, sparse_levels_won, planner_settings, planner_nodes, cumulative_planner_nodes)
-				print row
 				gamefilewriter.writerow(row)
 				mergedfilewriter.writerow(row)
 
