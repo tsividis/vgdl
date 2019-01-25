@@ -11,6 +11,13 @@ library(zoo)
 library(EnvStats)
 library(grid)
 
+
+## the fact that you're unable to change dataframes within functions
+## is forcing you to keep saving/resaving variables with different names
+## and it's forcing you to keep copy/pasting scripts all over the place.
+## start by figuring out the function thing, and then you can clean the
+## rest up more easily.
+
 original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_birds', 'boulderdash', 'butterflies',
                    'chase', 'closing_gates', 'corridor', 'ee', 'frogs', 'helper', 'jaws', 
                    'lemmings', 'missilecommand', 'myAliens', 'plaqueattack', 'portals', 'preconditions','push_boulders',
@@ -29,7 +36,7 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16', 'dec4')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('dec4')
+dates = list('jan23')
 saveddata = data
 data = list()
 for (date in dates){
@@ -72,14 +79,57 @@ data$score = as.numeric(as.character(data$sparse_score))
 ## TODO: once you're using human data, move this below and run it for all_data
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 
+#### Crap for fast analysis. delete soon.
+for (colname in names(MEPdata3)){
+  if (!(colname %in% names(data))){
+    data[,colname] = NA
+    print(colname)
+  }
+}
+for (colname in names(data)){
+  if (!(colname %in% names(MEPdata3))){
+    MEPdata3[,colname] = NA
+    print(colname)
+  }
+}
+
+lesion_games = levels(data$game_name)
+data = rbind(data, MEPdata3)
+
+for (colname in names(humandata)){
+  if (!(colname %in% names(data))){
+    data[,colname] = NA
+    print(colname)
+  }
+}
+for (colname in names(data)){
+  if (!(colname %in% names(humandata))){
+    humandata[,colname] = NA
+    print(colname)
+  }
+}
+data = rbind(data, humandata)
+
+p=ggplot(subset(data, game_name%in%lesion_games), aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+p=p+geom_point()+geom_jitter()+geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+theme(legend.position="none")+facet_wrap(~game_name)
+p
+
+p=ggplot(subset(data, game_name=='sokoban'), aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
+p=p+geom_point()+geom_jitter() +geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+theme(legend.position="none")
+p
+
+
+## you want to get the human_normed composite ratio and then make the raster plot for all the models.
+
+
+#### new crap for fast analysis ends here.
+
 for (colname in names(dqndata)){
   if (!(colname %in% names(data))){
     data[,colname] = NA
     print(colname)
   }
 }
-
-
 
 
 exploration_lesions = subset(data, grepl('eG=True', agent_type))
@@ -1074,6 +1124,7 @@ for (i in 1:length(levels(dataframe$game_name))){
   games_to_levels = rbind(games_to_levels, new)
 }
 
+savedplantimedata = plantimedata
 ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
 plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
                           max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
