@@ -430,7 +430,7 @@ class Agent:
         curriculumDir = 'savedCurricula2'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
-        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.task_ID
+        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
         loadedState = False
         loaded_n_level=0
         # embed()
