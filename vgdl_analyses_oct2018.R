@@ -36,7 +36,7 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16', 'dec4')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('jan23')
+dates = list('jan27')
 saveddata = data
 data = list()
 for (date in dates){
@@ -94,7 +94,7 @@ for (colname in names(data)){
 }
 
 lesion_games = levels(data$game_name)
-data = rbind(data, MEPdata3)
+data = rbind(data, subset(MEPdata3, game_name%in%lesion_games))
 
 for (colname in names(humandata)){
   if (!(colname %in% names(data))){
@@ -108,7 +108,7 @@ for (colname in names(data)){
     print(colname)
   }
 }
-data = rbind(data, humandata)
+data = rbind(data, subset(humandata, game_name%in%lesion_games))
 
 p=ggplot(subset(data, game_name%in%lesion_games), aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
 p=p+geom_point()+geom_jitter()+geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+theme(legend.position="none")+facet_wrap(~game_name)
@@ -1187,18 +1187,36 @@ plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
 # plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
 # plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 plantimedata$human_normed_composite_ratio=NA
+plantimedata$EMPA_normed_composite_ratio=NA
 ##norm by human level_efficiency
 for (i in 1:length(levels(plantimedata$game_name))){
   game = levels(plantimedata$game_name)[i]
   human_composite_ratio = subset(plantimedata, agent_type=='human' & game_name==game)$composite_ratio
-  for (agent in levels(plantimedata$agent_type)){
+  EMPA_composite_ratio = subset(plantimedata, agent_type=="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False"  & game_name==game)$composite_ratio
+    for (agent in levels(plantimedata$agent_type)){
     row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
     plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_composite_ratio = row$composite_ratio/human_composite_ratio
+    plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$EMPA_normed_composite_ratio = row$composite_ratio/EMPA_composite_ratio
+    
+      }
+}
+
+for (i in 1:length(plantimedata$human_normed_composite_ratio)){
+  if (plantimedata$human_normed_composite_ratio[i]==0){
+    plantimedata$human_normed_composite_ratio[i]=0.000000001
+  }
+  if (plantimedata$EMPA_normed_composite_ratio[i]==0){
+    plantimedata$EMPA_normed_composite_ratio[i]=0.000000001
   }
 }
 
+representation_lesion_names = c('No Chaser', 'No Missile', 'Missing Speeds', 'No Push', 'No Clone', 'No Destroy', 'No Pull', 'No Teleport', 'No Transform', 'EMPA')
 
-
+p=ggplot(subset(plantimedata, !(agent_type%in%c('human', levels(plantimedata$agent_type)[10], levels(plantimedata$agent_type)[12]))), aes(agent_type, game_name, fill=log(EMPA_normed_composite_ratio)))+geom_tile()+
+# +  theme(axis.text=element_blank(),axis.ticks= element_blank(),axis.title = element_blank(),panel.background = element_blank())
+ theme(axis.text.x = element_text(angle = 90, hjust = 1),axis.title = element_blank())+scale_fill_gradient2(low='red', midpoint=0, mid='white', high='green')+
+  scale_x_discrete(labels=representation_lesion_names)
+p
 
 
 
