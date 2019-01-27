@@ -36,7 +36,7 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16', 'dec4')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('jan23')
+dates = list('jan27')
 saveddata = data
 data = list()
 for (date in dates){
@@ -94,7 +94,7 @@ for (colname in names(data)){
 }
 
 lesion_games = levels(data$game_name)
-data = rbind(data, MEPdata3)
+data = rbind(data, subset(MEPdata3, game_name%in%lesion_games))
 
 for (colname in names(humandata)){
   if (!(colname %in% names(data))){
@@ -108,7 +108,7 @@ for (colname in names(data)){
     print(colname)
   }
 }
-data = rbind(data, humandata)
+data = rbind(data, subset(humandata, game_name%in%lesion_games))
 
 p=ggplot(subset(data, game_name%in%lesion_games), aes(x=cumulative_steps, y=cumulative_wins,color=agent_type))
 p=p+geom_point()+geom_jitter()+geom_smooth(span=.5, se=FALSE, size=1, alpha=0.5)+theme(legend.position="none")+facet_wrap(~game_name)
@@ -362,8 +362,8 @@ s = subset(humandata, game_name==game)
 for (i in 1:length(unique(s$subject_ID))){
   ID = unique(s$subject_ID)[i]
   print(c(ID, length(filter(s, s$subject_ID==ID)$sparse_levels_won)))
-
-  }
+  
+}
 
 ##remove first part of game string from humandata names. no longer needed because csv files have the right names.
 # humandata$game_name = as.factor(as.character(lapply(as.vector(humandata$game_name), remove_string_from_name)))
@@ -441,7 +441,7 @@ games_to_show = df[order(-df$level_percentage, -df$composite_ratio),][1:16,]$gam
 #games_to_show = c(as.character(games_to_show), as.character(df[order(df$level_percentage, df$composite_ratio),][1:4,]$game_name))
 
 games_to_show = c('myAliens', 'survivezombies','helper','avoidgeorge', 'missilecommand', 'antagonist', 'preconditions', 'closing_gates',
-                 'aliens','frogs', 'zelda', 'sokoban', 'butterflies', 'chase', 'bait', 'push_boulders')
+                  'aliens','frogs', 'zelda', 'sokoban', 'butterflies', 'chase', 'bait', 'push_boulders')
 games_to_show = c('myAliens', 'avoidgeorge','survivezombies', 'antagonist', 'frogs','butterflies', 'zelda', 'bait')
 games_to_show = c('avoidgeorge','missilecommand','antagonist','butterflies','zelda','bait')
 
@@ -449,8 +449,8 @@ sorted_game_names = sort(as.vector(unique(alldata$game_name)))
 ## plotting all agents/models
 plots = list()
 for (i in 1:length(sorted_game_names)){
-# for (i in 1:length(levels(alldata$game_name))){
-# for(i in 1:length(games_to_show)){
+  # for (i in 1:length(levels(alldata$game_name))){
+  # for(i in 1:length(games_to_show)){
   # game = levels(alldata$game_name)[i]
   # geom_smooth(method='loess',se=FALSE)
   # game = games_to_show[i]
@@ -467,16 +467,16 @@ for (i in 1:length(sorted_game_names)){
   p = ggplot(d, aes(x=cumulative_steps,y=cumulative_wins,color=subject_ID, size=agent_type))
   p=p+geom_point()+ 
     ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=colors)+colorScale+
-  # p=p+scale_color_manual(values=colors,name="Model",
-                                       # breaks=c("DDQN", levels(alldata$agent_type)[4],
-                                       # labels=c("DDQN", "EMPA")+
+    # p=p+scale_color_manual(values=colors,name="Model",
+    # breaks=c("DDQN", levels(alldata$agent_type)[4],
+    # labels=c("DDQN", "EMPA")+
     xlab('Steps taken by agent')+ylab('Levels won')
-    # p=p+xlim(0,1000000)
+  # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
   # if(length(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)<3){
   if ((length(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)==0) || 
-     (max(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)==0)){
-      p=p+geom_smooth(data=subset(d,agent_type %in% c('human', levels(alldata$agent_type)[4])),method=loess,span=1,se=FALSE)+
+      (max(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)==0)){
+    p=p+geom_smooth(data=subset(d,agent_type %in% c('human', levels(alldata$agent_type)[4])),method=loess,span=1,se=FALSE)+
       geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=subset(d,agent_type=='DDQN'),size=.7)
   }
   else{
@@ -1139,27 +1139,27 @@ for (j in 1:length(levels(dataframe$agent_type))){
     s = subset(g, agent_type==agent)
     if (length(s$level_max_score)>0){
       ## grab each subject's max_steps and max_wins.
-        level_maxes = list()
-        cumulative_step_maxes = list()
-        idx=1
-        for (k in 1:length(unique(s$subject_ID))){
-          subject = unique(s$subject_ID)[k]
-          subjectdata = s[which(s$subject_ID==subject),]
-          if (length(subjectdata$cumulative_steps)>0){
-            if(max(subjectdata$cumulative_steps)>0){
-              level_maxes[[idx]] = max(subjectdata$cumulative_wins)
-              cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
-              idx = idx+1            
-            }
-
+      level_maxes = list()
+      cumulative_step_maxes = list()
+      idx=1
+      for (k in 1:length(unique(s$subject_ID))){
+        subject = unique(s$subject_ID)[k]
+        subjectdata = s[which(s$subject_ID==subject),]
+        if (length(subjectdata$cumulative_steps)>0){
+          if(max(subjectdata$cumulative_steps)>0){
+            level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+            cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+            idx = idx+1            
           }
+          
         }
+      }
       
       ## calculate the metric you want here. You can normalize it later.
-        
+      
       ## mean vector of win numbers
       mean_wins = mean(as.numeric(as.vector(level_maxes)))
-        
+      
       ##mean of vector steps-to-win ratios
       l_e = mean(as.numeric(as.vector(level_maxes))/as.numeric(as.vector(cumulative_step_maxes)))
       
@@ -1183,22 +1183,40 @@ plantimedata = mutate(plantimedata, level_percentage=mean_levels_won/level_num)
 plantimedata = mutate(plantimedata, composite_ratio = level_percentage*level_efficiency)
 plantimedata = mutate(plantimedata, plan_nodes_per_step=planning_time/max_steps)
 
-  # plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
+# plantimedata = mutate(plantimedata, level_efficiency=level_percentage/max_steps)
 # plantimedata = mutate(plantimedata, composite_ratio=(max_levels_won/all_agent_max_levels)*level_efficiency)
 # plantimedata = mutate(plantimedata, plan_efficiency=score_efficiency/planning_time)
 plantimedata$human_normed_composite_ratio=NA
+plantimedata$EMPA_normed_composite_ratio=NA
 ##norm by human level_efficiency
 for (i in 1:length(levels(plantimedata$game_name))){
   game = levels(plantimedata$game_name)[i]
   human_composite_ratio = subset(plantimedata, agent_type=='human' & game_name==game)$composite_ratio
+  EMPA_composite_ratio = subset(plantimedata, agent_type=="IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False"  & game_name==game)$composite_ratio
   for (agent in levels(plantimedata$agent_type)){
     row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
     plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_composite_ratio = row$composite_ratio/human_composite_ratio
+    plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$EMPA_normed_composite_ratio = row$composite_ratio/EMPA_composite_ratio
+    
   }
 }
 
+for (i in 1:length(plantimedata$human_normed_composite_ratio)){
+  if (plantimedata$human_normed_composite_ratio[i]==0){
+    plantimedata$human_normed_composite_ratio[i]=0.000000001
+  }
+  if (plantimedata$EMPA_normed_composite_ratio[i]==0){
+    plantimedata$EMPA_normed_composite_ratio[i]=0.000000001
+  }
+}
 
+representation_lesion_names = c('No Chaser', 'No Missile', 'Missing Speeds', 'No Push', 'No Clone', 'No Destroy', 'No Pull', 'No Teleport', 'No Transform', 'EMPA')
 
+p=ggplot(subset(plantimedata, !(agent_type%in%c('human', levels(plantimedata$agent_type)[10], levels(plantimedata$agent_type)[12]))), aes(agent_type, game_name, fill=log(EMPA_normed_composite_ratio)))+geom_tile()+
+  # +  theme(axis.text=element_blank(),axis.ticks= element_blank(),axis.title = element_blank(),panel.background = element_blank())
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),axis.title = element_blank())+scale_fill_gradient2(low='red', midpoint=0, mid='white', high='green')+
+  scale_x_discrete(labels=representation_lesion_names)
+p
 
 
 
@@ -1246,8 +1264,8 @@ tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10
 logtickmarks=(log(tickmarks))
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p + scale_fill_manual(values=colors,name="Model",
-                       breaks=c(levels(plantimedata$agent_type)[4], levels(plantimedata$agent_type)[3], "DDQN"),
-                       labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN")) + scale_color_manual(values=colors,name="Model",
+                      breaks=c(levels(plantimedata$agent_type)[4], levels(plantimedata$agent_type)[3], "DDQN"),
+                      labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN")) + scale_color_manual(values=colors,name="Model",
                                                                                          breaks=c(levels(plantimedata$agent_type)[4], levels(plantimedata$agent_type)[3], "DDQN"),
                                                                                          labels=c("EMPA (IW1)", "EMPA (IW2)", "DDQN"))
 ## 14x10
@@ -1255,13 +1273,13 @@ p + scale_fill_manual(values=colors,name="Model",
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
 p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
- geom_histogram(stat='bin',bins=50, position='identity', alpha=.8) +scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
+  geom_histogram(stat='bin',bins=50, position='identity', alpha=.8) +scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
   scale_color_manual(values=colors)+scale_fill_manual(values=colors,name="Model",
-                                                                                  breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
-                                                                                  labels=c("DDQN", 'EMPA')) +
+                                                      breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                                                      labels=c("DDQN", 'EMPA')) +
   scale_color_manual(values=colors,name="Model",
-                    breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
-                    labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Number of games")+ geom_vline(xintercept=0,linetype='dashed',size=.4)
+                     breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                     labels=c("DDQN", 'EMPA'))+ xlab("Human-normed performance") + ylab("Number of games")+ geom_vline(xintercept=0,linetype='dashed',size=.4)
 p ## 6x8 performance_distribution_histogram
 
 
@@ -1339,9 +1357,9 @@ p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarklabels)
 p + scale_fill_manual(values=colors,name="Model",
                       breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
                       labels=c("DDQN", "EMPA (IW1)")) +
-                      scale_color_manual(values=colors,name="Model",
-                                         breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
-                                        labels=c("DDQN", "EMPA (IW1)"))
+  scale_color_manual(values=colors,name="Model",
+                     breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
+                     labels=c("DDQN", "EMPA (IW1)"))
 
 
 #### mess with this to get error bars in main figure.
@@ -1349,14 +1367,14 @@ p + scale_fill_manual(values=colors,name="Model",
 p = ggplot()+
   geom_bar(data=subset(plantimesummary, (agent_type%in%main_plot_agent_types & agent_type!='DDQN')),
            aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge', fun.y='mean') #+
-  # p = ggplot(s, aes(x=short_agent_type, y=normed_plan_nodes_per_step, fill=short_agent_type)) +
-  # geom_bar(position='dodge', stat='summary', fun.y='mean')+
-  geom_linerange(aes(ymin=log(human_normed_composite_ratio-log(ci), ymax=human(human_normed_composite_ratio)+log(ci))))+
-
-# geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
-           # aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+# p = ggplot(s, aes(x=short_agent_type, y=normed_plan_nodes_per_step, fill=short_agent_type)) +
+# geom_bar(position='dodge', stat='summary', fun.y='mean')+
+geom_linerange(aes(ymin=log(human_normed_composite_ratio-log(ci), ymax=human(human_normed_composite_ratio)+log(ci))))+
+  
+  # geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
+  # aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
   # scale_x_discrete(limits=ordered_names)+
-
+  
   colorScale+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
@@ -1393,8 +1411,8 @@ p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarklabels)
 p + scale_fill_manual(values=colors,name="Model",
                       breaks=c(levels(plantimedata$agent_type)[3], "DDQN"),
                       labels=c("EMPA (IW2)","DDQN")) + scale_color_manual(values=colors,name="Model",
-                                                                                         breaks=c(levels(plantimedata$agent_type)[3],"DDQN"),
-                                                                                         labels=c("EMPA (IW2)", "DDQN"))
+                                                                          breaks=c(levels(plantimedata$agent_type)[3],"DDQN"),
+                                                                          labels=c("EMPA (IW2)", "DDQN"))
 
 ## 14x10
 
@@ -1482,10 +1500,10 @@ for (i in 1:length(lesions)){
     scale_x_discrete(limits=ordered_names)+
     theme(legend.position="none")+
     colorScale+
-  ylab("")+xlab("")+geom_hline(yintercept=0,size=.4)
-      # ylab("Human-normed performance")+xlab('Game name')+ylim(-10,5)
-
-        # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    ylab("")+xlab("")+geom_hline(yintercept=0,size=.4)
+  # ylab("Human-normed performance")+xlab('Game name')+ylim(-10,5)
+  
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   # tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
   tickmarks = c(10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2)
   logtickmarks=(log(tickmarks))
@@ -1499,12 +1517,12 @@ for (i in 1:length(lesions)){
                            labels=c(types_to_plot[1]))
   p  
   # scale_fill_manual(values=colors,name="Model",
-                        # breaks=c(types_to_plot[1], types_to_plot[2]),
-                        # labels=c("EMPA (IW1)", types_to_plot[2]))
+  # breaks=c(types_to_plot[1], types_to_plot[2]),
+  # labels=c("EMPA (IW1)", types_to_plot[2]))
   
   plots[[i]] = p
   
-  }
+}
 
 layout = matrix(c(1:length(plots)), ncol=length(plots), byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
@@ -1524,8 +1542,8 @@ p = ggplot(s, aes(x=short_agent_type, y=log_human_normed_composite_ratio, fill=s
 p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
                                  breaks=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
                                  labels=c('EMPA', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')) #+
-  # scale_x_discrete(limits=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
-                   # labels=c('EMPA', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')) + xlab('Lesion') + ylab('Human-normed performance')
+# scale_x_discrete(limits=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
+# labels=c('EMPA', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW')) + xlab('Lesion') + ylab('Human-normed performance')
 p=p+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p ## 10x24
 
@@ -1546,7 +1564,7 @@ p = ggplot(s, aes(x=short_agent_type, y=log_human_normed_composite_ratio, fill=s
 p=p+colorScale+scale_fill_manual(values=colors, name="Lesion",
                                  breaks=xbreaks,
                                  labels=xlabels)+
- xlab('Lesion') + ylab('Human-normed performance')
+  xlab('Lesion') + ylab('Human-normed performance')
 p=p+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)+scale_x_discrete(breaks=xbreaks, labels=xlabels)
 p ## 10x24
 
@@ -1586,13 +1604,13 @@ IW2data = plantimedata[which(plantimedata$short_agent_type=='IW2'),]
 savedplantimedata=plantimedata
 plantimedata$normed_plan_nodes_per_step=NA
 for (i in 1:length(unique(plantimedata$game_name))){
- game=unique(plantimedata$game_name)[i] 
- min_nodes_per_step = min(plantimedata[which( (plantimedata$short_agent_type %in% c('IW2', planner_lesion_names)) & (plantimedata$game_name==game)),]$plan_nodes_per_step)
- # MEP_nodes_per_step = plantimedata[which( (plantimedata$short_agent_type=='IW2')& (plantimedata$game_name==game)),]$plan_nodes_per_step
- for (model in c('IW2', planner_lesion_names)){
-   row = plantimedata[which((plantimedata$short_agent_type==model)&(plantimedata$game_name==game)),]
-   plantimedata[which((plantimedata$short_agent_type==model)&(plantimedata$game_name==game)),]$normed_plan_nodes_per_step = min_nodes_per_step/row$plan_nodes_per_step
-   }
+  game=unique(plantimedata$game_name)[i] 
+  min_nodes_per_step = min(plantimedata[which( (plantimedata$short_agent_type %in% c('IW2', planner_lesion_names)) & (plantimedata$game_name==game)),]$plan_nodes_per_step)
+  # MEP_nodes_per_step = plantimedata[which( (plantimedata$short_agent_type=='IW2')& (plantimedata$game_name==game)),]$plan_nodes_per_step
+  for (model in c('IW2', planner_lesion_names)){
+    row = plantimedata[which((plantimedata$short_agent_type==model)&(plantimedata$game_name==game)),]
+    plantimedata[which((plantimedata$short_agent_type==model)&(plantimedata$game_name==game)),]$normed_plan_nodes_per_step = min_nodes_per_step/row$plan_nodes_per_step
+  }
 }
 
 ### Make plot of summarized planner efficiency
@@ -1619,15 +1637,15 @@ for (i in 1:length(models_to_plot)){
   p = ggplot(subset(plantimedata, short_agent_type==model), 
              aes(x=game_name, y=normed_plan_nodes_per_step, fill=short_agent_type))+
     geom_bar(position='dodge',stat='identity')+ylim(0,1)+xlab("Game name") +ylab("Planner efficiency")+theme(axis.title.x=element_blank(),
-                                                                axis.text.x=element_blank(),
-                                                                axis.ticks.x=element_blank())+colorScale+theme(legend.position="none")+
+                                                                                                             axis.text.x=element_blank(),
+                                                                                                             axis.ticks.x=element_blank())+colorScale+theme(legend.position="none")+
     # colorScale+scale_fill_manual(values=colors, name="",
     #                              breaks=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'),
     #                              labels=c('IW2', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW'))+
     colorScale+scale_fill_manual(values=colors, name="Lesion",
                                  breaks=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'),
                                  labels=c('IW1', 'No goal gradient', 'No subgoals', 'No subgoals + no gradient', 'No IW', 'No subgoals + no gradient + no IW'))+
-        scale_x_discrete(limits=unique(plantimedata$game_name))#+scale_fill_manual(name="Game", breaks=unique(plantimedata$game_name))
+    scale_x_discrete(limits=unique(plantimedata$game_name))#+scale_fill_manual(name="Game", breaks=unique(plantimedata$game_name))
   p
   # p=p+coord_flip()
   plots[[i]]=p
@@ -1637,358 +1655,359 @@ m = multiplot(plotlist = plots, layout=layout)
 ## 10x24
 
 summarise(subset(plantimedata, short_agent_type%in%c('IW2', lesions), comp_ratio_mean=mean(human_normed_composite_ratio), comp_ratio_sd=sd(human_normed_composite_ratio))
-
-## Entropy-reduction plots
-p = ggplot(data, aes(x=cumulative_steps,y=entropy,color=agent_type))
-p=p+geom_point()+ theme(legend.position="none")+geom_smooth()
-p
           
-
-
-## same thing but not grouped by game. not easy to read.
-# p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
-#   geom_bar(position='dodge', stat='identity')+
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_fill_manual(values=colors)
-# p
-## save as 6x72
-
-
-
-# ## you're unable to get both models on this plot. why??
-# s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & (!is.na(score_efficiency)|score_efficiency>0.005 ))
-# colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
-#            'firebrick2', 'tomato2', 'salmon',
-#            'purple2', 'mediumorchid2', 
-#            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
-# 
-# names(colors)=levels(s$agent_type)
-# colorScale = scale_color_manual(name="agent_type", values=colors)
-# 
-# p = ggplot(s, aes(x=reorder(game_name,score_efficiency), y=score_efficiency, fill=agent_type))+
-#   geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
-#   colorScale+
-#   scale_fill_manual(values=colors) +
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("max_score / steps")+xlab('game name')
-# p+coord_flip()
-
-
-# p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_type))) +
-#   geom_bar(position='dodge', stat='identity')+
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-# p
-
-
-## plot failures across models for each game
-p = ggplot(plantimedata, aes(x=game_name, y=1-level_percentage, fill=factor(modelrun_ID))) +
-  geom_bar(position='dodge', stat='identity', alpha=.7)+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-p
-
-## plot means and sd for each model. Probably the most useful figure you can make as you decide what to do.
-## But careful -- figure may be misleading because you're omitting NAs 
-## (game/model combinations that you don't yet have data for) 
-means = data.frame(model=as.character(), mean=as.numeric(), sd=as.numeric())
-for (i in 1:length(levels(plantimedata$agent_type))){
-  agent = levels(plantimedata$agent_type)[i]
-  if (length(subset(plantimedata, agent_type==agent)$game_name)<80){
-    print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
-  }
-  else{
-    num = summarise(subset(plantimedata, agent_type==levels(plantimedata$agent_type)[i]), 
-                    percentage_mean=mean(level_percentage), percentage_sd=sd(level_percentage))
-    r = data.frame(model=levels(plantimedata$agent_type)[i], percentage_mean=num$percentage_mean, percentage_sd=num$percentage_sd)
-    means=rbind(means,r)
-  }
-}
-means = na.omit(means)
-p = ggplot(means, aes(x=reorder(model,-percentage_mean) ,y=percentage_mean, color=model))+
-  geom_pointrange(aes(ymin=percentage_mean-percentage_sd, ymax=percentage_mean+percentage_sd))+ylim(0,1.2)+
-  colorScale+ xlab('agent type') + ylab('% levels won')+  theme(axis.text.x=element_blank(),
-                                                                axis.ticks.x=element_blank())
-p
-
-##plot of avg plantime per action
-plantimeplots = list()
-for (i in 1:length(levels(plantimedata$agent_type))){
-  agent = levels(plantimedata$agent_type)[i]
-  d = subset(plantimedata, agent_type==agent)
-  if (length(d$game_name)>0){
-    p = ggplot(d, aes(x=reorder(game_name, plan_nodes_per_step),y=plan_nodes_per_step,fill=level_percentage))
-    p=p+geom_bar(position='dodge',stat='identity')+ggtitle(as.character(agent)) +theme(axis.text.x = element_text(angle = 90, hjust = 1))
-    p=p+scale_fill_gradient2(low="red",high="green",midpoint=.6)
-    p
-    plantimeplots[[i]]=p
-  }
-}
-layout = matrix(c(1:length(plantimeplots)), ncol=1, byrow=TRUE)
-m = multiplot(plotlist = plantimeplots, layout=layout)
-## save as 32x16
-
-
-
-
-####
-####
-model_run1 = '2018-10-15_'
-model_run2 = '2018-10-18_'
-plot_overlap = function(plantimedata, model_run1, model_run2){
-  plots = list()
-  p = ggplot(subset(plantimedata, modelrun_ID%in%c(model_run1, model_run2)) , aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(modelrun_ID))) +
-    geom_bar(position='identity',stat='identity', alpha=.5)+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  p
-}
-
-######
-######
-path = '~/Projects/atari/vgdl/humandata_ratings/ratings'
-ratingpaths = list.files(path)
-ratings = list()
-for (rating in ratingpaths){
-  ratingpath = paste(path, '/', rating, sep='')
-  r=read.csv(ratingpath, header=TRUE, na.strings='NA')
-  if (length(ratings)==0){
-    ratings = r
-  }
-  else{
-    ratings = rbind(ratings,r)
-  }
-}
-substrRight <- function(x, n){
-  substr(x, nchar(x)-n+1, nchar(x))
-}
-find_source_game = function(name){
-  if (substrRight(name,1)%in%c("1","2","3","4")){
-    return(substr(name,0,nchar(name)-2))
-  }
-  else{
-    return(name)}
-}
-find_variant_number = function(name){
-  lastchar = substrRight(name,1)
-  if (lastchar%in%c("1","2","3","4")){
-    return(lastchar)
-  }
-  else{
-    return('0')
-  }
-}
-ratings$game_name = as.factor(ratings$gameName)
-ratings$source_game_name = as.factor(as.character(lapply(as.vector(ratings$game_name), find_source_game)))
-ratings$variant_number = as.factor(as.character(lapply(as.vector(ratings$game_name), find_variant_number)))
-for (i in 1:length(ratings$difficulty)){
-  if (!is.na(ratings$difficulty[i]) & ratings$difficulty[i]=="None"){
-    ratings$difficulty[i]=NA
-  }
-  if (ratings$interestingness[i]=="None"){
-    ratings$interestingness[i]=NA
-  }
-}
-ratings$difficulty = as.numeric(ratings$difficulty)
-ratings$interestingness = as.numeric(ratings$interestingness)
-## you also have enjoyability
-
-s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
-p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
-  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
-  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Difficulty')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
-#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
-p  
-##save 12x6
-
-s = summarySE(ratings, measurevar="interestingness", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
-p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=interestingness)) +
-  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=interestingness-ci, ymax=interestingness+ci))+
-  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Interestingness') +scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
-#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
-p  
-##save 12x6
-
-
-##for playing around with format
-# p = ggplot(subset(s, source_game_name%in%c('push_boulders','relational')), aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty))+
-# geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
-# facet_wrap(~source_game_name)
-# p
-
-
-######
-######
-diffdata = data.frame(game_name=as.character(), agent_type=as.character(), model_run = as.character(), max_score=as.numeric(), 
-                      max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
-for (i in 1:length(levels(data$game_name))){
-  for (j in 1:length(levels(data$modelrun_ID))){
-    s = subset(data, ((game_name==levels(data$game_name)[i]) & (modelrun_ID==levels(data$modelrun_ID)[j])) )
-    ## the row we want
-    r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
-    ## take only the relevant columns and put them in the new data frame
-    new = data.frame(game_name=r$game_name, agent_type=r$agent_type, model_run=r$modelrun_ID, max_score=r$score, 
-                     max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, max_levels_won=max(r$cumulative_wins))
-    diffdata = rbind(diffdata, new)
-  }
-}
-
-get_diff = function(diffdata, model_run1, model_run2){
-  ## makes a histogram of improvements in model_run1 over model_run2
-  
-  diff_frame = data.frame(game_name=as.character(), level_diff=as.numeric(), col=as.character())
-  
-  colors = c('red','green2')
-  for (i in 1:length(levels(diffdata$game_name))){
-    game = levels(diffdata$game_name)[i]
-    m1=subset(diffdata, game_name==game&model_run==model_run1)$max_levels_won
-    m2=subset(diffdata, game_name==game&model_run==model_run2)$max_levels_won        
-    d = m1-m2
-    if (length(d)==0){
-      d = NA
-      col=NA
-    }else{
-      if (d<0){
-        col=1
-      }else{
-        col=2
-      }
-    }
-    new = data.frame(game_name=game, level_diff=d, col=col)
-    diff_frame = rbind(diff_frame, new)
-  }
-  diff_frame$col = as.factor(diff_frame$col)
-  p = ggplot(diff_frame, aes(x=reorder(game_name,-level_diff), y=level_diff, color=col))+
-    geom_bar(position='dodge', stat='identity')+scale_color_manual(values=colors)+scale_fill_manual(values=colors)+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  p
-  
-}
-
-
-
-
-
-###
-### load helper functions
-g_legend <- function(a.gplot){ 
-  tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
-  legend <- tmp$grobs[[leg]] 
-  return(legend)} 
-
-
-# newdataframe = subset(data, game_name==levels(dataframe$game_name)[1])
-# for (i in 2:length(levels(dataframe$game_name))){
-#   name = levels(dataframe$game_name)[i]
-#   s = subset(data, game_name==levels(dataframe$game_name)[i])
-#   for (j in 1:length(strings_to_remove)){
-#     string_to_remove = strings_to_remove[j]
-#     if (grepl(string_to_remove, name)){
-#       newname = substr(name, nchar(string_to_remove)+2, nchar(name))
-#       s$game_name = as.factor(newname)
-#     }
-#     newdataframe = rbind(newdataframe, s)
-#   }
-# }
-
-remove_string_from_name = function(name){
-  strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
-  for (i in 1:length(strings_to_remove)){
-    string_to_remove = strings_to_remove[i]
-    if (grepl(string_to_remove, name)){
-      keep = substr(name, nchar(string_to_remove)+2, nchar(name))
-      return(keep)
-    }
-    else{
-      keep=name
-    }
-  }
-  return(name)
-}
-
-
-# Multiple plot function
-#
-# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
-# - cols:   Number of columns in layout
-# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
-#
-# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
-# then plot 1 will go in the upper left, 2 will go in the upper right, and
-# 3 will go all the way across the bottom.
-#
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])
-    
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-
-
-## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
-##   data: a data frame.
-##   measurevar: the name of a column that contains the variable to be summariezed
-##   groupvars: a vector containing names of columns that contain grouping variables
-##   na.rm: a boolean that indicates whether to ignore NA's
-##   conf.interval: the percent range of the confidence interval (default is 95%)
-summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
-                      conf.interval=.95, .drop=TRUE) {
-  library(plyr)
-  
-  # New version of length which can handle NA's: if na.rm==T, don't count them
-  length2 <- function (x, na.rm=FALSE) {
-    if (na.rm) sum(!is.na(x))
-    else       length(x)
-  }
-  
-  # This does the summary. For each group's data frame, return a vector with
-  # N, mean, and sd
-  datac <- ddply(data, groupvars, .drop=.drop,
-                 .fun = function(xx, col) {
-                   c(N    = length2(xx[[col]], na.rm=na.rm),
-                     mean = mean   (xx[[col]], na.rm=na.rm),
-                     sd   = sd     (xx[[col]], na.rm=na.rm)
-                   )
-                 },
-                 measurevar
-  )
-  
-  # Rename the "mean" column    
-  # datac$measurevar = datac$mean
-  colnames(datac)[colnames(datac)=="mean"] <- measurevar
-  
-  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
-  
-  # Confidence interval multiplier for standard error
-  # Calculate t-statistic for confidence interval: 
-  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
-  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
-  datac$ci <- datac$se * ciMult
-  
-  return(datac)
-}
+          ## Entropy-reduction plots
+          p = ggplot(data, aes(x=cumulative_steps,y=entropy,color=agent_type))
+          p=p+geom_point()+ theme(legend.position="none")+geom_smooth()
+          p
+          
+          
+          
+          ## same thing but not grouped by game. not easy to read.
+          # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
+          #   geom_bar(position='dodge', stat='identity')+
+          #   theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_fill_manual(values=colors)
+          # p
+          ## save as 6x72
+          
+          
+          
+          # ## you're unable to get both models on this plot. why??
+          # s = subset(plantimedata, (agent_type%in%c('DDQN',levels(plantimedata$agent_type)[4])) & (!is.na(score_efficiency)|score_efficiency>0.005 ))
+          # colors = c('steelblue3', 'steelblue3', 'steelblue3', 'steelblue3',
+          #            'firebrick2', 'tomato2', 'salmon',
+          #            'purple2', 'mediumorchid2', 
+          #            'darkslategray3', 'mediumpurple2', 'aquamarine3', 'coral3')
+          # 
+          # names(colors)=levels(s$agent_type)
+          # colorScale = scale_color_manual(name="agent_type", values=colors)
+          # 
+          # p = ggplot(s, aes(x=reorder(game_name,score_efficiency), y=score_efficiency, fill=agent_type))+
+          #   geom_bar(stat='identity',position='dodge')+theme(legend.position="none")+
+          #   colorScale+
+          #   scale_fill_manual(values=colors) +
+          #   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("max_score / steps")+xlab('game name')
+          # p+coord_flip()
+          
+          
+          # p = ggplot(plantimedata, aes(x=game_name, y=score_efficiency, fill=factor(agent_type))) +
+          #   geom_bar(position='dodge', stat='identity')+
+          #   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+          # p
+          
+          
+          ## plot failures across models for each game
+          p = ggplot(plantimedata, aes(x=game_name, y=1-level_percentage, fill=factor(modelrun_ID))) +
+            geom_bar(position='dodge', stat='identity', alpha=.7)+
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
+          p
+          
+          ## plot means and sd for each model. Probably the most useful figure you can make as you decide what to do.
+          ## But careful -- figure may be misleading because you're omitting NAs 
+          ## (game/model combinations that you don't yet have data for) 
+          means = data.frame(model=as.character(), mean=as.numeric(), sd=as.numeric())
+          for (i in 1:length(levels(plantimedata$agent_type))){
+            agent = levels(plantimedata$agent_type)[i]
+            if (length(subset(plantimedata, agent_type==agent)$game_name)<80){
+              print(paste('warning; you have fewer than 80 games for agent: ',agent, sep=''))
+            }
+            else{
+              num = summarise(subset(plantimedata, agent_type==levels(plantimedata$agent_type)[i]), 
+                              percentage_mean=mean(level_percentage), percentage_sd=sd(level_percentage))
+              r = data.frame(model=levels(plantimedata$agent_type)[i], percentage_mean=num$percentage_mean, percentage_sd=num$percentage_sd)
+              means=rbind(means,r)
+            }
+          }
+          means = na.omit(means)
+          p = ggplot(means, aes(x=reorder(model,-percentage_mean) ,y=percentage_mean, color=model))+
+            geom_pointrange(aes(ymin=percentage_mean-percentage_sd, ymax=percentage_mean+percentage_sd))+ylim(0,1.2)+
+            colorScale+ xlab('agent type') + ylab('% levels won')+  theme(axis.text.x=element_blank(),
+                                                                          axis.ticks.x=element_blank())
+          p
+          
+          ##plot of avg plantime per action
+          plantimeplots = list()
+          for (i in 1:length(levels(plantimedata$agent_type))){
+            agent = levels(plantimedata$agent_type)[i]
+            d = subset(plantimedata, agent_type==agent)
+            if (length(d$game_name)>0){
+              p = ggplot(d, aes(x=reorder(game_name, plan_nodes_per_step),y=plan_nodes_per_step,fill=level_percentage))
+              p=p+geom_bar(position='dodge',stat='identity')+ggtitle(as.character(agent)) +theme(axis.text.x = element_text(angle = 90, hjust = 1))
+              p=p+scale_fill_gradient2(low="red",high="green",midpoint=.6)
+              p
+              plantimeplots[[i]]=p
+            }
+          }
+          layout = matrix(c(1:length(plantimeplots)), ncol=1, byrow=TRUE)
+          m = multiplot(plotlist = plantimeplots, layout=layout)
+          ## save as 32x16
+          
+          
+          
+          
+          ####
+          ####
+          model_run1 = '2018-10-15_'
+          model_run2 = '2018-10-18_'
+          plot_overlap = function(plantimedata, model_run1, model_run2){
+            plots = list()
+            p = ggplot(subset(plantimedata, modelrun_ID%in%c(model_run1, model_run2)) , aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(modelrun_ID))) +
+              geom_bar(position='identity',stat='identity', alpha=.5)+
+              theme(axis.text.x = element_text(angle = 90, hjust = 1))
+            p
+          }
+          
+          ######
+          ######
+          path = '~/Projects/atari/vgdl/humandata_ratings/ratings'
+          ratingpaths = list.files(path)
+          ratings = list()
+          for (rating in ratingpaths){
+            ratingpath = paste(path, '/', rating, sep='')
+            r=read.csv(ratingpath, header=TRUE, na.strings='NA')
+            if (length(ratings)==0){
+              ratings = r
+            }
+            else{
+              ratings = rbind(ratings,r)
+            }
+          }
+          substrRight <- function(x, n){
+            substr(x, nchar(x)-n+1, nchar(x))
+          }
+          find_source_game = function(name){
+            if (substrRight(name,1)%in%c("1","2","3","4")){
+              return(substr(name,0,nchar(name)-2))
+            }
+            else{
+              return(name)}
+          }
+          find_variant_number = function(name){
+            lastchar = substrRight(name,1)
+            if (lastchar%in%c("1","2","3","4")){
+              return(lastchar)
+            }
+            else{
+              return('0')
+            }
+          }
+          ratings$game_name = as.factor(ratings$gameName)
+          ratings$source_game_name = as.factor(as.character(lapply(as.vector(ratings$game_name), find_source_game)))
+          ratings$variant_number = as.factor(as.character(lapply(as.vector(ratings$game_name), find_variant_number)))
+          for (i in 1:length(ratings$difficulty)){
+            if (!is.na(ratings$difficulty[i]) & ratings$difficulty[i]=="None"){
+              ratings$difficulty[i]=NA
+            }
+            if (ratings$interestingness[i]=="None"){
+              ratings$interestingness[i]=NA
+            }
+          }
+          ratings$difficulty = as.numeric(ratings$difficulty)
+          ratings$interestingness = as.numeric(ratings$interestingness)
+          ## you also have enjoyability
+          
+          s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+          p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
+            geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
+            facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Difficulty')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+          #+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
+          p  
+          ##save 12x6
+          
+          s = summarySE(ratings, measurevar="interestingness", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+          p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=interestingness)) +
+            geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=interestingness-ci, ymax=interestingness+ci))+
+            facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Interestingness') +scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+          #+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
+          p  
+          ##save 12x6
+          
+          
+          ##for playing around with format
+          # p = ggplot(subset(s, source_game_name%in%c('push_boulders','relational')), aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty))+
+          # geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
+          # facet_wrap(~source_game_name)
+          # p
+          
+          
+          ######
+          ######
+          diffdata = data.frame(game_name=as.character(), agent_type=as.character(), model_run = as.character(), max_score=as.numeric(), 
+                                max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric())
+          for (i in 1:length(levels(data$game_name))){
+            for (j in 1:length(levels(data$modelrun_ID))){
+              s = subset(data, ((game_name==levels(data$game_name)[i]) & (modelrun_ID==levels(data$modelrun_ID)[j])) )
+              ## the row we want
+              r = filter(s, cumulative_timestep==max(cumulative_timestep))[1,]
+              ## take only the relevant columns and put them in the new data frame
+              new = data.frame(game_name=r$game_name, agent_type=r$agent_type, model_run=r$modelrun_ID, max_score=r$score, 
+                               max_steps=r$cumulative_timestep, planning_time=r$cumulative_planner_nodes, max_levels_won=max(r$cumulative_wins))
+              diffdata = rbind(diffdata, new)
+            }
+          }
+          
+          get_diff = function(diffdata, model_run1, model_run2){
+            ## makes a histogram of improvements in model_run1 over model_run2
+            
+            diff_frame = data.frame(game_name=as.character(), level_diff=as.numeric(), col=as.character())
+            
+            colors = c('red','green2')
+            for (i in 1:length(levels(diffdata$game_name))){
+              game = levels(diffdata$game_name)[i]
+              m1=subset(diffdata, game_name==game&model_run==model_run1)$max_levels_won
+              m2=subset(diffdata, game_name==game&model_run==model_run2)$max_levels_won        
+              d = m1-m2
+              if (length(d)==0){
+                d = NA
+                col=NA
+              }else{
+                if (d<0){
+                  col=1
+                }else{
+                  col=2
+                }
+              }
+              new = data.frame(game_name=game, level_diff=d, col=col)
+              diff_frame = rbind(diff_frame, new)
+            }
+            diff_frame$col = as.factor(diff_frame$col)
+            p = ggplot(diff_frame, aes(x=reorder(game_name,-level_diff), y=level_diff, color=col))+
+              geom_bar(position='dodge', stat='identity')+scale_color_manual(values=colors)+scale_fill_manual(values=colors)+
+              theme(axis.text.x = element_text(angle = 90, hjust = 1))
+            p
+            
+          }
+          
+          
+          
+          
+          
+          ###
+          ### load helper functions
+          g_legend <- function(a.gplot){ 
+            tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
+            leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
+            legend <- tmp$grobs[[leg]] 
+            return(legend)} 
+          
+          
+          # newdataframe = subset(data, game_name==levels(dataframe$game_name)[1])
+          # for (i in 2:length(levels(dataframe$game_name))){
+          #   name = levels(dataframe$game_name)[i]
+          #   s = subset(data, game_name==levels(dataframe$game_name)[i])
+          #   for (j in 1:length(strings_to_remove)){
+          #     string_to_remove = strings_to_remove[j]
+          #     if (grepl(string_to_remove, name)){
+          #       newname = substr(name, nchar(string_to_remove)+2, nchar(name))
+          #       s$game_name = as.factor(newname)
+          #     }
+          #     newdataframe = rbind(newdataframe, s)
+          #   }
+          # }
+          
+          remove_string_from_name = function(name){
+            strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
+            for (i in 1:length(strings_to_remove)){
+              string_to_remove = strings_to_remove[i]
+              if (grepl(string_to_remove, name)){
+                keep = substr(name, nchar(string_to_remove)+2, nchar(name))
+                return(keep)
+              }
+              else{
+                keep=name
+              }
+            }
+            return(name)
+          }
+          
+          
+          # Multiple plot function
+          #
+          # ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+          # - cols:   Number of columns in layout
+          # - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+          #
+          # If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+          # then plot 1 will go in the upper left, 2 will go in the upper right, and
+          # 3 will go all the way across the bottom.
+          #
+          multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+            library(grid)
+            
+            # Make a list from the ... arguments and plotlist
+            plots <- c(list(...), plotlist)
+            
+            numPlots = length(plots)
+            
+            # If layout is NULL, then use 'cols' to determine layout
+            if (is.null(layout)) {
+              # Make the panel
+              # ncol: Number of columns of plots
+              # nrow: Number of rows needed, calculated from # of cols
+              layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                               ncol = cols, nrow = ceiling(numPlots/cols))
+            }
+            
+            if (numPlots==1) {
+              print(plots[[1]])
+              
+            } else {
+              # Set up the page
+              grid.newpage()
+              pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+              
+              # Make each plot, in the correct location
+              for (i in 1:numPlots) {
+                # Get the i,j matrix positions of the regions that contain this subplot
+                matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+                
+                print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                                layout.pos.col = matchidx$col))
+              }
+            }
+          }
+          
+          
+          ## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+          ##   data: a data frame.
+          ##   measurevar: the name of a column that contains the variable to be summariezed
+          ##   groupvars: a vector containing names of columns that contain grouping variables
+          ##   na.rm: a boolean that indicates whether to ignore NA's
+          ##   conf.interval: the percent range of the confidence interval (default is 95%)
+          summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                                conf.interval=.95, .drop=TRUE) {
+            library(plyr)
+            
+            # New version of length which can handle NA's: if na.rm==T, don't count them
+            length2 <- function (x, na.rm=FALSE) {
+              if (na.rm) sum(!is.na(x))
+              else       length(x)
+            }
+            
+            # This does the summary. For each group's data frame, return a vector with
+            # N, mean, and sd
+            datac <- ddply(data, groupvars, .drop=.drop,
+                           .fun = function(xx, col) {
+                             c(N    = length2(xx[[col]], na.rm=na.rm),
+                               mean = mean   (xx[[col]], na.rm=na.rm),
+                               sd   = sd     (xx[[col]], na.rm=na.rm)
+                             )
+                           },
+                           measurevar
+            )
+            
+            # Rename the "mean" column    
+            # datac$measurevar = datac$mean
+            colnames(datac)[colnames(datac)=="mean"] <- measurevar
+            
+            datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+            
+            # Confidence interval multiplier for standard error
+            # Calculate t-statistic for confidence interval: 
+            # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+            ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+            datac$ci <- datac$se * ciMult
+            
+            return(datac)
+          }
+          
