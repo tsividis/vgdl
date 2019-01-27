@@ -1,0 +1,60 @@
+BasicGame
+  SpriteSet
+    goal  > Immovable color=GREEN
+    key   > Resource color=ORANGE limit=10
+    sword > OrientedFlicker singleton=True color=BLUE
+    avatar  > MovingAvatar color=DARKBLUE
+    box1 > Immovable color=PURPLE
+    missile > Missile color=PINK orientation=DOWN speed=.2
+    box2 > Immovable color=ORANGE
+    box3 > Immovable color=LIGHTBLUE
+    box4 > Immovable color=BROWN
+    box5 > Immovable color=RED
+    wall > Immovable autotiling=true color=DARKGRAY
+
+
+  LevelMapping
+    g > goal
+    + > key
+    1 > monsterQuick
+    2 > monsterNormal
+    3 > monsterSlow
+    4 > box1
+    5 > box2
+    6 > box3
+    7 > box4
+    8 > box5
+    m > missile
+    w > wall
+
+
+  InteractionSet
+    avatar box1 > nothing
+    box1 avatar > killSprite
+    avatar box2 > nothing
+    box2 avatar > killSprite
+    avatar box3 > stepBack
+    box3 avatar > stepBack
+    box4 avatar > stepBack
+    avatar box4 > stepBack
+    box5 avatar > stepBack
+    avatar box5 > stepBack
+    avatar wall  > stepBack
+    wall avatar > nothing
+    avatar goal    > nothing
+    goal avatar > killSprite
+    missile wall > reverseDirection
+
+    sword goal > nothing
+    goal sword > nothing
+    sword key > nothing
+    sword wall > nothing
+    wall sword > nothing
+    sword avatar > nothing
+    sword sword > nothing
+    box1 sword > nothing
+    sword box1 > nothing
+
+  TerminationSet
+    SpriteCounter stype=goal   win=True
+    SpriteCounter stype=avatar win=False
