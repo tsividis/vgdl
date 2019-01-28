@@ -29,7 +29,7 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('dec3')
+dates = list('jan28')
 saveddata = data
 data = list()
 for (date in dates){
@@ -83,6 +83,11 @@ for (colname in names(dqndata)){
 
 
 exploration_lesions = subset(data, grepl('eG=True', agent_type))
+
+
+exploration_lesions = rbind(exploration_lesions, EMPA)
+
+
 planner_lesions = subset(data, grepl('PL=', agent_type))
 
 new_planner_lesions = subset(data, grepl('PL=', agent_type))
@@ -1585,11 +1590,42 @@ m = multiplot(plotlist = plots, layout=layout)
 
 summarise(subset(plantimedata, short_agent_type%in%c('IW2', lesions), comp_ratio_mean=mean(human_normed_composite_ratio), comp_ratio_sd=sd(human_normed_composite_ratio))
 
+entropy_reduction = data.frame(agent_type=as.character(), game_name=as.character(), level_number=as.numeric(), entropy_reduction=as.numeric())
+for (agent in unique(exploration_lesions$agent_type)){
+  agentdata = subset(exploration_lesions, agent_type==agent)
+  for (game in unique(agentdata$game_name)){
+    gamedata = subset(agentdata, game_name==game)
+  
+    for (level in unique(gamedata$level_number)){
+      leveldata = subset(gamedata, level_number==level)
+      beg = leveldata$entropy[8]
+      en = leveldata$entropy[length(leveldata)]
+      reduction = beg-en
+      row = data.frame(agent, game, level, reduction)
+      entropy_reduction = rbind(entropy_reduction, row)
+    }
+  }
+}
+
+p=ggplot(subset(entropy_reduction, game=='avoidgeorge'), 
+       aes(x=reduction, fill=agent))+geom_density()+theme(legend.position='none')
+
+  #geom_bar(position='dodge',stat='mean')
+p
+
+## exclude negative values; these are levels/games where new objects get introduced, which makes the calculation more complicated.
+## or, in the end, put these in for the summary figure but not for the illustrative example.
+p=ggplot(subset(entropy_reduction, reduction>0), 
+         aes(x=agent, y=reduction, fill=agent))+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+p
+
 
 ## Entropy-reduction plots
-p = ggplot(data, aes(x=cumulative_steps,y=entropy,color=agent_type))
-p=p+geom_point()+ theme(legend.position="none")+geom_smooth()
+p = ggplot(exploration_lesions, aes(x=timestep,y=entropy,color=agent_type))+geom_point()+ theme(legend.position="none")+geom_smooth()
 p
+
+## make entropy-reduction-per-level barplot.
 
 ## same thing but not grouped by game. not easy to read.
 # p = ggplot(plantimedata, aes(x=reorder(game_name,-level_percentage), y=level_percentage, fill=factor(agent_type))) +
