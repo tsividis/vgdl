@@ -28,4 +28,6 @@
 # 'watergame', 'variant_watergame_1', 'variant_watergame_2',
 # 'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3'] #90 total
 
-game_names = ['avoidgeorge', 'butterflies', 'corridor', 'expt_helper', 'expt_ee', 'expt_push_boulders', 'frogs', 'portals', 'sokoban', 'zelda']
+# game_names = ['avoidgeorge', 'butterflies', 'corridor', 'expt_helper', 'expt_ee', 'expt_push_boulders', 'frogs', 'portals', 'sokoban', 'zelda']
+
+game_names = ['expt_push_boulders', 'frogs']
