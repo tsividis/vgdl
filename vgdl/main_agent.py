@@ -48,7 +48,7 @@ class Agent:
         self.display_text = False
         self.display_states = True
         self.record_states = True
-        self.record_video_info = True
+        self.record_video_info = False
         self.saveMidEpisode = False
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
