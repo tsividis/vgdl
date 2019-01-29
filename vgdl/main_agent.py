@@ -48,7 +48,7 @@ class Agent:
         self.display_text = False
         self.display_states = True
         self.record_states = True
-        self.record_video_info = False
+        self.record_video_info = True
         self.saveMidEpisode = False
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
@@ -482,7 +482,11 @@ class Agent:
         if self.record_video_info:
             dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(dirname):
-                os.makedirs(dirname)
+                try:
+                    os.makedirs(dirname)
+                except:
+                    pass
+
         if self.make_movie:
             if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
                 shutil.rmtree("images/tmp/"+self.gameFilename)
