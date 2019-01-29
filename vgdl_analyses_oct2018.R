@@ -83,11 +83,6 @@ for (colname in names(dqndata)){
 
 
 exploration_lesions = subset(data, grepl('eG=True', agent_type))
-
-
-exploration_lesions = rbind(exploration_lesions, EMPA)
-
-
 planner_lesions = subset(data, grepl('PL=', agent_type))
 
 new_planner_lesions = subset(data, grepl('PL=', agent_type))

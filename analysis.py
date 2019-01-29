@@ -58,6 +58,14 @@ def process_model_run(data, modelrun_ID):
 		g = open('{}/merged_data'.format(data_path), 'a+')	
 		mergedfilewriter = csv.writer(g)
 
+	if 'interaction_data' not in os.listdir(data_path):
+		h = open('{}/interaction_data'.format(data_path), 'w+')
+		interactionfilewriter = csv.writer(h)
+		interactionfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'game_name', 'level_number', 'event_type', 'count'))
+	else:
+		h = open('{}/interaction_data'.format(data_path), 'a+')	
+		interactionfilewriter = csv.writer(h)
+
 	game_name = data['gameInfo']['gameName']
 
 	if game_name not in os.listdir(data_path):
@@ -81,19 +89,21 @@ def process_model_run(data, modelrun_ID):
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 
-	if game_name=='entropy':
-		print "embedded in process_model_run"
-		embed()
-	effects = defaultdict(lambda:0)
+	# if game_name=='entropy':
+		# print "embedded in process_model_run"
+		# embed()
 
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
 	prev_level_number = 0
 	accumulated_score = 0 ## at end of each level, you keep whatever score you've picked up.
 	for level_number,level in enumerate(data['episodes']):
+		episode_events = defaultdict(lambda:0)
 		level_max_score = 0
-		for episode in level:
+		for episode_num, episode in enumerate(level):
 			for t, state in enumerate(episode):
-				timestep, entropy, score, planner_nodes, episode_end, win, planner_settings = state['timestep'], state['entropy'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings']
+				timestep, entropy, score, planner_nodes, episode_end, win, planner_settings, events = state['timestep'], state['entropy'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings'], state['events']
+				for e in events:
+					episode_events[e] += 1
 				entropy = round(entropy,4) if entropy is not None else 'NA'
 				score = round(score,2)
 				## All this weird stuff needs to be done because we don't have a single-stream game.
@@ -138,13 +148,16 @@ def process_model_run(data, modelrun_ID):
 				mean_burn_in = np.mean(exploration_burn_ins) if type(exploration_burn_ins)==list else 'NA'
 				row = (agent_type, subject_ID, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, entropy, score, level_max_score, cumulative_max_score,
 						sparse_score, level_accumulated_score, episode_end, win, cumulative_wins, planner_settings, planner_nodes, cumulative_planner_nodes)
-				gamefilewriter.writerow(row)
+				# gamefilewriter.writerow(row)
 				mergedfilewriter.writerow(row)
 
 				prev_level_number = level_number
+			for event_name, count in episode_events.items():
+				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, episode_num, event_name, count))
 
 	f.close()
 	g.close()
+	h.close()
 
 def generate_subject_ID(length=7):
 	alphabet = "QWERTYUIOPASDFGHJKLZXCVBNM1234567890"

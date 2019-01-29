@@ -31,7 +31,7 @@ BasicGame
   InteractionSet
     avatar box1 > nothing
     box1 avatar > killSprite
-    avatar box2 > nothing
+    avatar box2 > killSprite
     box2 avatar > killSprite
     avatar box3 > stepBack
     box3 avatar > stepBack

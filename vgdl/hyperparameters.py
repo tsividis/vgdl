@@ -211,7 +211,9 @@ metacontroller_sets = [
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
     'safeDistance': 5,
-    'longHorizonObservationLimit': 2
+    'longHorizonObservationLimit': 2,
+    'allow_long_range': True,
+    'epsilon_greedy_variant': 'NA'
     },
     ## KEEP
     {'idx': 6,
