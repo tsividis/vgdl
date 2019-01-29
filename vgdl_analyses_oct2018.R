@@ -1215,7 +1215,7 @@ for (i in 1:length(plantimedata$human_normed_composite_ratio)){
   }
 }
 
-representation_lesion_names = c('No Chaser', 'No Missile','No Push','No Pull',  'No Destroy','No Clone','No Transform','No Teleport', 'Missing Speeds', 'EMPA')
+representation_lesion_names = c('No Chaser', 'No Missile','No Push','No Pull','No Clone','No Destroy','No Transform','No Teleport', 'Missing Speeds', 'EMPA')
 
 p=ggplot(subset(plantimedata, game_name!='sokoban' & !(agent_type%in%c('human', 
                             as.character(unique(plantimedata$agent_type)[9]), as.character(unique(plantimedata$agent_type)[11]))))
