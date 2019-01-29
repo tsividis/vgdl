@@ -29,7 +29,7 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
-dates = list('jan28')
+dates = list('jan28', 'jan29')
 saveddata = data
 data = list()
 for (date in dates){
@@ -1609,8 +1609,6 @@ for (agent in unique(exploration_lesions$agent_type)){
 
 p=ggplot(subset(entropy_reduction, game=='avoidgeorge'), 
        aes(x=reduction, fill=agent))+geom_density()+theme(legend.position='none')
-
-  #geom_bar(position='dodge',stat='mean')
 p
 
 ## exclude negative values; these are levels/games where new objects get introduced, which makes the calculation more complicated.

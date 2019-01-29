@@ -7,6 +7,7 @@ import cPickle
 import os
 from shutil import copy2
 import numpy as np
+from collections import defaultdict
 import random
 
 
@@ -40,6 +41,7 @@ def process_model_run(data, modelrun_ID):
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
 	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
 	subject_ID = generate_subject_ID()
+
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
  	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 	# data_path = '{}/{}'.format(date, 'csv_data')
@@ -78,6 +80,12 @@ def process_model_run(data, modelrun_ID):
 	# embed()
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
+
+	if game_name=='entropy':
+		print "embedded in process_model_run"
+		embed()
+	effects = defaultdict(lambda:0)
+
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
 	prev_level_number = 0
 	accumulated_score = 0 ## at end of each level, you keep whatever score you've picked up.
