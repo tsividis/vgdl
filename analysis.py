@@ -96,14 +96,17 @@ def process_model_run(data, modelrun_ID):
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
 	prev_level_number = 0
 	accumulated_score = 0 ## at end of each level, you keep whatever score you've picked up.
+	episode_number = 0
 	for level_number,level in enumerate(data['episodes']):
 		episode_events = defaultdict(lambda:0)
 		level_max_score = 0
 		for episode_num, episode in enumerate(level):
 			for t, state in enumerate(episode):
 				timestep, entropy, score, planner_nodes, episode_end, win, planner_settings, events = state['timestep'], state['entropy'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings'], state['events']
+				# if events:
+					# embed()
 				for e in events:
-					episode_events[e] += 1
+					episode_events[tuple(sorted((e[1], e[2])))] += .5
 				entropy = round(entropy,4) if entropy is not None else 'NA'
 				score = round(score,2)
 				## All this weird stuff needs to be done because we don't have a single-stream game.
@@ -153,8 +156,8 @@ def process_model_run(data, modelrun_ID):
 
 				prev_level_number = level_number
 			for event_name, count in episode_events.items():
-				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, episode_num, event_name, count))
-
+				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, episode_number, event_name, count))
+			episode_number += 1
 	f.close()
 	g.close()
 	h.close()
@@ -203,5 +206,5 @@ def merge_results(date):
 							copy2('../{}/results/{}/'.format(date, mod)+d+'/'+r,target)
 
 ## take things out one level; should be in results/all, rather than results/all/all
-merge_results(date)
+# merge_results(date)
 make_csvs(path)
