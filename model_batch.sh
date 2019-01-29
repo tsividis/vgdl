@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-40
+#SBATCH --array=0-10
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1680
 #SBATCH --qos=use-everything
@@ -54,6 +54,6 @@ fi
 ## to run conditioned on some exploration
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --pickled_theory_path 1
 ## to run epsilon-greedy
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 1 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --epsilon_greedy True
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index 12 --IW 1 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --epsilon_greedy False
 
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"
