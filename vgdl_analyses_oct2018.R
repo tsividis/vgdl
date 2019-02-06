@@ -1849,19 +1849,41 @@ g_legend <- function(a.gplot){
   return(legend)} 
 
 
-# newdataframe = subset(data, game_name==levels(dataframe$game_name)[1])
-# for (i in 2:length(levels(dataframe$game_name))){
-#   name = levels(dataframe$game_name)[i]
-#   s = subset(data, game_name==levels(dataframe$game_name)[i])
-#   for (j in 1:length(strings_to_remove)){
-#     string_to_remove = strings_to_remove[j]
-#     if (grepl(string_to_remove, name)){
-#       newname = substr(name, nchar(string_to_remove)+2, nchar(name))
-#       s$game_name = as.factor(newname)
-#     }
-#     newdataframe = rbind(newdataframe, s)
-#   }
-# }
+###level1-level2 plots
+d = subset(alldata, agent_type%in%c('human', 'DDQN', 'IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False'))
+level_win = data.frame(agent_type=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
+for (game in unique(s$game_name)){
+  s=subset(d, game_name==game&(level_number%in%c(0,1)|level%in%c(0,1)))
+  for (agent in unique(s$agent_type)){
+    agentdata = s[which(s$agent_type==agent),]
+    level0_steps = max(agentdata[which(agentdata$cumulative_wins==0),]$cumulative_steps)
+    row = data.frame(agent_type=agent, game_name=game, level_num=0, steps=level0_steps)
+    level_win=rbind(level_win, row)
+    level1_steps = max(agentdata[which(agentdata$cumulative_wins==1),]$cumulative_steps)
+    row = data.frame(agent_type=agent, game_name=game, level_num=1, steps=level1_steps)
+    level_win=rbind(level_win, row)
+  }
+}
+
+##Plot of steps to win level 1, conditioned on winning level 0. Only for games where the model *did* win level 1.
+##Only the DDQN failed to win level 1
+colors = c('darkolivegreen2','grey50','steelblue3')
+names(colors)=levels(level_win$agent_type)
+colorScale = scale_color_manual(name="agent_type", values=colors)
+
+
+p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=agent_type, y=log(steps,10), fill=agent_type))
+p=p+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+scale_fill_manual(values=colors)
+p
+
+
+
+if (length(subjectdata$cumulative_steps)>0){
+  if(max(subjectdata$cumulative_steps)>0){
+    level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+    cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+
+
 
 remove_string_from_name = function(name){
   strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
@@ -1924,6 +1946,9 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     }
   }
 }
+
+
+
 
 
 ## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
