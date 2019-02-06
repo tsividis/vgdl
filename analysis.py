@@ -92,21 +92,22 @@ def process_model_run(data, modelrun_ID):
 	# if game_name=='entropy':
 		# print "embedded in process_model_run"
 		# embed()
-
+	all_event_types = set()
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
 	prev_level_number = 0
 	accumulated_score = 0 ## at end of each level, you keep whatever score you've picked up.
 	episode_number = 0
 	for level_number,level in enumerate(data['episodes']):
-		episode_events = defaultdict(lambda:0)
 		level_max_score = 0
 		for episode_num, episode in enumerate(level):
+			episode_events = defaultdict(lambda:0)
 			for t, state in enumerate(episode):
 				timestep, entropy, score, planner_nodes, episode_end, win, planner_settings, events = state['timestep'], state['entropy'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings'], state['events']
 				# if events:
 					# embed()
 				for e in events:
 					episode_events[tuple(sorted((e[1], e[2])))] += .5
+					all_event_types.add(tuple(sorted((e[1], e[2]))))
 				entropy = round(entropy,4) if entropy is not None else 'NA'
 				score = round(score,2)
 				## All this weird stuff needs to be done because we don't have a single-stream game.
@@ -155,6 +156,9 @@ def process_model_run(data, modelrun_ID):
 				mergedfilewriter.writerow(row)
 
 				prev_level_number = level_number
+			for event_name in all_event_types:
+				if event_name not in episode_events:
+					episode_events[event_name] = 0
 			for event_name, count in episode_events.items():
 				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, episode_number, event_name, count))
 			episode_number += 1

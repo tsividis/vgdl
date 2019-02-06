@@ -876,7 +876,7 @@ class Node():
 			thingWeShot = potentialProjectiles[0] if potentialProjectiles else None
 			# vrle = copy.deepcopy(Vrle)
 			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
-			rolloutArray = []
+			rolloutArray = [] ## NOTE: we never actually use this!
 			i=0
 			terminal, win = vrle._isDone()
 			# print "in rollout"
