@@ -1871,11 +1871,12 @@ colors = c('darkolivegreen2','grey50','steelblue3')
 names(colors)=levels(level_win$agent_type)
 colorScale = scale_color_manual(name="agent_type", values=colors)
 
-
 p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=agent_type, y=log(steps,10), fill=agent_type))
 p=p+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+scale_fill_manual(values=colors)
 p
 
+
+p = ggplot(subset(level_win, steps!=-Inf), aes(x=agent_type, y=log(steps,10), fill=agent_type))
 
 
 if (length(subjectdata$cumulative_steps)>0){
