@@ -643,7 +643,7 @@ class Agent:
                  'entropy': rle._game.H,
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
                         for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list],
-                 'events': rle._game.effectListByColor
+                 'events': list(rle._game.effectListByClass)
                  }
         return state
 
