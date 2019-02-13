@@ -9,11 +9,11 @@ modelrun_ID = 'NA'
 agent_type = 'human'
 
 ### TODO:
-### Did someone actually play 20 episodes of ee_3??
 ### Why are some interaction counts .5???
 ### Add 0-count interactions?
-### Change EMPA stuff to record object names
 
+### What else will you need before you can run EMPA and e-greedy EMPA overnight?
+### EE_3 is perfect for this. What other games are actually good?
 
 def write_interaction_file(single_subject_single_game, subject_ID):
 	if 'human_interaction_data' not in os.listdir(data_path):
