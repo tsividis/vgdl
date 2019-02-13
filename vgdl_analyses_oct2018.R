@@ -1149,7 +1149,11 @@ for (i in 1:length(levels(plantimedata$game_name))){
   }
 }
 
-
+for (i in 1:length(plantimedata$human_normed_composite_ratio)){
+  if (plantimedata$human_normed_composite_ratio[i]==0){
+    plantimedata$human_normed_composite_ratio[i]=10e-8
+  }
+}
 
 
 
@@ -1263,8 +1267,10 @@ ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
 p = ggplot()+
   geom_bar(data=subset(plantimedata, (agent_type%in%main_plot_agent_types & agent_type!='DDQN')),
            aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
-  geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio)>-3)),
+  geom_point(data=subset(plantimedata, agent_type=='DDQN'),
              aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+    # geom_point(data=subset(plantimedata, agent_type%in%main_plot_agent_types  & !(log(human_normed_composite_ratio,10)>-3)),
+  #            aes(x=game_name, y=log(human_normed_composite_ratio,10), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
   scale_x_discrete(limits=ordered_names)+
   # theme(legend.position="none")+
   colorScale+
