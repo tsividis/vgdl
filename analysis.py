@@ -105,9 +105,15 @@ def process_model_run(data, modelrun_ID):
 				timestep, entropy, score, planner_nodes, episode_end, win, planner_settings, events = state['timestep'], state['entropy'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings'], state['events']
 				# if events:
 					# embed()
+				timestep_events = set()
 				for e in events:
-					episode_events[tuple(sorted((e[1], e[2])))] += .5
+					timestep_events.add(tuple(sorted((e[1], e[2]))))
 					all_event_types.add(tuple(sorted((e[1], e[2]))))
+				for e in timestep_events:
+					episode_events[e] += 1
+				# for e in events:
+					# episode_events[tuple(sorted((e[1], e[2])))] += .5
+					# all_event_types.add(tuple(sorted((e[1], e[2]))))
 				entropy = round(entropy,4) if entropy is not None else 'NA'
 				score = round(score,2)
 				## All this weird stuff needs to be done because we don't have a single-stream game.
@@ -161,6 +167,8 @@ def process_model_run(data, modelrun_ID):
 					episode_events[event_name] = 0
 			for event_name, count in episode_events.items():
 				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, episode_number, event_name, count))
+
+
 			episode_number += 1
 	f.close()
 	g.close()
