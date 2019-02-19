@@ -39,7 +39,7 @@ def playCurriculum(agent, level_game_pairs):
     return end_time
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, init_hypothesis=None, task_ID=0):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, random_policy=False, init_hypothesis=None, task_ID=0):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.outpath = None ## set in playCurriculum and then used in outputlesionsnapshot for writing all the theories learned in a particular run of playCurriculum into a single folder.
@@ -66,7 +66,6 @@ class Agent:
         self.shortHorizonNodes = 500 ## this isn't used. but you need to clean the code up a bit to actually delete it.
         self.shortHorizonAnnealing = 1.05 ## this isn't used, either. but you need to clean the code up a bit to actually delete it.
         # self.emptyPlansLimit = 5 ## not used
-
         self.metacontroller_params = metacontroller_sets[metacontroller_index]
         ## Metacontroller parameters
         self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
@@ -80,6 +79,7 @@ class Agent:
         self.safeDistance = self.metacontroller_params['safeDistance']
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
+        self.random_policy = random_policy
         #N=Normal, DS=Delayed switch out of short-term planning (by changing self.noNewObjectNum), DF=delayed game forfeit after failure to plan in a level (by changing self.absolute_max_nodes)
         #SN=smart-normal ('explore' step fulfills curiosity; 'exploit fulfills win'). 
         #SS=smart-sequential. Same as above, but it's first explore everything, then exploit everything.
@@ -101,8 +101,8 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         
-        self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_egv={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, 
-                self.extra_atom_allowed, self.extra_atom, self.shortHorizonNodes, self.longHorizonNodes, 
+        self.param_ID = "IW={}_rand={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_egv={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, 
+                self.random_policy, self.extra_atom_allowed, self.extra_atom, self.shortHorizonNodes, self.longHorizonNodes, 
                 self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, 
                 self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.epsilon_greedy_variant,
                 self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
@@ -847,7 +847,7 @@ class Agent:
             drew_random_action = False
             
             ### flip here. or take a random step. by doing this here you can leverage all the other stuff you've built
-            if self.epsilon_greedy:
+            if self.epsilon_greedy or self.random_policy:
                 ## calculate epsilon value according to annealing schedule
                 steps_so_far = self.total_game_steps+steps
                 if  steps_so_far < self.switch_to_exploit_step:
@@ -855,7 +855,7 @@ class Agent:
                 else:
                     epsilon = 0.05
                 print "steps so far {}. epsilon {}".format(steps_so_far, epsilon)
-                if random.random()<epsilon: ## and lesion_type is....
+                if self.random_policy or random.random()<epsilon: ## and lesion_type is....
                                             ## if it's not, still call normal planner.
                     print "taking a random step"
                     drew_random_action = True
@@ -984,7 +984,6 @@ class Agent:
             ##### OR self.total_game_steps >= self.max_rand_steps ####
             ##############################################
             else:       
-
                 ## MARK, EXPLORATION
                 ## When you're running the random-steps experiment, we want to remove
                 ## noveltyTerminations after the random step phase.

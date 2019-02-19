@@ -20,6 +20,7 @@ parser.add_argument('--pickled_theory_path',type=str,default=str(0),help='pickle
 parser.add_argument('--max_rand_steps',type=int,default=0,help='MAX STEPS')
 parser.add_argument('--use_pickled_theories',type=str2bool, default=False)
 parser.add_argument('--epsilon_greedy',type=str2bool, default=False)
+parser.add_argument('--random_policy', type=str2bool, default=False)
 parser.add_argument('--heatmap',type=str2bool, default=False)
 
 args = parser.parse_args()
@@ -35,6 +36,7 @@ pickled_theory_path = args.pickled_theory_path
 max_rand_steps = args.max_rand_steps
 use_pickled_theories = args.use_pickled_theories
 epsilon_greedy = args.epsilon_greedy
+random_policy = args.random_policy
 heatmap = args.heatmap
 
 if use_pickled_theories:
@@ -128,7 +130,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, epsilon_greedy=False):
+def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, epsilon_greedy=False, random_policy=False):
     start_time = time.time()
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
@@ -148,7 +150,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps=0, e
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, 
-            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, epsilon_greedy=epsilon_greedy, task_ID=task_ID)
+            extra_atom_allowed=extra_atom_allowed, max_rand_steps=max_rand_steps, epsilon_greedy=epsilon_greedy, random_policy=random_policy, task_ID=task_ID)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -225,15 +227,15 @@ def play_trainset_with_learned_theories(hyperparameter_sets, hyperparameter_inde
 ## normal play
 if pickled_theory_path==str(0) and max_rand_steps==0 and epsilon_greedy==False:
     print "running normal mode"
-    play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
+    play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, random_policy=random_policy)
 ##explore randomly to make theories
 elif pickled_theory_path == str(0) and max_rand_steps>0:
     print "exploring randomly to make theories"
     for i in range(burn_in_episodes_per_game):
-        play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps)
+        play_trainset(hyperparameter_sets, hyperparameter_index, max_rand_steps, random_policy=random_policy)
 elif pickled_theory_path == str(0) and epsilon_greedy:
     print "playing with epsilon_greedy"
-    play_trainset(hyperparameter_sets, hyperparameter_index, epsilon_greedy=epsilon_greedy)
+    play_trainset(hyperparameter_sets, hyperparameter_index, epsilon_greedy=epsilon_greedy, random_policy=random_policy)
 ##use learned theories
 elif pickled_theory_path != str(0):
     print "using learned theories"

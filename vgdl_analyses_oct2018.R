@@ -1871,18 +1871,49 @@ for (game in unique(s$game_name)){
   }
 }
 
+level_win$short_agent_type = NA
+for (i in 1:length(level_win$agent_type)){
+  agent = level_win$agent_type[i]
+  if((grepl('IW=1', agent)&!(grepl('rand=True', agent)))){
+    short_type = 'EMPA'
+  }
+  else if((grepl('IW=2', agent)&!(grepl('rand=True', agent)))){
+    short_type = 'EMPA2'
+  }
+  else if(agent=='DDQN'){
+    short_type = 'DDQN'
+  }
+  else if(agent=='human'){
+    short_type = 'human'
+  }
+  level_win$short_agent_type[i] = short_type
+}
+level_win$short_agent_type = as.factor(level_win$short_agent_type)
+level_win = transform(level_win, short_agent_type=factor(short_agent_type, levels=c("human", "EMPA", "DDQN"))) ## so that columns of plot are reordered
+level_win = select(level_win, -agent_type)
+## replace Inf with something really bad, and when you prettify the plot in Illustrator you'll use a plot break.
+
+
 ##Plot of steps to win level 1, conditioned on winning level 0. Only for games where the model *did* win level 1.
 ##Only the DDQN failed to win level 1
-colors = c('darkolivegreen2','grey50','steelblue3')
-names(colors)=levels(level_win$agent_type)
-colorScale = scale_color_manual(name="agent_type", values=colors)
+colors = c('palegreen3','steelblue3','grey50')
+names(colors) = c('human', 'EMPA','DDQN')
 
-p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=agent_type, y=log(steps,10), fill=agent_type))
+p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=short_agent_type, y=log(steps,10), fill=short_agent_type))
 p=p+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+scale_fill_manual(values=colors)
 p
 
+level_win_no_inf = level_win
+# level_win_no_inf[level_win_no_inf$steps=='-Inf',]$steps=10e20
+##level_win_no_inf[level_win_no_inf$steps==10e20,]$steps=10e15
+p = ggplot(subset(level_win_no_inf, level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('log(steps to win)')+scale_color_manual(values=colors)+scale_fill_manual(values=colors)
+p
 
-p = ggplot(subset(level_win, steps!=-Inf), aes(x=agent_type, y=log(steps,10), fill=agent_type))
+
+
+
+### show instead the distribution of steps to win for all agent types??
 
 
 if (length(subjectdata$cumulative_steps)>0){
