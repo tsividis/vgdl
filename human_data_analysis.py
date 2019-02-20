@@ -22,9 +22,6 @@ def write_interaction_file(single_subject_single_game, subject_ID):
 		interactionfilewriter = csv.writer(h)
 
 
-## .5
-## sorted in keys
-
 	game_dict = defaultdict(lambda: list())
 	for i, episode in enumerate(single_subject_single_game):
 		if len(episode.keys())>1:
@@ -120,15 +117,116 @@ def find_subject_data(subject_ID):
 
 ## we've lost all the info for various subjects after episode 5. e.g., for Raw_Nov12th_H1WZF6DaX
 
-for filename in os.listdir(folder):
-# filename = 'Raw_Nov12th_B1c1RTP67'
-	path = folder + "/" + filename
-	data_path = '.'
+def write_interaction_files(folder):
+	for filename in os.listdir(folder):
+	# filename = 'Raw_Nov12th_B1c1RTP67'
+		path = folder + "/" + filename
+		data_path = '.'
 
-	json_file = open(path, 'rb')
-	single_subject_single_game = json.load(json_file)  ## WRONG. This is not single subject, single game. There are two games here.
-	subject_ID = filename
-	write_interaction_file(single_subject_single_game, subject_ID)
+		json_file = open(path, 'rb')
+		single_subject_single_game = json.load(json_file)  ## WRONG. This is not single subject, single game. There are two games here.
+		subject_ID = filename
+		write_interaction_file(single_subject_single_game, subject_ID)
 
 
-	##all you want is to count the events per episode. what the fuck else were you doing???
+def make_heatmaps(folder, game_name, level_number):
+	for filename in os.listdir(folder):
+		path = folder + "/" + filename
+		data_path = '.'
+
+		json_file = open(path, 'rb')
+		single_subject_single_game = json.load(json_file)  ## WRONG. This is not single subject, single game. There are two games here.
+		relevant_episodes = []
+		for i,episode in enumerate(single_subject_single_game):
+			gN, game_level, game_number, game_round = game_string_to_info(episode.keys()[0])
+			print gN, game_level
+
+			## accumulate all the episodes for this game and level and then pass them to makeHeatmap
+
+			if gN==game_name and game_level==str(level_number):
+				print 'found {}, level {}'.format(gN, game_level)
+				game_states = episode[episode.keys()[0]]
+				relevant_episodes.append(game_states)
+				##make a filename for the heatmap
+		
+		outfilename = 'heatmap_{}_{}_human_{}'.format(game_name, game_level,filename)
+		unpacked_states = [item for sublist in game_states for item in sublist]	
+		makeHeatmap(unpacked_states, outfilename)
+
+
+def makeHeatmap(statesEncountered, filename):
+    from vgdl.plotting import featurePlot
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import NullLocator
+    import numpy as np
+
+    # states = [s['objects']['avatar'].keys()[0] for s in statesEncountered and s['objects']['avatar'].keys()]
+
+
+    for i,s in enumerate(statesEncountered):
+    	if s['frame']==0:
+    		first_state = s
+    		break
+
+    ## find dimensions:
+	positions = []
+	for object_instances in first_state['objects'].values():
+		for object_info in object_instances.values():
+			positions.append((object_info['x'], object_info['y']))
+	max_x, max_y = max([p[0] for p in positions]), max([p[1] for p in positions])
+
+	block_size = sorted(set([p[0] for p in positions]))[1]
+    shrunken_width, shrunken_height = max_x/block_size, max_y/block_size
+    ## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
+	states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y']) for s in statesEncountered if s['objects']['avatar']]
+    width, height = max_x, max_y
+
+	shrunken_states = [(s[0]/block_size, s[1]/block_size) for s in states]
+
+    # width, height = self.rle._game.width, self.rle._game.height
+    # correction_factor = self.rle._game.screensize[0]/width
+    # corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
+
+
+    m = np.zeros((shrunken_width, shrunken_height))
+    for s in shrunken_states:
+        x = s[0]
+        y = s[1]
+        m[x, y] += 1
+
+    plt.imshow(m.T, cmap='viridis')
+    plt.gca().set_axis_off()
+    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+        hspace = 0, wspace = 0)
+    plt.margins(0, 0)
+    plt.gca().xaxis.set_major_locator(NullLocator())
+    plt.gca().yaxis.set_major_locator(NullLocator())
+    plt.show()
+
+
+    m = np.zeros((width, height))
+    Xs, Ys = [],[]
+    # block_size = w/width
+    # block_size = 30
+    for s in corrected_states:
+        x = s[0]
+        y = s[1]
+        m[x, y] += 1
+        # Xs.append(x*block_size+block_size/2.)
+        # Ys.append(y*block_size+block_size/2.)
+    plt.imshow(m.T, cmap='viridis')
+    plt.gca().set_axis_off()
+    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+        hspace = 0, wspace = 0)
+    plt.margins(0, 0)
+    plt.gca().xaxis.set_major_locator(NullLocator())
+    plt.gca().yaxis.set_major_locator(NullLocator())
+    plt.show()
+
+    plt.savefig(filename, bbox_inches='tight', pad_inches=0)
+    plt.close()
+
+# folder = "../GameStates/Group1"
+# write_interaction_files(folder)
+
+

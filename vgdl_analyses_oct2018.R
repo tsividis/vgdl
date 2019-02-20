@@ -1906,11 +1906,20 @@ p
 level_win_no_inf = level_win
 # level_win_no_inf[level_win_no_inf$steps=='-Inf',]$steps=10e20
 ##level_win_no_inf[level_win_no_inf$steps==10e20,]$steps=10e15
+tickmarks = c(10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8)
+logtickmarks=(log(tickmarks,10))
+
 p = ggplot(subset(level_win_no_inf, level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
-p=p+geom_density(alpha=.8, adjust=1/10)+xlab('log(steps to win)')+scale_color_manual(values=colors)+scale_fill_manual(values=colors)
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('log(steps to win level 2)')+scale_color_manual(values=colors)+
+  scale_fill_manual(values=colors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
 p
 
 
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+
+### you want a game where DDQN did win level 1, where difference bet DDQN and humans is high, where no new objects are found on level 1,
+### where you can easily take a gvgai screenshot.
+## chase? steps to win will be high for humans
 
 
 ### show instead the distribution of steps to win for all agent types??
