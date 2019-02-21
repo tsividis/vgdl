@@ -654,7 +654,7 @@ class Agent:
         import numpy as np
 
 
-        states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
+        states = [(s['objects']['avatar'].keys()[0][0],s['objects']['avatar'].keys()[0][1],s['frame']) for s in statesEncountered
                   if (not s['observe_state']) and s['objects']['avatar'].keys()]
         width, height = self.rle._game.width, self.rle._game.height
         correction_factor = self.rle._game.screensize[0]/width
@@ -667,12 +667,23 @@ class Agent:
         # w, h = implot.get_extent()[1], implot.get_extent()[2]
         # block_size = w/width
         block_size = 30
+        prev_state = (None, None)
+        set_first_frame = False
+
+        # embed()
         for s in corrected_states:
-            x = s[0]
-            y = s[1]
-            m[x, y] += 1
-            Xs.append(x*block_size+block_size/2.)
-            Ys.append(y*block_size+block_size/2.)
+            frame = s[2]
+            x = int(round(s[0]))
+            y = int(round(s[1]))
+            if (x,y) != prev_state and (frame!=0 or not set_first_frame):
+                m[x, y] += 1
+
+            prev_state = (x,y)
+            if frame == 0:
+                set_first_frame = True
+
+            # Xs.append(x*block_size+block_size/2.)
+            # Ys.append(y*block_size+block_size/2.)
         # plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
         plt.imshow(m.T, cmap='viridis')
         plt.gca().set_axis_off()

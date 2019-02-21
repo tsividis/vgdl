@@ -609,7 +609,8 @@ class BasicGame(object):
               'entropy': self.H,
               'win': self.win,
               'objects': obs,
-              'observe_state': observe_state}
+              'observe_state': observe_state,
+              'frame':self.time}
         return fs
 
     def setFullState(self, fs, as_string=False):

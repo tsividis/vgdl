@@ -154,21 +154,23 @@ def make_heatmaps(folder, game_name, level_number):
 		game_states = None
 		for i,episode in enumerate(single_subject_single_game):
 			gN, game_level, game_number, game_round = game_string_to_info(episode.keys()[0])
-			print gN, game_level
+			# print gN, game_level
 
 			## accumulate all the episodes for this game and level and then pass them to makeHeatmap
 
 			if gN==game_name and game_level==str(level_number):
 				print 'found {}, level {}'.format(gN, game_level)
+				outfilename = 'heatmap_{}_{}_human_{}'.format(game_name, game_level,filename)
 				game_states = sorted(episode[episode.keys()[0]], key=lambda e:e['frame'])
 				relevant_episodes.append(game_states)
 				##make a filename for the heatmap
 		
-		outfilename = 'heatmap_{}_{}_human_{}'.format(game_name, game_level,filename)
 		if relevant_episodes:
-			unpacked_states = [item for sublist in relevant_episodes for item in sublist]	
-			makeHeatmap(unpacked_states, outfilename)
-			# break
+			# unpacked_states = [item for sublist in relevant_episodes for item in sublist]	
+			# makeHeatmap(unpacked_states, outfilename)
+			makeHeatmap(relevant_episodes, outfilename)
+			relevant_episodes = []
+			# embed()
 
 
 def makeHeatmap(statesEncountered, filename):
@@ -177,12 +179,10 @@ def makeHeatmap(statesEncountered, filename):
 	from matplotlib.ticker import NullLocator
 	import numpy as np
 
-	# embed()
-	# for i,s in enumerate(statesEncountered):
-	# 	if s['frame']==0:
-	# 		first_state = s
-	# 		break
-	first_state = statesEncountered[0]
+	## figure out how to call this for something easy,
+	## and then change things so that it takes multiple episodes and makes a heatmap that reflects the average amount of time, per episode, spent in each position.
+	# first_state = statesEncountered[0]
+	first_state = statesEncountered[0][0]
 
 	## find dimensions:
 	positions = []
@@ -193,30 +193,38 @@ def makeHeatmap(statesEncountered, filename):
 
 	block_size = sorted(set([p[0] for p in positions]))[1]
 	shrunken_width, shrunken_height = max_x/block_size, max_y/block_size
-	## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
-	states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y'], s['frame']) for s in statesEncountered if s['objects']['avatar']]
-	width, height = max_x, max_y
+	
 
-	shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
+	episode_matrices = []
+	for episode in statesEncountered:
 
-	# width, height = self.rle._game.width, self.rle._game.height
-	# correction_factor = self.rle._game.screensize[0]/width
-	# corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
+		## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
+		states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y'], s['frame']) for s in episode if s['objects']['avatar']]
 
+		shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
 
-	m = np.zeros((shrunken_width+1, shrunken_height+1))
-	prev_state = (None, None)
-	set_first_frame = False
-	for s in shrunken_states:
-		x = s[0]
-		y = s[1]
-		frame = s[2]
-		if (x,y) != prev_state and (frame!=0 or not set_first_frame):
-			m[x, y] += 1
-		prev_state = (x,y)
-		if frame == 0:
-			set_first_frame = True
+		m = np.zeros((shrunken_width+1, shrunken_height+1))
+		prev_state = (None, None)
+		set_first_frame = False
 
+		for s in shrunken_states:
+			x = int(round(s[0]))
+			y = int(round(s[1]))
+			frame = s[2]
+			if (x,y) != prev_state and (frame!=0 or not set_first_frame):
+				try:
+					m[x, y] += 1
+				except:
+					print "index error with m"
+					embed()
+			prev_state = (x,y)
+			if frame == 0:
+				set_first_frame = True
+		episode_matrices.append(m)
+
+	# embed()
+	m = np.mean(episode_matrices,axis=0)
+	# m = np.maximum.reduce(episode_matrices)
 	plt.imshow(m.T, cmap='viridis')
 	plt.gca().set_axis_off()
 	plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
@@ -228,27 +236,37 @@ def makeHeatmap(statesEncountered, filename):
 	plt.close()
 
 
-	# m = np.zeros((width, height))
-	# Xs, Ys = [],[]
-	# # block_size = w/width
-	# # block_size = 30
-	# for s in corrected_states:
-	#     x = s[0]
-	#     y = s[1]
-	#     m[x, y] += 1
-	#     # Xs.append(x*block_size+block_size/2.)
-	#     # Ys.append(y*block_size+block_size/2.)
+	## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
+	# states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y'], s['frame']) for s in statesEncountered if s['objects']['avatar']]
+	# width, height = max_x, max_y
+
+	# shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
+
+	# m = np.zeros((shrunken_width+1, shrunken_height+1))
+	# prev_state = (None, None)
+	# set_first_frame = False
+
+	# for s in shrunken_states:
+	# 	x = s[0]
+	# 	y = s[1]
+	# 	frame = s[2]
+	# 	if (x,y) != prev_state and (frame!=0 or not set_first_frame):
+	# 		m[x, y] += 1
+	# 	prev_state = (x,y)
+	# 	if frame == 0:
+	# 		set_first_frame = True
+
 	# plt.imshow(m.T, cmap='viridis')
 	# plt.gca().set_axis_off()
 	# plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
-	#     hspace = 0, wspace = 0)
+	# 	hspace = 0, wspace = 0)
 	# plt.margins(0, 0)
 	# plt.gca().xaxis.set_major_locator(NullLocator())
 	# plt.gca().yaxis.set_major_locator(NullLocator())
-	# # plt.show()
-
 	# plt.savefig(filename, bbox_inches='tight', pad_inches=0)
 	# plt.close()
+
+
 
 # folder = "../GameStates/Group1"
 # write_interaction_files(folder)
