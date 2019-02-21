@@ -1182,6 +1182,8 @@ class Agent:
         return regroundingFlag
 
     def saveCurriculumState(self, filename, episodeCompactStates):
+        if 'pedro' in os.getcwd():
+            return
         savedState = {'agent':self,
                       'episodeCompactStates': episodeCompactStates}
         with open(filename, 'wb') as f:
@@ -1189,6 +1191,8 @@ class Agent:
         # f.close()
 
     def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
+        if 'pedro' in os.getcwd():
+            return
         print "starting to save episode state"
         savedState = {'agent':self,
                       'effectsEncountered': effectsEncountered,
