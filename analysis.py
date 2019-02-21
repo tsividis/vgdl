@@ -89,9 +89,6 @@ def process_model_run(data, modelrun_ID):
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 
-	# if game_name=='entropy':
-		# print "embedded in process_model_run"
-		# embed()
 	all_event_types = set()
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
 	prev_level_number = 0
@@ -106,9 +103,18 @@ def process_model_run(data, modelrun_ID):
 				# if events:
 					# embed()
 				timestep_events = set()
+
 				for e in events:
-					timestep_events.add(tuple(sorted((e[1], e[2]))))
-					all_event_types.add(tuple(sorted((e[1], e[2]))))
+					## because event handling is so weird in Frogs, we need to filter out these events.
+					## Avatar-water and avatar-log collisions will still be reported from the (killSprite avatar water) interaction and (pullWithIt avatar log) interaction
+					## which is what a player perceives when they play
+					if e in  [('changeResource', 'avatar', 'water'),('changeResource', 'avatar', 'log')]:
+						pass
+					else:
+						timestep_events.add(tuple(sorted((e[1], e[2]))))
+						all_event_types.add(tuple(sorted((e[1], e[2]))))
+
+				print [e for e in timestep_events if 'avatar' in e]
 				for e in timestep_events:
 					episode_events[e] += 1
 				# for e in events:
