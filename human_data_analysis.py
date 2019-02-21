@@ -3,7 +3,7 @@ from IPython import embed
 from collections import defaultdict
 import os, csv
 
-folder = "../GameStates/Group1"
+folder = "../GameStates/Group10"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
@@ -12,13 +12,13 @@ agent_type = 'human'
 
 ### The current script only does group 1!!!
 
-def write_interaction_file(single_subject_single_game, subject_ID):
-	if 'human_interaction_data' not in os.listdir(data_path):
-		h = open('{}/human_interaction_data'.format(data_path), 'w+')
+def write_interaction_file(group, single_subject_single_game, subject_ID):
+	if 'human_interaction_data_{}'.format(group) not in os.listdir(data_path):
+		h = open('{}/human_interaction_data_{}'.format(data_path, group), 'w+')
 		interactionfilewriter = csv.writer(h)
 		interactionfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'game_name', 'level_number', 'episode_number', 'event_type', 'count'))
 	else:
-		h = open('{}/human_interaction_data'.format(data_path), 'a+')	
+		h = open('{}/human_interaction_data_{}'.format(data_path, group), 'a+')	
 		interactionfilewriter = csv.writer(h)
 
 
@@ -67,26 +67,40 @@ def write_interaction_file(single_subject_single_game, subject_ID):
 			step, events, score, win = frm['frame'], frm['events'], frm['score'], frm['win']
 			# cumulative_steps += step
 			timestep_events = set()
-			for e in events:
-				try:
-					translated_event = tuple(sorted((IDs_to_object_names[str(e[1])], IDs_to_object_names[str(e[2])])))
-					# print translated_event
-					timestep_events.add(translated_event)
-					# translated_event = tuple((IDs_to_object_names[str(e[1])], IDs_to_object_names[str(e[2])]))
+			if 'frogs' in game_name:
+				event_list = []
+				for e in events:
+					if e is not None:
+						try:
+							event_list.append((e[0], IDs_to_object_names[str(e[1])], IDs_to_object_names[str(e[2])]))
+						except:
+							pass
+							# print "key error in", game_name
+				events = event_list
+				for e in events:
+					if e in  [('changeResource', 'avatar', 'water'),('changeResource', 'avatar', 'log')]:
+						pass
+					else:
+						timestep_events.add(tuple(sorted((e[1], e[2]))))
+			else:	
+				for e in events:
+					try:
+						translated_event = tuple(sorted((IDs_to_object_names[str(e[1])], IDs_to_object_names[str(e[2])])))
+						# print translated_event
+						timestep_events.add(translated_event)
+						# translated_event = tuple((IDs_to_object_names[str(e[1])], IDs_to_object_names[str(e[2])]))
 
-				except:
-					print "Key error", game_name, e
-					pass
+					except:
+						# print "Key error", game_name, e
+						pass
 
-				# event_dict[translated_event] += 1
-				# all_event_types.add(translated_event)
+					# event_dict[translated_event] += 1
+					# all_event_types.add(translated_event)
 
 			for translated_event in timestep_events:
 				event_dict[translated_event] += 1
 		for event_name, count in event_dict.items():
 			row = (agent_type, subject_ID, modelrun_ID, game_name, game_level, episode_number, event_name, count)
-			# print episode.keys()[0]
-			# print row
 			interactionfilewriter.writerow(row)
 		
 		try:
@@ -118,15 +132,15 @@ def find_subject_data(subject_ID):
 ## we've lost all the info for various subjects after episode 5. e.g., for Raw_Nov12th_H1WZF6DaX
 
 def write_interaction_files(folder):
+	group = folder[folder.find('Group'):]
 	for filename in os.listdir(folder):
 	# filename = 'Raw_Nov12th_B1c1RTP67'
 		path = folder + "/" + filename
 		data_path = '.'
-
 		json_file = open(path, 'rb')
 		single_subject_single_game = json.load(json_file)  ## WRONG. This is not single subject, single game. There are two games here.
 		subject_ID = filename
-		write_interaction_file(single_subject_single_game, subject_ID)
+		write_interaction_file(group, single_subject_single_game, subject_ID)
 
 
 def make_heatmaps(folder, game_name, level_number):
