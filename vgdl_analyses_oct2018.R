@@ -1209,8 +1209,8 @@ p + scale_fill_manual(values=colors,name="Model",
 ## 14x10
 
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
-logtickmarks=(log(tickmarks))
-p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+logtickmarks=(log(tickmarks,10))
+p = ggplot(subset(plantimedata, short_agent_type %in% c('DDQN', 'IW1')), aes(x=log(human_normed_composite_ratio,10), fill=agent_type, color=agent_type))+
  geom_histogram(stat='bin',bins=50, position='identity', alpha=.8) +scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
   scale_color_manual(values=colors)+scale_fill_manual(values=colors,name="Model",
                                                                                   breaks=c("DDQN", levels(plantimedata$agent_type)[4]),
@@ -1906,11 +1906,11 @@ p
 level_win_no_inf = level_win
 # level_win_no_inf[level_win_no_inf$steps=='-Inf',]$steps=10e20
 ##level_win_no_inf[level_win_no_inf$steps==10e20,]$steps=10e15
-tickmarks = c(10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8)
+tickmarks = c(1,10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8)
 logtickmarks=(log(tickmarks,10))
 
 p = ggplot(subset(level_win_no_inf, level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
-p=p+geom_density(alpha=.8, adjust=1/10)+xlab('log(steps to win level 2)')+scale_color_manual(values=colors)+
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color_manual(values=colors)+
   scale_fill_manual(values=colors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
 p
 
@@ -1919,8 +1919,10 @@ p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 
 ### you want a game where DDQN did win level 1, where difference bet DDQN and humans is high, where no new objects are found on level 1,
 ### where you can easily take a gvgai screenshot.
-## chase? steps to win will be high for humans
-
+## chase? steps to win will be high for humans, and heatmap will be all over the place
+## portals? could be perfect?
+## push_boulders: level 1 DDQN will just be stuck in the little room on the top left on level 2.
+## sokoban could be great?
 
 ### show instead the distribution of steps to win for all agent types??
 

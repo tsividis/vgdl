@@ -653,11 +653,12 @@ class Agent:
         from matplotlib.ticker import NullLocator
         import numpy as np
 
+
         states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
                   if (not s['observe_state']) and s['objects']['avatar'].keys()]
         width, height = self.rle._game.width, self.rle._game.height
         correction_factor = self.rle._game.screensize[0]/width
-        corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
+        corrected_states = [(s[0]/correction_factor, s[1]/correction_factor, i) for i,s in enumerate(states)]
 
         m = np.zeros((width, height))
         Xs, Ys = [],[]
