@@ -270,5 +270,6 @@ def makeHeatmap(statesEncountered, filename):
 
 # folder = "../GameStates/Group1"
 # write_interaction_files(folder)
+# make_heatmaps(folder, 'frogs', 1)
 embed()
 

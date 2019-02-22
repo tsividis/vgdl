@@ -619,7 +619,7 @@ class Agent:
                     print "finished an episode; removing episodeSaveFile"
 
                 if heatmap:
-                    self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
+                    self.makeHeatmap(allStatesEncountered, 'heatmap_{}_level_{}_{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
 
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
@@ -670,7 +670,6 @@ class Agent:
         prev_state = (None, None)
         set_first_frame = False
 
-        # embed()
         for s in corrected_states:
             frame = s[2]
             x = int(round(s[0]))

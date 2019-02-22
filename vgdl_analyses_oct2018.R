@@ -290,6 +290,9 @@ p = ggplot(subset(humandata, game_name=='plaqueattack_1'), aes(x=cumulative_step
 
 p
 
+
+p = ggplot(subset(humandata, game_name=='frogs'&subject_ID=='BJ6WAj66X'), aes(x=cumulative_steps, y=cumulative_wins, color=subject_ID))+geom_point()+geom_smooth(method='loess', span=1,se=FALSE)
+p
 ## for new-format humandata:
 # humandata$cumulative_steps = humandata$timestep
 ## fix cumulative_timesteps

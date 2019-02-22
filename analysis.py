@@ -61,7 +61,7 @@ def process_model_run(data, modelrun_ID):
 	if 'interaction_data' not in os.listdir(data_path):
 		h = open('{}/interaction_data'.format(data_path), 'w+')
 		interactionfilewriter = csv.writer(h)
-		interactionfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'game_name', 'level_number', 'event_type', 'count'))
+		interactionfilewriter.writerow(('agent_type', 'subject_ID', 'modelrun_ID', 'game_name', 'level_number', 'episode_number', 'event_type', 'count'))
 	else:
 		h = open('{}/interaction_data'.format(data_path), 'a+')	
 		interactionfilewriter = csv.writer(h)
@@ -114,7 +114,6 @@ def process_model_run(data, modelrun_ID):
 						timestep_events.add(tuple(sorted((e[1], e[2]))))
 						all_event_types.add(tuple(sorted((e[1], e[2]))))
 
-				print [e for e in timestep_events if 'avatar' in e]
 				for e in timestep_events:
 					episode_events[e] += 1
 				# for e in events:
@@ -172,7 +171,7 @@ def process_model_run(data, modelrun_ID):
 				if event_name not in episode_events:
 					episode_events[event_name] = 0
 			for event_name, count in episode_events.items():
-				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, episode_number, event_name, count))
+				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, level_number, episode_number, event_name, count))
 
 
 			episode_number += 1
