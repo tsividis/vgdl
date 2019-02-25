@@ -3,7 +3,7 @@ from IPython import embed
 from collections import defaultdict
 import os, csv
 
-folder = "../GameStates/Group10"
+folder = "../GameStates/Group1"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
@@ -12,7 +12,7 @@ agent_type = 'human'
 
 ### The current script only does group 1!!!
 
-def write_interaction_file(group, single_subject_single_game, subject_ID):
+def write_interaction_file(group, single_subject_single_game, subject_ID, games):
 	if 'human_interaction_data_{}'.format(group) not in os.listdir(data_path):
 		h = open('{}/human_interaction_data_{}'.format(data_path, group), 'w+')
 		interactionfilewriter = csv.writer(h)
@@ -30,9 +30,13 @@ def write_interaction_file(group, single_subject_single_game, subject_ID):
 
 		game_name, game_level, game_number, game_round = game_string_to_info(episode.keys()[0])
 
-		if game_name in ['closing_gates_1', 'plaqueattack_1']:
+		# if game_name in ['closing_gates_1', 'plaqueattack_1']:
+			# continue
+
+		if not any([g in game_name for g in games]):
 			continue
 
+		print "continuing; found game: {}".format(game_name)
 		game_dict[(game_name, game_level, game_round)].append(episode)
 	
 	previous_game = None
@@ -131,7 +135,7 @@ def find_subject_data(subject_ID):
 
 ## we've lost all the info for various subjects after episode 5. e.g., for Raw_Nov12th_H1WZF6DaX
 
-def write_interaction_files(folder):
+def write_interaction_files(folder, games):
 	group = folder[folder.find('Group'):]
 	for filename in os.listdir(folder):
 	# filename = 'Raw_Nov12th_B1c1RTP67'
@@ -140,7 +144,7 @@ def write_interaction_files(folder):
 		json_file = open(path, 'rb')
 		single_subject_single_game = json.load(json_file)  ## WRONG. This is not single subject, single game. There are two games here.
 		subject_ID = filename
-		write_interaction_file(group, single_subject_single_game, subject_ID)
+		write_interaction_file(group, single_subject_single_game, subject_ID, games)
 
 
 def make_heatmaps(folder, game_name, level_number):
@@ -269,7 +273,7 @@ def makeHeatmap(statesEncountered, filename):
 
 
 # folder = "../GameStates/Group1"
-# write_interaction_files(folder)
+# write_interaction_files(folder, ['frogs'])
 # make_heatmaps(folder, 'frogs', 1)
 embed()
 
