@@ -31,7 +31,7 @@ DST=""
 #
 
 # Figure out which game and hyperparameter
-N_GAMES=10
+N_GAMES=8
 # N_PARAMS=3
 GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
 # META_IDX=$(($SLURM_ARRAY_TASK_ID / $N_GAMES))
