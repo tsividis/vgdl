@@ -30,4 +30,4 @@
 
 # game_names = ['avoidgeorge', 'butterflies', 'corridor', 'expt_helper', 'expt_ee', 'expt_push_boulders', 'frogs', 'portals', 'sokoban', 'zelda']
 
-game_names = ['bait', 'frogs', 'expt_relational', 'butterflies', 'boulderdash_1', 'variant_expt_ee_3', 'variant_portals_1', 'zelda'] ## DDQN wins the last 5
+game_names = ['bait', 'expt_relational', 'boulderdash_1', 'variant_portals_1'] ## DDQN wins the last 5
