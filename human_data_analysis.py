@@ -3,7 +3,7 @@ from IPython import embed
 from collections import defaultdict
 import os, csv
 
-folder = "../GameStates/Group1"
+folder = "../human_gamestates/Group1"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
@@ -32,8 +32,8 @@ def write_interaction_file(group, single_subject_single_game, subject_ID, games)
 
 		# if game_name in ['closing_gates_1', 'plaqueattack_1']:
 			# continue
-
-		if not any([g in game_name for g in games]):
+		# embed()
+		if games!='all' and not any([g in game_name for g in games]):
 			continue
 
 		print "continuing; found game: {}".format(game_name)
@@ -272,7 +272,7 @@ def makeHeatmap(statesEncountered, filename):
 
 
 
-# folder = "../GameStates/Group1"
+# folder = "../human_gamestates/Group1"
 # write_interaction_files(folder, ['frogs'])
 # make_heatmaps(folder, 'frogs', 1)
 embed()
