@@ -494,7 +494,7 @@ class Agent:
 
         print "timestamp", self.timestamp
         print "param_ID", self.param_ID
-        curriculumDir = 'savedCurricula'
+        curriculumDir = 'savedCurricula2'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
@@ -812,7 +812,7 @@ class Agent:
         if self.saveMidEpisode:
             ## if we get a loadedState, do things with it here.
             episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-            curriculumDir = 'savedCurricula'
+            curriculumDir = 'savedCurricula2'
             if episodeSaveFile in os.listdir(curriculumDir):
                 try:
                     loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
@@ -1416,7 +1416,7 @@ class Agent:
                       'compactStates': compactStates,
                       'annealing': annealing
                       }
-        filepath = 'savedCurricula/'+filename
+        filepath = 'savedCurricula2/'+filename
         with open(filepath, 'wb') as f:
             cloudpickle.dump(savedState, f)
         print "done saving state"
