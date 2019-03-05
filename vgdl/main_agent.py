@@ -584,21 +584,23 @@ class Agent:
 
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
-                if win:
-                    self.n_level += 1
-                    self.within_level_iteration = 0
+
                 self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
                 ## will write all previous episodes to the file at the end of each episode, after the random-exploration phase
                 if self.record_states and not (self.max_rand_steps > 0 and self.total_game_steps < self.max_rand_steps):
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     print "n_level", n_level
-                    print "recording episode. check planning_nodes for this episode"
-                    print "total nodes across all episodes for this level:", sum([item['planner_nodes'] for sublist in allCompactStates for item in sublist])
+                    print "most recent episode was of length {}. Game step is {}".format(len(episodeList[-1][-1]), steps)
+                    # print "recording episode. check planning_nodes for this episode"
+                    # print "total nodes across all episodes for this level:", sum([item['planner_nodes'] for sublist in allCompactStates for item in sublist])
+                    # embed()
                     with open(filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_ins':self.exploration_burn_ins, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     # f.close()
-
+                if win:
+                    self.n_level += 1
+                    self.within_level_iteration = 0
                 ## will write video data at the end of each episode
                 if self.record_video_info:
                     videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)

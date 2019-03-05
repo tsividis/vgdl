@@ -163,6 +163,22 @@ metacontroller_sets = [
     'allow_long_range': True,
     'epsilon_greedy_variant': 'DF'
     },
+    {'idx': 0,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 10,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'conservative_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 5,
+    'longHorizonObservationLimit': 2,
+    'switch_to_exploit_step': 1000,
+    'allow_long_range': True,
+    'epsilon_greedy_variant': 'N'
+    },
     ### end e-greedy variants
     #####
     #####
