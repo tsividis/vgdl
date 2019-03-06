@@ -94,8 +94,9 @@ def process_model_run(data, modelrun_ID):
 	prev_level_number = 0
 	accumulated_score = 0 ## at end of each level, you keep whatever score you've picked up.
 	episode_number = 0
-	# if 'ee_2' in game_name:
-		# embed()
+
+	if 'ee_3' in game_name:
+		embed()
 	for level_number,level in enumerate(data['episodes']):
 		level_max_score = 0
 		for episode_num, episode in enumerate(level):

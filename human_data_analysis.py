@@ -3,7 +3,7 @@ from IPython import embed
 from collections import defaultdict
 import os, csv
 
-folder = "../human_gamestates/Group1"
+folder = "../human_gamestates/Group6"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
@@ -61,6 +61,7 @@ def write_interaction_file(group, single_subject_single_game, subject_ID, games)
 		
 		
 		event_dict = defaultdict(lambda:0)
+		previous_frame_events = set()
 		for j,frm in enumerate(frms):
 			for object_type, object_instances in frm['objects'].items():
 				for object_ID, object_details in object_instances.items():
@@ -71,6 +72,17 @@ def write_interaction_file(group, single_subject_single_game, subject_ID, games)
 			step, events, score, win = frm['frame'], frm['events'], frm['score'], frm['win']
 			# cumulative_steps += step
 			timestep_events = set()
+
+			try:
+				filtered_events = []
+				for e in events:
+					if e is not None and tuple(e) not in previous_frame_events:
+						filtered_events.append(e)
+				
+				events = filtered_events
+			except:
+				print "problem with events"
+				embed()
 			if 'frogs' in game_name:
 				event_list = []
 				for e in events:
@@ -103,6 +115,9 @@ def write_interaction_file(group, single_subject_single_game, subject_ID, games)
 
 			for translated_event in timestep_events:
 				event_dict[translated_event] += 1
+
+			previous_frame_events = set([tuple(e) for e in frm['events'] if e is not None])
+
 		for event_name, count in event_dict.items():
 			row = (agent_type, subject_ID, modelrun_ID, game_name, game_level, episode_number, event_name, count)
 			interactionfilewriter.writerow(row)
@@ -273,7 +288,7 @@ def makeHeatmap(statesEncountered, filename):
 
 
 # folder = "../human_gamestates/Group1"
-# write_interaction_files(folder, ['frogs'])
+write_interaction_files(folder, ['bait_2'])
 # make_heatmaps(folder, 'frogs', 1)
 embed()
 
