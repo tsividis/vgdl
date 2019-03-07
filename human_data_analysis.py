@@ -288,7 +288,12 @@ def makeHeatmap(statesEncountered, filename):
 
 
 # folder = "../human_gamestates/Group1"
-write_interaction_files(folder, ['bait_2'])
+# write_interaction_files(folder, ['bait_2'])
 # make_heatmaps(folder, 'frogs', 1)
+
+# for i in range(1,16):
+# 	folder = "../human_gamestates/Group{}".format(i)
+# 	write_interaction_files(folder, 'all')
+
 embed()
 
