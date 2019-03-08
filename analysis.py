@@ -17,12 +17,14 @@ import random
 parser = argparse.ArgumentParser(description='.')
 parser.add_argument('--date', type=str, default='oct6', help='date') ##date whose data you want to process
 parser.add_argument('--game', type=str, default='', help='game') ##game whose data you want to process
+parser.add_argument('--heatmap',type=str2bool, default=False)
 
 ## add argument options for each of the different analyses?
 args = parser.parse_args()
 
 date = args.date
 game = args.game if args.game!='' else None
+heatmap = args.heatmap
 relative_path = '..'
 path = '{}/{}/results'.format(relative_path, date)
 # path = '{}/results'.format(date)
@@ -43,7 +45,7 @@ def process_model_run(data, modelrun_ID):
 	subject_ID = generate_subject_ID()
 
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
- 	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
+	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 	# data_path = '{}/{}'.format(date, 'csv_data')
 	# if 'csv_data' not in os.listdir('{}'.format(date)):
 		os.makedirs(data_path)
@@ -95,9 +97,8 @@ def process_model_run(data, modelrun_ID):
 	accumulated_score = 0 ## at end of each level, you keep whatever score you've picked up.
 	episode_number = 0
 
-	if 'ee_3' in game_name:
-		embed()
 	for level_number,level in enumerate(data['episodes']):
+		unpacked_states = [item for sublist in level for item in sublist]
 		level_max_score = 0
 		for episode_num, episode in enumerate(level):
 			episode_events = defaultdict(lambda:0)
@@ -176,8 +177,15 @@ def process_model_run(data, modelrun_ID):
 			for event_name, count in episode_events.items():
 				interactionfilewriter.writerow((agent_type, subject_ID, modelrun_ID, game_name, level_number, episode_number, event_name, count))
 
-
 			episode_number += 1
+
+		# if 'ee_3' in game_name:
+		# 	try:
+		# 		makeHeatmap(unpacked_states, agent_type, 'heatmap_{}_level_{}_{}.pdf'.format(game_name, level_number, agent_type))
+		# 	except:
+		# 		print "error with heatmaps"
+		# 		embed()
+
 	f.close()
 	g.close()
 	h.close()
@@ -189,7 +197,7 @@ def generate_subject_ID(length=7):
 		string += random.choice(alphabet)
 	return string
 
-def make_csvs(path, game=None):
+def make_csvs(path, heatmap, game_names = [], game=None):
 	for folder in open_folder(path):
 		for gamefolder in open_folder("{}/{}".format(path,folder)):
 			if game==None or game==gamefolder:
@@ -199,11 +207,14 @@ def make_csvs(path, game=None):
 					modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
 					with open(modelrun_path, 'r') as o:
 						data = cPickle.load(o)
-						try:
-							process_model_run(data, modelrun_ID)
-						except:
-							print "error..."
-							embed()
+						if heatmap:
+							make_heatmaps(data, modelrun_ID, game_names)
+						else:
+							try:
+								process_model_run(data, modelrun_ID)
+							except:
+								print "error..."
+								embed()
 						o.close()
 					# embed()
 
@@ -225,6 +236,82 @@ def merge_results(date):
 						if 'DS_Store' not in r:
 							copy2('../{}/results/{}/'.format(date, mod)+d+'/'+r,target)
 
+def make_heatmaps(data, modelrun_ID, game_names):
+	## takes a cPickle file of a full model run
+	## makes heatmaps for specified games
+	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
+	subject_ID = generate_subject_ID()
+	
+	agent_type = data['modelParams']
+	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 'NA'
+
+	condition = data['condition'] if 'condition' in data.keys() else 'full'
+	game_name = data['gameInfo']['gameName']
+
+	if game_name in game_names or game_names=='all':
+		for level_number,level in enumerate(data['episodes']):
+			unpacked_states = [item for sublist in level for item in sublist]
+			try:
+				makeHeatmap(unpacked_states, agent_type, '{}_level_{}_{}.pdf'.format(game_name, level_number, agent_type))
+			except:
+				print "error with heatmaps"
+				embed()
+
+def makeHeatmap(statesEncountered, agent_type, filename):
+	from vgdl.plotting import featurePlot
+	import matplotlib.pyplot as plt
+	from matplotlib.ticker import NullLocator
+	import numpy as np
+
+	if agent_type not in os.listdir('heatmaps'):
+		os.makedirs('heatmaps/{}'.format(agent_type))
+
+	avatar_color = 'DARKBLUE'
+	if 'relational' in filename:
+		avatar_color = 'WHITE'
+	states = []
+	for s in statesEncountered:
+		avatar_list = [(o[1][0], o[1][1], s['timestep']) for o in s['objects'] if o[0]==avatar_color]
+		if avatar_list:
+			states.append(avatar_list[0])
+
+	positions = [o[1] for o in statesEncountered[0]['objects']]
+	width, height = max([p[0] for p in positions]), max([p[1] for p in positions])
+	## check all avatar positions; maybe it moves somewhere outside the bounds of the original positions of objects on the screen
+	## this happens in games like aliens
+	width, height = max(width, max([s[0] for s in states])), max(height,max([s[1] for s in states]))
+
+	m = np.zeros((width+1, height+1))
+	Xs, Ys = [],[]
+	block_size = 30
+	prev_state = (None, None)
+	set_first_frame = False
+
+	for s in states:
+		frame = s[2]
+		x = int(round(s[0]))
+		y = int(round(s[1]))
+		if (x,y) != prev_state and (frame!=0 or not set_first_frame):
+			m[x, y] += 1
+
+		prev_state = (x,y)
+		if frame == 0:
+			set_first_frame = True
+
+		# Xs.append(x*block_size+block_size/2.)
+		# Ys.append(y*block_size+block_size/2.)
+	# plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
+	plt.imshow(m.T, cmap='viridis')
+	plt.gca().set_axis_off()
+	plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+		hspace = 0, wspace = 0)
+	plt.margins(0, 0)
+	plt.gca().xaxis.set_major_locator(NullLocator())
+	plt.gca().yaxis.set_major_locator(NullLocator())
+	plt.savefig('heatmaps/{}/{}'.format(agent_type, filename), bbox_inches='tight', pad_inches=0)
+	plt.close()
+
 ## take things out one level; should be in results/all, rather than results/all/all
 # merge_results(date)
-make_csvs(path)
+game_names = 'all'
+make_csvs(path, heatmap, game_names)
