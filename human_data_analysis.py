@@ -3,7 +3,7 @@ from IPython import embed
 from collections import defaultdict
 import os, csv
 
-folder = "../human_gamestates/Group6"
+folder = "../human_gamestates/Group14"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
@@ -163,6 +163,8 @@ def write_interaction_files(folder, games):
 
 
 def make_heatmaps(folder, game_name, level_number):
+	if 'human' not in os.listdir('heatmaps'):
+		os.makedirs('human')
 	for filename in os.listdir(folder):
 		path = folder + "/" + filename
 		data_path = '.'
@@ -179,7 +181,7 @@ def make_heatmaps(folder, game_name, level_number):
 
 			if gN==game_name and game_level==str(level_number):
 				print 'found {}, level {}'.format(gN, game_level)
-				outfilename = 'heatmap_{}_{}_human_{}'.format(game_name, game_level,filename)
+				outfilename = 'heatmaps/human/{}_{}_human_{}'.format(game_name, game_level,filename)
 				game_states = sorted(episode[episode.keys()[0]], key=lambda e:e['frame'])
 				relevant_episodes.append(game_states)
 				##make a filename for the heatmap
@@ -289,7 +291,7 @@ def makeHeatmap(statesEncountered, filename):
 
 # folder = "../human_gamestates/Group1"
 # write_interaction_files(folder, ['bait_2'])
-# make_heatmaps(folder, 'frogs', 1)
+# make_heatmaps(folder, 'bait', 0)
 
 # for i in range(1,16):
 # 	folder = "../human_gamestates/Group{}".format(i)
