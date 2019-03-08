@@ -257,38 +257,6 @@ def makeHeatmap(statesEncountered, filename):
 	plt.close()
 
 
-	## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
-	# states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y'], s['frame']) for s in statesEncountered if s['objects']['avatar']]
-	# width, height = max_x, max_y
-
-	# shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
-
-	# m = np.zeros((shrunken_width+1, shrunken_height+1))
-	# prev_state = (None, None)
-	# set_first_frame = False
-
-	# for s in shrunken_states:
-	# 	x = s[0]
-	# 	y = s[1]
-	# 	frame = s[2]
-	# 	if (x,y) != prev_state and (frame!=0 or not set_first_frame):
-	# 		m[x, y] += 1
-	# 	prev_state = (x,y)
-	# 	if frame == 0:
-	# 		set_first_frame = True
-
-	# plt.imshow(m.T, cmap='viridis')
-	# plt.gca().set_axis_off()
-	# plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
-	# 	hspace = 0, wspace = 0)
-	# plt.margins(0, 0)
-	# plt.gca().xaxis.set_major_locator(NullLocator())
-	# plt.gca().yaxis.set_major_locator(NullLocator())
-	# plt.savefig(filename, bbox_inches='tight', pad_inches=0)
-	# plt.close()
-
-
-
 # folder = "../human_gamestates/Group1"
 # write_interaction_files(folder, ['bait_2'])
 # make_heatmaps(folder, 'bait', 0)
