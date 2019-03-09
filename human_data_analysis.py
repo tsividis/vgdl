@@ -225,7 +225,7 @@ def makeHeatmap(statesEncountered, filename):
 		shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
 
 		width, height = max(shrunken_width, max([s[0] for s in shrunken_states])), max(shrunken_height, max([s[1] for s in shrunken_states]))
-		m = np.zeros((shrunken_width+1, shrunken_height+1))
+		m = np.zeros((width+1, height+1))
 		prev_state = (None, None)
 		set_first_frame = False
 
