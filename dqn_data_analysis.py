@@ -21,17 +21,34 @@ def makeHeatmap(statesEncountered, filename):
 	from matplotlib.ticker import NullLocator
 	import numpy as np
 
-	## find dimensions:
-	# max_x, max_y = max([s[0] for p in statesEncountered]), max([s[1] for p in statesEncountered])
-	if 'bait' not in filename:
-		print "warning -- you don't have dimensions for this game"
-		embed()
-	if statesEncountered[0][3]==0:
-		width, height = 4, 5
-	elif statesEncountered[0][3]==1:
-		width, height = 12, 9
+	## Hard-coding this for now, but will add dims for each level to the new script
+	## for getting state data from DDQN.
+	if 'bait' in filename:
+		if statesEncountered[0][3]==0:
+			width, height = 4, 5
+		elif statesEncountered[0][3]==1:
+			width, height = 12, 9
+		else:
+			print "warning -- you don't have dimensions for this level"
+			embed()
+	elif 'boulderdash' in filename:
+		width, height = 26, 13
+	elif 'butterflies' in filename:
+		width, height = 28, 12
+	elif 'expt_ee' in filename:
+		width, height = 26, 10
+	elif 'frogs' in filename:
+		width, height = 28, 11
+		if statesEncountered[0][3]==4: ## level 4 is smaller
+			width, height = 28, 10
+	elif 'relational' in filename:
+		width, height = 22, 10
+	elif 'portals' in filename:
+		width, height = 19, 11
+	elif 'zelda' in filename:
+		width, height = 13, 9
 	else:
-		print "warning -- you don't have dimensions for this level"
+		"You don't have dimensions for this game"
 		embed()
 
 	m = np.zeros((width+1, height+1))
@@ -67,34 +84,25 @@ for filename in dqn_state_files:
 	game_name = filename[:filename.find('.csv')]
 	f = open(path+'/'+filename)
 	state_data = pickle.load(f)
-
 	## state_data['gameInfo']: x,y size of game.
 	## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
 
-	levels = []
-	level_data = []
+	levels = [[],[],[],[],[],[]]
 	prev_level = state_data['episodes'][0][0][3]
 	for episode in state_data['episodes']:
 		curr_level = episode[0][3]
-		if curr_level == prev_level:
-			# print "same level"
-			level_data.extend(episode)
-		else:
-			print "new level"
-			levels.append(level_data)
-			level_data = [episode]
-		prev_level = curr_level
-	levels.append(level_data)
+		levels[curr_level].extend(episode)
 
 	for i, statesEncountered in enumerate(levels):
-		outfilename = 'heatmaps/ddqn/{}_{}'.format(game_name, agent_type)
-		try:
-			makeHeatmap(statesEncountered, outfilename)
-		except:
-			print "problem w/ heatmap"
-			embed()
+		outfilename = 'heatmaps/ddqn/{}_level{}_{}'.format(game_name, i, agent_type)
+		if statesEncountered:
+			try:
+				makeHeatmap(statesEncountered, outfilename)
+			except:
+				print "problem w/ heatmap"
+				embed()
 
-	break
+	# break
 
 	## break these up into unique levels (just looks at last element of the tuple for each episode)
 	## then put all those together into a single list

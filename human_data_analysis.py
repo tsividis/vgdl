@@ -179,9 +179,9 @@ def make_heatmaps(folder, game_name, level_number):
 
 			## accumulate all the episodes for this game and level and then pass them to makeHeatmap
 
-			if gN==game_name and game_level==str(level_number):
+			if (game_name=='all' or gN==game_name) and game_level==str(level_number):
 				print 'found {}, level {}'.format(gN, game_level)
-				outfilename = 'heatmaps/human/{}_{}_human_{}'.format(game_name, game_level,filename)
+				outfilename = 'heatmaps/human/{}_{}_human_{}'.format(gN, game_level,filename)
 				game_states = sorted(episode[episode.keys()[0]], key=lambda e:e['frame'])
 				relevant_episodes.append(game_states)
 				##make a filename for the heatmap
@@ -224,6 +224,7 @@ def makeHeatmap(statesEncountered, filename):
 
 		shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
 
+		width, height = max(shrunken_width, max([s[0] for s in shrunken_states])), max(shrunken_height, max([s[1] for s in shrunken_states]))
 		m = np.zeros((shrunken_width+1, shrunken_height+1))
 		prev_state = (None, None)
 		set_first_frame = False
@@ -261,9 +262,11 @@ def makeHeatmap(statesEncountered, filename):
 # write_interaction_files(folder, ['bait_2'])
 # make_heatmaps(folder, 'bait', 0)
 
-# for i in range(1,16):
-# 	folder = "../human_gamestates/Group{}".format(i)
-# 	write_interaction_files(folder, 'all')
+for i in range(1,16):
+	folder = "../human_gamestates/Group{}".format(i)
+	# write_interaction_files(folder, 'all')
+	make_heatmaps(folder, 'all', 0)
+	make_heatmaps(folder, 'all', 1)
 
 embed()
 
