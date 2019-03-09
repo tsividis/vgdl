@@ -213,10 +213,16 @@ def makeHeatmap(statesEncountered, filename):
 	max_x, max_y = max([p[0] for p in positions]), max([p[1] for p in positions])
 
 	block_size = sorted(set([p[0] for p in positions]))[1]
-	shrunken_width, shrunken_height = max_x/block_size, max_y/block_size
+	width, height = max_x/block_size, max_y/block_size
 	
-
 	episode_matrices = []
+	## iterate once over everything to get the right size for all the matrices
+	for episode in statesEncountered:
+		## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
+		states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y'], s['frame']) for s in episode if s['objects']['avatar']]
+		shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
+		width, height = max(width, max([s[0] for s in shrunken_states])), max(height, max([s[1] for s in shrunken_states]))
+
 	for episode in statesEncountered:
 
 		## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
@@ -224,7 +230,8 @@ def makeHeatmap(statesEncountered, filename):
 
 		shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
 
-		width, height = max(shrunken_width, max([s[0] for s in shrunken_states])), max(shrunken_height, max([s[1] for s in shrunken_states]))
+		# width, height = max(width, max([s[0] for s in shrunken_states])), max(height, max([s[1] for s in shrunken_states]))
+		
 		m = np.zeros((width+1, height+1))
 		prev_state = (None, None)
 		set_first_frame = False
@@ -245,7 +252,11 @@ def makeHeatmap(statesEncountered, filename):
 		episode_matrices.append(m)
 
 	# embed()
-	m = np.mean(episode_matrices,axis=0)
+	try:
+		m = np.mean(episode_matrices,axis=0)
+	except:
+		print "problem with np.mean"
+		embed()
 	# m = np.maximum.reduce(episode_matrices)
 	plt.imshow(m.T, cmap='viridis')
 	plt.gca().set_axis_off()
