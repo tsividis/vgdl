@@ -65,6 +65,7 @@ class Agent:
         self.absolute_max_nodes = 50000 ## just a convenience parameter
         self.shortHorizonNodes = 500 ## this isn't used. but you need to clean the code up a bit to actually delete it.
         self.shortHorizonAnnealing = 1.05 ## this isn't used, either. but you need to clean the code up a bit to actually delete it.
+        self.final_epsilon = .1 # for epsilon_greedy
         # self.emptyPlansLimit = 5 ## not used
         self.metacontroller_params = metacontroller_sets[metacontroller_index]
         ## Metacontroller parameters
@@ -101,10 +102,10 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         
-        self.param_ID = "IW={}_rand={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_egv={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, 
+        self.param_ID = "IW={}_rand={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_egv={}_fe={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, 
                 self.random_policy, self.extra_atom_allowed, self.extra_atom, self.shortHorizonNodes, self.longHorizonNodes, 
                 self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, 
-                self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.epsilon_greedy_variant,
+                self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.epsilon_greedy_variant, self.final_epsilon,
                 self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
                 self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
                 self.objectsWhoseLocationWeIgnoreString)
@@ -864,9 +865,9 @@ class Agent:
                 ## calculate epsilon value according to annealing schedule
                 steps_so_far = self.total_game_steps+steps
                 if  steps_so_far < self.switch_to_exploit_step:
-                    epsilon = 1.-steps_so_far*((1-0.05)/self.switch_to_exploit_step)
+                    epsilon = 1.-steps_so_far*((1-self.final_epsilon)/self.switch_to_exploit_step)
                 else:
-                    epsilon = 0.05
+                    epsilon = self.final_epsilon
                 print "steps so far {}. epsilon {}".format(steps_so_far, epsilon)
                 if self.random_policy or random.random()<epsilon: ## and lesion_type is....
                                             ## if it's not, still call normal planner.
