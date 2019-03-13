@@ -1861,7 +1861,7 @@ g_legend <- function(a.gplot){
 ###level1-level2 plots
 d = subset(alldata, agent_type%in%c('human', 'DDQN', 'IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False'))
 level_win = data.frame(agent_type=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
-for (game in unique(s$game_name)){
+for (game in unique(d$game_name)){
   s=subset(d, game_name==game&(level_number%in%c(0,1)|level%in%c(0,1)))
   for (agent in unique(s$agent_type)){
     agentdata = s[which(s$agent_type==agent),]
