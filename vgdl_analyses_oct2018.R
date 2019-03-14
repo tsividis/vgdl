@@ -27,6 +27,8 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov 18, nov 19: informal sensitivity analysis
 ## nov27: exploration and planner lesions
 ## nov28: AGH+IW planner lesion
+## mar4: e-greedy IW1, run with .05 endpoint for epsilon, and random policy.
+## mar14: e-greedy IW1, run with .1 endpoint for epsilon.
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
 # dates = list('jan28', 'jan29')
@@ -49,12 +51,12 @@ for (date in dates){
   else{
     for(colname in names(d)){
       if (!(colname %in% names(data))){
-        d[,colname] = NA
+        data[,colname] = NA
       }
     }
     for(colname in names(data)){
       if(!(colname %in% names(d))){
-        data[,colname]=NA
+        d[,colname]=NA
       }
     }
     data = rbind(data,d)
@@ -111,11 +113,13 @@ MEPdata = data
 # # }
 
 saveddqndata = dqndata
+
+
+#### loading DQN the old way
 dqndata = list()
 path = '~/Projects/atari/vgdl/dqn/'
 oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
 
-list.files(path)
 for (gamefile in list.files(path)){
   filename = paste(path,gamefile,sep='')
   gamenamestart = unlist(gregexpr('dqn/',filename))+nchar('dqn/')
@@ -128,13 +132,24 @@ for (gamefile in list.files(path)){
   d$ep_reward = NULL
   d$criteria = as.factor(1)
   d$cumulative_steps = d$steps
-  d$agent_type = as.factor("DDQN")
-  d$subject_ID = as.factor("DDQN")
+  if (grepl('101', filename)){
+    d$agent_type = as.factor("DDQN 1k") ## refers to the eps_decay (epsilon-greedy annealing) parameter in the DDQN implementation. 
+    d$subject_ID = as.factor("DDQN 1k")
+  }else if (grepl('102', filename)){
+    d$agent_type = as.factor("DDQN 10k")
+    d$subject_ID = as.factor("DDQN 10k")
+  }else if (grepl('103', filename)){
+    d$agent_type = as.factor("DDQN 100k")
+    d$subject_ID = as.factor("DDQN 100k")
+  }else{
+    d$agent_type = as.factor("DDQN")
+    d$subject_ID = as.factor("DDQN")
+  }
   d$steps = NULL
   d$win = NULL
   d$cumulative_wins = as.numeric(0)
   d$sparse_levels_won = NA
-  row = data.frame(level=0,score=0,game_name=game,criteria=as.factor(1),cumulative_steps=0,agent_type='DDQN',subject_ID='DDQN',cumulative_wins=0, sparse_levels_won=0)
+  # row = data.frame(level=0,score=0,game_name=game,criteria=as.factor(1),cumulative_steps=0,agent_type='DDQN',subject_ID='DDQN',cumulative_wins=0, sparse_levels_won=0)
   
   for (i in 2:length(d$level)){
     if (d$level[i]>d$level[i-1]){
@@ -164,6 +179,16 @@ for (colname in names(dqndata)){
 }
 alldata = rbind(alldata, dqndata)
 
+### Just plotting some test games to see what epsilon_decay (exploration annealing) factors worked best for DDQN
+all_agent_games = unique(filter(dqndata, agent_type=='DDQN 1k')$game_name)
+for (game in all_agent_games){
+  p = ggplot(filter(dqndata, game_name==game), aes(x=cumulative_steps, y=cumulative_wins, color=agent_type, fill=agent_type))
+  p = p+geom_point()+geom_smooth()
+  newdir='~/Projects/atari/vgdl/dqn_plots/'
+  # dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
+  title = paste(newdir, game, '.png', sep='')
+  ggsave(title, plot=p, width=8, height=8) 
+}
 # colors = c('orange','steelblue1','steelblue3')
 # names(colors) = levels(MEPdata2$agent_type)
 # colorScale = scale_color_manual(name='agent_type',values=colors)
@@ -1173,6 +1198,15 @@ p = ggplot(subset(plantimedata), aes(x=agent_type, y=level_percentage, fill=fact
         axis.ticks.x=element_blank())+theme(legend.position='bottom')#+scale_fill_manual(values=colors)
 p
 ## save as 10x16
+
+## just the composite ratio, for comparing models with one another. not a final figure for anything
+p = ggplot(subset(plantimedata), aes(x=short_agent_type, y=log(composite_ratio), fill=factor(short_agent_type))) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+#facet_wrap(~game_name)+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+theme(legend.position='bottom')+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p
+
 
 p = ggplot(subset(plantimedata), aes(x=agent_type, y=log(human_normed_composite_ratio), fill=factor(agent_type))) +
   geom_bar(position='dodge', stat='summary', fun.y='mean')+#facet_wrap(~game_name)+
