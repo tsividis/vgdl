@@ -542,7 +542,7 @@ class Agent:
             else:
                 first_time_playing_level = False
             quit_level = False
-            while not win and not quit_level and i<15:
+            while not win and not quit_level:# and (i<15 or self.random_policy): ## don't only play 15 
                 self.n_level = n_level
                 self.within_level_iteration = i
                 gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
