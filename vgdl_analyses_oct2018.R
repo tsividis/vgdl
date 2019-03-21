@@ -189,6 +189,8 @@ for (game in all_agent_games){
   title = paste(newdir, game, '.png', sep='')
   ggsave(title, plot=p, width=8, height=8) 
 }
+
+
 # colors = c('orange','steelblue1','steelblue3')
 # names(colors) = levels(MEPdata2$agent_type)
 # colorScale = scale_color_manual(name='agent_type',values=colors)
