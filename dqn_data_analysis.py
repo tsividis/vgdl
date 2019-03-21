@@ -80,36 +80,36 @@ def makeHeatmap(statesEncountered, filename):
 
 ## you need to get info about the correct level by opening the game somewhere else :/
 
-# for filename in dqn_state_files:
-# 	game_name = filename[:filename.find('.csv')]
-# 	if '101' in filename:
-# 		agent_type = agent_type+'_1k'
-# 	elif '102' in filename:
-# 		agent_type = agent_type+'_10k'
-# 	elif '103' in filename:
-# 		agent_type = agent_type+'_100k'
-# 	else:
-# 		#normal case
-# 		agent_type = agent_type+'_200'
-# 	f = open(path+'/'+filename)
-# 	state_data = pickle.load(f)
-# 	## state_data['gameInfo']: x,y size of game.
-# 	## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
+for filename in dqn_state_files:
+	game_name = filename[:filename.find('.csv')]
+	if '101' in filename:
+		agent_type = agent_type+'_1k'
+	elif '102' in filename:
+		agent_type = agent_type+'_10k'
+	elif '103' in filename:
+		agent_type = agent_type+'_100k'
+	else:
+		#normal case
+		agent_type = agent_type+'_200'
+	f = open(path+'/'+filename)
+	state_data = pickle.load(f)
+	## state_data['gameInfo']: x,y size of game.
+	## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
 
-# 	levels = [[],[],[],[],[],[]]
-# 	prev_level = state_data['episodes'][0][0][3]
-# 	for episode in state_data['episodes']:
-# 		curr_level = episode[0][3]
-# 		levels[curr_level].extend(episode)
+	levels = [[],[],[],[],[],[]]
+	prev_level = state_data['episodes'][0][0][3]
+	for episode in state_data['episodes']:
+		curr_level = episode[0][3]
+		levels[curr_level].extend(episode)
 
-# 	for i, statesEncountered in enumerate(levels):
-# 		outfilename = 'heatmaps/ddqn/{}_level{}_{}'.format(game_name, i, agent_type)
-# 		if statesEncountered:
-# 			try:
-# 				makeHeatmap(statesEncountered, outfilename)
-# 			except:
-# 				print "problem w/ heatmap"
-# 				embed()
+	for i, statesEncountered in enumerate(levels):
+		outfilename = 'heatmaps/ddqn/{}_level{}_{}'.format(game_name, i, agent_type)
+		if statesEncountered:
+			try:
+				makeHeatmap(statesEncountered, outfilename)
+			except:
+				print "problem w/ heatmap"
+				embed()
 
 	# break
 
