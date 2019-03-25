@@ -568,7 +568,9 @@ class Agent:
                  'win': win,
                  'entropy': rle._game.H,
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
-                        for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list]
+                        for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list],
+                 'events': list(rle._game.effectListByClass)
+
                  }
         self.last_recorded_time = current_time
         return state
@@ -705,8 +707,8 @@ class Agent:
             statesEncountered.append(self.rle._game.getFullState())
         
         self.last_recorded_time = time.time()
-        # if self.record_states:
-            # compactStates.append(self.compactify(self.rle))
+        if self.record_states:
+            compactStates.append(self.compactify(self.rle))
         ## Initialize memory of object positions
         self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
         for k, v in self.rle._game.all_objects.iteritems():
