@@ -75,14 +75,21 @@ data$score = as.numeric(as.character(data$sparse_score))
 ## TODO: once you're using human data, move this below and run it for all_data
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 
-for (colname in names(dqndata)){
-  if (!(colname %in% names(data))){
-    data[,colname] = NA
-    print(colname)
-  }
-}
 
-
+### if you need to merge something into alldata...
+# for (colname in names(data)){
+#   if (!(colname %in% names(alldata))){
+#     alldata[,colname] = NA
+#     print(colname)
+#   }
+# }
+# for (colname in names(alldata)){
+#   if (!(colname %in% names(data))){
+#     data[,colname] = NA
+#     print(colname)
+#   }
+# }
+# alldata = rbind(alldata, data[,names(alldata)])
 
 
 exploration_lesions = subset(data, grepl('eG=True', agent_type))
@@ -118,6 +125,8 @@ saveddqndata = dqndata
 #### loading DQN the old way
 dqndata = list()
 path = '~/Projects/atari/vgdl/dqn/'
+path = '~/Downloads/reward_histories/'
+
 oldformatdqngames = c('aliens','avoidgeorge','plaqueattack','survivezombies')
 
 for (gamefile in list.files(path)){
@@ -132,13 +141,13 @@ for (gamefile in list.files(path)){
   d$ep_reward = NULL
   d$criteria = as.factor(1)
   d$cumulative_steps = d$steps
-  if (grepl('101', filename)){
+  if ((grepl('101', filename) || grepl('trial1', filename))){
     d$agent_type = as.factor("DDQN 1k") ## refers to the eps_decay (epsilon-greedy annealing) parameter in the DDQN implementation. 
     d$subject_ID = as.factor("DDQN 1k")
-  }else if (grepl('102', filename)){
+  }else if ((grepl('102', filename)|| grepl('trial2', filename))){
     d$agent_type = as.factor("DDQN 10k")
     d$subject_ID = as.factor("DDQN 10k")
-  }else if (grepl('103', filename)){
+  }else if ((grepl('103', filename)||grepl('trial3', filename))){
     d$agent_type = as.factor("DDQN 100k")
     d$subject_ID = as.factor("DDQN 100k")
   }else{
@@ -189,8 +198,6 @@ for (game in all_agent_games){
   title = paste(newdir, game, '.png', sep='')
   ggsave(title, plot=p, width=8, height=8) 
 }
-
-
 # colors = c('orange','steelblue1','steelblue3')
 # names(colors) = levels(MEPdata2$agent_type)
 # colorScale = scale_color_manual(name='agent_type',values=colors)
@@ -1895,7 +1902,8 @@ g_legend <- function(a.gplot){
 
 
 ###level1-level2 plots
-d = subset(alldata, agent_type%in%c('human', 'DDQN', 'IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False'))
+d = subset(alldata, agent_type%in%c('human', 'DDQN', 'IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False',
+                                    'IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'))
 level_win = data.frame(agent_type=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
 for (game in unique(d$game_name)){
   s=subset(d, game_name==game&(level_number%in%c(0,1)|level%in%c(0,1)))
@@ -1913,39 +1921,37 @@ for (game in unique(d$game_name)){
 level_win$short_agent_type = NA
 for (i in 1:length(level_win$agent_type)){
   agent = level_win$agent_type[i]
-  if((grepl('IW=1', agent)&!(grepl('rand=True', agent)))){
+  if((grepl('IW=1', agent)&!(grepl('rand', agent)))){
     short_type = 'EMPA'
-  }
-  else if((grepl('IW=2', agent)&!(grepl('rand=True', agent)))){
+  }else if((grepl('IW=2', agent)&!(grepl('rand', agent)))){
     short_type = 'EMPA2'
-  }
-  else if(agent=='DDQN'){
+  }else if ((grepl('IW=1', agent)&grepl('eG=True', agent)&grepl('fe=0.1',agent))){
+    short_type = 'e-greedy .1'
+  }else if(agent=='DDQN'){
     short_type = 'DDQN'
-  }
-  else if(agent=='human'){
+  }else if(agent=='human'){
     short_type = 'human'
   }
   level_win$short_agent_type[i] = short_type
 }
 level_win$short_agent_type = as.factor(level_win$short_agent_type)
-level_win = transform(level_win, short_agent_type=factor(short_agent_type, levels=c("human", "EMPA", "DDQN"))) ## so that columns of plot are reordered
+level_win = transform(level_win, short_agent_type=factor(short_agent_type, levels=c("human", "EMPA", 'e-greedy .1', "DDQN"))) ## so that columns of plot are reordered
 level_win = select(level_win, -agent_type)
 ## replace Inf with something really bad, and when you prettify the plot in Illustrator you'll use a plot break.
 
 
 ##Plot of steps to win level 1, conditioned on winning level 0. Only for games where the model *did* win level 1.
 ##Only the DDQN failed to win level 1
-colors = c('palegreen3','steelblue3','grey50')
-names(colors) = c('human', 'EMPA','DDQN')
+colors = c('palegreen3','steelblue3','slateblue2','grey50')
+names(colors) = c('human', 'EMPA','e-greedy .1', 'DDQN')
 
-p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=short_agent_type, y=log(steps,10), fill=short_agent_type))
-p=p+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+scale_fill_manual(values=colors)
-p
+# p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=short_agent_type, y=log(steps,10), fill=short_agent_type))
+# p=p+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+scale_fill_manual(values=colors)
+# p
 
 level_win_no_inf = level_win
-# level_win_no_inf[level_win_no_inf$steps=='-Inf',]$steps=10e20
-##level_win_no_inf[level_win_no_inf$steps==10e20,]$steps=10e15
-tickmarks = c(1,10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8)
+level_win_no_inf[level_win_no_inf$steps=='-Inf',]$steps=10e15
+tickmarks = c(1,10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8,10e9,10e10,10e11,10e12,10e13,10e14,10e15)
 logtickmarks=(log(tickmarks,10))
 
 p = ggplot(subset(level_win_no_inf, level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
@@ -1954,7 +1960,7 @@ p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color
 p
 
 
-p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+## 
 
 ### you want a game where DDQN did win level 1, where difference bet DDQN and humans is high, where no new objects are found on level 1,
 ### where you can easily take a gvgai screenshot.
@@ -1966,10 +1972,10 @@ p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 ### show instead the distribution of steps to win for all agent types??
 
 
-if (length(subjectdata$cumulative_steps)>0){
-  if(max(subjectdata$cumulative_steps)>0){
-    level_maxes[[idx]] = max(subjectdata$cumulative_wins)
-    cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+# if (length(subjectdata$cumulative_steps)>0){
+#   if(max(subjectdata$cumulative_steps)>0){
+#     level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+#     cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
 
 
 
