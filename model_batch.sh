@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-90
+#SBATCH --array=0-900
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1680
 #SBATCH --qos=use-everything
