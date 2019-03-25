@@ -498,9 +498,7 @@ class Agent:
 
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
-                if win:
-                    self.n_level += 1
-                    self.within_level_iteration = 0
+
 
                 self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
 
@@ -516,6 +514,10 @@ class Agent:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     # f.close()
 
+                if win:
+                    self.n_level += 1
+                    self.within_level_iteration = 0
+                    
                 ## will write video data at the end of each episode
                 if self.record_video_info:
                     videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
