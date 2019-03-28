@@ -850,7 +850,8 @@ class Node():
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
 				terminal, win, t = vrle._isDone(getTermination=True)
-
+				if win and t.name=='SpriteCounter':
+					print t.stype
 				if self.WBP.firstOrderHorizon:
 					# Return plan if first-order progress was made towards
 					# a win condition
@@ -862,18 +863,18 @@ class Node():
 							if stype in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[stype] > n_stypes:
 								if not (terminal and not win):
 									terminal, win = True, True
-									if self.WBP.display:
-										print "exiting rollout early because progress was made toward", stype
-										# embed()
+									# if self.WBP.display:
+									print "exiting rollout early because progress was made toward", stype
+									embed()
 						elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 							stypes = term.termination.stypes
 							n_stypes = sum([len(self.WBP.findObjectsInRLE(vrle, stype)) for stype in stypes if self.WBP.findObjectsInRLE(vrle, stype)])
 							if tuple(stypes) in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[tuple(stypes)] > n_stypes:
 								if not(terminal and not win):
 									terminal, win = True, True
-									if self.WBP.display:
-										print "exiting rollout early because progress was made toward", stypes
-										# embed()
+									# if self.WBP.display:
+									print "exiting rollout early because progress was made toward", stypes
+									embed()
 						if win:
 							break
 
@@ -891,8 +892,8 @@ class Node():
 								# print "ignoring rollout termination because it didn't have to do with our recent projectile"
 								terminal, win = False, False
 						if terminal:
-							if self.WBP.display:
-								print t.name, t.s1, t.s2
+							# if self.WBP.display:
+							print t.name, t.s1, t.s2
 					except (IndexError, AttributeError) as e:
 						# Avatar is dead or doesn't have projectile
 						pass
