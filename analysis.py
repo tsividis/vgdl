@@ -206,7 +206,10 @@ def make_csvs(path, heatmap, game_names = [], game=None):
 					print modelrun_ID
 					modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
 					with open(modelrun_path, 'r') as o:
-						data = cPickle.load(o)
+						try:
+							data = cPickle.load(o)
+						except:
+							print "problem loading pickle for {}".format(modelrun_path)
 						if heatmap:
 							make_heatmaps(data, modelrun_ID, game_names)
 						else:

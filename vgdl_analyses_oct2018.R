@@ -29,10 +29,10 @@ original_games = c('aliens', 'antagonist', 'avoidgeorge', 'bait', 'bees_and_bird
 ## nov28: AGH+IW planner lesion
 ## mar4: e-greedy IW1, run with .05 endpoint for epsilon, and random policy.
 ## mar14: e-greedy IW1, run with .1 endpoint for epsilon.
+## mar28: 10 runs of EMPA with no limit on losses.
 dates = c('nov8', 'nov12', 'nov15', 'nov16')
 ## warning: don't plot frogs from anything before nov13b
 # dates = list('jan28', 'jan29')
-dates=list('jan30')
 saveddata = data
 data = list()
 for (date in dates){

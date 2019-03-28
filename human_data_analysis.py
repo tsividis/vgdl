@@ -3,7 +3,7 @@ from IPython import embed
 from collections import defaultdict
 import os, csv
 
-folder = "../human_gamestates/Group14"
+folder = "../human_gamestates/Group11"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
@@ -92,12 +92,17 @@ def write_interaction_file(group, single_subject_single_game, subject_ID, games)
 						except:
 							pass
 							# print "key error in", game_name
+							# print "problem was with event", e
 				events = event_list
 				for e in events:
-					if e in  [('changeResource', 'avatar', 'water'),('changeResource', 'avatar', 'log')]:
+					if e in  [('changeResource', 'avatar', 'water')]:
 						pass
-					else:
-						timestep_events.add(tuple(sorted((e[1], e[2]))))
+					if e in [('changeResource', 'avatar', 'log')]:
+						## pullWithIt didn't get recorded for human data, even though it's identical to changeResource.
+						## overwriting it here and adding it.
+						e = ('pullWithIt', 'avatar', 'log')
+					# else:
+					timestep_events.add(tuple(sorted((e[1], e[2]))))
 			else:	
 				for e in events:
 					try:
@@ -270,14 +275,15 @@ def makeHeatmap(statesEncountered, filename):
 
 
 # folder = "../human_gamestates/Group1"
-# write_interaction_files(folder, ['bait_2'])
+# write_interaction_files(folder, ['frogs'])
 # make_heatmaps(folder, 'bait', 0)
+# write_interaction_files(folder, 'all')
 
-for i in range(1,16):
-	folder = "../human_gamestates/Group{}".format(i)
-	# write_interaction_files(folder, 'all')
-	make_heatmaps(folder, 'all', 0)
-	make_heatmaps(folder, 'all', 1)
+# for i in range(1,16):
+# 	folder = "../human_gamestates/Group{}".format(i)
+# 	# write_interaction_files(folder, 'all')
+# 	make_heatmaps(folder, 'all', 0)
+# 	make_heatmaps(folder, 'all', 1)
 
 embed()
 
