@@ -406,7 +406,7 @@ class Agent:
         self.make_movie = make_movie
 
         ## used for time-stamping data related to this particular run of the model.
-        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M')+self.task_ID
+        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
         self.timestamp = timestamp
         if self.record_states:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
