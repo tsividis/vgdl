@@ -49,6 +49,7 @@ class Agent:
         self.record_states = True
         self.record_video_info = True
         self.saveMidEpisode = False
+        self.filename = None
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
@@ -411,6 +412,7 @@ class Agent:
         if self.record_states:
             dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+            self.filename = filename
             if not os.path.exists(dirname):
                 try:
                     os.makedirs(dirname)
@@ -440,6 +442,7 @@ class Agent:
                 loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
                 loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
                 self = loadedState['agent'] ## load saved agent
+                ##self.filename will get overloaded here.
                 print "loaded curriculum state"
             except:
                 os.remove(curriculumDir+'/'+episodeSaveFile)
@@ -510,7 +513,7 @@ class Agent:
                     print "recording episode. check planning_nodes for this episode"
                     print "total nodes across all episodes for this level:", sum([item['planner_nodes'] for sublist in allCompactStates for item in sublist])
                     # embed()
-                    with open(filename, 'wb') as f:
+                    with open(self.filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
                     # f.close()
 
