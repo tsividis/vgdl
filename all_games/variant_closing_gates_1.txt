@@ -29,7 +29,7 @@ BasicGame
         missile bullet stepBack
         bullet avatar > nothing
         avatar bullet > nothing
-        bullet bullet > killSprite
+        bullet bullet > nothing
         boulder avatar > bounceForward
         avatar boulder > nothing
         boulder forcefield > nothing
