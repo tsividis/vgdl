@@ -863,18 +863,18 @@ class Node():
 							if stype in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[stype] > n_stypes:
 								if not (terminal and not win):
 									terminal, win = True, True
-									# if self.WBP.display:
-									print "exiting rollout early because progress was made toward", stype
-									embed()
+									if self.WBP.display:
+										print "exiting rollout early because progress was made toward", stype
+									# embed()
 						elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 							stypes = term.termination.stypes
 							n_stypes = sum([len(self.WBP.findObjectsInRLE(vrle, stype)) for stype in stypes if self.WBP.findObjectsInRLE(vrle, stype)])
 							if tuple(stypes) in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[tuple(stypes)] > n_stypes:
 								if not(terminal and not win):
 									terminal, win = True, True
-									# if self.WBP.display:
-									print "exiting rollout early because progress was made toward", stypes
-									embed()
+									if self.WBP.display:
+										print "exiting rollout early because progress was made toward", stypes
+										# embed()
 						if win:
 							break
 
