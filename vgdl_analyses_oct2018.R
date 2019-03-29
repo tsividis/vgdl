@@ -212,7 +212,7 @@ for (colname in names(dqndata)){
   }
 }
 alldata = rbind(alldata, dqndata)
-
+savedalldata = alldata
 # colors = c('orange','steelblue1','steelblue3')
 # names(colors) = levels(MEPdata2$agent_type)
 # colorScale = scale_color_manual(name='agent_type',values=colors)
