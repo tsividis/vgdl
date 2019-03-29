@@ -24,7 +24,7 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
 # from line_profiler import LineProfiler
 
-MAX_STEPS = 10000
+MAX_STEPS = 1000000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
@@ -544,7 +544,7 @@ class Agent:
             else:
                 first_time_playing_level = False
             quit_level = False
-            while not win and not quit_level:# and (i<15 or self.random_policy): ## don't only play 15 
+            while not win and not quit_level and self.total_game_steps<MAX_STEPS:# and (i<15 or self.random_policy): ## don't only play 15 
                 self.n_level = n_level
                 self.within_level_iteration = i
                 gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
