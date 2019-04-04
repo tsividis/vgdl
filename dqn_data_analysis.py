@@ -9,47 +9,52 @@ from matplotlib.ticker import NullLocator
 import numpy as np
 
 path = 'dqn_interaction_data/state_data'
+path = 'dqn_interaction_data2/state_data'
 if 'ddqn' not in os.listdir('heatmaps'):
 	os.makedirs('heatmaps/ddqn')
-agent_type = 'DDQN'
 dqn_state_files = [f for f in os.listdir(path) if 'DS_Store' not in f]
 
 
-def makeHeatmap(statesEncountered, filename):
+def makeHeatmap(statesEncountered, filename, newformat=False):
 	from vgdl.plotting import featurePlot
 	import matplotlib.pyplot as plt
 	from matplotlib.ticker import NullLocator
 	import numpy as np
 
-	## Hard-coding this for now, but will add dims for each level to the new script
-	## for getting state data from DDQN.
-	if 'bait' in filename:
-		if statesEncountered[0][3]==0:
-			width, height = 4, 5
-		elif statesEncountered[0][3]==1:
-			width, height = 12, 9
-		else:
-			print "warning -- you don't have dimensions for this level"
-			embed()
-	elif 'boulderdash' in filename:
-		width, height = 26, 13
-	elif 'butterflies' in filename:
-		width, height = 28, 12
-	elif 'expt_ee' in filename:
-		width, height = 26, 10
-	elif 'frogs' in filename:
-		width, height = 28, 11
-		if statesEncountered[0][3]==4: ## level 4 is smaller
-			width, height = 28, 10
-	elif 'relational' in filename:
-		width, height = 22, 10
-	elif 'portals' in filename:
-		width, height = 19, 11
-	elif 'zelda' in filename:
-		width, height = 13, 9
+	if newformat:
+		width, height = statesEncountered['game_info']
+		width = width-1
+		height = height-1
+		statesEncountered = statesEncountered['episodes']
 	else:
-		"You don't have dimensions for this game"
-		embed()
+		## Before we were storing this level info we had to hard-code it.
+		if 'bait' in filename:
+			if statesEncountered[0][3]==0:
+				width, height = 4, 5
+			elif statesEncountered[0][3]==1:
+				width, height = 12, 9
+			else:
+				print "warning -- you don't have dimensions for this level"
+				embed()
+		elif 'boulderdash' in filename:
+			width, height = 26, 13
+		elif 'butterflies' in filename:
+			width, height = 28, 12
+		elif 'expt_ee' in filename:
+			width, height = 26, 10
+		elif 'frogs' in filename:
+			width, height = 28, 11
+			if statesEncountered[0][3]==4: ## level 4 is smaller
+				width, height = 28, 10
+		elif 'relational' in filename:
+			width, height = 22, 10
+		elif 'portals' in filename:
+			width, height = 19, 11
+		elif 'zelda' in filename:
+			width, height = 13, 9
+		else:
+			"You don't have dimensions for this game"
+			embed()
 
 	m = np.zeros((width+1, height+1))
 	Xs, Ys = [],[]
@@ -80,43 +85,65 @@ def makeHeatmap(statesEncountered, filename):
 
 ## you need to get info about the correct level by opening the game somewhere else :/
 
-for filename in dqn_state_files:
-	game_name = filename[:filename.find('.csv')]
-	if '101' in filename:
-		agent_type = agent_type+'_1k'
-	elif '102' in filename:
-		agent_type = agent_type+'_10k'
-	elif '103' in filename:
-		agent_type = agent_type+'_100k'
-	else:
-		#normal case
-		agent_type = agent_type+'_200'
-	f = open(path+'/'+filename)
-	state_data = pickle.load(f)
-	## state_data['gameInfo']: x,y size of game.
-	## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
+def make_heatmaps(requested_games='all'):
 
-	levels = [[],[],[],[],[],[]]
-	prev_level = state_data['episodes'][0][0][3]
-	for episode in state_data['episodes']:
-		curr_level = episode[0][3]
-		levels[curr_level].extend(episode)
-
-	for i, statesEncountered in enumerate(levels):
-		outfilename = 'heatmaps/ddqn/{}_level{}_{}'.format(game_name, i, agent_type)
-		if statesEncountered:
-			try:
-				makeHeatmap(statesEncountered, outfilename)
-			except:
-				print "problem w/ heatmap"
+	for filename in dqn_state_files:
+		agent_type = 'DDQN'
+		agent_seed = '0'
+		if '.csv' in filename:	
+			if '101' in filename:
+				agent_type = agent_type+'_1k'
+			elif '102' in filename:
+				agent_type = agent_type+'_10k'
+			elif '103' in filename:
+				agent_type = agent_type+'_100k'
+			else:
+				#normal case
+				agent_type = agent_type+'_200'
+			game_name = filename[:filename.find('.csv')]
+		elif '.pkl' in filename:
+			if '100k' in filename:
+				agent_type = agent_type+'_100k'
+			elif '10k' in filename:
+				agent_type = agent_type+'_10k'
+			elif '1k' in filename:
+				agent_type = agent_type+'_10k'
+			else:
+				print "loading dqn data. didn't recognize eps_decay value in filename: {}".format(filename)
 				embed()
+			agent_seed = filename[filename.find('seed')+len('seed'):filename.find('_decay')]
+			game_name = filename[:filename.find('_DDQN')]
 
-	# break
+		if requested_games=='all' or game_name in requested_games:
+			f = open(path+'/'+filename)
+			state_data = pickle.load(f)
 
-	## break these up into unique levels (just looks at last element of the tuple for each episode)
-	## then put all those together into a single list
-	## then plot
+			if 'episodes' in state_data.keys():
+				## state_data['gameInfo']: x,y size of game.
+				## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
 
-	## later you can play with plotting beginnings and ends of an episode.
+				levels = [[],[],[],[],[],[]]
+				prev_level = state_data['episodes'][0][0][3]
+				for episode in state_data['episodes']:
+					curr_level = episode[0][3]
+					levels[curr_level].extend(episode)
 
+				for i, statesEncountered in enumerate(levels):
+					outfilename = 'heatmaps/ddqn/{}_level{}_{}_{}'.format(game_name, i, agent_type, agent_seed)
+					if statesEncountered:
+						try:
+							makeHeatmap(statesEncountered, outfilename)
+						except:
+							print "problem w/ heatmap"
+							embed()
+			else:
+				for i,level_data in enumerate(state_data.values()):
+					outfilename = 'heatmaps/ddqn/{}_level{}_{}_{}'.format(game_name, i, agent_type, agent_seed)
+					if level_data:
+						try:
+							makeHeatmap(level_data, outfilename, newformat=True)
+						except:
+							print "problem w/ heatmap"
+							embed()
+	
 embed()

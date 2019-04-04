@@ -6,7 +6,7 @@
 #SBATCH --time=1680
 #SBATCH --qos=use-everything
 #SBTACH --cpus-per-task=2
-#SBATCH --mem=16G
+#SBATCH --mem=32G
 #SBATCH --requeue
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
