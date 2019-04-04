@@ -147,3 +147,5 @@ def make_heatmaps(requested_games='all'):
 							embed()
 	
 embed()
+## make_heatmaps(['aliens', 'zelda'])
+## make_heatmaps() ## will make them for all games
