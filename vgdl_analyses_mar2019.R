@@ -51,7 +51,7 @@ names(colors)=unique(alldata$agent_type)
 ## density plot summary plot of overall results -- easy to look at.
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
-p = ggplot(filter(human_normed_data, grepl('DDQN',agent_type)), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+p = ggplot(filter(human_normed_data, agent_type!='human'), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/5)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.4)
@@ -65,9 +65,9 @@ p = ggplot(subset(human_normed_data), aes(x=agent_type, y=level_percentage, fill
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+theme(legend.position='bottom')
 p
-
-
 ## save as 10x16
+
+
 # complete_games = c()
 # overcomplete_games = c()
 # for (game in unique(EMPA_data$game_name)){
