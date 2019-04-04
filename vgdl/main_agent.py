@@ -474,7 +474,7 @@ class Agent:
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
         self.timestamp = timestamp
         if self.record_states:
-            dirname = "results2/{}/{}/".format(self.param_ID, self.gameFilename)
+            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             self.filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             if not os.path.exists(dirname):
                 try:
@@ -500,6 +500,7 @@ class Agent:
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = False
         loaded_n_level=0
         # embed()
