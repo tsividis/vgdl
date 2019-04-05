@@ -52,7 +52,7 @@ names(colors)=unique(alldata$agent_type)
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
 p = ggplot(filter(human_normed_data, agent_type!='human'), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
-  geom_density(alpha=.8, adjust= 1/5)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
+  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.4)
 p # 6x9
