@@ -2,15 +2,276 @@ import json
 from IPython import embed
 from collections import defaultdict
 import os, csv
+import cPickle
 
-folder = "../human_gamestates/Group11"
+folder = "../human_gamestates/Group3"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
 
-### TODO:
 
-### The current script only does group 1!!!
+games_to_folders = {
+	'push_boulders_2': 'Group1',
+	'closing_gates_1': 'Group1',
+	'aliens_2': 'Group1',
+	'ee_3': 'Group1',
+	'plaqueattack_1': 'Group1',
+	'missilecommand': 'Group1',
+
+	'corridor_1': 'Group2',
+	'butterflies': 'Group2',
+	'zelda_3': 'Group2',
+	'watergame_2': 'Group2',
+	'avoidgeorge_1': 'Group2',
+	'bees_and_birds': 'Group2',
+
+	'survivezombies_1': 'Group3',
+	'portals': 'Group3',
+	'boulderdash': 'Group3',
+	'surprise_2': 'Group3',
+	'missilecommand_1': 'Group3',
+	'avoidgeorge': 'Group3',
+
+	'relational': 'Group4',
+	'bait_1': 'Group4',
+	'closing_gates': 'Group4',
+	'helper_1': 'Group4',
+	'chase_2': 'Group4',
+	'sokoban': 'Group4',
+
+	'survivezombies_2': 'Group5',
+	'push_boulders_1': 'Group5',
+	'ee_2': 'Group5',
+	'zelda_1': 'Group5',
+	'missilecommand_2': 'Group5',
+	'avoidgeorge_3': 'Group5',
+
+	'antagonist': 'Group6',
+	'bait_2': 'Group6',
+	'preconditions': 'Group6',
+	'boulderdash_2': 'Group6',
+	'ee': 'Group6',
+	'sokoban_2': 'Group6',
+
+	'chase_1': 'Group7',
+	'preconditions_1': 'Group7',
+	'aliens_4': 'Group7',
+	'lemmings': 'Group7',
+	'ee_1': 'Group7',
+	'missilecommand_4': 'Group7',
+
+	'lemmings_2': 'Group8',
+	'plaqueattack_2': 'Group8',
+	'missilecommand_3': 'Group8',
+	'avoidgeorge_4': 'Group8',
+	'relational_1': 'Group8',
+	'bees_and_birds_1': 'Group8',
+
+	'survivezombies': 'Group9',
+	'portals_1': 'Group9',
+	'surprise_1': 'Group9',
+	'butterflies_2': 'Group9',
+	'plaqueattack_3': 'Group9',
+	'helper_2': 'Group9',
+
+	'frogs': 'Group10',
+	'myAliens_2': 'Group10',
+	'aliens_3': 'Group10',
+	'lemmings_3': 'Group10',
+	'jaws_2': 'Group10',
+	'butterflies_1': 'Group10',
+
+	'frogs_3': 'Group11',
+	'antagonist_1': 'Group11',
+	'push_boulders': 'Group11',
+	'aliens_1': 'Group11',
+	'boulderdash_1': 'Group11',
+	'avoidgeorge_2': 'Group11',
+
+	'frogs_1': 'Group12',
+	'antagonist_2': 'Group12',
+	'portals_2': 'Group12',
+	'myAliens_1': 'Group12',
+	'corridor': 'Group12',
+	'aliens': 'Group12',
+
+	'frogs_2': 'Group13',
+	'preconditions_2': 'Group13',
+	'surprise': 'Group13',
+	'plaqueattack': 'Group13',
+	'zelda_2': 'Group13',
+	'watergame': 'Group13',
+
+	'relational_2': 'Group14',
+	'chase_3': 'Group14',
+	'jaws': 'Group14',
+	'sokoban_1': 'Group14',
+	'zelda': 'Group14',
+	'watergame_1': 'Group14',
+
+	'chase': 'Group15',
+	'myAliens': 'Group15',
+	'bait': 'Group15',
+	'lemmings_1': 'Group15',
+	'helper': 'Group15',
+	'jaws_1': 'Group15',
+}
+
+game_dict = {
+
+	('aliens', 0): (30,11),
+	('aliens', 1): (30,11),
+	('aliens', 2): (30,11),
+	('aliens', 3): (30,11),
+	('aliens', 4): (30,11),
+
+	('antagonist', 0): (32,10),
+	('antagonist', 1): (32,10),
+	('antagonist', 2): (32,10),
+	('antagonist', 3): (32,10),
+
+	('avoidgeorge', 0): (24,11),
+	('avoidgeorge', 1): (24,11),
+	('avoidgeorge', 2): (24,11),
+	('avoidgeorge', 3): (24,11),
+	('avoidgeorge', 4): (24,11),
+
+	('bait', 0):	(5,6),
+	('bait', 1):	(13,9),
+	('bait', 2):	(13,10),
+	('bait', 3):	(7,9),
+	('bait', 4):	(13,11),
+
+	('bees_and_birds', 0):	(16,15),
+	('bees_and_birds', 1):	(16,15),
+	('bees_and_birds', 2):	(16,11),
+	('bees_and_birds', 3):	(16,13),
+
+	('boulderdash', 0):	(26,13),
+	('boulderdash', 1):	(26,13),
+	('boulderdash', 2):	(26,13),
+	('boulderdash', 3):	(26,13),
+	('boulderdash', 4):	(26,13),
+
+	('butterflies', 0):	(28,11),
+	('butterflies', 1):	(28,11),
+	('butterflies', 2):	(28,11),
+	('butterflies', 3):	(28,11),
+	('butterflies', 4):	(28,12),
+
+	('chase', 0):	(24,11),
+	('chase', 1):	(24,11),
+	('chase', 2):	(24,11),
+	('chase', 3):	(24,11),
+	('chase', 4):	(24,11),
+
+	('closing_gates', 0):	(17,16),
+	('closing_gates', 1):	(17,17),
+	('closing_gates', 2):	(17,21),
+	('closing_gates', 3):	(17,21),
+
+	('corridor', 0):	(40,5),
+	('corridor', 1):	(40,5),
+	('corridor', 2):	(48,5),
+	('corridor', 3):	(48,5),
+
+	('ee_3', 0):	(26,10),
+	('ee_3', 1):	(26,10),
+	('ee_3', 2):	(26,10),
+	('ee_3', 3):	(26,10),
+	('ee_3', 4):	(26,10),
+
+	('frogs', 0):	(28,11),
+	('frogs', 1):	(28,11),
+	('frogs', 2):	(28,11),
+	('frogs', 3):	(28,11),
+	('frogs', 4):	(28,10),
+
+	('helper', 0):	(32,10),
+	('helper', 1):	(32,10),
+	('helper', 2):	(32,10),
+	('helper', 3):	(32,10),
+
+	('jaws', 0): (21,9),
+	('jaws', 1): (21,9),
+	('jaws', 2): (21,9),
+	('jaws', 3): (21,9),
+	('jaws', 4): (21,9),
+
+	('lemmings', 0): (21,11),
+	('lemmings', 1): (21,11),
+	('lemmings', 2): (21,11),
+	('lemmings', 3): (21,11),
+	('lemmings', 4): (21,11),
+
+	('missilecommand', 0): (24,13),
+	('missilecommand', 1): (24,13),
+	('missilecommand', 2): (24,13),
+	('missilecommand', 3): (24,13),
+	('missilecommand', 4): (24,13),
+
+	('myAliens', 0): (32,14),
+	('myAliens', 1): (32,14),
+	('myAliens', 2): (32,14),
+	('myAliens', 3): (32,14),
+	('myAliens', 4): (32,14),
+
+	('plaqueattack', 0): (24,22),
+	('plaqueattack', 1): (24,22),
+	('plaqueattack', 2): (24,22),
+	('plaqueattack', 3): (24,22),
+	('plaqueattack', 4): (23,22),
+
+	('portals', 0): (19,11),
+	('portals', 1): (19,11),
+	('portals', 2): (19,11),
+	('portals', 3): (19,11),
+	('portals', 4): (19,11),
+
+	('preconditions', 0): (18,10),
+	('preconditions', 1): (18,5),
+	('preconditions', 2): (18,7),
+	('preconditions', 3): (18,10),
+	('preconditions', 4): (18,10),
+
+	('push_boulders', 0): (22,10),
+	('push_boulders', 1): (22,10),
+	('push_boulders', 2): (22,10),
+	('push_boulders', 3): (22,10),
+
+	('relational', 0): (22,10),
+	('relational', 1): (22,10),
+	('relational', 2): (22,10),
+	('relational', 3): (22,10),
+
+	('sokoban', 0):	(13,9),
+	('sokoban', 1):	(13,9),
+	('sokoban', 2):	(11,9),
+	('sokoban', 3):	(9,8),
+
+	('surprise', 0): (13,7),
+	('surprise', 1): (13,7),
+	('surprise', 2): (13,7),
+	('surprise', 3): (13,7),
+
+	('survivezombies', 0): (19,11),
+	('survivezombies', 1): (19,11),
+	('survivezombies', 2): (19,11),
+	('survivezombies', 3): (19,11),
+	('survivezombies', 4): (19,11),
+
+	('watergame', 0): (7,6),
+	('watergame', 1): (7,7),
+	('watergame', 2): (7,9),
+	('watergame', 3): (7,8),
+	('watergame', 4): (7,8),
+
+	('zelda', 0):	(13,9),
+	('zelda', 1):	(13,9),
+	('zelda', 2):	(13,9),
+	('zelda', 3):	(13,9),
+	('zelda', 4):	(13,9)
+}
 
 def write_interaction_file(group, single_subject_single_game, subject_ID, games):
 	if 'human_interaction_data_{}'.format(group) not in os.listdir(data_path):
@@ -170,6 +431,12 @@ def write_interaction_files(folder, games):
 def make_heatmaps(folder, game_name, level_number):
 	if 'human' not in os.listdir('heatmaps'):
 		os.makedirs('human')
+
+	## if we specified 'all', then make all games for the specified folder.
+	## otherwise, find the folder that contains the game we care about
+	if game_name !='all':
+		folder = "../human_gamestates/" + games_to_folders[game_name]
+
 	for filename in os.listdir(folder):
 		path = folder + "/" + filename
 		data_path = '.'
@@ -192,22 +459,76 @@ def make_heatmaps(folder, game_name, level_number):
 				##make a filename for the heatmap
 		
 		if relevant_episodes:
-			# unpacked_states = [item for sublist in relevant_episodes for item in sublist]	
-			# makeHeatmap(unpacked_states, outfilename)
-			makeHeatmap(relevant_episodes, outfilename)
-			relevant_episodes = []
-			# embed()
+			res = find_dimensions(folder, game_name, level_number)
+			if res!=False:
+				width, height = res
+				makeHeatmap(relevant_episodes, outfilename, width, height)
+				relevant_episodes = []
+			else:
+				pass
+
+game_dimensions = dict()
+
+def clear_dimensions(game_name):
+	game_dimension_filename = '../game_dimensions'
+
+	with open(game_dimension_filename, 'rb') as f:
+		game_dimensions = cPickle.load(f)
+	
+	for k,v in game_dimensions.items():
+		if game_name in k:
+			game_dimensions.pop(k)
+	with open(game_dimension_filename, 'wb') as f:
+		cPickle.dump(game_dimensions, f)
+
+	return
 
 
-def makeHeatmap(statesEncountered, filename):
-	from vgdl.plotting import featurePlot
-	import matplotlib.pyplot as plt
-	from matplotlib.ticker import NullLocator
-	import numpy as np
+def find_dimensions(folder, game_name, level_number):
+	if (game_name, level_number) in game_dict:
+		return game_dict[(game_name, level_number)]
+	else:
+		non_variant_game_name = game_name[:game_name.rfind('_')]
+		if (non_variant_game_name, level_number) in game_dict:
+			return game_dict[(non_variant_game_name, level_number)]
+		else:
+			print "{} not in game_dict".format((game_name, level_number))
+			return False
 
-	## figure out how to call this for something easy,
-	## and then change things so that it takes multiple episodes and makes a heatmap that reflects the average amount of time, per episode, spent in each position.
-	# first_state = statesEncountered[0]
+# def find_dimensions(folder, game_name, level_number):
+# 	game_dimension_filename = '../game_dimensions'
+
+# 	with open(game_dimension_filename, 'rb') as f:
+# 		game_dimensions = cPickle.load(f)
+
+# 	if (game_name, level_number) in game_dimensions:
+# 		return game_dimensions[(game_name, level_number)]
+# 	else:
+# 		relevant_episodes = []
+# 		for filename in os.listdir(folder):
+
+# 			path = folder + "/" + filename
+# 			data_path = '.'
+
+# 			json_file = open(path, 'rb')
+# 			single_subject_single_game = json.load(json_file)
+# 			game_states = None
+# 			for i,episode in enumerate(single_subject_single_game):
+# 				gN, game_level, game_number, game_round = game_string_to_info(episode.keys()[0])
+# 				if (game_name=='all' or gN==game_name) and game_level==str(level_number):
+# 					print 'found {}, level {}'.format(gN, game_level)
+# 					game_states = sorted(episode[episode.keys()[0]], key=lambda e:e['frame'])
+# 					relevant_episodes.append(game_states)
+# 		width, height = extract_dimensions_from_episodes(game_name, level_number, relevant_episodes)
+
+# 		game_dimensions[(game_name, level_number)] = (width, height)
+# 		with open(game_dimension_filename, 'wb') as f:
+# 			cPickle.dump(game_dimensions, f)
+
+# 	return width, height
+
+def extract_dimensions_from_episodes(game_name, level_number, statesEncountered):
+
 	first_state = statesEncountered[0][0]
 
 	## find dimensions:
@@ -227,6 +548,36 @@ def makeHeatmap(statesEncountered, filename):
 		states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y'], s['frame']) for s in episode if s['objects']['avatar']]
 		shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
 		width, height = max(width, max([s[0] for s in shrunken_states])), max(height, max([s[1] for s in shrunken_states]))
+		print width, height
+	return width, height
+
+def makeHeatmap(statesEncountered, filename, width, height):
+	from vgdl.plotting import featurePlot
+	import matplotlib.pyplot as plt
+	from matplotlib.ticker import NullLocator
+	import numpy as np
+
+	# ## figure out how to call this for something easy,
+	# ## and then change things so that it takes multiple episodes and makes a heatmap that reflects the average amount of time, per episode, spent in each position.
+	first_state = statesEncountered[0][0]
+
+	# ## find dimensions:
+	positions = []
+	for object_instances in first_state['objects'].values():
+		for object_info in object_instances.values():
+			positions.append((object_info['x'], object_info['y']))
+	# max_x, max_y = max([p[0] for p in positions]), max([p[1] for p in positions])
+
+	block_size = sorted(set([p[0] for p in positions]))[1]
+	# width, height = width/block_size, height/block_size
+
+	episode_matrices = []
+	# ## iterate once over everything to get the right size for all the matrices
+	# for episode in statesEncountered:
+	# 	## Warning: these states aren't in order. But since you're just amassing time spent in each location, it shouldn't matter.
+	# 	states = [(s['objects']['avatar'].values()[0]['x'],s['objects']['avatar'].values()[0]['y'], s['frame']) for s in episode if s['objects']['avatar']]
+	# 	shrunken_states = [(s[0]/block_size, s[1]/block_size, s[2]) for s in states]
+	# 	width, height = max(width, max([s[0] for s in shrunken_states])), max(height, max([s[1] for s in shrunken_states]))
 
 	for episode in statesEncountered:
 
@@ -237,7 +588,11 @@ def makeHeatmap(statesEncountered, filename):
 
 		# width, height = max(width, max([s[0] for s in shrunken_states])), max(height, max([s[1] for s in shrunken_states]))
 		
-		m = np.zeros((width+1, height+1))
+		# if 'portals' in filename:
+			# m = np.zeros((width+2, height+2))
+		# else:
+		m = np.zeros((width, height))
+
 		prev_state = (None, None)
 		set_first_frame = False
 
@@ -284,6 +639,8 @@ def makeHeatmap(statesEncountered, filename):
 # 	# write_interaction_files(folder, 'all')
 # 	make_heatmaps(folder, 'all', 0)
 # 	make_heatmaps(folder, 'all', 1)
+
+#find_dimensions(folder, 'portals', 0)
 
 embed()
 
