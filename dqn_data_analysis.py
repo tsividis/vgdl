@@ -9,7 +9,7 @@ from matplotlib.ticker import NullLocator
 import numpy as np
 
 path = 'dqn_interaction_data/state_data'
-path = 'dqn_interaction_data2/state_data'
+# path = 'dqn_interaction_data2/state_data'
 if 'ddqn' not in os.listdir('heatmaps'):
 	os.makedirs('heatmaps/ddqn')
 dqn_state_files = [f for f in os.listdir(path) if 'DS_Store' not in f]
@@ -50,10 +50,16 @@ def makeHeatmap(statesEncountered, filename, newformat=False):
 			width, height = 22, 10
 		elif 'portals' in filename:
 			width, height = 19, 11
+		elif 'sokoban' in filename:
+			if statesEncountered[0][3] in [0,1]:
+				width, height = 19, 11
+			else:
+				print "You don't have dimensions for this game"
+				embed()
 		elif 'zelda' in filename:
 			width, height = 13, 9
 		else:
-			"You don't have dimensions for this game"
+			print "You don't have dimensions for this game"
 			embed()
 
 	m = np.zeros((width+1, height+1))
@@ -116,35 +122,38 @@ def make_heatmaps(requested_games='all'):
 
 		if requested_games=='all' or game_name in requested_games:
 			f = open(path+'/'+filename)
-			state_data = pickle.load(f)
+			try:
+				state_data = pickle.load(f)
+				if 'episodes' in state_data.keys():
+					## state_data['gameInfo']: x,y size of game.
+					## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
 
-			if 'episodes' in state_data.keys():
-				## state_data['gameInfo']: x,y size of game.
-				## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
+					levels = [[],[],[],[],[],[]]
+					prev_level = state_data['episodes'][0][0][3]
+					for episode in state_data['episodes']:
+						curr_level = episode[0][3]
+						levels[curr_level].extend(episode)
 
-				levels = [[],[],[],[],[],[]]
-				prev_level = state_data['episodes'][0][0][3]
-				for episode in state_data['episodes']:
-					curr_level = episode[0][3]
-					levels[curr_level].extend(episode)
+					for i, statesEncountered in enumerate(levels):
+						outfilename = 'heatmaps/ddqn/{}_level{}_{}_{}'.format(game_name, i, agent_type, agent_seed)
+						if statesEncountered:
+							try:
+								makeHeatmap(statesEncountered, outfilename)
+							except:
+								print "problem w/ heatmap in {}, level {}".format(game_name, i)
+								# embed()
+				else:
+					for i,level_data in enumerate(state_data.values()):
+						outfilename = 'heatmaps/ddqn/{}_level{}_{}_{}'.format(game_name, i, agent_type, agent_seed)
+						if level_data:
+							try:
+								makeHeatmap(level_data, outfilename, newformat=True)
+							except:
+								print "problem w/ heatmap in {}, level {}".format(game_name, i)
+								# embed()
+			except:
+				print "problem loading pickle data for {}".format(filename)
 
-				for i, statesEncountered in enumerate(levels):
-					outfilename = 'heatmaps/ddqn/{}_level{}_{}_{}'.format(game_name, i, agent_type, agent_seed)
-					if statesEncountered:
-						try:
-							makeHeatmap(statesEncountered, outfilename)
-						except:
-							print "problem w/ heatmap"
-							embed()
-			else:
-				for i,level_data in enumerate(state_data.values()):
-					outfilename = 'heatmaps/ddqn/{}_level{}_{}_{}'.format(game_name, i, agent_type, agent_seed)
-					if level_data:
-						try:
-							makeHeatmap(level_data, outfilename, newformat=True)
-						except:
-							print "problem w/ heatmap"
-							embed()
 	
 embed()
 ## make_heatmaps(['aliens', 'zelda'])
