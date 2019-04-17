@@ -4,7 +4,7 @@ from collections import defaultdict
 import os, csv
 import cPickle
 
-folder = "../human_gamestates/Group3"
+folder = "../human_gamestates/Group1"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'
@@ -175,11 +175,11 @@ game_dict = {
 	('corridor', 2):	(48,5),
 	('corridor', 3):	(48,5),
 
-	('ee_3', 0):	(26,10),
-	('ee_3', 1):	(26,10),
-	('ee_3', 2):	(26,10),
-	('ee_3', 3):	(26,10),
-	('ee_3', 4):	(26,10),
+	('ee', 0):	(26,10),
+	('ee', 1):	(26,10),
+	('ee', 2):	(26,10),
+	('ee', 3):	(26,10),
+	('ee', 4):	(26,10),
 
 	('frogs', 0):	(28,11),
 	('frogs', 1):	(28,11),
@@ -428,7 +428,7 @@ def write_interaction_files(folder, games):
 		write_interaction_file(group, single_subject_single_game, subject_ID, games)
 
 
-def make_heatmaps(folder, game_name, level_number):
+def make_heatmaps(folder, game_name, level_number, only_grab_data=False):
 	if 'human' not in os.listdir('heatmaps'):
 		os.makedirs('human')
 
@@ -437,37 +437,65 @@ def make_heatmaps(folder, game_name, level_number):
 	if game_name !='all':
 		folder = "../human_gamestates/" + games_to_folders[game_name]
 
+	all_data = []
 	for filename in os.listdir(folder):
 		path = folder + "/" + filename
 		data_path = '.'
 
 		json_file = open(path, 'rb')
-		single_subject_single_game = json.load(json_file)  ## WRONG. This is not single subject, single game. There are two games here.
-		relevant_episodes = []
-		game_states = None
-		for i,episode in enumerate(single_subject_single_game):
+		subject_data = json.load(json_file)  ## WRONG. This is not single subject, single game. There are two games here.
+
+		single_subject_single_game_dict = defaultdict(lambda:[])
+		for episode in subject_data:
 			gN, game_level, game_number, game_round = game_string_to_info(episode.keys()[0])
-			# print gN, game_level
+			single_subject_single_game_dict[gN].append(episode)
 
-			## accumulate all the episodes for this game and level and then pass them to makeHeatmap
-
-			if (game_name=='all' or gN==game_name) and game_level==str(level_number):
-				print 'found {}, level {}'.format(gN, game_level)
-				outfilename = 'heatmaps/human/{}_{}_human_{}'.format(gN, game_level,filename)
-				game_states = sorted(episode[episode.keys()[0]], key=lambda e:e['frame'])
-				relevant_episodes.append(game_states)
-				##make a filename for the heatmap
-		
-		if relevant_episodes:
-			res = find_dimensions(folder, game_name, level_number)
-			if res!=False:
-				width, height = res
-				makeHeatmap(relevant_episodes, outfilename, width, height)
+		# if 'closing_gates' in single_subject_single_game_dict.keys():
+		# 	print "found closing gates"
+		# 	embed()
+		# if 'ryl' in filename or 'rya' in filename:
+			# print "found nov12"
+			# embed()
+		all_data.append(single_subject_single_game_dict)
+		# if 'ee_3' in single_subject_single_game_dict.keys():
+		# 	print "found ee3"
+		# 	embed()
+		if not only_grab_data:
+			for game in single_subject_single_game_dict.keys():
+				single_subject_single_game = single_subject_single_game_dict[game]
 				relevant_episodes = []
-			else:
-				pass
+				game_states = None
+				for i,episode in enumerate(single_subject_single_game):
 
-game_dimensions = dict()
+					gN, game_level, game_number, game_round = game_string_to_info(episode.keys()[0])
+					# print gN, game_level
+					# if gN=='ee_3':
+						# print "found ee_3"
+						# embed()
+					## accumulate all the episodes for this game and level and then pass them to makeHeatmap
+
+					if (game_name=='all' or gN==game_name) and game_level==str(level_number):
+						print 'found {}, level {}'.format(gN, game_level)
+						outfilename = 'heatmaps/human/{}_{}_human_{}'.format(gN, game_level,filename)
+						game_states = sorted(episode[episode.keys()[0]], key=lambda e:e['frame'])
+						relevant_episodes.append(game_states)
+						##make a filename for the heatmap
+				
+				if relevant_episodes:
+					if game_name=='all':
+						res = find_dimensions(folder, gN, level_number)
+					else:
+						res = find_dimensions(folder, game_name, level_number)
+					if res!=False:
+						width, height = res
+						print "making heatmap"
+						makeHeatmap(relevant_episodes, outfilename, width, height)
+						relevant_episodes = []
+					else:
+						pass
+
+	return all_data
+# game_dimensions = dict()
 
 def clear_dimensions(game_name):
 	game_dimension_filename = '../game_dimensions'
@@ -604,8 +632,8 @@ def makeHeatmap(statesEncountered, filename, width, height):
 				try:
 					m[x, y] += 1
 				except:
-					print "index error with m"
-					embed()
+					print "index error with m for filename {}. width, height= {},{}. x,y= {}, {}".format(filename, width, height, x, y)
+					# embed()
 			prev_state = (x,y)
 			if frame == 0:
 				set_first_frame = True
@@ -639,8 +667,9 @@ def makeHeatmap(statesEncountered, filename, width, height):
 # 	# write_interaction_files(folder, 'all')
 # 	make_heatmaps(folder, 'all', 0)
 # 	make_heatmaps(folder, 'all', 1)
+# 	make_heatmaps(folder, 'all', 2)
 
 #find_dimensions(folder, 'portals', 0)
-
+all_data = make_heatmaps(folder, 'avoidgeorge_1', 0)
 embed()
 
