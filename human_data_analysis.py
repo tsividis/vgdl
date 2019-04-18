@@ -641,7 +641,7 @@ def makeHeatmap(statesEncountered, filename, width, height):
 
 	# embed()
 	try:
-		m = np.mean(episode_matrices,axis=0)
+		m = np.sum(episode_matrices,axis=0)
 	except:
 		print "problem with np.mean"
 		embed()
@@ -653,6 +653,7 @@ def makeHeatmap(statesEncountered, filename, width, height):
 	plt.margins(0, 0)
 	plt.gca().xaxis.set_major_locator(NullLocator())
 	plt.gca().yaxis.set_major_locator(NullLocator())
+	filename = filename+'_max='+str(int(np.max(m)))
 	plt.savefig(filename, bbox_inches='tight', pad_inches=0)
 	plt.close()
 
@@ -662,14 +663,14 @@ def makeHeatmap(statesEncountered, filename, width, height):
 # make_heatmaps(folder, 'bait', 0)
 # write_interaction_files(folder, 'all')
 
-# for i in range(1,16):
-# 	folder = "../human_gamestates/Group{}".format(i)
+for i in range(1,16):
+	folder = "../human_gamestates/Group{}".format(i)
 # 	# write_interaction_files(folder, 'all')
-# 	make_heatmaps(folder, 'all', 0)
-# 	make_heatmaps(folder, 'all', 1)
-# 	make_heatmaps(folder, 'all', 2)
+	make_heatmaps(folder, 'all', 0)
+	make_heatmaps(folder, 'all', 1)
+	make_heatmaps(folder, 'all', 2)
 
 #find_dimensions(folder, 'portals', 0)
-all_data = make_heatmaps(folder, 'avoidgeorge_1', 0)
+# all_data = make_heatmaps(folder, 'avoidgeorge_1', 0)
 embed()
 

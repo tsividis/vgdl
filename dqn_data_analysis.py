@@ -86,6 +86,7 @@ def makeHeatmap(statesEncountered, filename, newformat=False):
 	plt.margins(0, 0)
 	plt.gca().xaxis.set_major_locator(NullLocator())
 	plt.gca().yaxis.set_major_locator(NullLocator())
+	filename = filename+'_max='+str(int(np.max(m)))
 	plt.savefig(filename, bbox_inches='tight', pad_inches=0)
 	plt.close()
 
