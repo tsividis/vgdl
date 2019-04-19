@@ -44,7 +44,8 @@ colors = c('steelblue1',
            'purple2', #'mediumorchid2',
            'firebrick2',# 'seagreen3','darkolivegreen1',
            'palegreen3',# 'tomato2', 'salmon', 
-           'darkslategray3', 'darkslategray2', 'darkslategray1')#, 'mediumpurple2', 'aquamarine3', 'coral3')
+           'gray50', 'gray52', 'gray54')
+           # 'darkslategray3', 'darkslategray2', 'darkslategray1')#, 'mediumpurple2', 'aquamarine3', 'coral3')
 names(colors)=unique(alldata$agent_type)
 
 

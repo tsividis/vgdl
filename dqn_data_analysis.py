@@ -122,6 +122,7 @@ def make_heatmaps(requested_games='all'):
 			game_name = filename[:filename.find('_DDQN')]
 
 		if requested_games=='all' or game_name in requested_games:
+			
 			f = open(path+'/'+filename)
 			try:
 				state_data = pickle.load(f)
@@ -159,3 +160,9 @@ def make_heatmaps(requested_games='all'):
 embed()
 ## make_heatmaps(['aliens', 'zelda'])
 ## make_heatmaps() ## will make them for all games
+
+
+# for filename in os.listdir(dirname):
+# 	if 'max' not in filename:
+# 		os.unlink(dirname+'/'+filename)
+

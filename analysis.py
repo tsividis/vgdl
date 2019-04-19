@@ -311,6 +311,10 @@ def makeHeatmap(statesEncountered, agent_type, filename):
 	plt.margins(0, 0)
 	plt.gca().xaxis.set_major_locator(NullLocator())
 	plt.gca().yaxis.set_major_locator(NullLocator())
+	tmpfilename = filename[:filename.find('.pdf')]+'_max='+str(int(np.max(m)))
+	filename = tmpfilename + '.pdf'
+	# filename = filename+'_max='+str(int(np.max(m)))
+	print filename
 	plt.savefig('heatmaps/{}/{}'.format(agent_type, filename), bbox_inches='tight', pad_inches=0)
 	plt.close()
 
