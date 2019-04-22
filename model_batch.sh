@@ -55,6 +55,6 @@ fi
 ## to run conditioned on some exploration
 # singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index $META_IDX --IW 2 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --pickled_theory_path 1
 ## to run epsilon-greedy
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index 1 --IW 1 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --epsilon_greedy True --random_policy True
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --hyperparameter_index 3 --metacontroller_index 1 --IW 1 --extra_atom_allowed True --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --epsilon_greedy True --random_policy False
 
 #echo "-m vgdl.load_games --game_name ${GAME_NAME} --hyperparameter_index ${HYPER_IDX}"

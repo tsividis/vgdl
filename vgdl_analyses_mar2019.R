@@ -14,7 +14,7 @@ library(grid)
 ## everything starting mar23 has no 15-loss cutoff.
 ## mar28: 10 runs of EMPA with no limit on losses.
 ## mar30: unclear
-## apr4: e-greedy and random policy, both 10x
+## apr4: e-greedy and random policy, both 10x. Random policy incomplete (got kicked off om2)
 EMPA_dates = list('mar28', 'apr4')
 dqn_path = '~/Projects/atari/vgdl/dqn_data/'
 humandatapaths = list.files("~/Projects/atari/vgdl/humandata")

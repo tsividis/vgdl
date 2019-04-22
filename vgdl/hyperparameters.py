@@ -19,7 +19,7 @@ metacontroller_sets = [
     'allow_long_range': True,
     'epsilon_greedy_variant': 'N'
     },
-    {'idx': 1,
+    {'idx': 1, ##this model did best of the e-greedy variants, by a small margin, on one run per model.
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
     'longhorizonAnnealing': 2.,

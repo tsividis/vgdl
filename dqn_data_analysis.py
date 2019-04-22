@@ -162,7 +162,20 @@ embed()
 ## make_heatmaps() ## will make them for all games
 
 
+## silly script for deleting old filenames that weren't writte with the new format
 # for filename in os.listdir(dirname):
 # 	if 'max' not in filename:
 # 		os.unlink(dirname+'/'+filename)
+
+## script for grabbing just the first run of e-greedy and putting it into a new folder (to make heatmaps with)
+# import os
+# from shutil import copyfile
+# dirname = 'apr4/results/IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=2000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
+# outdirname = 'apr4_for_heatmaps/results/IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=2000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
+# for filename in [f for f in os.listdir(dirname) if 'DS_Store' not in f]:
+# 	to_copy = [f for f in os.listdir(dirname+'/'+filename) if 'DS_Store' not in f][0]
+# 	src = dirname+'/'+filename+'/'+to_copy
+# 	dest = outdirname+'/'+filename+'/'
+# 	os.makedirs(dest)
+# 	copy(src, dest)
 
