@@ -1937,13 +1937,14 @@ for (i in 1:length(level_win$agent_type)){
 level_win$short_agent_type = as.factor(level_win$short_agent_type)
 level_win = transform(level_win, short_agent_type=factor(short_agent_type, levels=c("human", "EMPA", 'e-greedy .1', "DDQN"))) ## so that columns of plot are reordered
 level_win = select(level_win, -agent_type)
+level_win_saved = level_win
 ## replace Inf with something really bad, and when you prettify the plot in Illustrator you'll use a plot break.
 
 
 ##Plot of steps to win level 1, conditioned on winning level 0. Only for games where the model *did* win level 1.
 ##Only the DDQN failed to win level 1
-colors = c('palegreen3','steelblue3','slateblue2','grey50')
-names(colors) = c('human', 'EMPA','e-greedy .1', 'DDQN')
+tmpcolors = c('palegreen3','steelblue3','slateblue2','grey50')
+names(tmpcolors) = c('human', 'EMPA','e-greedy .1', 'DDQN')
 
 # p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=short_agent_type, y=log(steps,10), fill=short_agent_type))
 # p=p+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+scale_fill_manual(values=colors)
@@ -1951,12 +1952,14 @@ names(colors) = c('human', 'EMPA','e-greedy .1', 'DDQN')
 
 level_win_no_inf = level_win
 level_win_no_inf[level_win_no_inf$steps=='-Inf',]$steps=10e15
+# level_win_no_inf[level_win_no_inf$steps==10e15,]$steps=10e8
+
 tickmarks = c(1,10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8,10e9,10e10,10e11,10e12,10e13,10e14,10e15)
 logtickmarks=(log(tickmarks,10))
 
-p = ggplot(subset(level_win_no_inf, level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
-p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color_manual(values=colors)+
-  scale_fill_manual(values=colors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
+p = ggplot(filter(level_win_no_inf, level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color_manual(values=tmpcolors)+
+  scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
 p
 
 

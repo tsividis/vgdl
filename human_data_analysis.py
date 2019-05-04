@@ -666,9 +666,11 @@ def makeHeatmap(statesEncountered, filename, width, height):
 for i in range(1,16):
 	folder = "../human_gamestates/Group{}".format(i)
 # 	# write_interaction_files(folder, 'all')
-	make_heatmaps(folder, 'all', 0)
-	make_heatmaps(folder, 'all', 1)
-	make_heatmaps(folder, 'all', 2)
+	# make_heatmaps(folder, 'all', 0)
+	# make_heatmaps(folder, 'all', 1)
+	# make_heatmaps(folder, 'all', 2)
+	make_heatmaps(folder, 'all', 3)
+	make_heatmaps(folder, 'all', 4)
 
 #find_dimensions(folder, 'portals', 0)
 # all_data = make_heatmaps(folder, 'avoidgeorge_1', 0)

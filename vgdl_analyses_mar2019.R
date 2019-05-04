@@ -12,6 +12,7 @@ library(EnvStats)
 library(grid)
 
 ## everything starting mar23 has no 15-loss cutoff.
+## nov28 old planner-lesion data
 ## mar28: 10 runs of EMPA with no limit on losses.
 ## mar30: unclear
 ## apr4: e-greedy and random policy, both 10x. Random policy incomplete (got kicked off om2)
@@ -36,27 +37,58 @@ EMPAdata = load_reward_data('EMPA', dates_or_groups)
 EMPA_variants = filter(EMPAdata, agent_type!='EMPA')
 humandata = load_reward_data('human', dates_or_groups)
 dqndata = load_reward_data('DDQN', dates_or_groups)
+planner_lesions = load_reward_data('EMPA', dates_or_groups)
 
 alldata = rbind(EMPAdata, humandata, dqndata)
+saved_human_normed_data = human_normed_data
 human_normed_data = make_human_normed_data(alldata)
+
+zelda_data = filter(EMPA_variants, agent_type=='e-greedy .1', game_name=='zelda')
+for (subject in unique(zelda_data$subject_ID)){
+  print (c(subject, max(filter(zelda_data, subject_ID==subject)$level_number)))
+}
 
 colors = c('steelblue1',
            'purple2', #'mediumorchid2',
            'firebrick2',# 'seagreen3','darkolivegreen1',
            'palegreen3',# 'tomato2', 'salmon', 
-           'gray50', 'gray52', 'gray54')
+           'gray50', 'gray52', 'gray54',
+           'goldenrod1', 'goldenrod3', 'darkslategray2', 'goldenrod2', 'darkolivegreen3')
+           )
            # 'darkslategray3', 'darkslategray2', 'darkslategray1')#, 'mediumpurple2', 'aquamarine3', 'coral3')
 names(colors)=unique(alldata$agent_type)
 
 
+
 ## density plot summary plot of overall results -- easy to look at.
+# (agent_type%in%c('EMPA','no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW', 'no subgoals + no gradient + no IW')
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
-p = ggplot(filter(human_normed_data, agent_type!='human'), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+human_normed_data = transform(human_normed_data, agent_type=factor(agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 
+                                                                                     'no goal gradient', 'no subgoals',  'no subgoals + no gradient',
+                                                                                     'no IW', 'no subgoals + no gradient + no IW',
+                                                                                     'DDQN 1k', 'DDQN 10k', 'DDQN 100k', 'random policy')))
+human_normed_data$model_cluster = NA
+human_normed_data[human_normed_data$agent_type=='EMPA',]$model_cluster = 'EMPA'
+human_normed_data[human_normed_data$agent_type%in%c('e-greedy .1'),]$model_cluster = 'exploration lesions'
+human_normed_data[human_normed_data$agent_type%in%c('no goal gradient', 'no subgoals',  'no subgoals + no gradient',
+                                                    'no IW', 'no subgoals + no gradient + no IW'),]$model_cluster = 'planner lesions'
+human_normed_data[human_normed_data$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'DDQN'
+human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'exploration lesions', 'planner lesions', 'DDQN', NA)))
+
+### Stacked plot; each model type gets one row
+p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
-  geom_vline(xintercept=0,linetype='dashed',size=.4)
-p # 6x9
+  geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~agent_type, ncol=1)
+p # 12x10
+
+### Stacked and organized by lesion type
+p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
+  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
+  geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~model_cluster, ncol=1)
+p # 8x10
 
 
 ## one plot per game summary plot of overall results -- easy to look at.
@@ -67,6 +99,185 @@ p = ggplot(subset(human_normed_data), aes(x=agent_type, y=level_percentage, fill
         axis.ticks.x=element_blank())+theme(legend.position='bottom')
 p
 ## save as 10x16
+
+
+p = ggplot(agentdata, aes(x=cumulative_steps, y=cumulative_wins, color=subject_ID))+geom_point()+geom_smooth()
+p
+
+## looks like 10 subjects won zelda, the rest did far worse (0,1, or 2 levels). Be careful how you average.
+### you first need to generate cumulative wins
+###level1-level2 plots
+level_win_saved = level_win
+level_win_proportions = level_win
+d = filter(alldata, agent_type%in%c('human', 'EMPA', 'DDQN 100k', 'e-greedy .1'))
+
+make_level_win_data = function(d){
+  level_win = data.frame(agent_type=as.character(), subject_ID=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
+  levels_to_try=c(1,2,3,4,5)
+  no_win_equivalent_steps = 10e6
+  for (game in unique(d$game_name)){
+    s=filter(d, game_name==game&(level_number%in%levels_to_try|level%in%levels_to_try))
+    for (agent in unique(s$agent_type)){
+      agentdata = filter(s, agent_type==agent)
+      for (subject in unique(agentdata$subject_ID)){
+        prev_cumulative_steps = 0
+        subjectdata = filter(agentdata, subject_ID==subject)
+        subject_steps_to_win = c()
+        for (l in levels_to_try){
+          if (l %in% subjectdata$cumulative_wins){
+            cumul_steps = min(subjectdata[which(subjectdata$cumulative_wins==l),]$cumulative_steps)
+            level_steps = cumul_steps - prev_cumulative_steps
+            prev_cumulative_steps = cumul_steps
+            subject_steps_to_win = level_steps
+            # subject_steps_to_win = 1
+          }
+          else{
+            subject_steps_to_win = no_win_equivalent_steps
+            # subject_steps_to_win = 0
+          }
+          row = data.frame(agent_type=agent, subject_ID=subject, game_name=game, level_num=l, steps=subject_steps_to_win)
+          level_win=rbind(level_win, row)
+        }
+      }
+    }
+  }
+  level_win = transform(level_win, agent_type=factor(agent_type, levels=c("human", "EMPA", 'e-greedy .1', "DDQN 100k"))) ## so that columns of plot are reordered
+  return(level_win)
+}
+
+
+make_level_win_proportions = function(d){
+  level_win = data.frame(agent_type=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
+  levels_to_try=c(1,2,3,4,5)
+  no_win_equivalent_steps = 10e6
+  for (game in unique(d$game_name)){
+    s=filter(d, game_name==game&(level_number%in%levels_to_try|level%in%levels_to_try))
+    for (agent in unique(s$agent_type)){
+      agentdata = filter(s, agent_type==agent)
+
+      across_subjects = c()
+      for (subject in unique(agentdata$subject_ID)){
+        prev_cumulative_steps = 0
+        subjectdata = filter(agentdata, subject_ID==subject)
+        subject_steps_to_win = c()
+        for (l in levels_to_try){
+          if (l %in% subjectdata$cumulative_wins){
+            cumul_steps = min(subjectdata[which(subjectdata$cumulative_wins==l),]$cumulative_steps)
+            level_steps = cumul_steps - prev_cumulative_steps
+            prev_cumulative_steps = cumul_steps
+            # subject_steps_to_win = c(subject_steps_to_win, level_steps)
+            subject_steps_to_win = c(subject_steps_to_win, 1)
+          }
+          else{
+            # subject_steps_to_win = c(subject_steps_to_win, no_win_equivalent_steps)
+            subject_steps_to_win = c(subject_steps_to_win, 0)
+
+          }
+        }
+        across_subjects = rbind(across_subjects, subject_steps_to_win)
+      }
+      across_subjects  = colMeans(across_subjects)
+      for (l in levels_to_try){
+        row = data.frame(agent_type=agent, game_name=game, level_num=l, steps=across_subjects[l])
+        level_win=rbind(level_win, row)
+
+      }
+    }
+  }
+  level_win = transform(level_win, agent_type=factor(agent_type, levels=c("human", "EMPA", 'e-greedy .1', "DDQN 100k"))) ## so that columns of plot are reordered
+  return(level_win)
+}
+
+level_win_proportions = make_level_win_proportions(d)
+
+##Plot of steps to win level 1, conditioned on winning level 0. Only for games where the model *did* win level 1.
+##Only the DDQN failed to win level 1
+tmpcolors = c('palegreen3','steelblue3','slateblue2','grey50')
+names(tmpcolors) = c('human', 'EMPA','e-greedy .1', 'DDQN 100k')
+
+# p = ggplot(subset(level_win, level_num==1&steps!=-Inf), aes(x=short_agent_type, y=log(steps,10), fill=short_agent_type))
+# p=p+geom_bar(position='dodge', stat='summary', fun.y='mean')+theme(legend.position='none')+scale_fill_manual(values=colors)
+# p
+
+
+# level_win_no_inf[level_win_no_inf$steps==10e15,]$steps=10e8
+
+tickmarks = c(1,10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8,10e9,10e10,10e11,10e12,10e13,10e14,10e15)
+logtickmarks=(log(tickmarks,10))
+
+level_win = transform(level_win, agent_type=factor(agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 'DDQN 100k')))
+
+## all levels
+p = ggplot(level_win, aes(x=log(steps,10), color=agent_type, fill=agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level')+scale_color_manual(values=tmpcolors)+
+  scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+facet_wrap(~level_num, ncol=1)
+p
+
+
+## levels 1, 2
+p = ggplot(filter(level_win_old, level_num%in%c(1,2)), aes(x=log(steps,10), color=agent_type, fill=agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level')+scale_color_manual(values=tmpcolors)+
+  scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+facet_wrap(~level_num, ncol=1)
+p
+
+## Individual plots for steps to level 1, steps to level 2...
+p = ggplot(filter(level_win, level_num%in%c(1)), aes(x=log(steps,10), color=agent_type, fill=agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level')+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='EMPA', level_num==1)$steps,10), na.rm=TRUE), linetype=agent_type))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='human', level_num==1)$steps,10), na.rm=TRUE), linetype=agent_type))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='e-greedy .1', level_num==1)$steps,10), na.rm=TRUE), linetype=agent_type))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='DDQN 100k', level_num==1)$steps,10), na.rm=TRUE), linetype=agent_type))+
+  
+    scale_color_manual(values=tmpcolors)+scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
+  scale_linetype_manual(values=c(1,2,3,4,5))
+p
+
+## Individual plots for steps to level 1, steps to level 2...
+p = ggplot(filter(level_win,level_num%in%c(2)), aes(x=log(steps,10), color=agent_type, fill=agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level')+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='EMPA', level_num==2)$steps,10), na.rm=TRUE), linetype='l'))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='human', level_num==2)$steps,10), na.rm=TRUE), linetype='k'))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='e-greedy .1', level_num==2)$steps,10), na.rm=TRUE), linetype='j'))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='DDQN 100k', level_num==2)$steps,10), na.rm=TRUE), linetype='i'))+
+  
+  scale_color_manual(values=tmpcolors)+scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
+p
+
+p = ggplot(filter(level_win,level_num%in%c(3)), aes(x=log(steps,10), color=agent_type, fill=agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level')+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='EMPA', level_num==3)$steps,10), na.rm=TRUE), linetype='l'))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='human', level_num==3)$steps,10), na.rm=TRUE), linetype='k'))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='e-greedy .1', level_num==3)$steps,10), na.rm=TRUE), linetype='j'))+
+  geom_vline(aes(xintercept=median(log(filter(level_win, agent_type=='DDQN 100k', level_num==3)$steps,10), na.rm=TRUE), linetype='i'))+
+  
+  scale_color_manual(values=tmpcolors)+scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
+p
+
+
+
+p = ggplot(level_win_proportions, aes(x=level_num, y=as.numeric(steps), fill=agent_type))+geom_bar(stat='summary',fun.y='mean', position='dodge')+
+  scale_fill_manual(values=tmpcolors)+facet_wrap(~agent_type, nrow=1)
+p=p+ylab('Proportion')+ggtitle('Level completion across games')+xlab("Level number")
+p
+
+
+p = ggplot(level_win_proportions, aes(x=game_name, y=as.numeric(steps), fill=agent_type))+geom_bar(stat='identity', position='dodge')+
+  scale_fill_manual(values=tmpcolors)+facet_wrap(~level_num, ncol=1) #facet_grid(level_num~game_name)#
+p=p+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab('Proportion of agents to complete level')
+p
+
+
+for (game in unique(level_win_proportions$game_name)){
+  p = ggplot(filter(level_win_proportions, game_name==game), aes(x=agent_type, y=as.numeric(steps), fill=agent_type))+geom_bar(stat='identity', position='dodge')+
+    scale_fill_manual(values=tmpcolors)+facet_wrap(~level_num, ncol=1) #facet_grid(level_num~game_name)#
+  p=p+ggtitle(game)+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab('Proportion of agents to complete level')
+  
+  newdir='~/Projects/atari/vgdl/interaction_plots/agent_win_proportions/'
+  dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
+  title = paste(newdir, game, '.png', sep='')
+  ggsave(title, plot=p, width=4, height=6)
+  
+}
 
 
 # complete_games = c()
@@ -89,6 +300,11 @@ p
 #   title = paste(newdir, game, '.png', sep='')
 #   ggsave(title, plot=p, width=7, height=5) 
 # }
+
+
+p = ggplot(filter(alldata, agent_type%in%c('human', 'EMPA'), game_name=='avoidgeorge'), aes(x=cumulative_steps, y=cumulative_wins, color=agent_type))
+p = p+geom_point()+geom_smooth()+scale_color_manual(values=colors)
+p
 
 
 make_human_normed_data = function(dataframe){
@@ -199,6 +415,11 @@ load_reward_data = function(data_to_load, dates_or_groups){
       e_greedy_05='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
       e_greedy_1a='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
       e_greedy_1b='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=2000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
+      planner_AGH1='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_AGH2='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH2_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_AGH3='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH3_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_IW='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_IW_AGH3='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW-AGH3_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
       data$agent_type = NA
       if (e_greedy_1a %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_1a,]$agent_type = 'e-greedy .1'
@@ -209,6 +430,21 @@ load_reward_data = function(data_to_load, dates_or_groups){
       }
       if (e_greedy_05 %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_05,]$agent_type = 'e-greedy .05'
+      }
+      if (planner_AGH1 %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_AGH1,]$agent_type = 'no goal gradient'
+      }
+      if (planner_AGH2 %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_AGH2,]$agent_type = 'no subgoals'
+      }
+      if (planner_AGH3 %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_AGH3,]$agent_type = 'no subgoals + no gradient'
+      }
+      if (planner_IW %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_IW,]$agent_type = 'no IW'
+      }
+      if (planner_IW_AGH3 %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_IW_AGH3,]$agent_type = 'no subgoals + no gradient + no IW'
       }
       for (agent in unique(data$long_agent_type)){
         if (grepl('rand=True', agent)){
@@ -222,7 +458,10 @@ load_reward_data = function(data_to_load, dates_or_groups){
       data$score = as.numeric(as.character(data$sparse_score))
       data = select(data, -timestep, -level_max_score, -cumulative_max_score, -sparse_score, -level_accumulated_score, 
                     -episode_end, -win, -planner_nodes, -planner_settings, -cumulative_planner_nodes, 
-                    -cumulative_timestep, -entropy, -condition, -exploration_burn_ins)
+                    -cumulative_timestep, condition, -exploration_burn_ins)
+      if ('entropy'%in% names(data)){
+        data = select(data, -entropy)
+      }
       if ('time_elapsed'%in%names(data)){
         data = select(data, -time_elapsed)
       }
