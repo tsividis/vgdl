@@ -1902,42 +1902,45 @@ g_legend <- function(a.gplot){
 
 
 ###level1-level2 plots
+### WARNING: This is wrong, as it's constructed assuming you only have a single subject per agent type
 d = subset(alldata, agent_type%in%c('human', 'DDQN', 'IW=1_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False',
                                     'IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'))
-level_win = data.frame(agent_type=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
-for (game in unique(d$game_name)){
-  s=subset(d, game_name==game&(level_number%in%c(0,1)|level%in%c(0,1)))
+level_win_old = data.frame(agent_type=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
+for (game in unique(alldata$game_name)){
+  s=subset(alldata, game_name==game&(level_number%in%c(0,1)|level%in%c(0,1)))
   for (agent in unique(s$agent_type)){
     agentdata = s[which(s$agent_type==agent),]
     level0_steps = max(agentdata[which(agentdata$cumulative_wins==0),]$cumulative_steps)
     row = data.frame(agent_type=agent, game_name=game, level_num=0, steps=level0_steps)
-    level_win=rbind(level_win, row)
+    level_win_old=rbind(level_win_old, row)
     level1_steps = max(agentdata[which(agentdata$cumulative_wins==1),]$cumulative_steps)
     row = data.frame(agent_type=agent, game_name=game, level_num=1, steps=level1_steps)
-    level_win=rbind(level_win, row)
+    level_win_old=rbind(level_win_old, row)
   }
 }
 
-level_win$short_agent_type = NA
-for (i in 1:length(level_win$agent_type)){
-  agent = level_win$agent_type[i]
-  if((grepl('IW=1', agent)&!(grepl('rand', agent)))){
-    short_type = 'EMPA'
-  }else if((grepl('IW=2', agent)&!(grepl('rand', agent)))){
-    short_type = 'EMPA2'
-  }else if ((grepl('IW=1', agent)&grepl('eG=True', agent)&grepl('fe=0.1',agent))){
-    short_type = 'e-greedy .1'
-  }else if(agent=='DDQN'){
-    short_type = 'DDQN'
-  }else if(agent=='human'){
-    short_type = 'human'
-  }
-  level_win$short_agent_type[i] = short_type
-}
-level_win$short_agent_type = as.factor(level_win$short_agent_type)
-level_win = transform(level_win, short_agent_type=factor(short_agent_type, levels=c("human", "EMPA", 'e-greedy .1', "DDQN"))) ## so that columns of plot are reordered
-level_win = select(level_win, -agent_type)
+# level_win_old$short_agent_type = NA
+# for (i in 1:length(level_win_old$agent_type)){
+#   agent = level_win_old$agent_type[i]
+#   if((grepl('IW=1', agent)&!(grepl('rand', agent)))){
+#     short_type = 'EMPA'
+#   }else if((grepl('IW=2', agent)&!(grepl('rand', agent)))){
+#     short_type = 'EMPA2'
+#   }else if ((grepl('IW=1', agent)&grepl('eG=True', agent)&grepl('fe=0.1',agent))){
+#     short_type = 'e-greedy .1'
+#   }else if(agent=='DDQN'){
+#     short_type = 'DDQN'
+#   }else if(agent=='human'){
+#     short_type = 'human'
+#   }
+#   level_win_old$short_agent_type[i] = short_type
+# }
+# level_win_old$short_agent_type = as.factor(level_win_old$short_agent_type)
+
+# level_win_old = transform(level_win, short_agent_type=factor(short_agent_type, levels=c("human", "EMPA", 'e-greedy .1', "DDQN"))) ## so that columns of plot are reordered
+# level_win_old = select(level_win_old, -agent_type)
 level_win_saved = level_win
+level_win_no_inf_saved = level_win_no_inf
 ## replace Inf with something really bad, and when you prettify the plot in Illustrator you'll use a plot break.
 
 
@@ -1958,6 +1961,23 @@ tickmarks = c(1,10e0,10e1,10e2,10e3,10e4,10e5,10e6,10e7,10e8,10e9,10e10,10e11,10
 logtickmarks=(log(tickmarks,10))
 
 p = ggplot(filter(level_win_no_inf, level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color_manual(values=tmpcolors)+
+  scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
+p
+
+p = ggplot(filter(level_win_old, agent_type%in%c('EMPA', 'human', 'DDQN 100k', 'e-greedy .1'), level_num==1), aes(x=log(steps,10), color=agent_type, fill=agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color_manual(values=tmpcolors)+
+  scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
+p
+
+## just for debugging
+p = ggplot(filter(level_win_old, agent_type%in%c('EMPA', 'e-greedy .1'), level_num==1), aes(x=log(steps,10), color=agent_type, fill=agent_type))
+p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color_manual(values=tmpcolors)+
+  scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
+p
+
+
+p = ggplot(filter(level_win_no_inf, short_agent_type%in%c('EMPA', 'e-greedy .1'), level_num==1), aes(x=log(steps,10), color=short_agent_type, fill=short_agent_type))
 p=p+geom_density(alpha=.8, adjust=1/10)+xlab('steps to win level 2')+scale_color_manual(values=tmpcolors)+
   scale_fill_manual(values=tmpcolors)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
 p

@@ -39,8 +39,9 @@ humandata = load_reward_data('human', dates_or_groups)
 dqndata = load_reward_data('DDQN', dates_or_groups)
 planner_lesions = load_reward_data('EMPA', dates_or_groups)
 
+dqndata = data
 alldata = rbind(EMPAdata, humandata, dqndata)
-saved_human_normed_data = human_normed_data
+# saved_human_normed_data = human_normed_data
 human_normed_data = make_human_normed_data(alldata)
 
 zelda_data = filter(EMPA_variants, agent_type=='e-greedy .1', game_name=='zelda')
@@ -54,10 +55,72 @@ colors = c('steelblue1',
            'palegreen3',# 'tomato2', 'salmon', 
            'gray50', 'gray52', 'gray54',
            'goldenrod1', 'goldenrod3', 'darkslategray2', 'goldenrod2', 'darkolivegreen3')
-           )
            # 'darkslategray3', 'darkslategray2', 'darkslategray1')#, 'mediumpurple2', 'aquamarine3', 'coral3')
-names(colors)=unique(alldata$agent_type)
+# names(colors)=unique(alldata$agent_type)
 
+
+### To make plots for figure 1
+
+## plotting all agents/models
+games_to_show = c('avoidgeorge', 'antagonist', 'bait', 'butterflies', 'frogs', 'zelda', 'missilecommand')
+plots = list()
+for(i in 1:length(games_to_show)){
+  # for(i in 1:length(unique(alldata$game_name))){
+    
+  agents_to_plot = c('human', 'DDQN 100k', 'EMPA')
+  # game = unique(alldata$game_name)[i]
+  game = games_to_show[i]
+  if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies')){
+    max_x=3000
+  }
+  else{
+    max_x = 1000
+  }
+  # max_x = 10000
+  d = filter(alldata, game_name==game&agent_type %in% agents_to_plot)
+  
+  ### assign correct colors to each subject ID
+  plotcolors = c()
+  for (agent in agents_to_plot){
+    agent_subjects = unique(filter(d, agent_type==agent)$subject_ID)
+    agent_color = colors[agent]
+    colorlist = rep(agent_color, length(agent_subjects))
+    names(colorlist) = agent_subjects
+    plotcolors = c(plotcolors, colorlist)
+  }
+  
+  ## Frogs has 5 levels; two subjects appear to have 6 wins. Bug on heroku side??
+  ## Dealing with this by assuming the last run was a repeat of the last level.
+  if (game=='frogs'){
+  d = filter(d, cumulative_wins<6)
+  }
+  
+  
+  d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
+  max_y = max(d$cumulative_wins)
+  p = ggplot(d, aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
+  p=p+geom_point()+ 
+    ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
+    xlab('Steps taken by agent')+ylab('Levels won')
+  # p=p+xlim(0,1000000)
+  # p=p+xlim(0,100000)
+  # if(length(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)<3){
+  if ((length(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins)==0) || 
+      (max(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins))==0){
+    p=p+geom_smooth(data=filter(d,agent_type %in% c('human', 'EMPA')),se=FALSE)+
+      geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,agent_type=='DDQN 100k'),size=.7)
+  }else{
+    p=p+geom_smooth(method=loess, span=1,se=FALSE)
+  }
+  p=p+xlim(0,max_x)+ylim(0,max_y)
+  
+  p
+  
+  newdir='~/Projects/atari/vgdl/plots/learning_curves/'
+  dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
+  title = paste(newdir, game, '.png', sep='')
+  ggsave(title, plot=p, width=8, height=6)
+}
 
 
 ## density plot summary plot of overall results -- easy to look at.
@@ -307,6 +370,70 @@ p = p+geom_point()+geom_smooth()+scale_color_manual(values=colors)
 p
 
 
+eg = filter(alldata, agent_type=='e-greedy .1')
+df = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(), level_number=as.numeric(),
+                cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric(), subsample_ID=as.character())
+for (i in 1:10){
+  tmp_df = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(), level_number=as.numeric(),
+                  cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
+  subjects_to_sample = sample(unique(eg$subject_ID), 3, replace = FALSE, prob = NULL)
+  subsample = filter(eg, subject_ID%in%subjects_to_sample)
+  tmp_df = rbind(tmp_df, subsample)
+  tmp_df$subsample_ID = i
+  df = rbind(df, tmp_df)
+}
+
+
+make_level_win_for_subsamples = function(d){
+  lw = data.frame(subsample_ID=as.character(), subject_ID=as.character(), game_name=as.character(), level_num=as.numeric(), steps=as.numeric())
+  levels_to_try=c(1,2,3,4,5)
+  no_win_equivalent_steps = 10e6
+  for (game in unique(d$game_name)){
+    s=filter(d, game_name==game&(level_number%in%levels_to_try|level%in%levels_to_try))
+    for (agent in unique(s$subsample_ID)){
+      agentdata = filter(s, subsample_ID==agent)
+      for (subject in unique(agentdata$subject_ID)){
+        prev_cumulative_steps = 0
+        subjectdata = filter(agentdata, subject_ID==subject)
+        subject_steps_to_win = c()
+        for (l in levels_to_try){
+          if (l %in% subjectdata$cumulative_wins){
+            cumul_steps = min(subjectdata[which(subjectdata$cumulative_wins==l),]$cumulative_steps)
+            level_steps = cumul_steps - prev_cumulative_steps
+            prev_cumulative_steps = cumul_steps
+            subject_steps_to_win = level_steps
+            # subject_steps_to_win = 1
+          }
+          else{
+            subject_steps_to_win = no_win_equivalent_steps
+            # subject_steps_to_win = 0
+          }
+          row = data.frame(subsample_ID=agent, subject_ID=subject, game_name=game, level_num=l, steps=subject_steps_to_win)
+          lw=rbind(lw, row)
+        }
+      }
+    }
+  }
+  return(lw)
+}
+lw=make_level_win_for_subsamples(df)
+head(lw)
+
+lw$subsample_ID=as.factor(lw$subsample_ID)
+p = ggplot(filter(lw,level_num%in%c(1)), aes(x=log(steps,10), color=subsample_ID, fill=subsample_ID))
+p = p+geom_density(alpha=.8, adjust=1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)
+p
+
+### You should actually make a plantimeata figure if what you're trying to check is what e-greedy would look like there if not sampled enough times.
+
+human_df=filter(alldata, agent_type=='human')
+head(human_df)
+df$agent_type=df$subsample_ID
+df = select(df, -subsample_ID)
+df=rbind(df, human_df)
+human_normed_df = make_human_normed_data(df)
+
+           
 make_human_normed_data = function(dataframe){
   ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
   plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
