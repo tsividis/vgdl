@@ -110,6 +110,7 @@ class Agent:
                 self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
                 self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
                 self.objectsWhoseLocationWeIgnoreString)
+        self.param_ID = self.param_ID+'_batchID='+str(0)
         print self.param_ID
 
         self.conservative = False
