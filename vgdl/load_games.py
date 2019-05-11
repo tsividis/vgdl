@@ -5,7 +5,8 @@ import pickle
 import os
 from IPython import embed
 import argparse
-from util import str2bool
+from util import str2bool, make_random_name, CHARS
+from random import random
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
@@ -30,7 +31,8 @@ hyperparameter_index = args.hyperparameter_index
 metacontroller_index = args.metacontroller_index
 IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
-task_ID = str(args.task_ID)
+added_string = make_random_name(CHARS, 4)
+task_ID = str(args.task_ID)+'_'+added_string
 make_movie = args.make_movie
 pickled_theory_path = args.pickled_theory_path
 max_rand_steps = args.max_rand_steps

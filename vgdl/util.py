@@ -102,10 +102,10 @@ def extendColorDict(num):
 		colorDict[str(color)] = colorName
 	print colorDict
 
-def make_random_name(chars):
+def make_random_name(chars, l):
 	import random
 	name = ''
-	for i in range(6):
+	for i in range(l):
 		name+=random.choice(chars)
 	return name
 

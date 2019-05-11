@@ -59,24 +59,25 @@ colors = c('steelblue1',
 # names(colors)=unique(alldata$agent_type)
 
 
-### To make plots for figure 1
 
+
+
+### To make plots for figure 1 (learning curves)
 ## plotting all agents/models
 games_to_show = c('avoidgeorge', 'antagonist', 'bait', 'butterflies', 'frogs', 'zelda', 'missilecommand')
 plots = list()
-for(i in 1:length(games_to_show)){
+for(i in 1:length(unique(alldata$game_name))){
   # for(i in 1:length(unique(alldata$game_name))){
     
   agents_to_plot = c('human', 'DDQN 100k', 'EMPA')
-  # game = unique(alldata$game_name)[i]
-  game = games_to_show[i]
-  if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies')){
+  game = unique(alldata$game_name)[i]
+  # game = games_to_show[i]
+  if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies', 'zelda')){
     max_x=3000
-  }
-  else{
+  }else{
     max_x = 1000
   }
-  # max_x = 10000
+  # max_x = 100000
   d = filter(alldata, game_name==game&agent_type %in% agents_to_plot)
   
   ### assign correct colors to each subject ID
@@ -95,32 +96,133 @@ for(i in 1:length(games_to_show)){
   d = filter(d, cumulative_wins<6)
   }
   
+  few_datapoint_subjects = c()
+  for (subject in unique(d$subject_ID)){
+    if (length(filter(d, subject_ID==subject, cumulative_steps<max_x)$cumulative_steps)<10){
+      few_datapoint_subjects = c(few_datapoint_subjects, subject)
+    }
+  }
+  
+  
+  no_win_subjects = c()
+  for (subject in unique(d$subject_ID)){
+    if (max(filter(d, subject_ID==subject, cumulative_steps<=max_x)$cumulative_wins)==0){
+      no_win_subjects = c(no_win_subjects, subject)
+    }
+  }
   
   d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
   max_y = max(d$cumulative_wins)
-  p = ggplot(d, aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
+  # p = ggplot(filter(d, subject_ID=='d4ff1'), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
+  p = ggplot(filter(d,agent_type=='human', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
   p=p+geom_point()+ 
     ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
     xlab('Steps taken by agent')+ylab('Levels won')
   # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
-  # if(length(subset(d, agent_type=='DDQN'&cumulative_steps<(max_x+1))$cumulative_wins)<3){
-  if ((length(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins)==0) || 
-      (max(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins))==0){
-    p=p+geom_smooth(data=filter(d,agent_type %in% c('human', 'EMPA')),se=FALSE)+
-      geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,agent_type=='DDQN 100k'),size=.7)
-  }else{
-    p=p+geom_smooth(method=loess, span=1,se=FALSE)
-  }
+  
+  
+    
+  # if ((length(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins)==0) || 
+  #     (max(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins))==0){
+  #   p=p+geom_smooth(data=filter(d,agent_type %in% c('human', 'EMPA')),se=FALSE)+
+  #     geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,agent_type=='DDQN 100k'),size=.7)
+  # }else{
+  #   p=p+geom_smooth(data=filter(d, !(subject_ID%in%few_datapoint_subjects)), method=loess, span=1,se=FALSE)+
+  #     geom_smooth(data=filter(d, (subject_ID%in%few_datapoint_subjects)), method=lm, span=1,se=FALSE)
+  # }
+
+  p=p+geom_smooth(data=filter(d,!(subject_ID%in%no_win_subjects)),se=FALSE)+
+         geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects),size=.7)
   p=p+xlim(0,max_x)+ylim(0,max_y)
+  # p=p+geom_smooth()
   
   p
   
-  newdir='~/Projects/atari/vgdl/plots/learning_curves/'
+  newdir='~/Projects/atari/vgdl/plots/learning_curves/max=100k/'
   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
   title = paste(newdir, game, '.png', sep='')
   ggsave(title, plot=p, width=8, height=6)
 }
+
+f = filter(alldata, game_name=='zelda', agent_type=='EMPA')
+for (subject in unique(f$subject_ID)){
+  print(subject)
+  print(max(filter(f, subject_ID==subject)$cumulative_wins))
+  # if (max(filter(f, subject_ID==subject)$cumulative_wins)<1){
+    # print(subject)
+  # }
+}
+
+
+
+p = ggplot(sparse_d, aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
+  ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
+  xlab('Steps taken by agent')+ylab('Levels won')
+p=p+geom_smooth(method=loess, se=FALSE)
+p
+p=p+xlim(0,max_x)+ylim(0,max_y)
+p
+
+
+p = ggplot(filter(bait_data, subject_ID=='d4ff1',cumulative_steps<688), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
+  ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
+  xlab('Steps taken by agent')+ylab('Levels won')
+p=p+xlim(0,max_x)+ylim(0,max_y)
+p=p+geom_smooth(method=loess, span=1, se=FALSE)
+p
+p
+
+
+
+
+
+# An attempt to just grab first and last data points per level won. Plot looks too weird, as smooths are nonmonotonic.
+# sparse_d = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric())
+# for (game in unique(d$game_name)){
+#   for (subject in unique(d$subject_ID)){
+#     subject_data = filter(d, subject_ID==subject, game_name==game)
+#     agent = subject_data$agent_type[1]
+#     for (win in unique(subject_data$cumulative_wins)){
+#       data_for_these_cumulative_wins = filter(subject_data, cumulative_wins==win)
+#       l = length(data_for_these_cumulative_wins$cumulative_wins)
+#       first_row = data_for_these_cumulative_wins[1,]
+#       last_row = data_for_these_cumulative_wins[l,]
+#       row1 = data.frame(game_name=game, agent_type=agent, subject_ID=subject, level_number=first_row$level_number, 
+#                        cumulative_steps=first_row$cumulative_steps, cumulative_wins=first_row$cumulative_wins)
+#       row2 = data.frame(game_name=game, agent_type=agent, subject_ID=subject, level_number=last_row$level_number, 
+#                         cumulative_steps=last_row$cumulative_steps, cumulative_wins=last_row$cumulative_wins)
+#       sparse_d = rbind(sparse_d, row1, row1)
+#     }
+#   }
+# }
+
+
+
+
+#### MAIN FIGURE ###
+main_plot_agent_types = c('DDQN 100k', 'EMPA')
+s = subset(human_normed_data, agent_type=='EMPA')
+ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
+p = ggplot()+
+  geom_bar(data=filter(human_normed_data, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(human_normed_composite_ratio, 10)>-3),
+           aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_point(data=filter(human_normed_data, agent_type%in%main_plot_agent_types & ((agent_type != 'DDQN 100k'  & !(log(human_normed_composite_ratio, 10)>-3)) | agent_type=='DDQN 100k')),
+             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  # theme(legend.position="none")+
+  colorScale+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+logtickmarks=(log(tickmarks))
+tickmarks = c(0, 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p + scale_fill_manual(values=colors,name="Model",
+                      breaks=c("EMPA", "DDQN 100k"),
+                      labels=c("EMPA", "DDQN")) + scale_color_manual(values=colors,name="Model",
+                                                                                         breaks=c("EMPA", "DDQN 100k"),
+                                                                                         labels=c("EMPA", "DDQN"))
+## 14x10
 
 
 ## density plot summary plot of overall results -- easy to look at.
