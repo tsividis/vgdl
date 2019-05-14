@@ -44,10 +44,10 @@ alldata = rbind(EMPAdata, humandata, dqndata)
 # saved_human_normed_data = human_normed_data
 human_normed_data = make_human_normed_data(alldata)
 
-zelda_data = filter(EMPA_variants, agent_type=='e-greedy .1', game_name=='zelda')
-for (subject in unique(zelda_data$subject_ID)){
-  print (c(subject, max(filter(zelda_data, subject_ID==subject)$level_number)))
-}
+# zelda_data = filter(EMPA_variants, agent_type=='e-greedy .1', game_name=='zelda')
+# for (subject in unique(zelda_data$subject_ID)){
+#   print (c(subject, max(filter(zelda_data, subject_ID==subject)$level_number)))
+# }
 
 colors = c('steelblue1',
            'purple2', #'mediumorchid2',
@@ -56,7 +56,7 @@ colors = c('steelblue1',
            'gray50', 'gray52', 'gray54',
            'goldenrod1', 'goldenrod3', 'darkslategray2', 'goldenrod2', 'darkolivegreen3')
            # 'darkslategray3', 'darkslategray2', 'darkslategray1')#, 'mediumpurple2', 'aquamarine3', 'coral3')
-# names(colors)=unique(alldata$agent_type)
+names(colors)=unique(alldata$agent_type)
 
 
 
@@ -116,7 +116,8 @@ for(i in 1:length(unique(alldata$game_name))){
   # p = ggplot(filter(d, subject_ID=='d4ff1'), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
   p = ggplot(filter(d,agent_type=='human', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
   p=p+geom_point()+ 
-    ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
+    # ggtitle(game)+
+    theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
     xlab('Steps taken by agent')+ylab('Levels won')
   # p=p+xlim(0,1000000)
   # p=p+xlim(0,100000)
@@ -138,6 +139,9 @@ for(i in 1:length(unique(alldata$game_name))){
   }
   p=p+xlim(0,max_x)+ylim(0,max_y)
   
+  # kappas = filter(human_normed_data, game_name=='antagonist')
+  # kappa_string = paste('\n',expression(kappa),'values:','\nhuman:', filter(kappas, agent_type=='human')$composite_ratio, '\nEMPA:', filter(kappas, agent_type=='EMPA')$composite_ratio, '\nDDQN:', filter(kappas, agent_type=='DDQN 100k')$composite_ratio, sep=' ')
+  # p = p+ggtitle(paste(game, kappa_string, sep=''))
   
   p# p
   
@@ -231,6 +235,8 @@ p + scale_fill_manual(values=colors,name="Model",
 # (agent_type%in%c('EMPA','no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW', 'no subgoals + no gradient + no IW')
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
+tickmarks = c('0 (failure)',10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+
 human_normed_data = transform(human_normed_data, agent_type=factor(agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 
                                                                                      'no goal gradient', 'no subgoals',  'no subgoals + no gradient',
                                                                                      'no IW', 'no subgoals + no gradient + no IW',
@@ -243,6 +249,8 @@ human_normed_data[human_normed_data$agent_type%in%c('no goal gradient', 'no subg
 human_normed_data[human_normed_data$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'DDQN'
 human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'exploration lesions', 'planner lesions', 'DDQN', NA)))
 
+# human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'exploration lesions', 'DDQN', NA)))
+
 ### Stacked plot; each model type gets one row
 p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
@@ -252,11 +260,120 @@ p # 12x10
 
 ### Stacked and organized by lesion type
 p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
-  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
+  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+geom_boxplot(aes(x=log(human_normed_composite_ratio), y=.75))+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~model_cluster, ncol=1)
 p # 8x10
 
+
+p = ggplot(filter(human_normed_data, agent_type%in%c('EMPA')))+
+  geom_boxplot(aes(x=agent_type, y=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+coord_flip()
+p  
+
+
+## Facet-wrapped plot that shows quartiles!
+agents = c('EMPA', 'e-greedy .1', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
+datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), agent_type=as.character(), model_cluster=as.character())
+for (i in 1:length(agents)){
+  agent = agents[i]
+  ## Trying to just add the boxplot data manually
+  quantiles = quantile(log(filter(human_normed_data, agent_type==agent)$human_normed_composite_ratio))
+  
+  q1=quantiles[2]
+  q2=quantiles[3]
+  q3=quantiles[4]
+  
+  if (agent == 'EMPA'){
+    m_cluster = 'EMPA'
+  }
+  if (agent %in% c('e-greedy .1')){
+    m_cluster = 'exploration lesions'
+  }
+  if (agent%in% c('no goal gradient', 'no subgoals',  'no subgoals + no gradient',
+                  'no IW', 'no subgoals + no gradient + no IW')){
+    m_cluster = 'planner lesions'
+  }
+    if (agent %in% c('DDQN 1k', 'DDQN 10k', 'DDQN 100k')){
+      m_cluster = 'DDQN'
+  }
+  
+  y1=1.06
+  y2=1.1
+  y3=1.14
+  if(agent=='no goal gradient'){
+    y1 = y1-.06
+    y2 = y2-.06
+    y3 = y3-.06
+  }
+  if(agent=='no subgoals + no gradient'){
+    y1 = y1-.12
+    y2 = y2-.12
+    y3 = y3-.12
+  }
+  if(agent=='no IW'){
+    y1 = y1-.18
+    y2 = y2-.18
+    y3 = y3-.18
+  }
+  if(agent=='no subgoals + no gradient + no IW'){
+    y1 = y1-.24
+    y2 = y2-.24
+    y3 = y3-.24
+  }
+  datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, y1=y1, y2=y2, y3=y3,agent_type=agent,model_cluster=m_cluster))
+  }
+ 
+
+p = ggplot(filter(human_normed_data, agent%in%agents, !is.na(model_cluster)), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+  geom_density(alpha=.8, adjust= 1/10)+
+  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
+  geom_vline(xintercept=0,linetype='dashed',size=.4)+
+  geom_segment(aes(x=x1, y=y2, xend=x3, yend=y2), data=datapoints)+
+  geom_segment(aes(x=x1, y=y1, xend=x1, yend=y3), data=datapoints)+
+  geom_segment(aes(x=x3, y=y1, xend=x3, yend=y3), data=datapoints)+
+  geom_segment(aes(x=x2, y=y1, xend=x2, yend=y3), data=datapoints)+
+  
+      theme(legend.title=element_blank())+scale_x_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(logtickmarks[1], 6)) +facet_wrap(~model_cluster, ncol=1)
+p
+
+## fix colors for the quartile bars
+## add offsets for multiple planner lesions
+## figure out why it's adding extra facets
+
+## attempt to produce individual plots with quartiles.
+# plots = list()
+# i=1
+# agents = c('EMPA', 'e-greedy .1', 'DDQN 100k')
+# for (i in 1:length(agents)){
+#   agent = agents[i]
+#   ## Trying to just add the boxplot data manually
+#   quantiles = quantile(log(filter(human_normed_data, agent_type==agent)$human_normed_composite_ratio))
+#   print(agent)
+#   print (i)
+# 
+#   q1=quantiles[2]
+#   q2=quantiles[3]
+#   q3=quantiles[4]
+#   datapoints = data.frame(x=c(q1,q3), y=c(1.2, 1.2), agent_type=agent)
+#   print(datapoints)
+#   p = ggplot(filter(human_normed_data, agent_type==agent), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+#     geom_density(alpha=.8, adjust= 1/10)+
+#     scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
+#     geom_vline(xintercept=0,linetype='dashed',size=.4)+
+#     geom_segment(aes(x=datapoints[1,]$x, y=datapoints[1,]$y, xend=datapoints[2,]$x, yend=datapoints[2,]$y), size=2, data=datapoints)+
+#     theme(legend.title=element_blank())+scale_x_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(logtickmarks[1], 6))
+#     #+facet_wrap(~model_cluster, ncol=1)
+#   p
+#   newdir='~/Projects/atari/vgdl/plots/densities/'
+#   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
+#   title = paste(newdir, agent, '.png', sep='')
+#   ggsave(title, plot=p, width=7, height=3)
+#   # i = i+1
+# }
+
+# layout = matrix(c(1:length(plots)), nrow=length(plots))
+# m = multiplot(plotlist = plots, layout=layout)
+# 8x10
 
 ## one plot per game summary plot of overall results -- easy to look at.
 p = ggplot(subset(human_normed_data), aes(x=agent_type, y=level_percentage, fill=factor(agent_type))) +
