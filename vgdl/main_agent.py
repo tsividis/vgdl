@@ -108,7 +108,8 @@ class Agent:
                 self.noNewObjectNum, self.objectNumberTrackingLimit, 
                 self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
                 self.objectsWhoseLocationWeIgnoreString)
-
+        self.param_ID = self.param_ID+'_batchID='+str(0)
+    
         self.conservative = False
         self.regrounding = 1
         # self.selective_regrounding = True ## not used

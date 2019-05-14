@@ -82,7 +82,7 @@ class WBP():
 		# Compute starting number of each SpriteCounter stype
 		self.firstOrderHorizon = firstOrderHorizon
 		if any([s in self.lesion for s in ['AGH2', 'AGH3']]):
-			print "no firstOrderHorizon"
+			# print "no firstOrderHorizon"
 			self.firstOrderHorizon = False
 		self.extra_atom = extra_atom
 		self.gameString_array = []
@@ -338,7 +338,7 @@ class WBP():
 	def rewardSelection(self, QReward, QNovelty):
 		## Use this for IW lesion
 		if 'IW' in self.lesion:
-			print "no IW"
+			# print "no IW"
 			acceptableNodes = QReward
 			acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward))
@@ -1461,7 +1461,7 @@ class Node():
 		
 		##AGH lesion
 		if any([s in self.WBP.lesion for s in ['AGH1', 'AGH3']]):
-			print "no heuristics"
+			# print "no heuristics"
 			return 0.
 
 		if rle==None:
