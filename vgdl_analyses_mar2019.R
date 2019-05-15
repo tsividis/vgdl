@@ -41,8 +41,15 @@ planner_lesions = load_reward_data('EMPA', dates_or_groups)
 
 dqndata = data
 alldata = rbind(EMPAdata, humandata, dqndata)
+EMPA_data = filter(alldata, agent_type=='EMPA')
+alldata = filter(alldata, agent_type!='EMPA')
+alldata = rbind(alldata, filter(EMPA_data, grepl('IW=1', long_agent_type)))
 # saved_human_normed_data = human_normed_data
 human_normed_data = make_human_normed_data(alldata)
+
+
+### figure out how to get IW2 out of alldata
+
 
 # zelda_data = filter(EMPA_variants, agent_type=='e-greedy .1', game_name=='zelda')
 # for (subject in unique(zelda_data$subject_ID)){
@@ -64,22 +71,22 @@ names(colors)=unique(alldata$agent_type)
 
 ### To make plots for figure 1 (learning curves)
 ## plotting all agents/models
-games_to_show = c('avoidgeorge', 'antagonist', 'bait', 'butterflies', 'frogs', 'zelda', 'missilecommand')
+# games_to_show = c('avoidgeorge', 'antagonist', 'bait', 'butterflies', 'frogs', 'zelda', 'missilecommand')
+games_to_plot = c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2', 'corridor')
 plots = list()
-for(i in 1:length(unique(alldata$game_name))){
+# for(i in 1:length(unique(alldata$game_name))){
   # for(i in 1:length(unique(alldata$game_name))){
-    
+  for (i in 1:length(games_to_plot)){  
   agents_to_plot = c('human', 'DDQN 100k', 'EMPA')
-  game = unique(alldata$game_name)[i]
-  # game = games_to_show[i]
+  # game = unique(alldata$game_name)[i]
+  game = games_to_plot[i]
   if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies', 'zelda')){
     max_x=3000
   }else{
     max_x = 1000
   }
   # max_x = 100000
-  d = filter(alldata, game_name==game&agent_type %in% agents_to_plot)
-  
+  d = filter(alldata, game_name==game, agent_type %in% agents_to_plot)
   ### assign correct colors to each subject ID
   plotcolors = c()
   for (agent in agents_to_plot){
@@ -92,8 +99,15 @@ for(i in 1:length(unique(alldata$game_name))){
   
   ## Frogs has 5 levels; two subjects appear to have 6 wins. Bug on heroku side??
   ## Dealing with this by assuming the last run was a repeat of the last level.
-  if (game=='frogs'){
+  
+  ## let's correct this conservatively. Instead of assuming the game ran for an additional level than it had to,
+  ## let's assume ppl got free credit for some level at some point, and let's subtract that credit.
+  
+  if (game %in% c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2')){
   d = filter(d, cumulative_wins<6)
+  }
+  if (game %in% c('corridor')){
+    d = filter(d, cumulative_wins<5)
   }
   
   # few_datapoint_subjects = c()
@@ -103,7 +117,44 @@ for(i in 1:length(unique(alldata$game_name))){
     # }
   # }
   
+  ## If we have a low max_x, we should add data points for every DDQN time-step, since we can afford to do this and know what the data points are
+  ## (as we recorded end-of-episode data and cumulative_wins definitionally don't change before then)
+  ## WARNING: if you ever plotted score, you wouldn't be able to do this. You didn't record score within episodes for DDQN.
+  if (max_x<10000){
+  replacement_subjects = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
+                              modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
+  for (subject in unique(filter(d, grepl('DDQN', agent_type))$subject_ID)){
+    subject_data = filter(d, subject_ID==subject, cumulative_steps<max_x)
+    
+    ## if we actually have subject data for the max_x cutoff we care about...
+    if (length(subject_data$cumulative_steps)>0){
+      subject_agent_type = subject_data$agent_type[1]
+      last_steps = 0
+      
+      new_subject_df = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
+                                  modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
+      for (i in 1:length(subject_data$cumulative_steps)){
+        subject_row = subject_data[i,]
+        for (j in last_steps:(subject_row$cumulative_steps-1)){
+          row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
+                           modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
+                           score=subject_row$score)
+          new_subject_df = rbind(new_subject_df, row)
+        }
+        new_subject_df = rbind(new_subject_df, subject_row)
+        last_steps = subject_row$cumulative_steps
+      }
+      replacement_subjects = rbind(replacement_subjects, new_subject_df)
+    } 
+    
+    d=filter(d, !grepl('DDQN', agent_type))
+    d = rbind(d, replacement_subjects) 
+    }
+  }
   
+  d = filter(d, cumulative_steps<=max_x)
+  
+  ## you can only assume DDQN kept playing for max_x steps. Humans might have quit before then, and EMPA might be stuck thinking, within the allotted limit.
   no_win_subjects = c()
   for (subject in unique(d$subject_ID)){
     if (max(filter(d, subject_ID==subject, cumulative_steps<=max_x)$cumulative_wins)==0){
@@ -114,16 +165,13 @@ for(i in 1:length(unique(alldata$game_name))){
   d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
   max_y = max(d$cumulative_wins)
   # p = ggplot(filter(d, subject_ID=='d4ff1'), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
-  p = ggplot(filter(d,agent_type=='human', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
-  p=p+geom_point()+ 
-    # ggtitle(game)+
-    theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
+  # p = ggplot(filter(d,agent_type=='human', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
+  # p = ggplot(filter(replacement_subjects, agent_type=='DDQN 100k', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
+  p = ggplot(subject_data ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
+    ggtitle(game)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1))+
     xlab('Steps taken by agent')+ylab('Levels won')
-  # p=p+xlim(0,1000000)
-  # p=p+xlim(0,100000)
+
   
-  
-    
   # if ((length(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins)==0) || 
   #     (max(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins))==0){
   #   p=p+geom_smooth(data=filter(d,agent_type %in% c('human', 'EMPA')),se=FALSE)+
@@ -133,19 +181,24 @@ for(i in 1:length(unique(alldata$game_name))){
   #     geom_smooth(data=filter(d, (subject_ID%in%few_datapoint_subjects)), method=lm, span=1,se=FALSE)
   # }
 
-  p=p+geom_smooth(data=filter(d,!(subject_ID%in%no_win_subjects)),se=FALSE)
-  if (length(no_win_subjects)>0){
-    p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects),size=.7)
+  p=p+geom_smooth(data=filter(d,!(subject_ID%in%no_win_subjects)), se=FALSE)
+  if ( (length(no_win_subjects)>0) & length(filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type))$cumulative_steps>0) ){
+    p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type)),size=1.4)
   }
+  ## there are some games where you got 0 DDQN data in short ranges of time, like 1k steps for chase.
+  if (length(filter(d, grepl('DDQN', agent_type), cumulative_steps<max_x)$cumulative_steps<0)){
+    p = p+geom_hline(yintercept=0, size=1.4, color=colors['DDQN 100k'])
+  }
+  
   p=p+xlim(0,max_x)+ylim(0,max_y)
+  p
   
   # kappas = filter(human_normed_data, game_name=='antagonist')
   # kappa_string = paste('\n',expression(kappa),'values:','\nhuman:', filter(kappas, agent_type=='human')$composite_ratio, '\nEMPA:', filter(kappas, agent_type=='EMPA')$composite_ratio, '\nDDQN:', filter(kappas, agent_type=='DDQN 100k')$composite_ratio, sep=' ')
   # p = p+ggtitle(paste(game, kappa_string, sep=''))
+
   
-  p# p
-  
-  newdir='~/Projects/atari/vgdl/plots/learning_curves/max=100k/'
+  newdir='~/Projects/atari/vgdl/plots/learning_curves/max=3k/'
   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
   title = paste(newdir, game, '.png', sep='')
   ggsave(title, plot=p, width=8, height=6)
@@ -172,7 +225,7 @@ p
 
 
 p = ggplot(filter(bait_data, subject_ID=='d4ff1',cumulative_steps<688), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
-  ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
+  ggtitle(game)+theme(legend.position="none") +scale_size_manual(values=c(1,1,1))#+scale_color_manual(values=plotcolors)+
   xlab('Steps taken by agent')+ylab('Levels won')
 p=p+xlim(0,max_x)+ylim(0,max_y)
 p=p+geom_smooth(method=loess, span=1, se=FALSE)
