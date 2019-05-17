@@ -20,6 +20,7 @@ EMPA_dates = list('mar28', 'apr4')
 dqn_path = '~/Projects/atari/vgdl/dqn_data/'
 humandatapaths = list.files("~/Projects/atari/vgdl/humandata")
 
+
 ### Toggle the below line to alter what you're reading in
 data_to_load = 'EMPA'
 data_to_load = 'human'
@@ -34,21 +35,44 @@ if (data_to_load == 'EMPA'){
 }
 
 EMPAdata = load_reward_data('EMPA', dates_or_groups)
+
 EMPA_variants = filter(EMPAdata, agent_type!='EMPA')
 humandata = load_reward_data('human', dates_or_groups)
 dqndata = load_reward_data('DDQN', dates_or_groups)
 planner_lesions = load_reward_data('EMPA', dates_or_groups)
 
-dqndata = data
+# dqndata = data
 alldata = rbind(EMPAdata, humandata, dqndata)
 EMPA_data = filter(alldata, agent_type=='EMPA')
-alldata = filter(alldata, agent_type!='EMPA')
-alldata = rbind(alldata, filter(EMPA_data, grepl('IW=1', long_agent_type)))
-# saved_human_normed_data = human_normed_data
+# alldata = filter(alldata, agent_type!='EMPA')
+# alldata = rbind(alldata, filter(EMPAdata, agent_type=='EMPA'))
+#saved_human_normed_data = human_normed_data
+
+## To calculate human-normed data for just some new model, do something like this.
+## Note: you'll always need to pass humans in.
+# just_empa_and_humans = filter(alldata, agent_type%in%c('human', 'EMPA'))
+# human_normed_data_just_empa_and_humans = make_human_normed_data(just_empa_and_humans)
+## now putting these back in:
+# human_normed_data = filter(human_normed_data, agent_type!='EMPA')
+# human_normed_data = select(human_normed_data, -model_cluster)
+# human_normed_data = rbind(human_normed_data, filter(human_normed_data_just_empa_and_humans, agent_type=='EMPA'))
+
 human_normed_data = make_human_normed_data(alldata)
 
-
-### figure out how to get IW2 out of alldata
+## Finds all (subject, game, level) tuples where the subject was forced to play a level more than once.
+fullhumandata = load_full_human_data()
+excluded_subjects = data.frame(game_name=as.character(), subject_ID=as.character(), level=as.numeric())
+for (game in unique(fullhumandata$game_name)){
+  human_game_data = filter(fullhumandata, game_name==game)
+  for (subject in unique(human_game_data$subject_ID)){
+    subject_data = filter(human_game_data, subject_ID==subject)
+    for (level in unique(subject_data$level_number)){
+      if (length(unique(filter(subject_data, level_number==level)$cumulative_wins))>2){
+        excluded_subjects = rbind(excluded_subjects, data.frame(game_name=game, subject_ID=subject, level_number=level))
+      }
+    }
+  }
+}
 
 
 # zelda_data = filter(EMPA_variants, agent_type=='e-greedy .1', game_name=='zelda')
@@ -67,25 +91,27 @@ names(colors)=unique(alldata$agent_type)
 
 
 
-
+p = ggplot(human_normed_data, aes(x=agent_type, y=mean_levels_won))
+p=p+geom_bar(stat='summary', fun.y='mean')
+p
 
 ### To make plots for figure 1 (learning curves)
 ## plotting all agents/models
 # games_to_show = c('avoidgeorge', 'antagonist', 'bait', 'butterflies', 'frogs', 'zelda', 'missilecommand')
 games_to_plot = c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2', 'corridor')
 plots = list()
-# for(i in 1:length(unique(alldata$game_name))){
-  # for(i in 1:length(unique(alldata$game_name))){
-  for (i in 1:length(games_to_plot)){  
+for(i in 1:length(unique(alldata$game_name))){
+# for (i in 1:length(games_to_plot)){  
   agents_to_plot = c('human', 'DDQN 100k', 'EMPA')
-  # game = unique(alldata$game_name)[i]
-  game = games_to_plot[i]
+  game = unique(alldata$game_name)[i]
+  # game = games_to_plot[i]
   if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies', 'zelda')){
     max_x=3000
   }else{
     max_x = 1000
   }
-  # max_x = 100000
+
+  # max_x = 10000
   d = filter(alldata, game_name==game, agent_type %in% agents_to_plot)
   ### assign correct colors to each subject ID
   plotcolors = c()
@@ -103,13 +129,21 @@ plots = list()
   ## let's correct this conservatively. Instead of assuming the game ran for an additional level than it had to,
   ## let's assume ppl got free credit for some level at some point, and let's subtract that credit.
   
-  if (game %in% c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2')){
-  d = filter(d, cumulative_wins<6)
+  # if (game %in% c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2')){
+  # d = filter(d, cumulative_wins<6)
+  # }
+  # if (game %in% c('corridor')){
+  #   d = filter(d, cumulative_wins<5)
+  # }
+  if (game%in%levels(excluded_subjects)){
+    es = filter(excluded_subjects, game_name==game)
+    subjects_to_exclude = unique(es$subject_ID)
+  }else{
+    subjects_to_exclude = c()
   }
-  if (game %in% c('corridor')){
-    d = filter(d, cumulative_wins<5)
-  }
-  
+
+  d = filter(d, !(subject_ID%in%subjects_to_exclude))
+
   # few_datapoint_subjects = c()
   # for (subject in unique(d$subject_ID)){
     # if (length(filter(d, subject_ID==subject, cumulative_steps<max_x)$cumulative_steps)<10){
@@ -167,10 +201,10 @@ plots = list()
   # p = ggplot(filter(d, subject_ID=='d4ff1'), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
   # p = ggplot(filter(d,agent_type=='human', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
   # p = ggplot(filter(replacement_subjects, agent_type=='DDQN 100k', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
-  p = ggplot(subject_data ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
+  p = ggplot(d ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
     ggtitle(game)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1))+
     xlab('Steps taken by agent')+ylab('Levels won')
-
+#p
   
   # if ((length(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins)==0) || 
   #     (max(filter(d, grepl('DDQN', agent_type)&cumulative_steps<(max_x+1))$cumulative_wins))==0){
@@ -186,12 +220,12 @@ plots = list()
     p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type)),size=1.4)
   }
   ## there are some games where you got 0 DDQN data in short ranges of time, like 1k steps for chase.
-  if (length(filter(d, grepl('DDQN', agent_type), cumulative_steps<max_x)$cumulative_steps<0)){
-    p = p+geom_hline(yintercept=0, size=1.4, color=colors['DDQN 100k'])
+  if (length(filter(d, grepl('DDQN', agent_type), cumulative_steps<max_x)$cumulative_steps)==0){
+    p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=d,size=1.4, color=colors['DDQN 100k'])
   }
   
   p=p+xlim(0,max_x)+ylim(0,max_y)
-  p
+  plots[[i]] = p
   
   # kappas = filter(human_normed_data, game_name=='antagonist')
   # kappa_string = paste('\n',expression(kappa),'values:','\nhuman:', filter(kappas, agent_type=='human')$composite_ratio, '\nEMPA:', filter(kappas, agent_type=='EMPA')$composite_ratio, '\nDDQN:', filter(kappas, agent_type=='DDQN 100k')$composite_ratio, sep=' ')
@@ -274,7 +308,7 @@ p = ggplot()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed performance")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 logtickmarks=(log(tickmarks))
-tickmarks = c(0, 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p + scale_fill_manual(values=colors,name="Model",
                       breaks=c("EMPA", "DDQN 100k"),
@@ -326,16 +360,21 @@ p
 
 ## Facet-wrapped plot that shows quartiles!
 agents = c('EMPA', 'e-greedy .1', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
-datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), agent_type=as.character(), model_cluster=as.character())
+datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), x4=as.numeric(), x5=as.numeric(), 
+                        y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), mean_val=as.numeric(), agent_type=as.character(), model_cluster=as.character())
 for (i in 1:length(agents)){
   agent = agents[i]
   ## Trying to just add the boxplot data manually
-  quantiles = quantile(log(filter(human_normed_data, agent_type==agent)$human_normed_composite_ratio))
-  
-  q1=quantiles[2]
-  q2=quantiles[3]
-  q3=quantiles[4]
-  
+  quantiles = quantile(log(filter(human_normed_data, agent_type==agent)$human_normed_composite_ratio), c(.1, .25, .5, .75, .9))
+  mn=mean(log(filter(human_normed_data, agent_type==agent)$human_normed_composite_ratio))
+  # q1=quantiles[2]
+  # q2=quantiles[3]
+  # q3=quantiles[4]
+  q1=quantiles[1]
+  q2=quantiles[2]
+  q3=quantiles[3]
+  q4=quantiles[4]
+  q5=quantiles[5]
   if (agent == 'EMPA'){
     m_cluster = 'EMPA'
   }
@@ -353,6 +392,7 @@ for (i in 1:length(agents)){
   y1=1.06
   y2=1.1
   y3=1.14
+  ## offsets for planner lesions
   if(agent=='no goal gradient'){
     y1 = y1-.06
     y2 = y2-.06
@@ -373,7 +413,21 @@ for (i in 1:length(agents)){
     y2 = y2-.24
     y3 = y3-.24
   }
-  datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, y1=y1, y2=y2, y3=y3,agent_type=agent,model_cluster=m_cluster))
+  
+  ##offsets for DDQN
+  if(agent=='DDQN 10k'){
+    y1 = y1-.06
+    y2 = y2-.06
+    y3 = y3-.06
+  }
+  if(agent=='DDQN 1k'){
+    y1 = y1-.12
+    y2 = y2-.12
+    y3 = y3-.12
+  }
+  # datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, y1=y1, y2=y2, y3=y3,agent_type=agent,model_cluster=m_cluster))
+  
+  datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, x4=q4, x5=q5,y1=y1, y2=y2, y3=y3, mean_val=mn, agent_type=agent,model_cluster=m_cluster))
   }
  
 
@@ -381,13 +435,23 @@ p = ggplot(filter(human_normed_data, agent%in%agents, !is.na(model_cluster)), ae
   geom_density(alpha=.8, adjust= 1/10)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed performance") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.4)+
-  geom_segment(aes(x=x1, y=y2, xend=x3, yend=y2), data=datapoints)+
-  geom_segment(aes(x=x1, y=y1, xend=x1, yend=y3), data=datapoints)+
-  geom_segment(aes(x=x3, y=y1, xend=x3, yend=y3), data=datapoints)+
-  geom_segment(aes(x=x2, y=y1, xend=x2, yend=y3), data=datapoints)+
+
+  # geom_segment(aes(x=x2, y=y2, xend=x4, yend=y2), data=datapoints)+
+  # geom_segment(aes(x=x1, y=y1, xend=x1, yend=y3), data=datapoints)+
+  # geom_segment(aes(x=x3, y=y1, xend=x3, yend=y3), data=datapoints)+
+  # geom_segment(aes(x=x2, y=y1, xend=x2, yend=y3), data=datapoints)+
+  geom_point(aes(x=mean_val, y=y2), shape=5, data=datapoints)+
+  geom_segment(aes(x=x1, y=y2, xend=x2, yend=y2), linetype='dotted', data=datapoints)+ ##5-25
+  geom_segment(aes(x=x2, y=y2, xend=x4, yend=y2), data=datapoints)+ ##25-75
+  geom_segment(aes(x=x2, y=y1, xend=x2, yend=y3), data=datapoints)+ ##25 edge
+  geom_segment(aes(x=x4, y=y1, xend=x4, yend=y3), data=datapoints)+ ## 75 edge
+  geom_segment(aes(x=x4, y=y2, xend=x5, yend=y2), linetype='dotted', data=datapoints)+ ##75-95
+  
+  geom_segment(aes(x=x3, y=y1, xend=x3, yend=y3), data=datapoints)+ ##median line
   
       theme(legend.title=element_blank())+scale_x_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(logtickmarks[1], 6)) +facet_wrap(~model_cluster, ncol=1)
 p
+## 8x10
 
 ## fix colors for the quartile bars
 ## add offsets for multiple planner lesions
@@ -638,10 +702,19 @@ for (game in unique(level_win_proportions$game_name)){
 #   ggsave(title, plot=p, width=7, height=5) 
 # }
 
+### Planner lesion plot
 
-p = ggplot(filter(alldata, agent_type%in%c('human', 'EMPA'), game_name=='avoidgeorge'), aes(x=cumulative_steps, y=cumulative_wins, color=agent_type))
-p = p+geom_point()+geom_smooth()+scale_color_manual(values=colors)
+## Standard boxplots
+tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+logtickmarks=(log(tickmarks))
+tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+p = ggplot(filter(human_normed_data, model_cluster%in%c('EMPA', 'planner lesions'))) + 
+  geom_boxplot(aes(x=agent_type, y=log(human_normed_composite_ratio), fill=agent_type), outlier.shape=NA)+ # outlier.shape=NA removes outliers
+  scale_color_manual(values=colors)+scale_fill_manual(values=colors)+
+  scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p
+
+
 
 
 eg = filter(alldata, agent_type=='e-greedy .1')
@@ -951,6 +1024,33 @@ load_reward_data = function(data_to_load, dates_or_groups){
   
   data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
   return (data)
+}
+
+load_full_human_data = function(){
+  fullhumandata = list()
+  for (humandatapath in humandatapaths){
+    path = paste('~/Projects/atari/vgdl/humandata/',humandatapath, sep='')
+    d=read.csv(path, header=TRUE, na.strings='NA')
+    if (length(fullhumandata)==0){
+      fullhumandata = d
+    }
+    else{
+      fullhumandata = rbind(fullhumandata,d)
+    }
+  }
+  fullhumandata$long_agent_type=as.factor('human')
+  fullhumandata$agent_type=as.factor('human')
+  fullhumandata$modelrun_ID = as.factor('oct29')
+  fullhumandata$condition = as.factor('full')
+  
+  fullhumandata$game_name = as.factor(fullhumandata$game_name)
+  fullhumandata = select(fullhumandata, -levels_lost, -group, -gameNumber, -gameRound)
+  data = fullhumandata
+  data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
+}
+
+data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
+return(data)
 }
 
 create_rand_string <- function() {
