@@ -248,24 +248,38 @@ for (subject in unique(f$subject_ID)){
 }
 
 
+## levels won plot
+ordered_agents = data.frame(agent_type=as.character(), mean_levels_won=as.numeric())
+for (agent in unique(filter(human_normed_data, agent_type!='random policy')$agent_type)){
+  ordered_agents = rbind(ordered_agents, data.frame(agent_type=agent, mean_levels_won=mean(filter(human_normed_data, agent_type==agent)$mean_levels_won)))
+}
+ordered_agents
+ordered_names = ordered_agents[order(ordered_agents$mean_levels_won, decreasing=TRUE),]$agent_type
 
-p = ggplot(sparse_d, aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
-  ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
-  xlab('Steps taken by agent')+ylab('Levels won')
-p=p+geom_smooth(method=loess, se=FALSE)
-p
-p=p+xlim(0,max_x)+ylim(0,max_y)
-p
-
-
-p = ggplot(filter(bait_data, subject_ID=='d4ff1',cumulative_steps<688), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
-  ggtitle(game)+theme(legend.position="none") +scale_size_manual(values=c(1,1,1))#+scale_color_manual(values=plotcolors)+
-  xlab('Steps taken by agent')+ylab('Levels won')
-p=p+xlim(0,max_x)+ylim(0,max_y)
-p=p+geom_smooth(method=loess, span=1, se=FALSE)
-p
+p = ggplot(filter(human_normed_data, agent_type!='random policy'), aes(agent_type, y=mean_levels_won, fill=agent_type))+geom_bar(stat='summary', fun.y='mean')+scale_fill_manual(values=colors)+
+  scale_x_discrete(limits=ordered_names)+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab('Mean levels won')
 p
 
+
+
+
+# p = ggplot(sparse_d, aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
+#   ggtitle(game)+theme(legend.position="none")+scale_size_manual(values=c(1,1,1))+scale_color_manual(values=plotcolors)+
+#   xlab('Steps taken by agent')+ylab('Levels won')
+# p=p+geom_smooth(method=loess, se=FALSE)
+# p
+# p=p+xlim(0,max_x)+ylim(0,max_y)
+# p
+
+
+# p = ggplot(filter(bait_data, subject_ID=='d4ff1',cumulative_steps<688), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
+#   ggtitle(game)+theme(legend.position="none") +scale_size_manual(values=c(1,1,1))#+scale_color_manual(values=plotcolors)+
+#   xlab('Steps taken by agent')+ylab('Levels won')
+# p=p+xlim(0,max_x)+ylim(0,max_y)
+# p=p+geom_smooth(method=loess, span=1, se=FALSE)
+# p
+# p
+# 
 
 
 
@@ -290,7 +304,7 @@ p
 #   }
 # }
 
-
+  
 
 
 #### MAIN FIGURE ###
@@ -775,6 +789,8 @@ for (i in 1:length(agents)){
     y3 = y3+2.5
   }
   
+  ##add offsets for e-greedy before making plot
+
   ##offsets for DDQN
   if(agent=='DDQN 10k'){
     y1 = y1+3
