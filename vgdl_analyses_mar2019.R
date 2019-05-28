@@ -319,7 +319,7 @@ p = ggplot()+
   scale_x_discrete(limits=ordered_names)+
   # theme(legend.position="none")+
   colorScale+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human+normed performance")+xlab('Game name')+ylim(+10,10)
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(+10,10)
 tickmarks = c(1e+7,1e+6, 1e+5,1e+4,1e+3,1e+2,1e+1,1e0,1e1,1e2,1e3,1e4, 1e5)
 logtickmarks=(log(tickmarks))
 tickmarks = c('0 (fail)', 1e+6, 1e+5,1e+4,1e+3,1e+2,1e+1,1e0,1e1,1e2,1e3,1e4, 1e5)
@@ -355,14 +355,14 @@ human_normed_data = transform(human_normed_data, model_cluster=factor(model_clus
 ### Stacked plot; each model type gets one row
 p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
-  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human+normed performance") + ylab("Density") + 
+  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~agent_type, ncol=1)
 p # 12x10
 
 ### Stacked and organized by lesion type
 p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+geom_boxplot(aes(x=log(human_normed_composite_ratio), y=.75))+
-  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human+normed performance") + ylab("Density") + 
+  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~model_cluster, ncol=1)
 p # 8x10
 
@@ -372,7 +372,7 @@ p = ggplot(filter(human_normed_data, agent_type%in%c('EMPA')))+
 p  
 
 
-## Facet+wrapped plot that shows quartiles!
+## Facet-wrapped plot that shows quartiles!
 agents = c('EMPA', 'e+greedy .1', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
 datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), x4=as.numeric(), x5=as.numeric(), 
                         y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), mean_val=as.numeric(), agent_type=as.character(), model_cluster=as.character())
@@ -447,7 +447,7 @@ for (i in 1:length(agents)){
 
 p = ggplot(filter(human_normed_data, agent%in%agents, !is.na(model_cluster)), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+
-  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human+normed performance") + ylab("Density") + 
+  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.4)+
 
   # geom_segment(aes(x=x2, y=y2, xend=x4, yend=y2), data=datapoints)+
@@ -728,7 +728,7 @@ p = ggplot(filter(human_normed_data, model_cluster%in%c('EMPA', 'planner lesions
   scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p
 
-## Facet+wrapped plot that shows quartiles!
+## Facet-wrapped plot that shows quartiles!
 agents = c('EMPA', 'e+greedy .1', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
 boxplot_datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), x4=as.numeric(), x5=as.numeric(), 
                         y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), mean_val=as.numeric(), agent_type=as.character(), model_cluster=as.character())
