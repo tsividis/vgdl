@@ -118,7 +118,7 @@ for(k in 1:length(unique(alldata$game_name))){
   #   max_x = 1000
   # }
 
-  max_x = 100000
+  max_x = 1000
   
   ## used for adding data points to sparse DDQN data
   if(max_x<5000){
@@ -140,18 +140,6 @@ for(k in 1:length(unique(alldata$game_name))){
     plotcolors = c(plotcolors, colorlist)
   }
   
-  ## Frogs has 5 levels; two subjects appear to have 6 wins. Bug on heroku side??
-  ## Dealing with this by assuming the last run was a repeat of the last level.
-  
-  ## let's correct this conservatively. Instead of assuming the game ran for an additional level than it had to,
-  ## let's assume ppl got free credit for some level at some point, and let's subtract that credit.
-  
-  # if (game %in% c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2')){
-  # d = filter(d, cumulative_wins<6)
-  # }
-  # if (game %in% c('corridor')){
-  #   d = filter(d, cumulative_wins<5)
-  # }
   if (game%in%levels(excluded_subjects)){
     es = filter(excluded_subjects, game_name==game)
     subjects_to_exclude = unique(es$subject_ID)
@@ -162,10 +150,10 @@ for(k in 1:length(unique(alldata$game_name))){
   d = filter(d, !(subject_ID%in%subjects_to_exclude))
 
 
-  ## If we have a low max_x, we should add data points for every DDQN time-step, since we can afford to do this and know what the data points are
+  ## Add data points for every 'step_size' DDQN time-step, since we can afford to do this and know what the data points are
   ## (as we recorded end-of-episode data and cumulative_wins definitionally don't change before then)
   ## WARNING: if you ever plotted score, you wouldn't be able to do this. You didn't record score within episodes for DDQN.
-  if (max_x<10000){
+  if (max_x<1000000000){
   replacement_subjects = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
                               modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
   for (subject in unique(filter(d, grepl('DDQN', agent_type))$subject_ID)){
@@ -178,10 +166,12 @@ for(k in 1:length(unique(alldata$game_name))){
       
       new_subject_df = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
                                   modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
-      for (i in 1:length(subject_data$cumulative_steps)){
+      
+      for (i in 1:length(subject_data$cumulative_steps)){ ## meaning, for each episode
         subject_row = subject_data[i,]
-        for (j in last_steps:(subject_row$cumulative_steps-1)){
-          row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
+        # for (j in last_steps:(subject_row$cumulative_steps-1)){
+          for (j in seq(last_steps, subject_row$cumulative_steps-1,step_size)){
+                    row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
                            modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
                            score=subject_row$score)
           new_subject_df = rbind(new_subject_df, row)
@@ -237,15 +227,26 @@ for(k in 1:length(unique(alldata$game_name))){
   
   ## round kappa just to exponents
   ## do you put kappa in a box, or do you do this manually?
-  kappa_df$formatted_efficiency = formatC(kappa_df$efficiency, format = "e", digits = 1)
-  
+  kappa_df$formatted_efficiency = formatC(kappa_df$efficiency, format = "e", digits = 0)
+  for (o in 1:length(kappa_df$formatted_efficiency)){
+   if(kappa_df$formatted_efficiency[o]=='0e+00'){
+     kappa_df$formatted_efficiency[o] = '0.0'
+   }
+     kappa_df$formatted_efficiency[o] = sub('e-0','e-',kappa_df$formatted_efficiency[o])
+  }
   
   d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
   max_y = max(d$cumulative_wins)
   
   p = ggplot(d ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
     ggtitle(game)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1))+
-    xlab('Steps taken by agent')+ylab('Levels won')
+    xlab('Steps taken by agent')+ylab('Levels won')+
+    theme(plot.title=element_text(family='',face='plain', size=26),
+          axis.text.x=element_text(size=22),
+          axis.text.y=element_text(size=22),
+          axis.title.x=element_text(size=24),
+          axis.title.y=element_text(size=24))
+  
   p=p+geom_smooth(data=filter(d,!(subject_ID%in%no_win_subjects)), se=FALSE)
   if ( (length(no_win_subjects)>0) & length(filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type))$cumulative_steps>0) ){
     p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type)),size=1.4)
@@ -264,14 +265,11 @@ for(k in 1:length(unique(alldata$game_name))){
                        EMPA_kappa, '\nDDQN: ', 
                        DDQN_kappa, sep='')
 
-  p=p+annotate("label", x = max_x*.75, y = 3, label = kappa_string) 
+  p=p+annotate("label", x = max_x*.75, y = 3, label = kappa_string, size=7) 
 
   ## Can get different colors, but if you build up the plot line by line, you won't get automatic centering.
   # p+annotate("text",x=max_x*.75, y=3, hjust = 0, parse=T, label='"Learning efficiency (\u03ba):"', color="black") +
     # annotate("text", x =  max_x*.75, y=2.8, hjust = 0, parse=T, label='"Pontiac Firebird"', color="green")
-
-
-  p = p+ggtitle(paste(game, kappa_string, sep=''))
   
   print(length(plots))
   plots[[k]] = p
