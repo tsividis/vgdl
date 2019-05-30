@@ -64,6 +64,7 @@ alldata = rbind(EMPAdata, planner_lesions, humandata, dqndata)
 
 
 saved_human_normed_data2 = human_normed_data
+just_empa_and_humans = make_human_normed_data(rbind(humandata, data))
 human_normed_data = make_human_normed_data(alldata)
 
 ## Finds all (subject, game, level) tuples where the subject was forced to play a level more than once.
@@ -118,7 +119,7 @@ for(k in 1:length(unique(alldata$game_name))){
   #   max_x = 1000
   # }
 
-  max_x = 1000
+  max_x = 10000
   
   ## used for adding data points to sparse DDQN data
   if(max_x<5000){
@@ -238,8 +239,9 @@ for(k in 1:length(unique(alldata$game_name))){
   d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
   max_y = max(d$cumulative_wins)
   
+  game_title=gsub('_',' ',game)
   p = ggplot(d ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
-    ggtitle(game)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1))+
+    ggtitle(game_title)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1))+
     xlab('Steps taken by agent')+ylab('Levels won')+
     theme(plot.title=element_text(family='',face='plain', size=26),
           axis.text.x=element_text(size=22),
@@ -265,7 +267,7 @@ for(k in 1:length(unique(alldata$game_name))){
                        EMPA_kappa, '\nDDQN: ', 
                        DDQN_kappa, sep='')
 
-  p=p+annotate("label", x = max_x*.75, y = 3, label = kappa_string, size=7) 
+  p=p+annotate("label", x = max_x*.75, y = max_y*.6, label = kappa_string, size=7) 
 
   ## Can get different colors, but if you build up the plot line by line, you won't get automatic centering.
   # p+annotate("text",x=max_x*.75, y=3, hjust = 0, parse=T, label='"Learning efficiency (\u03ba):"', color="black") +
@@ -280,7 +282,7 @@ for(k in 1:length(unique(alldata$game_name))){
   ggsave(title, plot=p, width=8, height=6)
 }
 
-plots_3k = plots
+plots_1k = plots
 plots_10k = plots
 plots_100k = plots
 
@@ -305,15 +307,20 @@ p = ggplot(filter(human_normed_data, agent_type!='random policy'), aes(agent_typ
 p
 
 
+human_normed_data$formatted_game_name = NA
+for (i in 1:length(human_normed_data$game_name)){
+  human_normed_data$formatted_game_name[i] = gsub('_', ' ', human_normed_data$game_name[i])
+}
+
 #### MAIN FIGURE ###
 main_plot_agent_types = c('DDQN 100k', 'EMPA')
 s = subset(human_normed_data, agent_type=='EMPA')
-ordered_names = s[order(log(s$human_normed_composite_ratio)),]$game_name
+ordered_names = s[order(log(s$human_normed_composite_ratio)),]$formatted_game_name
 p = ggplot()+
   geom_bar(data=filter(human_normed_data, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(human_normed_composite_ratio, 10)>-3),
-           aes(x=game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+           aes(x=formatted_game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
   geom_point(data=filter(human_normed_data, agent_type%in%main_plot_agent_types & ((agent_type != 'DDQN 100k'  & !(log(human_normed_composite_ratio, 10)>-3)) | agent_type=='DDQN 100k')),
-             aes(x=game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+             aes(x=formatted_game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
   scale_x_discrete(limits=ordered_names)+
   # theme(legend.position="none")+
   colorScale+
