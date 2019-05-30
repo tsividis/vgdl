@@ -42,11 +42,9 @@ humandata = load_reward_data('human', dates_or_groups)
 dqndata = load_reward_data('DDQN', dates_or_groups)
 planner_lesions = load_reward_data('EMPA', list('nov28'))
 
-planner_lesions_plus_humans = make_human_normed_data(rbind(humandata, planner_lesions))
-
 savedalldata = alldata
 # dqndata = data
-alldata = rbind(EMPAdata, humandata, dqndata)
+alldata = rbind(EMPAdata, planner_lesions, humandata, dqndata)
 #EMPA_data = filter(alldata, agent_type=='EMPA')
 # alldata = filter(alldata, agent_type!='EMPA')
 # alldata = rbind(alldata, filter(EMPAdata, agent_type=='EMPA'))
@@ -60,6 +58,10 @@ alldata = rbind(EMPAdata, humandata, dqndata)
 # human_normed_data = filter(human_normed_data, agent_type!='EMPA')
 # human_normed_data = select(human_normed_data, -model_cluster)
 # human_normed_data = rbind(human_normed_data, filter(human_normed_data_just_empa_and_humans, agent_type=='EMPA'))
+
+# planner_lesions_plus_humans = make_human_normed_data(rbind(humandata, planner_lesions))
+# planner_lesions_plus_humans = filter(planner_lesions_plus_humans, !(agent_type%in%c('EMPA', 'human')))
+
 
 saved_human_normed_data2 = human_normed_data
 human_normed_data = make_human_normed_data(alldata)
@@ -317,23 +319,23 @@ human_normed_data = transform(human_normed_data, model_cluster=factor(model_clus
 # human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'exploration lesions', 'DDQN', NA)))
 
 ### Stacked plot; each model type gets one row
-p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
-  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
-  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
-  geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~agent_type, ncol=1)
-p # 12x10
-
-### Stacked and organized by lesion type
-p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
-  geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+geom_boxplot(aes(x=log(human_normed_composite_ratio), y=.75))+
-  scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
-  geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~model_cluster, ncol=1)
-p # 8x10
-
-
-p = ggplot(filter(human_normed_data, agent_type%in%c('EMPA')))+
-  geom_boxplot(aes(x=agent_type, y=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+coord_flip()
-p  
+# p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+#   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
+#   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
+#   geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~agent_type, ncol=1)
+# p # 12x10
+# 
+# ### Stacked and organized by lesion type
+# p = ggplot(filter(human_normed_data, !agent_type%in%c('human', 'random policy')), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+#   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+geom_boxplot(aes(x=log(human_normed_composite_ratio), y=.75))+
+#   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
+#   geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~model_cluster, ncol=1)
+# p # 8x10
+# 
+# 
+# p = ggplot(filter(human_normed_data, agent_type%in%c('EMPA')))+
+#   geom_boxplot(aes(x=agent_type, y=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+coord_flip()
+# p  
 
 
 ## Facet-wrapped plot that shows quartiles!
@@ -431,9 +433,6 @@ p = ggplot(filter(human_normed_data, agent%in%agents, !is.na(model_cluster)), ae
 p
 ## 8x10
 
-## fix colors for the quartile bars
-## add offsets for multiple planner lesions
-## figure out why it's adding extra facets
 
 ## attempt to produce individual plots with quartiles.
 # plots = list()
@@ -921,7 +920,7 @@ make_human_normed_data = function(dataframe){
   
   for (i in 1:length(plantimedata$human_normed_composite_ratio)){
     if (plantimedata$human_normed_composite_ratio[i]==0){
-      plantimedata$human_normed_composite_ratio[i]=10e+8
+      plantimedata$human_normed_composite_ratio[i]=10e-8
     }
   }
   return(plantimedata)
