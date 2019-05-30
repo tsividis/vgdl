@@ -161,13 +161,7 @@ for(k in 1:length(unique(alldata$game_name))){
 
   d = filter(d, !(subject_ID%in%subjects_to_exclude))
 
-  # few_datapoint_subjects = c()
-  # for (subject in unique(d$subject_ID)){
-    # if (length(filter(d, subject_ID==subject, cumulative_steps<max_x)$cumulative_steps)<10){
-      # few_datapoint_subjects = c(few_datapoint_subjects, subject)
-    # }
-  # }
-  
+
   ## If we have a low max_x, we should add data points for every DDQN time-step, since we can afford to do this and know what the data points are
   ## (as we recorded end-of-episode data and cumulative_wins definitionally don't change before then)
   ## WARNING: if you ever plotted score, you wouldn't be able to do this. You didn't record score within episodes for DDQN.
@@ -213,17 +207,45 @@ for(k in 1:length(unique(alldata$game_name))){
     }
   }
   
+  ### calculate kappas here:
+  kappa_df = data.frame(agent_type=as.character, efficiency=as.numeric())
+  for (agent in unique(d$agent_type)){
+    agent_data = filter(d, agent_type==agent)
+    
+    level_maxes = list()
+    cumulative_step_maxes = list()
+    idx=1
+    for (l in 1:length(unique(agent_data$subject_ID))){
+      subject = unique(agent_data$subject_ID)[l]
+      subjectdata = filter(agent_data, subject_ID==subject)
+      if (length(subjectdata$cumulative_steps)>0){
+        if(max(subjectdata$cumulative_steps)>0){
+          level_maxes[[idx]] = max(subjectdata$cumulative_wins)
+          cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+          idx = idx+1            
+        }
+      }
+    }
+    
+    ## mean vector of win numbers
+    mean_wins = mean(as.numeric(as.vector(level_maxes)))
+    
+    ##mean of vector steps+to+win ratios (kappa)
+    l_e = mean(as.numeric(as.vector(level_maxes))/as.numeric(as.vector(cumulative_step_maxes)))
+    kappa_df = rbind(kappa_df, data.frame(agent_type=agent, efficiency=l_e))
+  }
+  
+  ## round kappa just to exponents
+  ## do you put kappa in a box, or do you do this manually?
+  kappa_df$formatted_efficiency = formatC(kappa_df$efficiency, format = "e", digits = 1)
+  
+  
   d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
   max_y = max(d$cumulative_wins)
-  # p = ggplot(filter(d, subject_ID=='d4ff1'), aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
-  # p = ggplot(filter(d,agent_type=='human', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
-  # p = ggplot(filter(replacement_subjects, agent_type=='DDQN 100k', cumulative_steps<=max_x) ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))
+  
   p = ggplot(d ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
     ggtitle(game)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1))+
     xlab('Steps taken by agent')+ylab('Levels won')
-#p
-  
-
   p=p+geom_smooth(data=filter(d,!(subject_ID%in%no_win_subjects)), se=FALSE)
   if ( (length(no_win_subjects)>0) & length(filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type))$cumulative_steps>0) ){
     p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type)),size=1.4)
@@ -234,13 +256,25 @@ for(k in 1:length(unique(alldata$game_name))){
   }
   
   p=p+xlim(0,max_x)+ylim(0,max_y)
+
+  human_kappa = filter(kappa_df, agent_type=='human')$formatted_efficiency
+  EMPA_kappa = filter(kappa_df, agent_type=='EMPA')$formatted_efficiency
+  DDQN_kappa = filter(kappa_df, agent_type=='DDQN 100k')$formatted_efficiency
+  kappa_string = paste('Learning efficiency (\u03ba):','\nHuman: ', human_kappa, '\nEMPA: ', 
+                       EMPA_kappa, '\nDDQN: ', 
+                       DDQN_kappa, sep='')
+
+  p=p+annotate("label", x = max_x*.75, y = 3, label = kappa_string) 
+
+  ## Can get different colors, but if you build up the plot line by line, you won't get automatic centering.
+  # p+annotate("text",x=max_x*.75, y=3, hjust = 0, parse=T, label='"Learning efficiency (\u03ba):"', color="black") +
+    # annotate("text", x =  max_x*.75, y=2.8, hjust = 0, parse=T, label='"Pontiac Firebird"', color="green")
+
+
+  p = p+ggtitle(paste(game, kappa_string, sep=''))
+  
   print(length(plots))
   plots[[k]] = p
-  
-  # kappas = filter(human_normed_data, game_name=='antagonist')
-  # kappa_string = paste('\n',expression(kappa),'values:','\nhuman:', filter(kappas, agent_type=='human')$composite_ratio, '\nEMPA:', filter(kappas, agent_type=='EMPA')$composite_ratio, '\nDDQN:', filter(kappas, agent_type=='DDQN 100k')$composite_ratio, sep=' ')
-  # p = p+ggtitle(paste(game, kappa_string, sep=''))
-
   
   newdir='~/Projects/atari/vgdl/plots/learning_curves/max=3k/'
   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
