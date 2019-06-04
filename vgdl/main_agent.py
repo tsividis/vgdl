@@ -103,13 +103,9 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         
-        self.param_ID = "IW={}_rand={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_egv={}_fe={}_sTE={}_hyb={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, 
-                self.random_policy, self.extra_atom_allowed, self.extra_atom, self.shortHorizonNodes, self.longHorizonNodes, 
-                self.shortHorizonAnnealing, self.longhorizonAnnealing, self.shortHorizonRandomChoice, 
-                self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, self.epsilon_greedy_variant, self.final_epsilon,
-                self.switch_to_exploit_step, self.hybrid, self.noNewObjectNum, self.objectNumberTrackingLimit, 
-                self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
-                self.objectsWhoseLocationWeIgnoreString)
+        self.param_ID = "rand={}_eG={}_egv={}_fe={}_sTE={}".format(self.random_policy, 
+                self.epsilon_greedy, self.epsilon_greedy_variant, self.final_epsilon,
+                self.switch_to_exploit_step)
         self.param_ID = self.param_ID+'_batchID='+str(0)
         print self.param_ID
 
