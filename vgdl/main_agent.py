@@ -106,7 +106,7 @@ class Agent:
         self.param_ID = "rand={}_eG={}_egv={}_fe={}_sTE={}".format(self.random_policy, 
                 self.epsilon_greedy, self.epsilon_greedy_variant, self.final_epsilon,
                 self.switch_to_exploit_step)
-        self.param_ID = self.param_ID+'_batchID='+str(3)
+        self.param_ID = self.param_ID+'_batchID='+str(0)
         print self.param_ID
 
         self.conservative = False
