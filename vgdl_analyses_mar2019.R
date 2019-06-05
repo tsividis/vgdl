@@ -67,7 +67,7 @@ human_normed_new_lesions$formatted_game_name = NA
 human_normed_new_lesions = rbind(human_normed_new_lesions, filter(human_normed_data, agent_type=='EMPA'))
 human_normed_new_lesions_2 = rbind(human_normed_new_lesions, human_normed_data)
 
-p = ggplot(filter(human_normed_data, agent_type!='human'), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
+p = ggplot(filter(human_normed_new_lesions, agent_type!='human'), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+scale_x_continuous(breaks=logtickmarks,labels=tickmarks)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") +
   geom_vline(xintercept=0,linetype='dashed',size=.4)+facet_wrap(~agent_type, ncol=1)
@@ -486,6 +486,9 @@ for (i in 1:length(agents)){
   }
  
 
+tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
+logtickmarks=(log(tickmarks))
+tickmarks = c('0 (failure)',10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 p = ggplot(filter(human_normed_data, agent%in%agents, !is.na(model_cluster)), aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
