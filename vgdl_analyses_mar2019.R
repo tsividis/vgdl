@@ -139,11 +139,13 @@ p
 ## plotting all agents/models
 # games_to_show = c('avoidgeorge', 'antagonist', 'bait', 'butterflies', 'frogs', 'zelda', 'missilecommand')
 games_to_plot = c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2', 'corridor')
+games_in_order = unique(alldata$game_name)[order(unique(alldata$game_name))]
 plots = list()
 for(k in 1:length(unique(alldata$game_name))){
 # for (k in 1:length(games_to_plot)){
   agents_to_plot = c('human', 'DDQN 100k', 'EMPA')
-  game = unique(alldata$game_name)[k]
+  game = games_in_order[k]
+  # game = unique(alldata$game_name)[k]
   # game = games_to_plot[k]
   # if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies', 'zelda')){
   #   max_x=3000
@@ -151,14 +153,17 @@ for(k in 1:length(unique(alldata$game_name))){
   #   max_x = 1000
   # }
 
-  max_x = 1000000
+  max_x = 10000
   
   ## used for adding data points to sparse DDQN data
   if(max_x<5000){
     step_size=5
-  }else if(max_x<10000){
+  }else if(max_x<100000){
     step_size=100
-  }else{
+  }else if(max_x<1000000){
+    step_size=1000
+  }
+  else{
     step_size=10000
   }
   
@@ -202,6 +207,7 @@ for(k in 1:length(unique(alldata$game_name))){
       
       for (i in 1:length(subject_data$cumulative_steps)){ ## meaning, for each episode
         subject_row = subject_data[i,]
+        if (last_steps<subject_row$cumulative_steps){
         # for (j in last_steps:(subject_row$cumulative_steps-1)){
           for (j in seq(last_steps, subject_row$cumulative_steps-1,step_size)){
                     row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
@@ -211,6 +217,7 @@ for(k in 1:length(unique(alldata$game_name))){
         }
         new_subject_df = rbind(new_subject_df, subject_row)
         last_steps = subject_row$cumulative_steps
+      }
       }
       replacement_subjects = rbind(replacement_subjects, new_subject_df)
     } 
