@@ -329,10 +329,11 @@ plots_100k = plots
 plots_1mil = plots
 
 layout = matrix(c(1:90), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = plots_10k, layout=layout)
+m = multiplot(plotlist = plots_100k, layout=layout)
 
 multi_1k = m
 multi_10k = m
+multi_100k =m
 multi_1mil_with_box = m
 ## save 50x30
 
