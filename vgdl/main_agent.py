@@ -109,7 +109,7 @@ class Agent:
         #         self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
         #         self.objectsWhoseLocationWeIgnoreString)
         self.param_ID = "eG={}_PL={}".format(self.epsilon_greedy, self.planner_lesion)
-        self.param_ID = self.param_ID+'_batchID='+str(10)
+        self.param_ID = self.param_ID+'_batchID='+str(0)
     
         self.conservative = False
         self.regrounding = 1
