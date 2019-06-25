@@ -1082,6 +1082,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
       e_greedy_2a='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=DSDF_fe=0.1_sTE=1000_hyb=False_nnon=550_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
       e_greedy_2a1='rand=False_eG=True_egv=DSDF_fe=0.1_sTE=1000'
       e_greedy_2b='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=DSDF_fe=0.1_sTE=2000_hyb=False_nnon=550_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
+      e_greedy_2b1='rand=False_eG=True_egv=DSDF_fe=0.1_sTE=2000'
       planner_AGH1a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
       planner_AGH1b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
       planner_AGH1c='eG=False_PL=AGH1'
@@ -1152,6 +1153,15 @@ load_reward_data = function(data_to_load, dates_or_groups){
       }
       if (e_greedy_2a1 %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_2a1,]$agent_type = 'e-greedy 1k DS'
+      }
+      if (e_greedy_2b1 %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==e_greedy_2b1,]$agent_type = 'e-greedy 2k DS'
+      }
+      if ('rand=False_eG=False_egv=SS_fe=0.1_sTE=1000' %in% unique(data$long_agent_type)){
+        data[data$long_agent_type=='rand=False_eG=False_egv=SS_fe=0.1_sTE=1000',]$agent_type = 'e-greedy 1k SN'
+      }
+      if ('rand=False_eG=False_egv=SN_fe=0.1_sTE=1000' %in% unique(data$long_agent_type)){
+        data[data$long_agent_type=='rand=False_eG=False_egv=SN_fe=0.1_sTE=1000',]$agent_type = 'e-greedy 1k SN'
       }
       if (planner_AGH1c %in% unique(data$long_agent_type)){
         data[data$long_agent_type==planner_AGH1c,]$agent_type = 'no goal gradient'
