@@ -185,6 +185,6 @@
 # 'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3'] #90 total
 
 
-game_names = ['expt_preconditions_1', 'expt_preconditions_2', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2']
+game_names = ['variant_expt_preconditions_1', 'variant_expt_preconditions_2', 'variant_expt_push_boulders_1', 'variant_expt_push_boulders_2']
 
 
