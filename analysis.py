@@ -162,8 +162,8 @@ def make_csvs(path, game=None):
 							data = cPickle.load(o)
 							process_model_run(data, modelrun_ID)
 						except:
-							print "error..."
-							embed()
+							print "error with {}, {}, {}...".format(path, folder, modelrun_ID)
+							# embed()
 						o.close()
 					# embed()
 

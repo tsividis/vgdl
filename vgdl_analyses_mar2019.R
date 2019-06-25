@@ -42,11 +42,13 @@ humandata = load_reward_data('human', dates_or_groups)
 dqndata = load_reward_data('DDQN', dates_or_groups)
 planner_lesions = load_reward_data('EMPA', list('nov28'))
 
+
 ## everything that is currently stored as e-greedy .1 is called e-greedy 2k in the new lesions
 
 ### Before you do this, you need to fix how you're IDing model types from the string. you've added new parts
 ## (minimally batchID).
 new_lesions = load_reward_data('EMPA', dates_or_groups)
+new_lesions_2 = load_reward_data('EMPA', dates_or_groups)
 
 for (agent in unique(new_lesions$agent_type)){
   agent_data = filter(new_lesions, agent_type==agent)
@@ -153,7 +155,7 @@ for(k in 1:length(unique(alldata$game_name))){
   #   max_x = 1000
   # }
 
-  max_x = 10000
+  max_x = 1000
   
   ## used for adding data points to sparse DDQN data
   if(max_x<5000){
@@ -162,8 +164,7 @@ for(k in 1:length(unique(alldata$game_name))){
     step_size=100
   }else if(max_x<1000000){
     step_size=1000
-  }
-  else{
+  }else{
     step_size=10000
   }
   
@@ -267,13 +268,14 @@ for(k in 1:length(unique(alldata$game_name))){
   
   ## round kappa just to exponents
   ## do you put kappa in a box, or do you do this manually?
-  kappa_df$formatted_efficiency = formatC(kappa_df$efficiency, format = "e", digits = 0)
-  for (o in 1:length(kappa_df$formatted_efficiency)){
-   if(kappa_df$formatted_efficiency[o]=='0e+00'){
-     kappa_df$formatted_efficiency[o] = '0.0'
-   }
-     kappa_df$formatted_efficiency[o] = sub('e-0','e-',kappa_df$formatted_efficiency[o])
-  }
+  # kappa_df$formatted_efficiency = formatC(kappa_df$efficiency, format = "e", digits = 0)
+  # for (o in 1:length(kappa_df$formatted_efficiency)){
+  #  if(kappa_df$formatted_efficiency[o]=='0e+00'){
+  #    kappa_df$formatted_efficiency[o] = '0.0'
+  #  }
+  #    kappa_df$formatted_efficiency[o] = sub('e-0','e-',kappa_df$formatted_efficiency[o])
+  # }
+  
   
   d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
   max_y = max(d$cumulative_wins)
@@ -298,6 +300,10 @@ for(k in 1:length(unique(alldata$game_name))){
   }
   
   p=p+xlim(0,max_x)+ylim(0,max_y)
+  
+  if(max_x==1000000){
+    p=p+scale_x_continuous(breaks=c(0, 250000, 500000, 750000, 1000000),labels=c('0', '250k', '500k', '750k', '1mil'), limits=c(0,1000000))
+  }
 
   human_kappa = filter(kappa_df, agent_type=='human')$formatted_efficiency
   EMPA_kappa = filter(kappa_df, agent_type=='EMPA')$formatted_efficiency
@@ -306,7 +312,7 @@ for(k in 1:length(unique(alldata$game_name))){
                        EMPA_kappa, '\nDDQN: ', 
                        DDQN_kappa, sep='')
 
-  # p=p+annotate("label", x = max_x*.75, y = max_y*.6, label = kappa_string, size=7) 
+  p=p+annotate("label", x = max_x*.75, y = max_y*.6, label = kappa_string, size=7)
 
   ## Can get different colors, but if you build up the plot line by line, you won't get automatic centering.
   # p+annotate("text",x=max_x*.75, y=3, hjust = 0, parse=T, label='"Learning efficiency (\u03ba):"', color="black") +
@@ -329,11 +335,12 @@ plots_100k = plots
 plots_1mil = plots
 
 layout = matrix(c(1:90), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = plots_100k, layout=layout)
+m = multiplot(plotlist = plots_10k, layout=layout)
 
 multi_1k = m
 multi_10k = m
 multi_100k =m
+multi_1mil = m
 multi_1mil_with_box = m
 ## save 50x30
 
@@ -1070,34 +1077,38 @@ load_reward_data = function(data_to_load, dates_or_groups){
       
       e_greedy_05='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
       e_greedy_1a='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
+      e_greedy_1a1='rand=False_eG=True_egv=N_fe=0.1_sTE=1000'
       e_greedy_1b='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=2000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
       e_greedy_2a='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=DSDF_fe=0.1_sTE=1000_hyb=False_nnon=550_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
+      e_greedy_2a1='rand=False_eG=True_egv=DSDF_fe=0.1_sTE=1000'
       e_greedy_2b='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=DSDF_fe=0.1_sTE=2000_hyb=False_nnon=550_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
       planner_AGH1a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
-      planner_AGH1b= 'IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_AGH1b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_AGH1c='eG=False_PL=AGH1'
       planner_AGH2a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH2_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
       planner_AGH2b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH2_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_AGH2c='eG=False_PL=AGH2'
       planner_AGH3a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH3_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
       planner_AGH3b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH3_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_AGH3c='eG=False_PL=AGH3'
       planner_IWa='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
       planner_IWb='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_IWc='eG=False_PL=IW'
       planner_IW_AGH3a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW+AGH3_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
       planner_IW_AGH3b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW-AGH3_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
+      planner_IW_AGH3c='eG=False_PL=IW-AGH3'
       data$agent_type = NA
       if (e_greedy_1a %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_1a,]$agent_type = 'e-greedy 1k'
       }
       if (e_greedy_1b %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_1b,]$agent_type = 'e-greedy 2k'
-        
       }
       if (e_greedy_2a %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_2a,]$agent_type = 'e-greedy 1k DS'
-        
       }
       if (e_greedy_2b %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_2b,]$agent_type = 'e-greedy 2k DS'
-        
       }
       if (e_greedy_05 %in% unique(data$long_agent_type)){
         data[data$long_agent_type==e_greedy_05,]$agent_type = 'e-greedy .05'
@@ -1117,6 +1128,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
       if (planner_IW_AGH3a %in% unique(data$long_agent_type)){
         data[data$long_agent_type==planner_IW_AGH3a,]$agent_type = 'no subgoals + no gradient + no IW'
       }
+
       ## longer newer planner IDs:
       if (planner_AGH1b %in% unique(data$long_agent_type)){
         data[data$long_agent_type==planner_AGH1b,]$agent_type = 'no goal gradient'
@@ -1132,6 +1144,29 @@ load_reward_data = function(data_to_load, dates_or_groups){
       }
       if (planner_IW_AGH3b %in% unique(data$long_agent_type)){
         data[data$long_agent_type==planner_IW_AGH3b,]$agent_type = 'no subgoals + no gradient + no IW'
+      }
+      
+      ## shortest, newest planner IDs
+      if (e_greedy_1a1 %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==e_greedy_1a1,]$agent_type = 'e-greedy 1k'
+      }
+      if (e_greedy_2a1 %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==e_greedy_2a1,]$agent_type = 'e-greedy 1k DS'
+      }
+      if (planner_AGH1c %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_AGH1c,]$agent_type = 'no goal gradient'
+      }
+      if (planner_AGH2c %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_AGH2c,]$agent_type = 'no subgoals'
+      }
+      if (planner_AGH3c %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_AGH3c,]$agent_type = 'no subgoals + no gradient'
+      }
+      if (planner_IWc %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_IWc,]$agent_type = 'no IW'
+      }
+      if (planner_IW_AGH3c %in% unique(data$long_agent_type)){
+        data[data$long_agent_type==planner_IW_AGH3c,]$agent_type = 'no subgoals + no gradient + no IW'
       }
       for (agent in unique(data$long_agent_type)){
         if (grepl('rand=True', agent)){
