@@ -20,6 +20,8 @@ EMPA_dates = list('mar28', 'apr4')
 lesion_dates = list('jun3', 'jun22', 'jun23')
 planner_lesion_dates = list('nov28')
 dqn_path = '~/Projects/atari/vgdl/dqn_data/'
+rainbow_path = '~/Projects/atari/vgdl/rainbow_data/'
+
 humandatapaths = list.files("~/Projects/atari/vgdl/humandata")
 
 
@@ -27,12 +29,13 @@ humandatapaths = list.files("~/Projects/atari/vgdl/humandata")
 data_to_load = 'EMPA'
 data_to_load = 'human'
 data_to_load = 'DDQN'
+data_to_load = 'rainbow'
 
 if (data_to_load == 'EMPA'){
   dates_or_groups = EMPA_dates
 }else if (data_to_load == 'human'){
   dates_or_groups = groups
-}else if (data_to_load == 'DDQN'){
+}else if (data_to_load %in% c('DDQN','rainbow')){
   dates_or_groups = NA #doesn't matter
 }
 
@@ -43,6 +46,7 @@ humandata = load_reward_data('human', dates_or_groups)
 dqndata = load_reward_data('DDQN', dates_or_groups)
 planner_lesions = load_reward_data('EMPA', list('nov28'))
 
+rainbow_data = load_reward_data('rainbow', dates_or_groups)
 
 ## everything that is currently stored as e-greedy .1 is called e-greedy 2k in the new lesions
 
@@ -117,6 +121,13 @@ human_normed_new_lesions$formatted_game_name = NA
 human_normed_new_lesions = rbind(human_normed_new_lesions, filter(human_normed_data, agent_type%in%c('EMPA', 'DDQN 100k')))
 human_normed_data = rbind(human_normed_new_lesions, filter(human_normed_data, agent_type %in% c('DDQN 1k', 'DDQN 10k')))
 
+## august 4:
+saved_human_normed_data = human_normed_data ## human DDQN 100k EMPA 
+rainbow_and_humans = rbind(rainbow_data, humandata)
+human_normed_rainbow_data = make_human_normed_data(rainbow_and_humans)
+human_normed_data = select(human_normed_data, -formatted_game_name)
+human_normed_data = rbind(human_normed_data, filter(human_normed_rainbow_data, agent_type!='human'))
+#####
 
 # human_normed_new_lesions_2 = rbind(human_normed_new_lesions, human_normed_data)
 
@@ -453,7 +464,7 @@ p = ggplot()+
   scale_x_discrete(limits=ordered_names)+
   # theme(legend.position="none")+
   colorScale+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 logtickmarks=(log(tickmarks))
 tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
@@ -480,14 +491,18 @@ human_normed_data = transform(human_normed_data, agent_type=factor(agent_type, l
                                                                                         'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k',
                                                                                         'no goal gradient', 'no subgoals',  'no subgoals + no gradient',
                                                                                         'no IW', 'no subgoals + no gradient + no IW',
-                                                                                        'DDQN 1k', 'DDQN 10k', 'DDQN 100k', 'random policy')))
+                                                                                        'DDQN 1k', 'DDQN 10k', 'DDQN 100k', 
+                                                                                        'rainbow 250k', 'rainbow 150k', 'rainbow 50k',
+                                                                                        'random policy')))
 human_normed_data$model_cluster = 'none'
 human_normed_data[human_normed_data$agent_type=='EMPA',]$model_cluster = 'EMPA'
 human_normed_data[human_normed_data$agent_type%in%c('e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k'),]$model_cluster = 'Exploration ablations'
 human_normed_data[human_normed_data$agent_type%in%c('no goal gradient', 'no subgoals',  'no subgoals + no gradient',
                                                     'no IW', 'no subgoals + no gradient + no IW'),]$model_cluster = 'Planner ablations'
 human_normed_data[human_normed_data$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'DDQN'
-human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'Exploration ablations', 'Planner ablations', 'DDQN', NA)))
+human_normed_data[human_normed_data$agent_type%in%c('rainbow 50k', 'rainbow 150k', 'rainbow 250k'),]$model_cluster = 'rainbow'
+
+human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'Exploration ablations', 'Planner ablations', 'DDQN', 'rainbow', NA)))
 
 # human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'exploration lesions', 'DDQN', NA)))
 
@@ -513,7 +528,7 @@ human_normed_data = transform(human_normed_data, model_cluster=factor(model_clus
 
 ## Facet-wrapped plot that shows quartiles!
 # agents = c('EMPA', 'e-greedy .1', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
-agents = c('EMPA', 'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
+agents = c('EMPA', 'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
 datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), x4=as.numeric(), x5=as.numeric(), 
                         y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), mean_val=as.numeric(), agent_type=as.character(), model_cluster=as.character())
 for (i in 1:length(agents)){
@@ -539,9 +554,13 @@ for (i in 1:length(agents)){
                   'no IW', 'no subgoals + no gradient + no IW')){
     m_cluster = 'Planner ablations'
   }
-    if (agent %in% c('DDQN 1k', 'DDQN 10k', 'DDQN 100k')){
+  if (agent %in% c('DDQN 1k', 'DDQN 10k', 'DDQN 100k')){
       m_cluster = 'DDQN'
   }
+  if(grepl('rainbow', agent)){
+    m_cluster = 'rainbow'
+  }
+  
   
   # y1=1.06
   # y2=1.1
@@ -604,6 +623,19 @@ for (i in 1:length(agents)){
     y2 = y2-.12
     y3 = y3-.12
   }
+  
+  ##offsets for rainbow
+  if(agent=='rainbow 150k'){
+    y1 = y1-.06
+    y2 = y2-.06
+    y3 = y3-.06
+  }
+  if(agent=='rainbow 250k'){
+    y1 = y1-.12
+    y2 = y2-.12
+    y3 = y3-.12
+  }
+  
   # datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, y1=y1, y2=y2, y3=y3,agent_type=agent,model_cluster=m_cluster))
   
   datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, x4=q4, x5=q5,y1=y1, y2=y2, y3=y3, mean_val=mn, agent_type=agent,model_cluster=m_cluster))
@@ -620,22 +652,37 @@ colors = c('steelblue1', #EMPA
            # 'royalblue1', 'blue1', 'purple1', 'slateblue1',
            
                       'firebrick2',# 'seagreen3','darkolivegreen1',
-           'palegreen3',# 'tomato2', 'salmon', 
+           'palegreen3',
            # 'gray50', 'gray52', 'gray54',
            'gray50', 'gray65', 'gray80',
-           
-                      'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkslategray2', 'darkolivegreen3')
+          # 'tomato1', 'tomato3', 'salmon', 
+           'orange3', 'tomato3', 'red3', 
+          
+                                'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkslategray2', 'darkolivegreen3')
 names(colors)=c('EMPA', 
                 'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
                 'random policy',
                 'human',
                 'DDQN 100k', 'DDQN 10k', 'DDQN 1k',
+                'rainbow 250k', 'rainbow 150k', 'rainbow 50k',
                 'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW', 'no subgoals + no gradient + no IW')
 
+
+#### aug 4: to plot everything, incl. ablations
 df = filter(human_normed_data, agent%in%agents, !is.na(model_cluster))
 df = transform(df, agent_type=factor(agent_type, levels=c("human", "EMPA", 'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
-                                                                    'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW',
-                                                                     'no subgoals + no gradient + no IW', 'DDQN 1k', 'DDQN 10k', 'DDQN 100k')))
+                                                          'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW',
+                                                          'no subgoals + no gradient + no IW', 'DDQN 1k', 'DDQN 10k', 'DDQN 100k',
+                                                          'rainbow 250k', 'rainbow 150k', 'rainbow 50k')))
+
+## to plot just empa ddqn rainbow
+rainbow_games = unique(filter(human_normed_data, model_cluster=='rainbow')$game_name)
+df = filter(human_normed_data, agent%in%agents, model_cluster%in%c('EMPA', 'DDQN', 'rainbow'), game_name%in%rainbow_games) ##to plot just empa ddqn rainbow
+df = transform(df, agent_type=factor(agent_type, levels=c("human", "EMPA",
+                                                                     'DDQN 1k', 'DDQN 10k', 'DDQN 100k',
+                                                                      'rainbow 250k', 'rainbow 150k', 'rainbow 50k')))
+df = transform(df, model_cluster=factor(model_cluster, levels=c('EMPA','DDQN','rainbow')))
+datapoints = filter(datapoints, model_cluster%in%c('EMPA', 'DDQN', 'rainbow'))
 
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
@@ -661,13 +708,13 @@ p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=a
   
   geom_segment(aes(x=x3, y=y1, xend=x3, yend=y3), data=datapoints, size=1.2)+ ##median line
   
-      theme(legend.title=element_blank(), text=element_text(size=38), legend.position='none',
+      theme(legend.title=element_blank(), text=element_text(size=38), #legend.position='none',
             axis.text.x=element_text(size=34), axis.text.y=element_text(size=34), strip.text.x=element_text(size=44))+
   scale_x_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(logtickmarks[1], 7.5)) +
   scale_y_continuous(limits=c(0,.95), breaks=c(0,.2,.4,.6,.8), labels=c(0,.2,.4,.6,.8))+
   facet_wrap(~model_cluster, ncol=1)
 p
-e## 30x18
+## 30x18
 
 
 ## attempt to produce individual plots with quartiles.
@@ -1419,6 +1466,62 @@ load_reward_data = function(data_to_load, dates_or_groups){
     data = select(data, -criteria, -level, -ep_reward)
     data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
     
+  }else if (data_to_load == 'rainbow'){
+    rainbowdata = list()
+    for (gamefile in list.files(rainbow_path)){
+      filename = paste(rainbow_path,gamefile,sep='')
+      if(grepl('rainbow/', filename)){
+        gamenamestart = unlist(gregexpr('rainbow/',filename))+nchar('rainbow/')
+        gamenameend = unlist(gregexpr('_reward', filename))+1        
+      }else if (grepl('rainbow_data/', filename)){
+        gamenamestart = unlist(gregexpr('rainbow_data/',filename))+nchar('rainbow_data/')
+        gamenameend = unlist(gregexpr('_reward', filename))-1
+      }
+      
+      game = substr(filename, gamenamestart, gamenameend)
+      if (grepl('k_', filename)){
+        subject_ID_start = unlist(gregexpr('k_',filename))+2
+        subject_ID_end = unlist(gregexpr('.csv', filename))+1
+        subject_ID = substr(filename, subject_ID_start, subject_ID_end)
+      }else{
+        subject_ID = create_rand_string()
+      }
+      d=read.csv(filename, header=TRUE, na.strings='NA')
+      
+      d$score = d$ep_reward
+      d$game_name = as.factor(remove_string_from_name(game))
+      d$cumulative_steps = d$steps
+      d$subject_ID = as.factor(subject_ID)
+      
+      ## WARNING: This is not robust to ordering trial numbers differently.
+      if (grepl('trial10', filename)){
+        d$agent_type = as.factor("rainbow 50k") ## refers to the eps_decay (epsilon-greedy annealing) parameter in the DDQN implementation. 
+      }else if (grepl('trial1', filename)){
+        d$agent_type = as.factor("rainbow 250k")
+      }else if (grepl('trial23', filename)){
+        d$agent_type = as.factor("rainbow 150k")
+      }else{
+        d$agent_type = as.factor("rainbow")
+      }
+      d$long_agent_type = d$agent_type
+      d$cumulative_wins = as.numeric(0)
+      for (i in 2:length(d$level)){
+        if (d$level[i]>d$level[i-1]){
+          d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
+          # d$sparse_levels_won[i] = d$cumulative_wins[i]
+        }
+        else{
+          d$cumulative_wins[i] = d$cumulative_wins[i-1]
+        }
+      }
+      d$level_number = d$level
+      
+      rainbowdata = rbind(rainbowdata,d)
+    }
+    data = rainbowdata
+    data$modelrun_ID = NA
+    data = select(data, -criteria, -level, -ep_reward)
+    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
   }else if (data_to_load == 'human'){
     humandata = list()
     for (humandatapath in humandatapaths){
