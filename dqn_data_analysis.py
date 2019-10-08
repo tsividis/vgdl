@@ -11,7 +11,8 @@ import numpy as np
 
 """
 Generates heatmaps from ddqn data
-Sample usage:
+
+Usage:
 make_heatmaps(['aliens', 'zelda'])
 make_heatmaps() ## will make them for all games
 """
