@@ -9,15 +9,18 @@ from shutil import copy2
 import numpy as np
 import random
 
+"""
+Preprocesses raw EMPA data into csv files where score/time data can be analyzed in R.
 
-## python -m process_EMPA_data --date oct6
-## python -m process_EMPA_data --date vgdl ## for local stuff
+Usage:
+python -m process_EMPA_data --date apr4
+python -m process_EMPA_data --date vgdl ## for local stuff
+"""
 
 parser = argparse.ArgumentParser(description='.')
 parser.add_argument('--date', type=str, default='apr4', help='date') ##date whose data you want to process
 parser.add_argument('--game', type=str, default='', help='game') ##game whose data you want to process
 
-## add argument options for each of the different analyses?
 args = parser.parse_args()
 
 date = args.date
@@ -33,16 +36,9 @@ def process_model_run(data, modelrun_ID):
 	## takes a cPickle file of a full model run
 	## writes a csv
 
-	## you need to count max_score differently, as you want to show the max points someone has gotten, but you don't want to give people
-	## points for continually almost winning a level. 
-	## you want to end up with one csv per game. if you want to look at things across games, you just have to merge those csvs, but this is the cleanest way to do it
-	## and to avoid loading huge csv files.
-	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
 	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
  	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
-	# data_path = '{}/{}'.format(date, 'csv_data')
-	# if 'csv_data' not in os.listdir('{}'.format(date)):
 		os.makedirs(data_path)
 
 	if 'merged_data' not in os.listdir(data_path):
@@ -70,11 +66,6 @@ def process_model_run(data, modelrun_ID):
 	agent_type = data['modelParams']
 	subject_ID = generate_subject_ID()
 	exploration_burn_ins = data['exploration_burn_ins'] if 'exploration_burn_ins' in data.keys() else 'NA'
-	# if 'exploration_burn_ins' in data.keys():
-	# 	agent_type = 'lesion'
-	# else:
-	# 	agent_type = 'normal'
-	# print "you've modified agent_type to test a single thing, but you need to remove this modification"
 	condition = data['condition'] if 'condition' in data.keys() else 'full'
 	game_name = data['gameInfo']['gameName']
 	cumulative_timestep, cumulative_max_score, sparse_score, cumulative_wins, cumulative_planner_nodes = 0,0,0,0,0
@@ -100,7 +91,6 @@ def process_model_run(data, modelrun_ID):
 						level_accumulated_score = accumulated_score + score
 					else:
 						level_accumulated_score = 'NA'
-					# level_accumulated_score = accumulated_score + score
 					if score > level_max_score:
 						score_delta = score - level_max_score
 						level_max_score = max(score, level_max_score)
@@ -166,6 +156,7 @@ def make_csvs(path, game=None):
 					# embed()
 
 def generate_subject_ID(length=7):
+	## Generate random subject IDs so that you can refer to them in R analyses
 	alphabet = "QWERTYUIOPASDFGHJKLZXCVBNM1234567890"
 	string = ''
 	for i in range(length):

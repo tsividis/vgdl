@@ -17,7 +17,7 @@ import cPickle, cloudpickle
 import time
 from datetime import datetime
 import copy
-from metaplanner import translateEvents, observe
+from agent_utils import translateEvents, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
@@ -296,7 +296,7 @@ class Agent:
                 gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
                 initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
-                self.observe(self.rle, 14, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
+                self.observe(self.rle, 3, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
             else:
                 self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)                
             spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
@@ -431,7 +431,7 @@ class Agent:
 
         print "timestamp", self.timestamp
         print "param_ID", self.param_ID
-        curriculumDir = 'savedCurricula2'
+        curriculumDir = 'savedCurricula'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
@@ -739,7 +739,7 @@ class Agent:
         if self.saveMidEpisode:
             ## if we get a loadedState, do things with it here.
             episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-            curriculumDir = 'savedCurricula2'
+            curriculumDir = 'savedCurricula'
             if episodeSaveFile in os.listdir(curriculumDir):
                 try:
                     loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
@@ -1209,7 +1209,7 @@ class Agent:
                       'compactStates': compactStates,
                       'annealing': annealing
                       }
-        filepath = 'savedCurricula2/'+filename
+        filepath = 'savedCurricula/'+filename
         with open(filepath, 'wb') as f:
             cloudpickle.dump(savedState, f)
         print "done saving state"
