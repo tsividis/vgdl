@@ -10,11 +10,11 @@ import numpy as np
 import random
 
 
-## python -m vgdl --date oct6
-## python -m vgdl --date vgdl ## for local stuff
+## python -m process_EMPA_data --date oct6
+## python -m process_EMPA_data --date vgdl ## for local stuff
 
 parser = argparse.ArgumentParser(description='.')
-parser.add_argument('--date', type=str, default='oct6', help='date') ##date whose data you want to process
+parser.add_argument('--date', type=str, default='apr4', help='date') ##date whose data you want to process
 parser.add_argument('--game', type=str, default='', help='game') ##game whose data you want to process
 
 ## add argument options for each of the different analyses?
@@ -22,11 +22,9 @@ args = parser.parse_args()
 
 date = args.date
 game = args.game if args.game!='' else None
-relative_path = '..'
+relative_path = '../data_files/EMPA_data_files'
 
 path = '{}/{}/results'.format(relative_path, date)
-
-# path = '{}/results'.format(date)
 
 def open_folder(path):
 	return [f for f in os.listdir(path) if 'DS_Store' not in f]
@@ -179,19 +177,18 @@ def merge_results(date):
 	## param_specification/game_name/game_pickle_file
 	## to
 	## param_specification/all_games/pickle_files
-	if 'all' not in os.listdir('../{}/results'.format(date)):
-		os.makedirs('../{}/results/all'.format(date))
-		os.makedirs('../{}/results/all/all'.format(date))
+	if 'all' not in os.listdir('{}/{}/results'.format(relative_path, date)):
+		os.makedirs('{}/{}/results/all'.format(relative_path, date))
+		os.makedirs('{}/{}/results/all/all'.format(relative_path, date))
 
-	target = '../{}/results/all/all'.format(date)
-	for mod in os.listdir('../{}/results'.format(date)):
+	target = '{}/{}/results/all/all'.format(relative_path, date)
+	for mod in os.listdir('{}/{}/results'.format(relative_path, date)):
 		if 'DS_Store' not in mod and 'all' not in mod:
-			for d in os.listdir('../{}/results/{}/'.format(date, mod)):
+			for d in os.listdir('{}/{}/results/{}/'.format(relative_path, date, mod)):
 				if 'DS_Store' not in d and 'all' not in d:
-					for r in os.listdir('../{}/results/{}/'.format(date, mod)+d):
+					for r in os.listdir('{}/{}/results/{}/'.format(relative_path, date, mod)+d):
 						if 'DS_Store' not in r:
-							copy2('../{}/results/{}/'.format(date, mod)+d+'/'+r,target)
+							copy2('{}/{}/results/{}/'.format(relative_path, date, mod)+d+'/'+r,target)
 
-## take things out one level; should be in results/all, rather than results/all/all
 merge_results(date)
 make_csvs(path)
