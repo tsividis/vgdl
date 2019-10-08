@@ -8,8 +8,18 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import NullLocator
 import numpy as np
 
-path = 'dqn_interaction_data/state_data'
-# path = 'dqn_interaction_data2/state_data'
+
+"""
+Generates heatmaps from ddqn data
+Sample usage:
+make_heatmaps(['aliens', 'zelda'])
+make_heatmaps() ## will make them for all games
+"""
+
+
+path = '../data_files/dqn_interaction_data/state_data'
+if 'heatmaps' not in os.listdir('.'):
+	os.makedirs('heatmaps')
 if 'ddqn' not in os.listdir('heatmaps'):
 	os.makedirs('heatmaps/ddqn')
 dqn_state_files = [f for f in os.listdir(path) if 'DS_Store' not in f]
@@ -27,7 +37,7 @@ def makeHeatmap(statesEncountered, filename, newformat=False):
 		height = height-1
 		statesEncountered = statesEncountered['episodes']
 	else:
-		## Before we were storing this level info we had to hard-code it.
+		## Have to hard-code level info for games where ddqn was run before we started storing level info in the ddqn data itself
 		if 'bait' in filename:
 			if statesEncountered[0][3]==0:
 				width, height = 4, 5
@@ -90,8 +100,6 @@ def makeHeatmap(statesEncountered, filename, newformat=False):
 	plt.savefig(filename, bbox_inches='tight', pad_inches=0)
 	plt.close()
 
-## you need to get info about the correct level by opening the game somewhere else :/
-
 def make_heatmaps(requested_games='all'):
 
 	for filename in dqn_state_files:
@@ -129,7 +137,6 @@ def make_heatmaps(requested_games='all'):
 				if 'episodes' in state_data.keys():
 					## state_data['gameInfo']: x,y size of game.
 					## state_data['episodes']: all the episodes. Expect many. Each is a (left, top, time, level) tuple.
-
 					levels = [[],[],[],[],[],[]]
 					prev_level = state_data['episodes'][0][0][3]
 					for episode in state_data['episodes']:
@@ -143,7 +150,6 @@ def make_heatmaps(requested_games='all'):
 								makeHeatmap(statesEncountered, outfilename)
 							except:
 								print "problem w/ heatmap in {}, level {}".format(game_name, i)
-								# embed()
 				else:
 					for i,level_data in enumerate(state_data.values()):
 						outfilename = 'heatmaps/ddqn/{}_level{}_{}_{}'.format(game_name, i, agent_type, agent_seed)
@@ -152,30 +158,8 @@ def make_heatmaps(requested_games='all'):
 								makeHeatmap(level_data, outfilename, newformat=True)
 							except:
 								print "problem w/ heatmap in {}, level {}".format(game_name, i)
-								# embed()
 			except:
 				print "problem loading pickle data for {}".format(filename)
 
-	
-embed()
-## make_heatmaps(['aliens', 'zelda'])
-## make_heatmaps() ## will make them for all games
 
-
-## silly script for deleting old filenames that weren't writte with the new format
-# for filename in os.listdir(dirname):
-# 	if 'max' not in filename:
-# 		os.unlink(dirname+'/'+filename)
-
-## script for grabbing just the first run of e-greedy and putting it into a new folder (to make heatmaps with)
-# import os
-# from shutil import copyfile
-# dirname = 'apr4/results/IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=2000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
-# outdirname = 'apr4_for_heatmaps/results/IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=2000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
-# for filename in [f for f in os.listdir(dirname) if 'DS_Store' not in f]:
-# 	to_copy = [f for f in os.listdir(dirname+'/'+filename) if 'DS_Store' not in f][0]
-# 	src = dirname+'/'+filename+'/'+to_copy
-# 	dest = outdirname+'/'+filename+'/'
-# 	os.makedirs(dest)
-# 	copy(src, dest)
 
