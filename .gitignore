@@ -10,3 +10,4 @@ examples/gridphysics/theorytest*
 temp_data.npy
 singularity/pyenv.simg
 examples.*
+theory_files
