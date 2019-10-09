@@ -11,3 +11,4 @@ temp_data.npy
 singularity/pyenv.simg
 examples.*
 theory_files
+data_files
