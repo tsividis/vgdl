@@ -799,8 +799,8 @@ class Agent:
             if self.shortHorizon and self.shortHorizonRandomChoice:
                 self.max_nodes = random.choice(self.shortHorizonRandomChoice)
 
-            print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-            print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
+            # print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+            print "planning with max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             ## initialize one or many VRLEs according to hypothesis-selection method
             theoryRLEs = self.VrleInitPhase(flexible_goals)
@@ -819,7 +819,7 @@ class Agent:
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
-            print "total planner steps in main_agent:", self.total_planner_steps
+            # print "total planner steps in main_agent:", self.total_planner_steps
             if bestNode is not None:
                 solution = p.solution
                 gameString_array = p.gameString_array
@@ -940,8 +940,8 @@ class Agent:
 
             if solution and not p.quitting and not takingRandomSteps and self.display_states:
                 print "============================================="
-                print "got solution of length", len(solution)
-                print colored(p.gameString_array[0], 'green')
+                print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
+                # print colored(p.gameString_array[0], 'green')
                 for i,g in enumerate(p.gameString_array[1:]):
                     print actionDict[solution[i]]
                     print colored(g, 'green')
@@ -1402,7 +1402,7 @@ class Agent:
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
                 if display:
-                    print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
+                    print "score: {}, timestep: {}".format(rle._game.score, rle._game.time)
                     print rle.show(color='blue')
 
                 rle._game.nextPositions = {}
@@ -1651,7 +1651,7 @@ class Agent:
         self.rle._game.H = self.calculateEntropy(hypotheses[0], self.rle._game.spriteDistribution)
         statesEncountered[-1]['entropy'] = self.rle._game.H
         # compactStates[-1]['entropy'] = self.rle._game.H
-        print "entropy", self.rle._game.H
+        # print "entropy", self.rle._game.H
 
         if set(hypotheses[0].terminationSet) != oldTerminationSet:
             if self.display_text:
