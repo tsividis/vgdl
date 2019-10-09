@@ -6,6 +6,7 @@ from vgdl.util import str2bool
 import cPickle
 import os
 from shutil import copy2
+from collections import defaultdict
 import numpy as np
 import random
 
@@ -14,7 +15,8 @@ Preprocesses raw EMPA data into csv files where score/time data can be analyzed 
 
 Usage:
 python -m process_EMPA_data --date apr4
-python -m process_EMPA_data --date vgdl ## for local stuff
+python -m process_EMPA_data --date apr4 --heatmap True ## call this on a date for which state data were stored
+
 """
 
 parser = argparse.ArgumentParser(description='.')
@@ -322,8 +324,11 @@ def makeHeatmap(statesEncountered, agent_type, filename):
 	plt.close()
 
 
-# merge_results(date)
-# make_csvs(path)
-## make all heatmaps
-# game_names = 'all'
-# make_csvs(path, heatmap, game_names)
+if not heatmap:
+	## To preprocess data
+	merge_results(date)
+	make_csvs(path, heatmap)
+else:
+	## To make all heatmaps (note -- this needs to be called with a date flag for which human data were stored)
+	game_names = 'all'
+	make_csvs(path, heatmap, game_names)
