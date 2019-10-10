@@ -4,7 +4,7 @@ from collections import defaultdict
 import os, csv
 import cPickle
 
-folder = "../human_gamestates/Group1"
+folder = "demo_files/human_gamestates/Group1"
 data_path = "../"
 modelrun_ID = 'NA'
 agent_type = 'human'

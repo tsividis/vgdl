@@ -18,7 +18,7 @@ make_heatmaps() ## will make them for all games
 """
 
 
-path = '../data_files/dqn_interaction_data/state_data'
+path = 'demo_data_files/dqn_interaction_data/state_data'
 if 'heatmaps' not in os.listdir('.'):
 	os.makedirs('heatmaps')
 if 'ddqn' not in os.listdir('heatmaps'):
