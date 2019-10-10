@@ -22,21 +22,11 @@ from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrin
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
-# from line_profiler import LineProfiler
-
 MAX_STEPS = 10000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
-
-def playCurriculum(agent, level_game_pairs):
-    # Necessary to define a top-level function for playCurriculum so that
-    # hyperopt.mongoexpt can correctly pickle the objective function
-    start_time = time()
-    agent.playCurriculum(level_game_pairs)
-    end_time = time() - start_time
-    return end_time
 
 class Agent:
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0):
@@ -55,8 +45,8 @@ class Agent:
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
         self.timestamp = False
         self.annealingFactor = 1.
-        self.shortHorizon = self.hyperparameters['short_horizon']#False
-        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+        self.shortHorizon = self.hyperparameters['short_horizon']
+        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k
         self.task_ID = task_ID
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
@@ -88,7 +78,6 @@ class Agent:
         self.interaction_lesion_replacement = self.metacontroller_params['interaction_lesion_replacement'] if 'interaction_lesion_replacement' in self.metacontroller_params else []
         self.disallowed_events = self.interaction_lesion
 
-        # disallowed_events = ['bounceForward', 'transformTo', 'killSprite', 'cloneSprite', 'teleportToExit', 'pullWithIt']
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
         else:
@@ -187,7 +176,6 @@ class Agent:
             newRle._gravepoints = ccopy(rle._gravepoints)
         newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
         newRle._game.kill_list = ccopy(rle._game.kill_list)
-        # newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
         newRle._game.time = ccopy(rle._game.time)
         newRle._game.score = ccopy(rle._game.score)
         newRle._game.keystate = ccopy(rle._game.keystate)
@@ -254,9 +242,7 @@ class Agent:
 
 
     def initializeVrle(self, hypothesis):
-        ## World in agent's head given 'hypothesis', including object goal
-        # gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
-        #          "./theory_files/hyperparameter_idx_{}/{}.py".format(self.hyperparameters['idx'], self.gameFilename))
+        ## Simulatable world in agent's head given 'hypothesis', including object goal
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
                  "./theory_files/{}.py".format(self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
@@ -309,7 +295,6 @@ class Agent:
             gameObject = Game(self.gameString)
             initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
-        # Handle wall vs. projectile interaction (hacky)
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
         self.hypotheses = [initialTheory]
         self.symbolDict = generateSymbolDict(self.rle)
@@ -340,62 +325,9 @@ class Agent:
             embed()
         self.hypotheses = newHypotheses
 
-    def entropy(self, k, dist):
-        ## returns entropy of a probability vector; normalizes it if it's not normalized.
-        if sum(dist)>1.1:
-            dist = [v/sum(dist) for v in dist]
-        ## entropy of join distribution of independent random variables: sum of the entropies.
-        return -sum([p*log(p) for p in dist if p!=0])
 
     def calculateEntropy(self, theory, spriteDistribution):
-        ## calculates entropy of interaction and termination set, assuming:
-        ## prior is uniform over all interaction and termination rules
-        ## termination rules can be made for any item we think can be killed.
-
-        ## excluding walls and avatar from distribution
-
-        ## figure out when to run this calculation; it's expensive to run on every step.
-        ## also you have to run it during the observation steps, as that's when
-        ## most of the entropy collapses for dynamic types
-
-        ## TODO: you're not looking at internal consistency yet. as in, you're considering that a termination rule for an item
-        ## is possible as long as you haven't learned its rule, rather than thinking it's only possible for the particular hypotheses where you suppose
-        ## that the thing can be destroyed.
-
-        ## how do you deal with introduction of new objects in new levels? entropy automatically goes up.
-        ## just generate plots for games that don't have this problem
-        ## and have a summary that's entropy reduction per level, for all models.
-        
-        ## Allowed predicates: picking just 20 for now.
-            ## TODO: decide how you're counting sub-rules with increments of values, etc.
-
-        num_predicates = 20
-        unknown_rules = sum([r.generic for r in theory.interactionSet])
-
-        ## if rule is generic you assume it's uniform over the allowed types
-        interaction_rule_space = num_predicates**unknown_rules
-        
-        ###TERMINATIONS
-        destroy_rules = ['killSprite', 'killIfHasLess', 'killIfHasMore', 'transformTo', 'collectResource']
-        destroyable_types = set([r.slot1 for r in theory.interactionSet if ((r.generic or r.interaction in destroy_rules) and r.slot1 not in ['avatar', 'EOS'])])
-        unfalsified_termination_rules = 2**len(destroyable_types) ## all possible combinations of killable objects.
-        falsified_termination_rules = len([rule for rule in set(theory.falsified) if rule.termination.stype!='EOS']) + \
-        len([rule for rule in set(theory.multi_falsified) if 'EOS' not in rule.termination.stypes])
-        termination_rule_space = unfalsified_termination_rules - falsified_termination_rules
-
-        rule_space = interaction_rule_space*termination_rule_space
-        single_rule_p = 1./rule_space
-
-        rule_space_entropy = -log(single_rule_p,2)
-
-        sprite_distribution_entropy = sum([self.entropy(k, spriteDistribution[k].values()) for k in spriteDistribution.keys() if self.rle._game.all_objects[k]['features']['color']!='DARKBLUE'])
-
-        ## entropy of joint distribution of independent random variables: sum of the entropies.
-        return rule_space_entropy #+ sprite_distribution_entropy
-
-
-
-
+        return None
 
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
@@ -458,9 +390,7 @@ class Agent:
             if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
                 continue
             print("Playing level {}".format(n_level))
-            # if n_level == 1:
-                # print "about to play level 1. quit here so you can test loading state after this point."
-                # embed()
+
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
@@ -542,17 +472,6 @@ class Agent:
 
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
-                # self.makeHeatmap(allStatesEncountered, '{}_{}_level{}_heatmap.pdf'.format(
-                    # self.gameFilename[self.gameFilename.find('expt'):],
-                    # gvgname[gvgname.find('set_1/')+6:],
-                    # self.modelType, n_level))
-
-            # allEffectsEncountered.append(levelEffectsEncountered)
-
-            ## Uncomment if you want to run flexible goals version.
-            # j+=1
-            # if j>0:
-            #     flexible_goals=True
 
             if flexible_goals:
                 ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
@@ -565,7 +484,6 @@ class Agent:
         current_time = time.time()
         gameObject = rle._game
         ended, win = rle._isDone()
-        # print "time elapsed: {}".format(current_time - self.last_recorded_time)
         state = {'timestep': gameObject.time,
                  'time_elapsed': current_time - self.last_recorded_time,
                  'score': gameObject.score,
@@ -596,12 +514,6 @@ class Agent:
 
         m = np.zeros((width, height))
         Xs, Ys = [],[]
-        # print "above imread"
-        # embed()
-        # im = plt.imread('flexible_goals.png')
-        # implot = plt.imshow(im)
-        # w, h = implot.get_extent()[1], implot.get_extent()[2]
-        # block_size = w/width
 
         block_size=30
         for s in corrected_states:
@@ -611,7 +523,6 @@ class Agent:
             Xs.append(x*block_size+block_size/2.)
             Ys.append(y*block_size+block_size/2.)
 
-        # plt.scatter(x=Xs, y=Ys, alpha=.5, edgecolor='')
         plt.imshow(m.T, cmap='viridis')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
@@ -678,15 +589,6 @@ class Agent:
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
         print "Won {} out of {} episodes.".format(sum(wins), i)
-
-        """
-        def playEpisodeProfiler(self, gameObject, flexible_goals=False, first_time_playing_level=False):
-            lp = LineProfiler()
-            lp_wrapper = lp(self.playEpisode)
-            gameObject, win, score, steps, statesEncountered, effectsEncountered = lp_wrapper(gameObject, flexible_goals, first_time_playing_level)
-            lp.print_stats()
-            return gameObject, win, score, steps, statesEncountered, effectsEncountered
-        """
 
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
@@ -774,16 +676,9 @@ class Agent:
         emptyPlans = 0
         while not ended:
 
-            ## if more than 20 minutes have passed, save state.
-            # if (time.time()-episodeSaveTime)/60 > 20:
-            # if len(statesEncountered)%2==0:
-                # print "about to save episodeState"
-                # embed()
             if self.saveMidEpisode:
                 self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
                 self.episodeSaveTime = time.time()
-            # print "just saved episode state. quit now to see if you can reload it."
-            # embed()
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle._game.score
@@ -819,7 +714,7 @@ class Agent:
             p_quitting = p.quitting
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
-            # print "total planner steps in main_agent:", self.total_planner_steps
+
             if bestNode is not None:
                 solution = p.solution
                 gameString_array = p.gameString_array
@@ -829,17 +724,11 @@ class Agent:
             else:
                 solution = []
 
-            # if self.n_level==1:
-                # print "just planned"
-                # embed()
             if not solution:
                 ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
                     if self.hyperparameter_index == 1:
                         new_index = 1 ## don't switch away from idx_1
-                        # if self.display_text:
-                            # print "Repeated deaths. Switching to short-range planning"
-                        # new_index = 3 
                         conservative = False
                     if self.hyperparameter_index == 3:
                         if self.display_text:
@@ -858,19 +747,14 @@ class Agent:
                     print "moving types: {}".format(movingTypes)
                     print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
                     print "scoreChange: {}".format(scoreChange)
-                    # print "self.max_game_time_observed>501: {}".format(self.max_game_time_observed>501)
                     if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
                             (not movingTypes or (movingTypes and not scoreChange)):
-                            # (not movingTypes or (movingTypes and self.max_game_time_observed>501)):
-                        # if self.display_text:
                         print "switching to long-range planning"
                         ## switch to long-range planning
                         new_index = 1
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = False
-                        # embed()
                     else:
-                        # if self.display_text:
                         print "planning conservatively"
                         new_index = 3
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
@@ -879,7 +763,6 @@ class Agent:
                         self.max_nodes = self.conservative_max_nodes
                 else:
                     conservative = False
-                # embed()
                 if self.display_text:
                     print "planning with hyperparameter index {}".format(self.hyperparameter_index)
                     print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
@@ -914,7 +797,8 @@ class Agent:
                 if self.extra_atom_allowed:
                     print "turning on extra atom"
                     self.extra_atom = True
-                if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with idx_3 you'll plan conservatively. you only get here if you're in idx_1 and don't find a plan.
+                if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with idx_3 you'll plan conservatively. 
+                                                                                  ## you only get here if you're in idx_1 and don't find a plan.
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
                     plannerNodes = p.total_nodes_opened
                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
@@ -946,15 +830,6 @@ class Agent:
                     print actionDict[solution[i]]
                     print colored(g, 'green')
                 print "============================================="
-
-            ##new 6/30/18
-            # if emptyPlans > self.emptyPlansLimit:
-            #     self.max_nodes *= self.max_nodes_annealing
-            #     print "reached emptyPlansLimit of {}. Annealing max nodes to {}".format(self.emptyPlansLimit, self.max_nodes)
-
-            # if emptyPlans > self.emptyPlansLimit:
-                # print "got too many empty plans"
-                # observe(self.rle, 5, self.bestSpriteTypeDict)
 
             if not quitting:
                 for i, action in enumerate(solution):
@@ -1031,20 +906,8 @@ class Agent:
                                 break
 
                         except ValueError:
-                            # print("error in avoid_danger: is the avatar dead?")
                             pass
 
-                # if deferred_quitting:
-                #     ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
-                #     ## Search more deeply next time.
-                #     self.max_nodes *= self.max_nodes_annealing
-                #     self.stored_max_nodes = self.max_nodes
-                #     win, effects = False, []
-                #     self.episodeRecord.insert(0, (win, effects))
-                #     print colored('________________________________________________________________', 'white', 'on_red')
-                #     print colored("Quitting", 'white', 'on_red')
-                #     print colored('________________________________________________________________', 'white', 'on_red')
-                #     return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates
             else:
                 ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
                 ## Search more deeply next time.
@@ -1079,10 +942,6 @@ class Agent:
                 print "lost on timeout. switching hyperparameters"
                 self.hyperparameterSwitch(new_index=1)
 
-
-        ## Update global memory of updates
-        # for k in game.spriteUpdateDict:
-            # self.spriteUpdateDict[k] = game.spriteUpdateDict[k]
 
         score = self.rle._game.score
 
@@ -1213,8 +1072,6 @@ class Agent:
         with open(filepath, 'wb') as f:
             cloudpickle.dump(savedState, f)
         print "done saving state"
-        # embed()
-        # f.close()
 
     def loadState(self, filename):
         with open(filename, 'r') as f:
@@ -1224,94 +1081,10 @@ class Agent:
 
 
     def saveState(self):
-
-        ## You also need to save where in playCurriculum() you where...
-        ## or maybe just save 
-        # print "in savestate"
-        # embed()
         filename = 'saved_state'
-        # unsaved = ['rle', 'statesEncountered', 'rleHistory', 'bestSpriteTypeDict', 'spriteUpdateDict', 'rleCreateFunc', 'hypotheses', 'finalTimeStepList', 'finalEventList']
-
-        # MAPHypothesis = dict()
-        # MAPHypothesis['resource_limits'] = dict([(k,v) for k,v in self.hypotheses[0].resource_limits.iteritems()])
-        # MAPHypothesis['classes'] = self.hypotheses[0].classes
-        # MAPHypothesis['spriteObjects'] = self.hypotheses[0].spriteObjects
-        # MAPHypothesis['spriteSet'] = self.hypotheses[0].spriteSet
-        # MAPHypothesis['interactionSet'] = self.hypotheses[0].interactionSet
-        # MAPHypothesis['terminationSet'] = self.hypotheses[0].terminationSet
-        # MAPHypothesis['falsified'] = self.hypotheses[0].falsified
-        # MAPHypothesis['multi_falsified'] = self.hypotheses[0].multi_falsified
-
-        # saveableTimeStepList = []
-        # print "WARNING: you're not saving Timestep.rle or Timestep.t because it doesn't seem like those get used"
-        # for t in self.finalTimeStepList:
-        #     saveableTimeStep = {'agentAction':t.agentAction,
-        #                         'agentState': dict([(k,v) for k,v in t.agentState.iteritems()]),
-        #                         'events': t.events,
-        #                         'gameState': None,
-        #                         'rle': None
-        #                         }
-        #     saveableTimeStepList.append(saveableTimeStep)
-        
-        # saved = {
-        #         'agentState': dict([(k,v) for k,v in self.__dict__.iteritems() if k not in unsaved]),
-        #         'sprite_groups': self.rle._game.sprite_groups,
-        #         'bestSpriteTypeDict': dict([(k,v) for k,v in self.bestSpriteTypeDict.iteritems()]),
-        #         'spriteUpdateDict': dict([(k,v) for k,v in self.spriteUpdateDict.iteritems()]),
-        #         'hypotheses': [MAPHypothesis],
-        #         'finalTimeStepList': saveableTimeStepList,
-        #         'n_level':1,
-        #         'within_level_iteration':self.within_level_iteration
-        #         }
-
-
-
         with open(filename, 'wb') as f:
             cloudpickle.dump(self, f)
-        # f.close()
         return
-
-
-    # def loadState(self, filename):
-    #     ## need to initialize rleCreateFunc?
-    #     with open(filename, 'r') as f:
-    #         loadedState = cPickle.load(f)
-    #     f.close()
-        
-    #     ## initialize all the defaultdicts and then fill in their contents.
-    #     self.bestSpriteTypeDict = defaultdict(lambda : {})
-    #     self.spriteUpdateDict = defaultdict(lambda : 0)
-    #     for k,v in loadedState['bestSpriteTypeDict'].items():
-    #         self.bestSpriteTypeDict[k] = v
-    #     for k,v in loadedState['spriteUpdateDict'].items():
-    #         self.spriteUpdateDict[k] = v
-        
-    #     ## Set all the straightforward aspects of the Agent state
-    #     for k,v in loadedState['agentState'].items():
-    #         self.__dict__[k] = v
-        
-    #     # print "in loadState"
-    #     # embed()
-    #     # ## initialize Theory, then initialize its fields.
-    #     ## hypothesis: the source. theory: the target. bad naming, but don't want to type long variable names.
-    #     hypothesis = loadedState['hypotheses'][0]
-
-    #     gameObject = Game(spriteInductionResult=hypothesis['spriteObjects'])
-    #     theory = Theory(gameObject)
-    #     theory.spriteObjects = hypothesis['spriteObjects']
-    #     theory.spriteSet = hypothesis['spriteSet']
-    #     theory.classes = hypothesis['classes']
-    #     theory.interactionSet = hypothesis['interactionSet']
-    #     theory.terminationSet = hypothesis['terminationSet']
-    #     theory.falsified = hypothesis['falsified']
-    #     theory.multi_falsified = hypothesis['multi_falsified']
-    #     resource_limits = defaultdict(lambda:1)
-    #     for k,v in hypothesis['resource_limits'].items():
-    #         resource_limits[k] = v 
-    #     theory.resource_limits = resource_limits
-    #     self.hypotheses = [theory]
-    #     return loadedState
-
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
@@ -1356,39 +1129,8 @@ class Agent:
                 self.rle._game.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
 
-
-            # if k not in theory.spriteObjects.keys():
-            #     color = k
-            #     existing_classes = [key for key in theory.classes if key[0] == 'c']
-            #     max_num = max([int(c[1:]) for c in existing_classes])
-            #     class_num = max_num+1
-            #     newClassName = 'c'+str(class_num)
-            #     theory.addSpriteToTheory(newClassName, color, vgdlType=Resource, args={'limit':errorMap.targetToken.inventory[k][1]})
-
-        # for k in self.new_objects.keys():
-        #     self.new_objects[k] += 1
-
-        # if any([self.new_objects[k]>5 for k in self.new_objects.keys()]):
-        #     # if self.new_objects[k] > 5:
-        #     spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
-        #     gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-
-        #     newHypotheses = []
-        #     for hypothesis in hypotheses:
-        #         newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
-        #     hypotheses = newHypotheses
-
-        # [self.new_objects.pop(k, None) for k in self.new_objects.keys() if self.new_objects[k]>5] ## don't track items once we've updated the theory
         return hypotheses
 
-    """
-    def executeStepProfiler(self, action, hypotheses, statesEncountered, run_induction=True):
-        lp = LineProfiler()
-        lp_wrapper = lp(self.executeStep)
-        hypotheses, theory_change_flag, effects = lp_wrapper(action, hypotheses, statesEncountered, run_induction)
-        lp.print_stats()
-        return hypotheses, theory_change_flag, effects
-    """
     def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False, hypothesis=None):
         if display:
             print "observing for {} steps".format(obsSteps)
@@ -1446,7 +1188,6 @@ class Agent:
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-            # print agentState
 
             for e in res['effectList']:
                 if 'changeResource' in e:
@@ -1472,28 +1213,21 @@ class Agent:
             self.rle.agentStatePrev = agentState
         for k,v in agentState.items():
             agentState[k] = max(0, v)
-        # print "post-step understanding of pre-step agentState (passed to induction): {}".format(agentState)
-        # print "agentState stuff: {}".format(time.time()-t1)
-        # embed()
 
         t1 = time.time()
         hypotheses = self.manageNewObjects(hypotheses)
 
         if self.make_movie or self.record_video_info:
-            statesEncountered.append(self.rle._game.getFullState()) ## will change the recorded entropy after we do our calculations.
+            statesEncountered.append(self.rle._game.getFullState())
         if self.record_states:
             compactStates.append(self.compactify(self.rle, plannerNodes))
-
-        # print "manage new objects and getFullState: {}".format(time.time()-t1)
 
         t1 = time.time()
         if not self.skipInduction:
             distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         else:
             distributionsHaveChanged = False
-        # print "sprite induction step 3: {}".format(time.time()-t1)
  
-        # effects = translateEvents(res['effectList'], self.all_objects, self.rle)
         ## First interaction-rule lesion:
         effects = self.rle._game.effectListByColor
         if self.interaction_lesion_replacement == 'nothing':
@@ -1503,7 +1237,6 @@ class Agent:
                     effects[i] = ('nothing', e[1], e[2])
                     print "with", effects[i]
                     print ""
-                    # embed()
 
         if self.display_states:
             print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
@@ -1513,27 +1246,19 @@ class Agent:
             print ""
             print keyPresses[action]
             print self.rle.show(color='blue')
-        # print "rle.show: {}".format(time.time()-t1)
-        
-        # event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
-        #     'gameState': self.rle._game.getFullStateColorized(), 'rle': self.rle}
+
         event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
             'gameState': None, 'rle': self.rle}
-        # if len(effects)>4:
-            # embed()
-        # t1 = time.time()
+
         newEffects = False
-        # print "{} effects in this time-step".format(len(effects))
-        # print "finalEffectList:"
-        # print self.finalEffectList
+
         if effects:
             if self.display_text:
                 print effects
             # #  PRECONDITIONS HANDLING
             # # Current assumptions:
             # # - Only one resource can change for each timestep
-            # # - The first time a resource changes, it goes from 0 to a positive
-            # #   value
+            # # - The first time a resource changes, it goes from 0 to a positive value
             for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
                 resource = change_resource_effect['resource']
                 val = change_resource_effect['value']
@@ -1566,33 +1291,15 @@ class Agent:
                     if self.display_text:
                         print "New event: {}".format(compactEvent)
                     newEffects = True
-            # newEffects = True
         
         self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
             not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
-
-        # print "finalEffectList length: {}".format(len(self.finalEffectList))
-        # print "set prep took {} seconds".format(time.time()-t1)
-
-        ## For games with moving objects you should do a quick-and-dirty evaluation of whether to change theories.
-        ## For the games where we're the only ones to cause effects, we can afford to do the full thing.
-        # if not any([t in str(s.vgdlType) for s in self.hypotheses[0].spriteObjects.values() for t in ['Random', 'Missile', 'Chaser']]):
-            # newEffects = len(event['effectList'])
-        # if (event['effectList'] and run_induction) or distributionsHaveChanged:
-        # distributionsHaveChanged = False
 
         if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
             if self.display_text:
                 print "new event", newEffects, "distributions changed", distributionsHaveChanged
 
-            ## Delete fake interaction rules for events that were witnessed in this time step.
-            # oldFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
-
-            # self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
-            #     not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
-
-            # if (not all([e in all_effects for e in effects])) or distributionsHaveChanged:
             if newEffects or distributionsHaveChanged:
                 theory_change_flag = True
 
@@ -1601,67 +1308,31 @@ class Agent:
                     self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
 
             game_object = Game(spriteInductionResult=sample)
-            # print "sampleFromDistribution: {}".format(time.time()-t1)
             
             terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
-            # trace = ([TimeStep(e['agentAction'], e['agentState'], e['effectList'], e['gameState'], e['rle']) \
-                # for e in self.finalEventList], terminationCondition)
             trace = (self.finalTimeStepList, terminationCondition)
 
             t1 = time.time()
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
             verbose=False, existingTheories=hypotheses))
-            # print "induction took {} seconds".format(time.time()-t1)
+
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
-            # #  PRECONDITIONS HANDLING
-            # # Current assumptions:
-            # # - Only one resource can change for each timestep
-            # # - The first time a resource changes, it goes from 0 to a positive
-            # #   value
-            # for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
-            #     resource = change_resource_effect['resource']
-            #     val = change_resource_effect['value']
-            #     limit = change_resource_effect['limit']
-
-            #     if (resource not in self.seen_resources and val>0):
-            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
-            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-            #         self.seen_resources.append(resource)
-            #         hypotheses[0].resource_limits[resource] = limit
-            #         theory_change_flag = True
-
-            #     if agentState[resource]==limit and resource not in self.seen_limits:
-            #         self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
-            #         self.fakeInteractionRules = list(set(self.fakeInteractionRules))
-            #         self.seen_limits.append(resource)
-
-            #         theory_change_flag = True
-            #         # print "reached resource limit for", resource
-
         ## We need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
-        # t1 = time.time()
-        # oldhypothesis = copy.deepcopy(hypotheses[0])
         oldTerminationSet = set(hypotheses[0].terminationSet)
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
 
         self.rle._game.H = self.calculateEntropy(hypotheses[0], self.rle._game.spriteDistribution)
         statesEncountered[-1]['entropy'] = self.rle._game.H
-        # compactStates[-1]['entropy'] = self.rle._game.H
-        # print "entropy", self.rle._game.H
 
         if set(hypotheses[0].terminationSet) != oldTerminationSet:
             if self.display_text:
                 print "terminationSet Change"
             theory_change_flag = True
-            # embed()
 
-        # if action == K_LEFT:
-            # embed()
-        # print "updateTerminations took {} seconds".format(time.time()-t1)
         if theory_change_flag and not distributionsHaveChanged and self.display_text:
             print "changed theory:"
             hypotheses[0].display()
@@ -1671,16 +1342,6 @@ class Agent:
 
 
 if __name__ == "__main__":
-
-    ##simpleGame_missile: no support for learning that it can shoot things.
-    # filename = "examples.gridphysics.demo_helper"
-
-
-    # filename = "examples.gridphysics.expt_physics_sharpshooter"
-    # filename = "examples.gridphysics.demo_transform_relational"
-    # filename = "examples.gridphysics.simpleGame_push_boulders"
-    # filename = "examples.gridphysics.pick_apples"
-    # filename = "examples.gridphysics.expt_exploration_exploitation_debugging"
 
     filename = "examples.gridphysics.theory_overload"
 
