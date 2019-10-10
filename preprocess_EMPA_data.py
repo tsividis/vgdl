@@ -30,7 +30,7 @@ date = args.date
 game = args.game if args.game!='' else None
 heatmap = args.heatmap
 
-relative_path = '../data_files/EMPA_data_files'
+relative_path = 'demo_data_files/EMPA'
 
 path = '{}/{}/results'.format(relative_path, date)
 
