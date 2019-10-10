@@ -14,6 +14,7 @@ library(zoo)
 library(EnvStats)
 library(grid)
 library(plotrix)
+library(ggExtra)
 
 
 remove_string_from_name = function(name){
@@ -152,6 +153,35 @@ make_human_normed_data = function(dataframe){
       outputdata$human_normed_composite_ratio[i]=10e-8
     }
   }
+  
+  
+  outputdata$formatted_game_name = NA
+  for (i in 1:length(outputdata$game_name)){
+    outputdata$formatted_game_name[i] = gsub('_', ' ', outputdata$game_name[i])
+    if (outputdata$formatted_game_name[i]=='ee'){
+      outputdata$formatted_game_name[i] = 'explore/exploit'
+    }
+    if (outputdata$formatted_game_name[i]=='ee 1'){
+      outputdata$formatted_game_name[i] = 'explore/exploit 1'
+    }
+    if (outputdata$formatted_game_name[i]=='ee 2'){
+      outputdata$formatted_game_name[i] = 'explore/exploit 2'
+    }
+    if (outputdata$formatted_game_name[i]=='ee 3'){
+      outputdata$formatted_game_name[i] = 'explore/exploit 3'
+    }
+  }
+  outputdata$model_cluster = 'none'
+  outputdata[outputdata$agent_type=='EMPA',]$model_cluster = 'EMPA'
+  outputdata[outputdata$agent_type%in%c('e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k'),]$model_cluster = 'Exploration ablations'
+  outputdata[outputdata$agent_type%in%c('no goal gradient', 'no subgoals',  'no subgoals + no gradient',
+                                        'no IW', 'no subgoals + no gradient + no IW'),]$model_cluster = 'Planner ablations'
+  
+  outputdata[outputdata$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'Deep RL'
+  outputdata[outputdata$agent_type%in%c('rainbow 50k', 'rainbow 150k', 'rainbow 250k','rainbow'),]$model_cluster = 'Deep RL'
+  # outputdata[outputdata$agent_type=='random',]$model_cluster = 'Random'
+  outputdata = transform(outputdata, model_cluster=factor(model_cluster, levels=c('EMPA', 'Exploration ablations', 'Planner ablations', 'Deep RL','Random', NA)))
+  
   return(outputdata)
 }
 
@@ -436,18 +466,8 @@ load_reward_data = function(data_to_load, dates_or_groups){
       d$cumulative_steps = d$steps
       d$subject_ID = as.factor(subject_ID)
       
-      ## WARNING: This is not robust to ordering trial numbers differently.
-      if (grepl('trial10', filename)){
-        d$agent_type = as.factor("rainbow 50k") ## refers to the eps_decay (epsilon-greedy annealing) parameter in the DDQN implementation.
-      }else if (grepl('trial1', filename)){
-        d$agent_type = as.factor("rainbow 250k")
-      }else if (grepl('trial23', filename)){
-        d$agent_type = as.factor("rainbow 150k")
-      }else{
-        d$agent_type = as.factor("rainbow")
-      }
-      
-      
+      d$agent_type = as.factor("ranbow 150k")
+
       d$long_agent_type = d$agent_type
       d$cumulative_wins = as.numeric(0)
       if(length(d$level>2)){
@@ -539,7 +559,8 @@ load_reward_data = function(data_to_load, dates_or_groups){
   }
   
   data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
-  # beep(sound=2)
+  
+  
   return (data)
 }
 
