@@ -65,8 +65,27 @@ return(data)
 
 
 make_human_normed_data = function(dataframe){
-  ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
-  plantimedata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
+  
+  games_to_levels = data.frame(game_name=as.character(), num_levels=as.numeric())
+  for (i in 1:length(levels(dataframe$game_name))){
+    game_name=levels(dataframe$game_name)[i]
+    num_levels = 5
+    if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
+         (grepl('closing',game_name)) ){
+      num_levels=4
+    }
+    if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
+      num_levels=6
+    }
+    if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
+      num_levels=5
+    }
+    new = data.frame(game_name=game_name, num_levels=num_levels)
+    games_to_levels = rbind(games_to_levels, new)
+  }
+  
+  
+  outputdata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
                             max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
                             level_num=as.numeric(), level_efficiency=as.numeric())
   
@@ -108,32 +127,32 @@ make_human_normed_data = function(dataframe){
                          max_steps=r$cumulative_steps, mean_levels_won=mean_wins,
                          level_num=subset(games_to_levels, (game_name==r$game_name))$num_levels,
                          level_efficiency=l_e)
-        plantimedata = rbind(plantimedata, new)
+        outputdata = rbind(outputdata, new)
       }
     }
   }
   
   
-  plantimedata = mutate(plantimedata, level_percentage=mean_levels_won/level_num)
-  plantimedata = mutate(plantimedata, composite_ratio = level_percentage*level_efficiency)
+  outputdata = mutate(outputdata, level_percentage=mean_levels_won/level_num)
+  outputdata = mutate(outputdata, composite_ratio = level_percentage*level_efficiency)
   
-  plantimedata$human_normed_composite_ratio=NA
+  outputdata$human_normed_composite_ratio=NA
   ##norm by human level_efficiency
-  for (i in 1:length(unique(plantimedata$game_name))){
-    game = unique(plantimedata$game_name)[i]
-    human_composite_ratio = subset(plantimedata, agent_type=='human' & game_name==game)$composite_ratio
-    for (agent in unique(plantimedata$agent_type)){
-      row = plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]
-      plantimedata[which(plantimedata$agent_type==agent & plantimedata$game_name==game),]$human_normed_composite_ratio = row$composite_ratio/human_composite_ratio
+  for (i in 1:length(unique(outputdata$game_name))){
+    game = unique(outputdata$game_name)[i]
+    human_composite_ratio = subset(outputdata, agent_type=='human' & game_name==game)$composite_ratio
+    for (agent in unique(outputdata$agent_type)){
+      row = outputdata[which(outputdata$agent_type==agent & outputdata$game_name==game),]
+      outputdata[which(outputdata$agent_type==agent & outputdata$game_name==game),]$human_normed_composite_ratio = row$composite_ratio/human_composite_ratio
     }
   }
   
-  for (i in 1:length(plantimedata$human_normed_composite_ratio)){
-    if (plantimedata$human_normed_composite_ratio[i]==0){
-      plantimedata$human_normed_composite_ratio[i]=10e-8
+  for (i in 1:length(outputdata$human_normed_composite_ratio)){
+    if (outputdata$human_normed_composite_ratio[i]==0){
+      outputdata$human_normed_composite_ratio[i]=10e-8
     }
   }
-  return(plantimedata)
+  return(outputdata)
 }
 
 load_reward_data = function(data_to_load, dates_or_groups){
@@ -341,15 +360,11 @@ load_reward_data = function(data_to_load, dates_or_groups){
   }else if (data_to_load == 'DDQN'){
     dqndata = list()
     for (gamefile in list.files(dqn_path)){
-      filename = paste(dqn_path,gamefile,sep='')
-      if(grepl('dqn/', filename)){
-        gamenamestart = unlist(gregexpr('dqn/',filename))+nchar('dqn/')
-        gamenameend = unlist(gregexpr('_reward', filename))+1        
-      }else if (grepl('dqn_data/', filename)){
-        gamenamestart = unlist(gregexpr('dqn_data/',filename))+nchar('dqn_data/')
+      filename = paste(dqn_path,'/',gamefile,sep='')
+      if(grepl('ddqn/', filename)){
+        gamenamestart = unlist(gregexpr('ddqn/',filename))+nchar('ddqn/')
         gamenameend = unlist(gregexpr('_DDQN_reward', filename))-1 ##careful; you changed this 8/23/19. used to be +1.
-      }
-      
+        }
       game = substr(filename, gamenamestart, gamenameend)
       if (grepl('k_', filename)){
         subject_ID_start = unlist(gregexpr('k_',filename))+2
@@ -397,12 +412,11 @@ load_reward_data = function(data_to_load, dates_or_groups){
   }else if (data_to_load == 'rainbow'){
     rainbowdata = list()
     for (gamefile in list.files(rainbow_path)){
-      filename = paste(rainbow_path,gamefile,sep='')
+      filename = paste(rainbow_path,'/', gamefile,sep='')
       if(grepl('rainbow/', filename)){
+        # gamenamestart = unlist(gregexpr('rainbow/',filename))+nchar('rainbow/')
+        # gamenameend = unlist(gregexpr('_reward', filename))+1        
         gamenamestart = unlist(gregexpr('rainbow/',filename))+nchar('rainbow/')
-        gamenameend = unlist(gregexpr('_reward', filename))+1        
-      }else if (grepl('rainbowdata/', filename)){
-        gamenamestart = unlist(gregexpr('rainbowdata/',filename))+nchar('rainbowdata/')
         gamenameend = unlist(gregexpr('_reward', filename))-1
       }
       
@@ -527,6 +541,58 @@ load_reward_data = function(data_to_load, dates_or_groups){
   data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
   # beep(sound=2)
   return (data)
+}
+
+
+load_ratings = function(){
+  path = paste(getwd(),'/data_files/humandata_ratings/ratings', sep='')
+  ratingpaths = list.files(path)
+  ratings = list()
+  for (rating in ratingpaths){
+    ratingpath = paste(path, '/', rating, sep='')
+    r=read.csv(ratingpath, header=TRUE, na.strings='NA')
+    if (length(ratings)==0){
+      ratings = r
+    }
+    else{
+      ratings = rbind(ratings,r)
+    }
+  }
+  substrRight <- function(x, n){
+    substr(x, nchar(x)-n+1, nchar(x))
+  }
+  find_source_game = function(name){
+    if (substrRight(name,1)%in%c("1","2","3","4")){
+      return(substr(name,0,nchar(name)-2))
+    }
+    else{
+      return(name)}
+  }
+  find_variant_number = function(name){
+    lastchar = substrRight(name,1)
+    if (lastchar%in%c("1","2","3","4")){
+      return(lastchar)
+    }
+    else{
+      return('0')
+    }
+  }
+  ratings$game_name = as.factor(ratings$gameName)
+  ratings$source_game_name = as.factor(as.character(lapply(as.vector(ratings$game_name), find_source_game)))
+  ratings$variant_number = as.factor(as.character(lapply(as.vector(ratings$game_name), find_variant_number)))
+  for (i in 1:length(ratings$difficulty)){
+    if (!is.na(ratings$difficulty[i]) & ratings$difficulty[i]=="None"){
+      ratings$difficulty[i]=NA
+    }
+    if (ratings$interestingness[i]=="None"){
+      ratings$interestingness[i]=NA
+    }
+  }
+  ratings$difficulty = as.numeric(ratings$difficulty)
+  ratings$interestingness = as.numeric(ratings$interestingness)
+  ## you also have enjoyability
+  
+  return(ratings)  
 }
 
 

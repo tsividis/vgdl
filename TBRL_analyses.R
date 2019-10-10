@@ -5,9 +5,9 @@ source(paste(getwd(), '/TBRL_functions.R', sep=''))
 
 EMPA_dates = list('mar28')
 lesion_dates = list('jun3', 'jun22', 'jun23')
-dqn_path = paste(getwd(),'/data_files/dqn', sep='')
+dqn_path = paste(getwd(),'/data_files/ddqn', sep='')
 rainbow_path = paste(getwd(),'/data_files/rainbow', sep='')
-random_path = paste(getwd(),'/data_files/randomdata', sep='') ## TODO: add
+random_path = paste(getwd(),'/data_files/randomdata', sep='')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load data. These next few lines take a long time.
@@ -16,74 +16,11 @@ EMPAdata = load_reward_data('EMPA', EMPA_dates)
 EMPA_variants = filter(EMPAdata, agent_type!='EMPA')
 new_lesions = load_reward_data('EMPA', c('apr4', 'jun3', 'jun22', 'jun23')) ## TODO: rename
 dqndata = load_reward_data('DDQN', NA)
-rainbowdata = load_reward_data('rainbow', dates_or_groups) # extra slow!
-randomdata = load_reward_data('random', dates_or_groups)
+rainbowdata = load_reward_data('rainbow', NA)
+# randomdata = load_reward_data('random', NA)
 
-##Load ratings
-path = '~/Projects/atari/vgdl/humandata_ratings/ratings'
-ratingpaths = list.files(path)
-ratings = list()
-for (rating in ratingpaths){
-  ratingpath = paste(path, '/', rating, sep='')
-  r=read.csv(ratingpath, header=TRUE, na.strings='NA')
-  if (length(ratings)==0){
-    ratings = r
-  }
-  else{
-    ratings = rbind(ratings,r)
-  }
-}
-substrRight <- function(x, n){
-  substr(x, nchar(x)-n+1, nchar(x))
-}
-find_source_game = function(name){
-  if (substrRight(name,1)%in%c("1","2","3","4")){
-    return(substr(name,0,nchar(name)-2))
-  }
-  else{
-    return(name)}
-}
-find_variant_number = function(name){
-  lastchar = substrRight(name,1)
-  if (lastchar%in%c("1","2","3","4")){
-    return(lastchar)
-  }
-  else{
-    return('0')
-  }
-}
-ratings$game_name = as.factor(ratings$gameName)
-ratings$source_game_name = as.factor(as.character(lapply(as.vector(ratings$game_name), find_source_game)))
-ratings$variant_number = as.factor(as.character(lapply(as.vector(ratings$game_name), find_variant_number)))
-for (i in 1:length(ratings$difficulty)){
-  if (!is.na(ratings$difficulty[i]) & ratings$difficulty[i]=="None"){
-    ratings$difficulty[i]=NA
-  }
-  if (ratings$interestingness[i]=="None"){
-    ratings$interestingness[i]=NA
-  }
-}
-ratings$difficulty = as.numeric(ratings$difficulty)
-ratings$interestingness = as.numeric(ratings$interestingness)
-## you also have enjoyability
-
-s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
-p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
-  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
-  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Difficulty')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
-#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
-p  
-##save 12x6
-
-s = summarySE(ratings, measurevar="interestingness", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
-p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=interestingness)) +
-  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=interestingness-ci, ymax=interestingness+ci))+
-  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Interestingness') +scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
-#+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())+theme(legend.position='bottom')
-p  
-##save 12x6
-
-
+##Load subjective game ratings
+ratings = load_ratings()
 
 ## Remove subject-game pairs where the subject said they'd played the game before.
 played_before = filter(ratings, played.before=='Yes')
@@ -93,8 +30,8 @@ for (game in unique(played_before$gameName)){
   }
 }
 
-## Finds all (subject, game, level) tuples where the subject was forced to play a level more than once.
-# fullhumandata = load_full_human_data()
+## Find all (subject, game, level) tuples where the subject was forced to play a level more than once.
+## (this is slow)
 excluded_subjects = data.frame(game_name=as.character(), subject_ID=as.character(), level=as.numeric())
 for (game in unique(humandata$game_name)){
   human_game_data = filter(humandata, game_name==game)
@@ -107,7 +44,8 @@ for (game in unique(humandata$game_name)){
     }
   }
 }
-## Remove game-subject pairs where the subject played a given level in a game more than once (this only happened a few times)
+## Remove game-subject pairs where the subject played a given level in a game more than once 
+## (this only happened a few times)
 for (i in 1:length(excluded_subjects$game_name)){
   row = excluded_subjects[i,]
   game = row$game_name
@@ -116,113 +54,29 @@ for (i in 1:length(excluded_subjects$game_name)){
 }
 
 
+## TODO: rm comment
 ## everything that is currently stored as e-greedy .1 is called e-greedy 2k in the new lesions
 
 ### Before you do this, you need to fix how you're IDing model types from the string. you've added new parts
 ## (minimally batchID).
-first_lesions = load_reward_data("EMPA", c('apr4'))
 
-# new_lesions_saved = new_lesions ##jun3
-# new_lesions_2 = load_reward_data('EMPA', dates_or_groups)
-# new_lesions_3 = load_reward_data('EMPA', dates_or_groups)
-# new_lesions_all = rbind(new_lesions, new_lesions_2, new_lesions_3)
-# new_lesions = load_reward_data('EMPA', lesion_dates)
-
-## Used this to check which lesions didn't have enough data
+## Grab first 5 of each lesion.
+first_5_IDs_of_each_lesion_type = c()
 for (agent in unique(new_lesions$agent_type)){
-  agent_data = filter(new_lesions, agent_type==agent)
-  for (game in unique(EMPAdata$game_name)){
-    game_data = filter(agent_data, game_name==game)
-    if (length(unique(game_data$subject_ID))<5){
-    print (c(agent, game, (length(unique(game_data$subject_ID)))))
-    }
+  if (!(agent %in% c('e-greedy 1k SN', 'e-greedy 1k SS', 'EMPA'))){
+    first_5_IDs_of_each_lesion_type = c(first_5_IDs_of_each_lesion_type, as.character(unique(filter(new_lesions, agent_type==agent)$subject_ID)[1:5]))
   }
 }
+new_lesions = filter(new_lesions, subject_ID%in%first_5_IDs_of_each_lesion_type)
+
+alldata = rbind(humandata, EMPAdata, new_lesions, dqndata, rainbowdata)
+human_normed_data = make_human_normed_data(alldata)
+
+
 
 
 ## Global plot styling
 removeGrid(x = TRUE, y = TRUE)
-
-
-# new_lesions_5_each_2 = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
-#                                 odelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
-# for (agent in c('e-greedy 2k')){
-#     agent_data = filter(new_lesions, agent_type==agent)
-#     for (game in unique(EMPAdata$game_name)){
-#       game_data = filter(agent_data, game_name==game)
-#       first_5_IDs = unique(filter(game_data)$subject_ID)[1:5]
-#       for (ID in first_5_IDs){
-#         subject_data = filter(game_data, subject_ID==ID)
-#         new_lesions_5_each_2 = rbind(new_lesions_5_each_2, subject_data)
-#       }
-#     }
-# }
-# 
-# new_lesions_5_each = rbind(new_lesions_5_each, new_lesions_5_each_2)
-
-## Grab first 5 of each lesion. This takes a *very* long time.
-new_lesions_5_each = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
-                                odelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
-for (agent in unique(new_lesions$agent_type)){
-  ## exclude two lesion types we ran by mistake:
-  if (!(agent %in% c('e-greedy 1k SN', 'e-greedy 1k SS', 'EMPA'))){
-    agent_data = filter(new_lesions, agent_type==agent)
-    for (game in unique(EMPAdata$game_name)){
-      game_data = filter(agent_data, game_name==game)
-      first_5_IDs = unique(filter(game_data)$subject_ID)[1:5]
-      for (ID in first_5_IDs){
-        subject_data = filter(game_data, subject_ID==ID)
-        new_lesions_5_each = rbind(new_lesions_5_each, subject_data)
-      }
-    }
-  }
-}
- 
-# human_normed_new_lesions_2 = make_human_normed_data(rbind(new_lesions_5_each_2, humandata))
-# human_normed_new_lesions_2$model_cluster = NA
-# human_normed_new_lesions_2$formatted_game_name = NA
-# human_normed_new_lesions = rbind(human_normed_new_lesions, filter(human_normed_new_lesions_2, agent_type=='e-greedy 2k'))
-
-new_lesions = rbind(new_lesions_5_each, humandata)
-human_normed_new_lesions = make_human_normed_data(new_lesions)
-saved_human_normed_new_lesions = human_normed_new_lesions
-saved_human_normed_data = human_normed_data
-human_normed_new_lesions$model_cluster = NA
-human_normed_new_lesions$formatted_game_name = NA
-human_normed_new_lesions = rbind(human_normed_new_lesions, filter(human_normed_data, agent_type%in%c('EMPA', 'DDQN 100k')))
-human_normed_data = rbind(human_normed_new_lesions, filter(human_normed_data, agent_type %in% c('DDQN 1k', 'DDQN 10k')))
-
-dqn_and_humans = rbind(dqndata, humandata)
-human_normed_dqn_data = make_human_normed_data(dqn_and_humans)
-filter(human_normed_dqn_data, agent_type=='DDQN 100k', human_normed_composite_ratio<.01)
-
-## august 4, 16:
-saved_human_normed_data = human_normed_data ## human DDQN 100k EMPA 
-rainbow_and_humans = rbind(rainbowdata, humandata)
-human_normed_rainbowdata = make_human_normed_data(rainbow_and_humans)
-
-random_and_humans = rbind(randomdata, humandata)
-human_normed_randomdata = make_human_normed_data(random_and_humans)
-
-human_normed_data = filter(human_normed_data, !(agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k', 'rainbow 50k')) )
-human_normed_data = rbind(human_normed_data, filter(human_normed_dqn_data, agent_type!='human'))
-human_normed_data = rbind(human_normed_data, filter(human_normed_rainbowdata, agent_type!='human'))
-human_normed_data = rbind(human_normed_data, filter(human_normed_randomdata, agent_type!='human'))
-
-####### aug 29
-all_models_and_humans = rbind(humandata, filter(EMPA_data, agent_type=='EMPA'), new_lesions, dqndata, rainbowdata)
-alldata = all_models_and_humans
-human_normed_data = make_human_normed_data(alldata)
-# human_normed_data_frames = make_human_normed_data(all_models_and_humans)
-# saved_human_normed_data = human_normed_data
-######
-# human_normed_data = filter(human_normed_data, agent_type%in%c('human', 'DDQN 100k', 'EMPA'))
-# human_normed_data = select(human_normed_data, -model_cluster)
-# human_normed_data = rbind(human_normed_data, filter(human_normed_rainbowdata, agent_type!='human'))
-#####
-
-
-
 
 
 
@@ -867,6 +721,27 @@ p
 filter(human_normed_data, agent_type=='EMPA', (human_normed_composite_ratio>10 | human_normed_composite_ratio<.1))
 
 filter(human_normed_data, agent_type=='DDQN 100k', human_normed_composite_ratio<.01)
+
+
+
+## Plot subjective game ratings
+s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=difficulty-ci, ymax=difficulty+ci))+
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Difficulty')+scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+p  
+##save 12x6
+
+s = summarySE(ratings, measurevar="interestingness", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
+p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=interestingness)) +
+  geom_bar(position='dodge', stat='summary', fun.y='mean', fill='steelblue3')+geom_linerange(aes(ymin=interestingness-ci, ymax=interestingness+ci))+
+  facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Interestingness') +scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
+p  
+##save 12x6
+
+
+
+
 
 ## attempt to produce individual plots with quartiles.
 # plots = list()
