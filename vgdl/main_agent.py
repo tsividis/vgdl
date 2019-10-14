@@ -343,7 +343,8 @@ class Agent:
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
         self.timestamp = timestamp
         if self.record_states:
-            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
+            # dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename) # old data location
+            dirname = "demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             self.filename = filename
             if not os.path.exists(dirname):
