@@ -2522,7 +2522,8 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 						# embed()
 						argsString += " %s=%s"%("stype", colorConvertedToSType)
 					except KeyError:
-						print "in TheoryToTxt(), search for colorConvertedToSType"
+						pass
+						# print "in TheoryToTxt(), search for colorConvertedToSType"
 						## TODO: If you, say, hypothesize that a missile is a Chaser and that it chases some random color but you don't have that color in your theory yet,
 						## you can end up here.
 						# embed()

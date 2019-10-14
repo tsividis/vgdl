@@ -1058,11 +1058,11 @@ class BasicGame(object):
         if win:
             # self.score += 1
             self.win = True
-            print "Game won, with score %s" % self.score
+            # print "Game won, with score %s" % self.score
         else:
             # self.score -= 1
             self.win = False
-            print "Playback is incomplete, or game is lost. Score=%s" % self.score
+            # print "Playback is incomplete, or game is lost. Score=%s" % self.score
         
         # if make_movie:
             # self.makeMovie(parameter_string, gameName)

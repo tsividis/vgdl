@@ -399,8 +399,8 @@ class WBP():
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 
-			if i%100==0:
-				print "Searching node {}".format(i)
+			if i>0 and i%100==0:
+				print "searching node {}".format(i)
 
 			current = self.rewardSelection(QReward, QNovelty)
 			
@@ -560,8 +560,8 @@ class WBP():
 									else:
 										child.terminal = True
 										child.win, foundWin = True, True
-										# if self.display:
-										print "exiting early because progress was made toward", stype
+										if self.display:
+											print "exiting early because progress was made toward", stype
 											# embed()
 							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 								stypes = term.termination.stypes
@@ -572,8 +572,8 @@ class WBP():
 									else:
 										child.terminal = True
 										child.win, foundWin = True, True
-										# if self.display:
-										print "exiting early because progress was made toward", stypes
+										if self.display:
+											print "exiting early because progress was made toward", stypes
 											# embed()
 							if foundWin:
 								break
@@ -595,8 +595,8 @@ class WBP():
 						ended, win, t = child.rle._isDone(getTermination=True)
 						# if self.display:
 							# print child.rle.show()
-						if t:
-							print t.__dict__
+						# if t:
+							# print t.__dict__
 							# embed()
 							# embed()
 						# if a == K_LEFT:
@@ -892,8 +892,8 @@ class Node():
 								# print "ignoring rollout termination because it didn't have to do with our recent projectile"
 								terminal, win = False, False
 						if terminal:
-							# if self.WBP.display:
-							print t.name, t.s1, t.s2
+							if self.WBP.display:
+								print t.name, t.s1, t.s2
 					except (IndexError, AttributeError) as e:
 						# Avatar is dead or doesn't have projectile
 						pass

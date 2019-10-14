@@ -30,7 +30,7 @@ class Tree(object):
 
 	def addChild(self, sprite):
 		if str(sprite) in self.members.keys():
-			print "{} already in tree.".format(sprite)
+			# print "{} already in tree.".format(sprite)
 			return
 		#if the parent is in the tree	
 		elif str(sprite.__base__) in self.members.keys():
@@ -40,11 +40,11 @@ class Tree(object):
 			parent.children.append(t)
 			t.head.members[str(sprite)] = t
 			# A.add_edge(str(parent.VGDLType), str(sprite))
-			print "added self, {}".format(sprite)
+			# print "added self, {}".format(sprite)
 		 #Otherwise, add the sprite's parent and then add the sprite.
 		else:
 			self.addChild(sprite.__base__)
-			print "added parent, {}".format(sprite.__base__)
+			# print "added parent, {}".format(sprite.__base__)
 			self.addChild(sprite)
 
 	def distance(self, n1, n2):

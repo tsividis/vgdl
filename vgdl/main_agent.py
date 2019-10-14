@@ -360,8 +360,8 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
-        print "timestamp", self.timestamp
-        print "param_ID", self.param_ID
+        # print "timestamp", self.timestamp
+        # print "param_ID", self.param_ID
         curriculumDir = 'savedCurricula'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
@@ -388,6 +388,7 @@ class Agent:
 
             if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
                 continue
+            print ""
             print("Playing level {}".format(n_level))
 
             (self.gameString, self.levelString) = level_game
@@ -428,7 +429,7 @@ class Agent:
 
                 # first_time_playing_level = False
                 i += 1
-                print "Finished in ", time.time() - t1
+                # print "Finished in ", time.time() - t1
 
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
@@ -440,9 +441,9 @@ class Agent:
                 if self.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
-                    print "n_level", n_level
-                    print "recording episode. check planning_nodes for this episode"
-                    print "total nodes across all episodes for this level:", sum([item['planner_nodes'] for sublist in allCompactStates for item in sublist])
+                    # print "n_level", n_level
+                    # print "recording episode. check planning_nodes for this episode"
+                    # print "total nodes across all episodes for this level:", sum([item['planner_nodes'] for sublist in allCompactStates for item in sublist])
                     # embed()
                     with open(self.filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
@@ -606,7 +607,9 @@ class Agent:
         self.initializeEnvironment()
         if self.display_text:
             print "initializing RLE"
-        print "Game name:", self.gameFilename
+        # print "Game name:", self.gameFilename
+        print "Starting episode"
+        print ""
         print self.rle.show(color='blue')
 
         self.quits = 0
@@ -677,7 +680,7 @@ class Agent:
         legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
         if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
             legalActions.append(K_SPACE)
-        print "legal actions: {}".format(legalActions)
+        # print "legal actions: {}".format(legalActions)
 
         steps = self.rle._game.time
         emptyPlans = 0
@@ -702,6 +705,7 @@ class Agent:
                 self.max_nodes = random.choice(self.shortHorizonRandomChoice)
 
             # print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+            print "==============================================================="
             print "planning with max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             ## initialize one or many VRLEs according to hypothesis-selection method
@@ -830,13 +834,13 @@ class Agent:
             self.actionSeqLength += len(solution)
 
             if solution and not p.quitting and not takingRandomSteps and self.display_states:
-                print "============================================="
+                # print "==============================================================="
                 print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
                 # print colored(p.gameString_array[0], 'green')
                 for i,g in enumerate(p.gameString_array[1:]):
                     print actionDict[solution[i]]
                     print colored(g, 'green')
-                print "============================================="
+                print "==============================================================="
 
             if not quitting:
                 for i, action in enumerate(solution):
@@ -952,7 +956,10 @@ class Agent:
 
         score = self.rle._game.score
 
-        output =          "ended episode. Win={}                                           ".format(win)
+        if win:
+            output =          "ended episode. Win={}                                         ".format(win)
+        else:
+            output =          "ended episode. Win={}                                        ".format(win)            
         if win:
             print colored('________________________________________________________________', 'white', 'on_green')
             print colored('________________________________________________________________', 'white', 'on_green')
@@ -1246,7 +1253,7 @@ class Agent:
                     print ""
 
         if self.display_states:
-            print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
+            print "score: {}, game step: {}".format(self.rle._game.score, self.rle._game.time)
 
         # t1 = time.time()
         if self.display_states:

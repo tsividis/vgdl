@@ -137,11 +137,11 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
 
     ##then pass this down for multiple episodes
     gameObject = None
-    print game_levels
+    # print game_levels
 
     agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
 
-    print game_levels
+    # print game_levels
 
     total_time = time.time() - start_time
 
