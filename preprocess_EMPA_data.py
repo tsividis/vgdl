@@ -13,7 +13,10 @@ import random
 """
 Preprocesses raw EMPA data into csv files where score/time data can be analyzed in R, or make heatmaps
 
-Usage:
+Demo usage:
+python -m process_EMPA_data --date local
+
+Normal usage:
 python -m process_EMPA_data --date apr4 ## preprocess
 python -m process_EMPA_data --date apr4 --heatmap True ## heatmap. call this on a date for which state data were stored
 
