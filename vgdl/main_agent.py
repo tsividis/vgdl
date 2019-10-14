@@ -1,4 +1,3 @@
-# from IPython import embed
 from util import *
 from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
@@ -478,6 +477,9 @@ class Agent:
                 print "in main_agent; playing with flexible_goals"
                 embed()
 
+        if make_movie:
+            self.makeMovie()
+
         endtime = time.time()
 
     def compactify(self, rle, planner_nodes=0):
@@ -554,19 +556,24 @@ class Agent:
 
 
     def makeImages(self):
+        # params_to_print_to_video = self.param_ID
+        params_to_print_to_video = ''
+        game_name_to_print_to_video = self.gameFilename
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = self.gameFilename, parameter_string=self.param_ID, padding=10)
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
 
     def makeMovie(self):
 
         print "Creating Movie"
-        movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
-
+        # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
+        movie_dir = "videos/"
         if not os.path.exists(movie_dir):
             print movie_dir, "didn't exist. making new dir"
             os.makedirs(movie_dir)
-        round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
-        video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+
+        round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store' and self.gameFilename in d])
+        # video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+        video_dirname = movie_dir+"/"+self.gameFilename+'_'+str(round_index)+".mp4"
         images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
         com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
         command = "{}".format(com)

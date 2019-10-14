@@ -1024,7 +1024,7 @@ class BasicGame(object):
             #### in image-making mode ####
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
-            self.message_display(gameName, fontsize=20, location='top_left')
+            # self.message_display(gameName, fontsize=20, location='top_left')
             self.message_display(parameter_string, location='bottom_right')
             self.message_display(str(current_state['score']), fontsize=20, location='top_right')
             if current_state['ended']:
