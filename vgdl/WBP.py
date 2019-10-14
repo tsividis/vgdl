@@ -363,8 +363,8 @@ class WBP():
 				print "picked a node with >0 badoutcomes"
 				embed()
 		except:
-			# if self.display:
-			print("RewardSelection didn't find a node that satisfied novelty criteria.")
+			if self.display:
+				print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			# embed()
 			return 'pickMaxNode'
 		

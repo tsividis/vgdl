@@ -756,9 +756,9 @@ class Agent:
                     else:
                         scoreChange = True
                     # if self.display_text:
-                    print "moving types: {}".format(movingTypes)
-                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
-                    print "scoreChange: {}".format(scoreChange)
+                    # print "moving types: {}".format(movingTypes)
+                    # print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
+                    # print "scoreChange: {}".format(scoreChange)
                     if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
                             (not movingTypes or (movingTypes and not scoreChange)):
                         print "switching to long-range planning"
@@ -767,7 +767,7 @@ class Agent:
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = False
                     else:
-                        print "planning conservatively"
+                        print "planning in 'stall' mode"
                         new_index = 3
                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
                         conservative = True
@@ -790,7 +790,7 @@ class Agent:
                     p_quitting = p.quitting
                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
                     self.total_planner_steps += p.total_nodes_opened
-                    print "total planner steps in main_agent:", self.total_planner_steps
+                    # print "total planner steps in main_agent:", self.total_planner_steps
                     if bestNode is not None:
                         solution = p.solution
                         gameString_array = p.gameString_array
@@ -807,7 +807,7 @@ class Agent:
                 # in the second case, you also add a new atom to IW
                 # if p.exhausted_novelty and self.extra_atom_allowed:
                 if self.extra_atom_allowed:
-                    print "turning on extra atom"
+                    # print "turning on extra atom"
                     self.extra_atom = True
                 if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with idx_3 you'll plan conservatively. 
                                                                                   ## you only get here if you're in idx_1 and don't find a plan.
