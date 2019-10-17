@@ -113,7 +113,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameter_sets, hyperparameter_index):
+def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     start_time = time.time()
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
@@ -132,12 +132,26 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
-
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
 
     ##then pass this down for multiple episodes
     gameObject = None
     # print game_levels
+
+    estimated_time = {
+    'aliens': '10 minutes',
+    'tiny_zelda': '1 minute',
+    'demo_bait': '3 minutes',
+    'zelda': '5 minutes',
+    'bait': '10 hours'
+    }
+    print ""
+
+    if args.make_movie:
+        print "Playing and producing game-play video for {}".format(game_name)
+    else: 
+        print "Playing {}".format(game_name)
+    print "Typical runtime for this game: {}".format(estimated_time[game_name])
 
     agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
 
@@ -147,7 +161,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index):
 
     return total_time
 
-play_trainset(hyperparameter_sets, hyperparameter_index)
+play_trainset(hyperparameter_sets, hyperparameter_index, args)
 
 
 
