@@ -377,13 +377,6 @@ class WBP():
 		return current
 
 
-	# def BFS_profiler(self):
-	# 	lp = LineProfiler()
-	# 	lp_wrapper = lp(self.BFS)
-	# 	lp_wrapper()
-	# 	lp.print_stats()
-
-
 	def BFS(self):
 		QNovelty, QReward = [], []
 		visited, rejected = [], []
@@ -399,7 +392,7 @@ class WBP():
 
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 
-			if i>0 and i%100==0:
+			if i>0 and i%100==0 and self.display:
 				print "searching node {}".format(i)
 
 			current = self.rewardSelection(QReward, QNovelty)
@@ -850,7 +843,7 @@ class Node():
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
 				terminal, win, t = vrle._isDone(getTermination=True)
-				if win and t.name=='SpriteCounter':
+				if self.WBP.display and win and t.name=='SpriteCounter':
 					print t.stype
 				if self.WBP.firstOrderHorizon:
 					# Return plan if first-order progress was made towards
@@ -910,8 +903,8 @@ class Node():
 		# print sum(rolloutArray)
 		# embed()
 		if win:
-			# if self.WBP.display:
-			print "rolloutwin"
+			if self.WBP.display:
+				print "rolloutwin"
 			# embed()
 			self.terminal = terminal
 			self.win = win
@@ -1234,7 +1227,7 @@ class Node():
 				try:
 					resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
 				except:
-					print "problem with resource positions"
+					# print "problem with resource positions"
 					resource_positions = []
 					# embed()
 
@@ -1611,7 +1604,7 @@ class Node():
 						badOutcomeLimit = 0
 						okOutcomes, badOutcomes = [], []
 						for i in range(10):
-							print "multiple samples"
+							# print "multiple samples"
 							vrle = self.fastcopy(self.parent.rle)
 							res = vrle.step(a, return_obs=True)
 							terminal, win = res['ended'], res['win']
@@ -1726,8 +1719,8 @@ class Node():
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
-				# if self.WBP.display:
-				print "resource limit win. Need {} and have {}".format(self.WBP.theory.resource_limits, self.rle._game.getAvatars()[0].resources)
+				if self.WBP.display:
+					print "resource limit win. Need {} and have {}".format(self.WBP.theory.resource_limits, self.rle._game.getAvatars()[0].resources)
 				self.win=True
 		except IndexError:
 			pass
