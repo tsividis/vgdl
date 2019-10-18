@@ -5,7 +5,9 @@ import time
 import os
 from IPython import embed
 import argparse
+import subprocess
 from util import str2bool
+from make_gameplay_videos import *
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
@@ -17,6 +19,8 @@ parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra
 parser.add_argument('--task_ID', type=int, default=0, help='task_ID')
 parser.add_argument('--heatmap', type=str2bool, default=False, help='heatmap')
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
+parser.add_argument('--play_movie', type=str2bool, default=False, help='play_movie')
+parser.add_argument('--produce_printout', type=str2bool, default=False, help='produce_printout')
 
 args = parser.parse_args()
 game_number = args.game_number
@@ -27,6 +31,7 @@ IW_k = args.IW_k
 extra_atom_allowed = args.extra_atom_allowed
 task_ID = str(args.task_ID)
 make_movie = args.make_movie
+play_movie = args.play_movie
 heatmap = args.heatmap
 
 if game_name==str(0):
@@ -132,7 +137,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         with open('{}_lvl{}.txt'.format(gvgname, level_number), 'r') as level:
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
-    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
+    agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID, produce_printout=args.produce_printout)
 
     ##then pass this down for multiple episodes
     gameObject = None
@@ -149,19 +154,28 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
     if args.make_movie:
         print "Playing and producing game-play video for {}".format(game_name)
+        if args.play_movie:
+            print "The video will open automatically in Quicktime after it is made. If it doesn't, please check the 'videos' directory in this folder."
+        else:
+            print "The video will appear in the 'videos' directory in this folder."
     else: 
         print "Playing {}".format(game_name)
-    print "Typical runtime for this game: {}".format(estimated_time[game_name])
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
+    if game_name in estimated_time:
+        print "Typical runtime for this game: {}".format(estimated_time[game_name])
+    else:
+        print "No estimated runtime for this game."
+
+    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, play_movie=play_movie, heatmap=heatmap)
 
     # print game_levels
 
     total_time = time.time() - start_time
 
+    print total_time
+
     return total_time
 
-play_trainset(hyperparameter_sets, hyperparameter_index, args)
-
-
+# embed()
+# play_trainset(hyperparameter_sets, hyperparameter_index, args)
 

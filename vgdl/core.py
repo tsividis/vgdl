@@ -350,6 +350,8 @@ class BasicGame(object):
                     self.resources_colors[res_type] = args['color']
                 if 'limit' in args:
                     self.resources_limits[res_type] = args['limit']
+                if 'img' in args:
+                    self.resources_imgs[res_type] = args['img']
             else:
                 self.sprite_groups[res_type] = []
 
@@ -394,6 +396,8 @@ class BasicGame(object):
                     self.resources_colors[res_type] = args['color']
                 if 'limit' in args:
                     self.resources_limits[res_type] = args['limit']
+                if 'img' in args:
+                    self.resources_imgs[res_type] = args['img']
             else:
                 self.sprite_groups[res_type] = []
 
@@ -965,7 +969,8 @@ class BasicGame(object):
         # Logging
         f = sys.argv[0]
         m = re.search('([A-Za-z0-9]+)\.py', f)
-        name = m.group(1)
+        # name = m.group(1)
+        name = 'tmp_buggy_name'
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
         timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
@@ -1044,7 +1049,6 @@ class BasicGame(object):
                         pygame.image.save(self.screen, tmpl%(img_index+j))
                 else:
                     pygame.image.save(self.screen, tmpl%img_index)
-
                 i+=1
 
             VGDLSprite.dirtyrects = []
@@ -1068,7 +1072,9 @@ class BasicGame(object):
             # self.makeMovie(parameter_string, gameName)
 
         # pause a few frames for the player to see the final screen.
-        pygame.time.wait(10)
+        # pygame.time.wait(10)
+        pygame.display.quit()
+        pygame.quit()
         return win, self.score
     
     # def makeMovie(self, param_ID, gameFilename):
@@ -1115,7 +1121,8 @@ class BasicGame(object):
         # Logging
         f = sys.argv[0]
         m = re.search('([A-Za-z0-9]+)\.py', f)
-        name = m.group(1)
+        # name = m.group(1)
+        name = 'tmp_buggy_name'
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
         timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
@@ -1446,11 +1453,14 @@ class VGDLSprite(object):
     def __hash__(self):
         return hash(self.ID)
 
-    def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
+    def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, img=None, **kwargs):
         from ontology import GridPhysics
         self.rect = pygame.Rect(pos, size)
         self.x = pos[0]
         self.y = pos[1]
+        self.img_path = img
+        if img is not None:
+            self.draw_arrow = False
         self.lastrect = self.rect.copy()
         self.physicstype = physicstype or self.physicstype or GridPhysics
         self.physics = self.physicstype()
@@ -1527,22 +1537,47 @@ class VGDLSprite(object):
         else:
             shrunk = self.rect
 
+        if self.img_path != None and '.png' not in self.img_path:
+            self.img_path = self.img_path+'.png'
+
         if self.is_avatar:
             '''
             rounded = roundedPoints(shrunk)
             pygame.draw.polygon(screen, self.color, rounded)
             pygame.draw.lines(screen, LIGHTGREEN, True, rounded, 2)
             '''
-            pygame.draw.rect(screen, self.color, shrunk)
+            if self.img_path != None:
+                #print("Yes we got image")
+                img = pygame.image.load(self.img_path)
+                screen.blit(pygame.transform.scale(img, (shrunk.width, shrunk.height)), (shrunk.left, shrunk.top))
+                #    _drawImage(gphx, game, r)
+            else:
+                #print("No we didn't get image")
+                pygame.draw.rect(screen, self.color, shrunk)
             # pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
             r = self.rect.copy()
         elif not self.is_static:
             #rounded = roundedPoints(shrunk)
             #pygame.draw.polygon(screen, self.color, rounded)
-            pygame.draw.rect(screen, self.color, shrunk)
+            if self.img_path != None:
+                #print("Yes we got image")
+                img = pygame.image.load(self.img_path)
+                screen.blit(pygame.transform.scale(img, (shrunk.width, shrunk.height)), (shrunk.left, shrunk.top))
+                #    _drawImage(gphx, game, r)
+            else:
+                #print("No we didn't get image")
+                pygame.draw.rect(screen, self.color, shrunk)
+
             r = self.rect.copy()
         else:
-            r = screen.fill(self.color, shrunk)
+            if self.img_path != None:
+                #print("Yes we got image")
+                img = pygame.image.load(self.img_path)
+                r = screen.blit(pygame.transform.scale(img, (shrunk.width, shrunk.height)), (shrunk.left, shrunk.top))
+                #    _drawImage(gphx, game, r)
+            else:
+                #print("No we didn't get image")
+                r = screen.fill(self.color, shrunk)
         if self.resources:
             self._drawResources(game, screen, shrunk)
         VGDLSprite.dirtyrects.append(r)

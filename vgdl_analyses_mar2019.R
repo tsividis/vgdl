@@ -10,6 +10,7 @@ library(purrr)
 library(zoo)
 library(EnvStats)
 library(grid)
+library(plotrix)
 
 ## everything starting mar23 has no 15-loss cutoff.
 ## nov28 old planner-lesion data
@@ -19,10 +20,10 @@ library(grid)
 EMPA_dates = list('mar28', 'apr4')
 lesion_dates = list('jun3', 'jun22', 'jun23')
 planner_lesion_dates = list('nov28')
-dqn_path = '~/Projects/atari/vgdl/dqn_data/'
-rainbow_path = '~/Projects/atari/vgdl/rainbow_data/'
-
-humandatapaths = list.files("~/Projects/atari/vgdl/humandata")
+dqn_path = '~/Projects/atari/vgdl/vgdl/dqn_data/'
+rainbow_path = '~/Projects/atari/vgdl/vgdl/rainbow_data/'
+random_path = '~/Projects/atari/vgdl/vgdl/random_data/'
+humandatapaths = list.files("~/Projects/atari/vgdl/vgdl/humandata")
 
 
 ### Toggle the below line to alter what you're reading in
@@ -30,12 +31,13 @@ data_to_load = 'EMPA'
 data_to_load = 'human'
 data_to_load = 'DDQN'
 data_to_load = 'rainbow'
+data_to_load = 'random'
 
 if (data_to_load == 'EMPA'){
   dates_or_groups = EMPA_dates
 }else if (data_to_load == 'human'){
-  dates_or_groups = groups
-}else if (data_to_load %in% c('DDQN','rainbow')){
+  dates_or_groups = NA
+}else if (data_to_load %in% c('DDQN','rainbow','random')){
   dates_or_groups = NA #doesn't matter
 }
 
@@ -43,10 +45,43 @@ EMPAdata = load_reward_data('EMPA', dates_or_groups)
 
 EMPA_variants = filter(EMPAdata, agent_type!='EMPA')
 humandata = load_reward_data('human', dates_or_groups)
+savedhumandata = humandata ## saved on aug 29. then loaded humandata where steps are frames.
 dqndata = load_reward_data('DDQN', dates_or_groups)
 planner_lesions = load_reward_data('EMPA', list('nov28'))
 
-rainbow_data = load_reward_data('rainbow', dates_or_groups)
+rainbow_data = load_reward_data('rainbow', dates_or_groups) # slow!
+random_data = load_reward_data('random', dates_or_groups)
+
+## Remove subject-game pairs where the subject said they'd played the game before.
+played_before = filter(ratings, played.before=='Yes')
+for (game in unique(played_before$gameName)){
+  for (subject in unique(filter(played_before, gameName==game)$subject)){
+    humandata = filter(humandata, !((game_name==game) & (subject_ID==subject)))
+  }
+}
+
+## Finds all (subject, game, level) tuples where the subject was forced to play a level more than once.
+# fullhumandata = load_full_human_data()
+excluded_subjects = data.frame(game_name=as.character(), subject_ID=as.character(), level=as.numeric())
+for (game in unique(humandata$game_name)){
+  human_game_data = filter(humandata, game_name==game)
+  for (subject in unique(humandata$subject_ID)){
+    subject_data = filter(humandata, subject_ID==subject)
+    for (level in unique(subject_data$level_number)){
+      if (length(unique(filter(subject_data, level_number==level)$cumulative_wins))>2){
+        excluded_subjects = rbind(excluded_subjects, data.frame(game_name=game, subject_ID=subject, level_number=level))
+      }
+    }
+  }
+}
+## Remove game-subject pairs where the subject played a given level in a game more than once (this only happened a few times)
+for (i in 1:length(excluded_subjects$game_name)){
+  row = excluded_subjects[i,]
+  game = row$game_name
+  subject = row$subject_ID
+  humandata = filter(humandata, !((game_name==as.character(game))&(subject_ID==as.character(subject))))
+}
+
 
 ## everything that is currently stored as e-greedy .1 is called e-greedy 2k in the new lesions
 
@@ -121,13 +156,42 @@ human_normed_new_lesions$formatted_game_name = NA
 human_normed_new_lesions = rbind(human_normed_new_lesions, filter(human_normed_data, agent_type%in%c('EMPA', 'DDQN 100k')))
 human_normed_data = rbind(human_normed_new_lesions, filter(human_normed_data, agent_type %in% c('DDQN 1k', 'DDQN 10k')))
 
-## august 4:
+dqn_and_humans = rbind(dqndata, humandata)
+human_normed_dqn_data = make_human_normed_data(dqn_and_humans)
+filter(human_normed_dqn_data, agent_type=='DDQN 100k', human_normed_composite_ratio<.01)
+
+## august 4, 16:
 saved_human_normed_data = human_normed_data ## human DDQN 100k EMPA 
 rainbow_and_humans = rbind(rainbow_data, humandata)
 human_normed_rainbow_data = make_human_normed_data(rainbow_and_humans)
-human_normed_data = select(human_normed_data, -formatted_game_name)
+
+random_and_humans = rbind(random_data, humandata)
+human_normed_random_data = make_human_normed_data(random_and_humans)
+
+human_normed_data = filter(human_normed_data, !(agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k', 'rainbow 50k')) )
+human_normed_data = rbind(human_normed_data, filter(human_normed_dqn_data, agent_type!='human'))
 human_normed_data = rbind(human_normed_data, filter(human_normed_rainbow_data, agent_type!='human'))
+human_normed_data = rbind(human_normed_data, filter(human_normed_random_data, agent_type!='human'))
+
+####### aug 29
+all_models_and_humans = rbind(humandata, filter(EMPA_data, agent_type=='EMPA'), new_lesions, dqndata, rainbow_data)
+alldata = all_models_and_humans
+human_normed_data = make_human_normed_data(alldata)
+# human_normed_data_frames = make_human_normed_data(all_models_and_humans)
+# saved_human_normed_data = human_normed_data
+######
+# human_normed_data = filter(human_normed_data, agent_type%in%c('human', 'DDQN 100k', 'EMPA'))
+# human_normed_data = select(human_normed_data, -model_cluster)
+# human_normed_data = rbind(human_normed_data, filter(human_normed_rainbow_data, agent_type!='human'))
 #####
+
+
+
+
+
+
+
+
 
 # human_normed_new_lesions_2 = rbind(human_normed_new_lesions, human_normed_data)
 
@@ -140,7 +204,7 @@ p # 12x10
 
 savedalldata = alldata
 # dqndata = data
-alldata = rbind(EMPAdata, planner_lesions, humandata, dqndata)
+# alldata = rbind(EMPAdata, planner_lesions, humandata, dqndata)
 #EMPA_data = filter(alldata, agent_type=='EMPA')
 # alldata = filter(alldata, agent_type!='EMPA')
 # alldata = rbind(alldata, filter(EMPAdata, agent_type=='EMPA'))
@@ -164,20 +228,7 @@ just_empa_and_humans = make_human_normed_data(rbind(humandata, data))
 
 human_normed_data = make_human_normed_data(filter(alldata, agent_type %in% c('human', 'EMPA', 'DDQN 100k')))
 
-## Finds all (subject, game, level) tuples where the subject was forced to play a level more than once.
-fullhumandata = load_full_human_data()
-excluded_subjects = data.frame(game_name=as.character(), subject_ID=as.character(), level=as.numeric())
-for (game in unique(fullhumandata$game_name)){
-  human_game_data = filter(fullhumandata, game_name==game)
-  for (subject in unique(human_game_data$subject_ID)){
-    subject_data = filter(human_game_data, subject_ID==subject)
-    for (level in unique(subject_data$level_number)){
-      if (length(unique(filter(subject_data, level_number==level)$cumulative_wins))>2){
-        excluded_subjects = rbind(excluded_subjects, data.frame(game_name=game, subject_ID=subject, level_number=level))
-      }
-    }
-  }
-}
+
 
 
 # zelda_data = filter(EMPA_variants, agent_type=='e-greedy .1', game_name=='zelda')
@@ -201,24 +252,58 @@ p = ggplot(human_normed_data, aes(x=agent_type, y=mean_levels_won))
 p=p+geom_bar(stat='summary', fun.y='mean')
 p
 
+
+colors = c('steelblue1', #EMPA
+           'slategray2', # EMPA failure
+           # 'purple1', 'purple2', 'purple3', 'purple4', #e-greedy
+           # 'orchid1','mediumorchid1', 'mediumpurple1', 'purple1',
+           'slateblue1', 'slateblue4', 'mediumpurple1', 'purple1',
+           
+           # 'slateblue1', 'slateblue3', 'purple1', 'purple3',
+           # 'royalblue1', 'royalblue3', 'purple1', 'purple3',
+           # 'royalblue1', 'dodgerblue1', 'purple1', 'slateblue1',
+           # 'royalblue1', 'blue1', 'purple1', 'slateblue1',
+           
+           'firebrick2',# 'seagreen3','darkolivegreen1',
+           'palegreen3',
+           # 'gray50', 'gray52', 'gray54',
+           'gray50', 'gray65', 'gray80',
+           # 'tomato1', 'tomato3', 'salmon', 
+           'orange3', 'tomato3', 'red3', 'red3',
+           'magenta3',
+           
+           'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkslategray2', 'darkolivegreen3')
+names(colors)=c('EMPA', 'EMPA fail',
+                'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
+                'random policy',
+                'human',
+                'DDQN 100k', 'DDQN 10k', 'DDQN 1k',
+                'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow',
+                'random',
+                'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW', 'no subgoals + no gradient + no IW')
+
+
+
+
 ### To make plots for figure 3 (learning curves)
 ## plotting all agents/models
-games_to_plot = c('avoidgeorge','bait', 'butterflies', 'frogs', 'zelda', 'missilecommand', 'plaqueattack')
+games_to_plot = c('avoidgeorge','bait', 'butterflies', 'frogs', 'zelda', 'plaqueattack')
 # games_to_plot = c('avoidgeorge_4', 'bait_2', 'ee_2', 'ee_3', 'frogs', 'surprise_1', 'zelda_2', 'corridor')
 games_in_order = unique(alldata$game_name)[order(unique(alldata$game_name))]
 plots = list()
 # for(k in 1:length(unique(alldata$game_name))){
-for (k in 1:length(games_to_plot)){
-  agents_to_plot = c('human', 'DDQN 100k', 'EMPA')
-  # game = games_in_order[k]
-  game = games_to_plot[k]
+# for (k in 1:length(games_to_plot)){
+for (k in 1:length(games_in_order)){
+  agents_to_plot = c('human', 'rainbow 150k', 'DDQN 100k', 'EMPA')
+  game = games_in_order[k]
+  # game = games_to_plot[k]
   # if (game %in% c('myAliens', 'avoidgeorge', 'survivezombies', 'zelda')){
   #   max_x=3000
   # }else{
   #   max_x = 1000
   # }
 
-  max_x = 1000
+  max_x = 1000000
   
   ## used for adding data points to sparse DDQN data
   if(max_x<5000){
@@ -252,13 +337,25 @@ for (k in 1:length(games_to_plot)){
   d = filter(d, !(subject_ID%in%subjects_to_exclude))
 
 
+  if (game %in% c('antagonist', 'antagonist_1', 'antagonist_2', 'bees_and_birds', 'bees_and_birds_1', 
+                  'closing_gates', 'closing_gates_1', 'corridor', 'corridor_1', 
+                  'helper', 'helper_1', 'helper_2', 'preconditions', 'preconditions_1', 'preconditions_2',
+                  'push_boulders', 'push_boulders_1', 'push_boulders_2', 'relational', 'relational_1', 'relational_2',
+                  'surprise', 'surprise_1', 'surprise_2')){
+    level_max = 4
+  }else if (game %in% c('ee', 'ee_1', 'ee_2', 'ee_3')){
+    level_max = 6
+  }else{
+    level_max = 5
+  }
   ## Add data points for every 'step_size' DDQN time-step, since we can afford to do this and know what the data points are
   ## (as we recorded end-of-episode data and cumulative_wins definitionally don't change before then)
   ## WARNING: if you ever plotted score, you wouldn't be able to do this. You didn't record score within episodes for DDQN.
   if (max_x<1000000){
   replacement_subjects = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
                               modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
-  for (subject in unique(filter(d, grepl('DDQN', agent_type))$subject_ID)){
+  clean_d=filter(d, (!grepl('DDQN', agent_type) & (!grepl('rainbow', agent_type))) )
+  for (subject in unique(filter(d, (grepl('DDQN', agent_type)|(grepl('rainbow', agent_type))))$subject_ID)){
     subject_data = filter(d, subject_ID==subject, cumulative_steps<max_x)
     
     ## if we actually have subject data for the max_x cutoff we care about...
@@ -271,24 +368,42 @@ for (k in 1:length(games_to_plot)){
       
       for (i in 1:length(subject_data$cumulative_steps)){ ## meaning, for each episode
         subject_row = subject_data[i,]
-        if (last_steps<subject_row$cumulative_steps){
-        # for (j in last_steps:(subject_row$cumulative_steps-1)){
-          for (j in seq(last_steps, subject_row$cumulative_steps-1,step_size)){
+        if ( (last_steps<subject_row$cumulative_steps)){
+          if (subject_row$cumulative_wins<level_max){## add lots of points if game is not won
+            for (j in seq(last_steps, subject_row$cumulative_steps-1,step_size)){
                     row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
+                           modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
+                           score=subject_row$score)
+            new_subject_df = rbind(new_subject_df, row)
+            }
+          }
+          else{ ## just add the last row
+              row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
+                               modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
+                               score=subject_row$score)
+              new_subject_df = rbind(new_subject_df, row)    
+            }
+        new_subject_df = rbind(new_subject_df, subject_row)
+        last_steps = subject_row$cumulative_steps
+        }
+      }
+      ## If we haven't filled out the x range
+      last_x = new_subject_df$cumulative_steps[length(new_subject_df$cumulative_steps)]
+      if(last_x+step_size<max_x){
+        subject_row = new_subject_df[length(new_subject_df$cumulative_steps),]
+        for (j in seq(last_x+step_size, max_x, step_size)){
+          row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
                            modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
                            score=subject_row$score)
           new_subject_df = rbind(new_subject_df, row)
         }
-        new_subject_df = rbind(new_subject_df, subject_row)
-        last_steps = subject_row$cumulative_steps
-      }
       }
       replacement_subjects = rbind(replacement_subjects, new_subject_df)
     } 
     
-    d=filter(d, !grepl('DDQN', agent_type))
-    d = rbind(d, replacement_subjects) 
-    }
+    clean_d = rbind(clean_d, replacement_subjects) 
+  }
+  d = clean_d
   }
   
   d = filter(d, cumulative_steps<=max_x)
@@ -341,7 +456,8 @@ for (k in 1:length(games_to_plot)){
   
   
   d=transform(d, subject_ID=factor(subject_ID, levels=names(plotcolors))) ## reorder in order to plot EMPA on top, as it otherwise can get lost in the many human curves.
-  max_y = max(d$cumulative_wins)
+  # max_y = max(d$cumulative_wins)
+  max_y = level_max
   
   game_title=gsub('_',' ',game)
   if (game_title=='ee'){
@@ -357,7 +473,7 @@ for (k in 1:length(games_to_plot)){
     game_title='explore/exploit 3'
   }
   p = ggplot(d ,aes(x=cumulative_steps,y=cumulative_wins, color=subject_ID, size=agent_type))+geom_point()+ 
-    ggtitle(game_title)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1))+
+    ggtitle(game_title)+theme(legend.position="none")+scale_color_manual(values=plotcolors)+scale_size_manual(values=c(1,1,1,1))+
     xlab('Steps taken by agent')+ylab('Levels won')+
     theme(plot.title=element_text(family='',face='plain', size=26),
           axis.text.x=element_text(size=22),
@@ -369,27 +485,33 @@ for (k in 1:length(games_to_plot)){
   if ( (length(no_win_subjects)>0) & length(filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type))$cumulative_steps>0) ){
     p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type)),size=1.4)
   }
+  if ( (length(no_win_subjects)>0) & length(filter(d,subject_ID%in%no_win_subjects,grepl('rainbow', agent_type))$cumulative_steps>0) ){
+    p = p+geom_segment(aes(x=0,y=0.05,xend=max_x,yend=0.05),data=filter(d,subject_ID%in%no_win_subjects,grepl('rainbow', agent_type)),size=1.4)
+  }
   ## there are some games where you got 0 DDQN data in short ranges of time, like 1k steps for chase.
   if (length(filter(d, grepl('DDQN', agent_type), cumulative_steps<max_x)$cumulative_steps)==0){
-    p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=d,size=1.4, color=colors['DDQN 100k'])
+    p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0,alpha=.7),data=d,size=1.4, color=colors['DDQN 100k'])
+  }
+  if (length(filter(d, grepl('rainbow', agent_type), cumulative_steps<max_x)$cumulative_steps)==0){
+    p = p+geom_segment(aes(x=0,y=0.05,xend=max_x,yend=0.05,alpha=.7),data=d,size=1.4, color=colors['rainbow']) ## add offset so that it's visible w/ DDQN.
   }
   
   p=p+xlim(0,max_x)+ylim(0,max_y)
-  
+
+  if(max_x==10000){
+    p=p+scale_x_continuous(breaks=c(0, 2500, 5000, 7500, 10000),labels=c('0', '2.5k', '5k', '7.5k', '10k'), limits=c(0,10000))
+  }  
   if(max_x==1000000){
     p=p+scale_x_continuous(breaks=c(0, 250000, 500000, 750000, 1000000),labels=c('0', '250k', '500k', '750k', '1mil'), limits=c(0,1000000))
   }
 
-  human_kappa = filter(kappa_df, agent_type=='human')$formatted_efficiency
-  EMPA_kappa = filter(kappa_df, agent_type=='EMPA')$formatted_efficiency
-  DDQN_kappa = filter(kappa_df, agent_type=='DDQN 100k')$formatted_efficiency
+  human_kappa = filter(kappa_df, agent_type=='human')$efficiency
+  EMPA_kappa = filter(kappa_df, agent_type=='EMPA')$efficiency
+  DDQN_kappa = filter(kappa_df, agent_type=='DDQN 100k')$efficiency
   kappa_string = paste('Learning efficiency (\u03ba):','\nHuman: ', human_kappa, '\nEMPA: ', 
                        EMPA_kappa, '\nDDQN: ', 
                        DDQN_kappa, sep='')
-
-  # p=p+annotate("label", x = max_x*.75, y = max_y*.6, label = kappa_string, size=7)
-  
-  p=p+annotate("label", x = max_x*.25, y = max_y*.6, label = kappa_string, size=7)
+  # p=p+annotate("label", x = max_x*.25, y = max_y*.6, label = kappa_string, size=7)
 
   ## Can get different colors, but if you build up the plot line by line, you won't get automatic centering.
   # p+annotate("text",x=max_x*.75, y=3, hjust = 0, parse=T, label='"Learning efficiency (\u03ba):"', color="black") +
@@ -401,24 +523,31 @@ for (k in 1:length(games_to_plot)){
   newdir=paste('~/Projects/atari/vgdl/plots/learning_curves/max=', max_x/1000, 'k/', sep='')
   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
   title = paste(newdir, game, '.png', sep='')
-  ggsave(title, plot=p, width=8, height=6)
+  # ggsave(title, plot=p, width=8, height=6)
 }
 
 ## plots_1k_with_box, plots_10k_with_box, plots_100k_with_box, plots_1mil_with_box
 ## multi_1k_with_box, multi_10k_with_box, multi_1mil_with_box
-plots_1k = plots
-plots_10k = plots
+plots_1k_with_rainbow = plots
+plots_10k_with_rainbow = plots
+# plots_10k_short_label = plots
 plots_100k = plots
-plots_1mil = plots
+plots_1mil_with_rainbow = plots
 
 layout = matrix(c(1:90), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = plots_1mil, layout=layout)
+m = multiplot(plotlist = plots_10k_with_rainbow, layout=layout)
 
-multi_1k = m
-multi_10k = m
+
+multi_1k_with_rainbow = m
+multi_10k_with_rainbow = m
+multi_10k_short_label= m
 multi_100k =m
-multi_1mil = m
+multi_1mil_with_rainbow = m
 multi_1mil_with_box = m
+
+# multi_1k_with_rainbow_all_subjects = multi_1k_with_rainbow
+# multi_10k_with_rainbow_all_subjects = multi_10k_with_rainbow
+# multi_1mil_with_rainbow_all_subjects = multi_1mil_with_rainbow
 ## save 50x30
 
 
@@ -487,22 +616,27 @@ tickmarks = c('0 (failure)',10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1
 #                                                                                      'no goal gradient', 'no subgoals',  'no subgoals + no gradient',
 #                                                                                      'no IW', 'no subgoals + no gradient + no IW',
 #                                                                                      'DDQN 1k', 'DDQN 10k', 'DDQN 100k', 'random policy')))
-human_normed_data = transform(human_normed_data, agent_type=factor(agent_type, levels=c('human', 'EMPA',
-                                                                                        'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k',
-                                                                                        'no goal gradient', 'no subgoals',  'no subgoals + no gradient',
-                                                                                        'no IW', 'no subgoals + no gradient + no IW',
-                                                                                        'DDQN 1k', 'DDQN 10k', 'DDQN 100k', 
-                                                                                        'rainbow 250k', 'rainbow 150k', 'rainbow 50k',
-                                                                                        'random policy')))
+# human_normed_data = transform(human_normed_data, agent_type=factor(agent_type, levels=c('human', 'EMPA',
+#                                                                                         'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k',
+#                                                                                         'no goal gradient', 'no subgoals',  'no subgoals + no gradient',
+#                                                                                         'no IW', 'no subgoals + no gradient + no IW',
+#                                                                                         'DDQN 1k', 'DDQN 10k', 'DDQN 100k', 
+#                                                                                         'rainbow 250k', 'rainbow 150k', 'rainbow 50k','rainbow','random',
+#                                                                                         'random policy')))
 human_normed_data$model_cluster = 'none'
 human_normed_data[human_normed_data$agent_type=='EMPA',]$model_cluster = 'EMPA'
 human_normed_data[human_normed_data$agent_type%in%c('e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k'),]$model_cluster = 'Exploration ablations'
 human_normed_data[human_normed_data$agent_type%in%c('no goal gradient', 'no subgoals',  'no subgoals + no gradient',
                                                     'no IW', 'no subgoals + no gradient + no IW'),]$model_cluster = 'Planner ablations'
-human_normed_data[human_normed_data$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'DDQN'
-human_normed_data[human_normed_data$agent_type%in%c('rainbow 50k', 'rainbow 150k', 'rainbow 250k'),]$model_cluster = 'rainbow'
 
-human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'Exploration ablations', 'Planner ablations', 'DDQN', 'rainbow', NA)))
+human_normed_data[human_normed_data$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'Deep RL'
+human_normed_data[human_normed_data$agent_type%in%c('rainbow 50k', 'rainbow 150k', 'rainbow 250k','rainbow'),]$model_cluster = 'Deep RL'
+human_normed_data[human_normed_data$agent_type=='random',]$model_cluster = 'Random'
+
+
+human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'Exploration ablations', 'Planner ablations', 'Deep RL','Random', NA)))
+
+# human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'Exploration ablations', 'Planner ablations', 'DDQN', 'rainbow', NA)))
 
 # human_normed_data = transform(human_normed_data, model_cluster=factor(model_cluster, levels=c('EMPA', 'exploration lesions', 'DDQN', NA)))
 
@@ -528,7 +662,7 @@ human_normed_data = transform(human_normed_data, model_cluster=factor(model_clus
 
 ## Facet-wrapped plot that shows quartiles!
 # agents = c('EMPA', 'e-greedy .1', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
-agents = c('EMPA', 'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
+agents = c('EMPA', 'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow','random', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
 datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), x4=as.numeric(), x5=as.numeric(), 
                         y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), mean_val=as.numeric(), agent_type=as.character(), model_cluster=as.character())
 for (i in 1:length(agents)){
@@ -559,6 +693,9 @@ for (i in 1:length(agents)){
   }
   if(grepl('rainbow', agent)){
     m_cluster = 'rainbow'
+  }
+  if(agent=='random'){
+    m_cluster = 'random'
   }
   
   
@@ -641,47 +778,21 @@ for (i in 1:length(agents)){
   datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, x4=q4, x5=q5,y1=y1, y2=y2, y3=y3, mean_val=mn, agent_type=agent,model_cluster=m_cluster))
   }
 
-colors = c('steelblue1', #EMPA
-           # 'purple1', 'purple2', 'purple3', 'purple4', #e-greedy
-           # 'orchid1','mediumorchid1', 'mediumpurple1', 'purple1',
-           'slateblue1', 'slateblue4', 'mediumpurple1', 'purple1',
-           
-          # 'slateblue1', 'slateblue3', 'purple1', 'purple3',
-           # 'royalblue1', 'royalblue3', 'purple1', 'purple3',
-           # 'royalblue1', 'dodgerblue1', 'purple1', 'slateblue1',
-           # 'royalblue1', 'blue1', 'purple1', 'slateblue1',
-           
-                      'firebrick2',# 'seagreen3','darkolivegreen1',
-           'palegreen3',
-           # 'gray50', 'gray52', 'gray54',
-           'gray50', 'gray65', 'gray80',
-          # 'tomato1', 'tomato3', 'salmon', 
-           'orange3', 'tomato3', 'red3', 
-          
-                                'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkslategray2', 'darkolivegreen3')
-names(colors)=c('EMPA', 
-                'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
-                'random policy',
-                'human',
-                'DDQN 100k', 'DDQN 10k', 'DDQN 1k',
-                'rainbow 250k', 'rainbow 150k', 'rainbow 50k',
-                'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW', 'no subgoals + no gradient + no IW')
-
 
 #### aug 4: to plot everything, incl. ablations
 df = filter(human_normed_data, agent%in%agents, !is.na(model_cluster))
 df = transform(df, agent_type=factor(agent_type, levels=c("human", "EMPA", 'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
                                                           'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW',
                                                           'no subgoals + no gradient + no IW', 'DDQN 1k', 'DDQN 10k', 'DDQN 100k',
-                                                          'rainbow 250k', 'rainbow 150k', 'rainbow 50k')))
+                                                          'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow', 'random')))
 
 ## to plot just empa ddqn rainbow
-rainbow_games = unique(filter(human_normed_data, model_cluster=='rainbow')$game_name)
-df = filter(human_normed_data, agent%in%agents, model_cluster%in%c('EMPA', 'DDQN', 'rainbow'), game_name%in%rainbow_games) ##to plot just empa ddqn rainbow
-df = transform(df, agent_type=factor(agent_type, levels=c("human", "EMPA",
-                                                                     'DDQN 1k', 'DDQN 10k', 'DDQN 100k',
-                                                                      'rainbow 250k', 'rainbow 150k', 'rainbow 50k')))
-df = transform(df, model_cluster=factor(model_cluster, levels=c('EMPA','DDQN','rainbow')))
+# rainbow_games = unique(filter(human_normed_data, model_cluster=='rainbow')$game_name)
+# df = filter(human_normed_data, agent%in%agents, model_cluster%in%c('EMPA', 'DDQN', 'rainbow'), game_name%in%rainbow_games) ##to plot just empa ddqn rainbow
+# df = transform(df, agent_type=factor(agent_type, levels=c("human", "EMPA",
+                                                                     # 'DDQN 1k', 'DDQN 10k', 'DDQN 100k',
+                                                                      # 'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow', 'random')))
+# df = transform(df, model_cluster=factor(model_cluster, levels=c('EMPA','DDQN','rainbow')))
 datapoints = filter(datapoints, model_cluster%in%c('EMPA', 'DDQN', 'rainbow'))
 
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
@@ -716,6 +827,10 @@ p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=a
 p
 ## 30x18
 
+
+filter(human_normed_data, agent_type=='EMPA', (human_normed_composite_ratio>10 | human_normed_composite_ratio<.1))
+
+filter(human_normed_data, agent_type=='DDQN 100k', human_normed_composite_ratio<.01)
 
 ## attempt to produce individual plots with quartiles.
 # plots = list()
@@ -1148,7 +1263,7 @@ make_human_normed_data = function(dataframe){
     print(agent)
     for (i in 1:length(unique(dataframe$game_name))){
       g = subset(dataframe, game_name==unique(dataframe$game_name)[i])
-      print(unique(dataframe$game_name)[i])
+      # print(unique(dataframe$game_name)[i])
       s = subset(g, agent_type==agent)
       if (length(s$cumulative_steps)>0){
         ## grab each subject's max_steps and max_wins.
@@ -1213,7 +1328,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
     if (data_to_load=='EMPA'){
       data = c()
       for (date in dates_or_groups){
-      path = paste('~/Projects/atari/vgdl/',date, '/csv_data/merged_data', sep='')
+      path = paste('~/Projects/atari/vgdl_data_files/',date, '/csv_data/merged_data', sep='')
       d=read.csv(path, header=TRUE, na.strings='NA')
       
       # if ('exploration_burn_ins' %in% names(d)){
@@ -1419,13 +1534,13 @@ load_reward_data = function(data_to_load, dates_or_groups){
         gamenameend = unlist(gregexpr('_reward', filename))+1        
       }else if (grepl('dqn_data/', filename)){
         gamenamestart = unlist(gregexpr('dqn_data/',filename))+nchar('dqn_data/')
-        gamenameend = unlist(gregexpr('_DDQN_reward', filename))+1  
+        gamenameend = unlist(gregexpr('_DDQN_reward', filename))-1 ##careful; you changed this 8/23/19. used to be +1.
       }
 
       game = substr(filename, gamenamestart, gamenameend)
       if (grepl('k_', filename)){
         subject_ID_start = unlist(gregexpr('k_',filename))+2
-        subject_ID_end = unlist(gregexpr('.csv', filename))+1
+        subject_ID_end = unlist(gregexpr('.csv', filename))-1 ##careful; you changed this 8/23/19. used to be +1.
         subject_ID = substr(filename, subject_ID_start, subject_ID_end)
       }else{
         subject_ID = create_rand_string()
@@ -1449,7 +1564,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
       d$long_agent_type = d$agent_type
       d$cumulative_wins = as.numeric(0)
       for (i in 2:length(d$level)){
-        if (d$level[i]>d$level[i-1]){
+        if ((d$level[i]>d$level[i-1]) |(i==length(d$level)& (d$win[i]=='True'))){
           d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
           # d$sparse_levels_won[i] = d$cumulative_wins[i]
         }
@@ -1479,6 +1594,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
       }
       
       game = substr(filename, gamenamestart, gamenameend)
+      print(game)
       if (grepl('k_', filename)){
         subject_ID_start = unlist(gregexpr('k_',filename))+2
         subject_ID_end = unlist(gregexpr('.csv', filename))+1
@@ -1495,7 +1611,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
       
       ## WARNING: This is not robust to ordering trial numbers differently.
       if (grepl('trial10', filename)){
-        d$agent_type = as.factor("rainbow 50k") ## refers to the eps_decay (epsilon-greedy annealing) parameter in the DDQN implementation. 
+        d$agent_type = as.factor("rainbow 50k") ## refers to the eps_decay (epsilon-greedy annealing) parameter in the DDQN implementation.
       }else if (grepl('trial1', filename)){
         d$agent_type = as.factor("rainbow 250k")
       }else if (grepl('trial23', filename)){
@@ -1503,17 +1619,20 @@ load_reward_data = function(data_to_load, dates_or_groups){
       }else{
         d$agent_type = as.factor("rainbow")
       }
+
+      
       d$long_agent_type = d$agent_type
       d$cumulative_wins = as.numeric(0)
+      if(length(d$level>2)){
       for (i in 2:length(d$level)){
-        if (d$level[i]>d$level[i-1]){
+        if ((d$level[i]>d$level[i-1]) |(i==length(d$level)& (d$win[i]=='True'))){
           d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
           # d$sparse_levels_won[i] = d$cumulative_wins[i]
         }
         else{
           d$cumulative_wins[i] = d$cumulative_wins[i-1]
         }
-      }
+      }}
       d$level_number = d$level
       
       rainbowdata = rbind(rainbowdata,d)
@@ -1522,10 +1641,56 @@ load_reward_data = function(data_to_load, dates_or_groups){
     data$modelrun_ID = NA
     data = select(data, -criteria, -level, -ep_reward)
     data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
-  }else if (data_to_load == 'human'){
+  }else if (data_to_load == 'random'){
+    randomdata = list()
+    for (gamefile in list.files(random_path)){
+      filename = paste(random_path,gamefile,sep='')
+      if (grepl('random_data/', filename)){
+        gamenamestart = unlist(gregexpr('random_data/',filename))+nchar('random_data/')
+        gamenameend = unlist(gregexpr('_reward', filename))-1
+      }
+      
+      game = substr(filename, gamenamestart, gamenameend)
+      print(game)
+      if (grepl('k_', filename)){
+        subject_ID_start = unlist(gregexpr('k_',filename))+2
+        subject_ID_end = unlist(gregexpr('.csv', filename))+1
+        subject_ID = substr(filename, subject_ID_start, subject_ID_end)
+      }else{
+        subject_ID = create_rand_string()
+      }
+      d=read.csv(filename, header=TRUE, na.strings='NA')
+      
+      d$score = d$ep_reward
+      d$game_name = as.factor(remove_string_from_name(game))
+      d$cumulative_steps = d$steps
+      d$subject_ID = as.factor(subject_ID)
+      d$agent_type = 'random'
+      d$long_agent_type = d$agent_type
+      d$cumulative_wins = as.numeric(0)
+      if(length(d$level>2)){
+        for (i in 2:length(d$level)){
+          if ((d$level[i]>d$level[i-1]) |(i==length(d$level)& (d$win[i]=='True'))){
+            d$cumulative_wins[i] = d$cumulative_wins[i-1]+1
+            # d$sparse_levels_won[i] = d$cumulative_wins[i]
+          }
+          else{
+            d$cumulative_wins[i] = d$cumulative_wins[i-1]
+          }
+        }}
+      d$level_number = d$level
+      
+      randomdata = rbind(randomdata,d)
+    }
+    data = randomdata
+    data$modelrun_ID = NA
+    data = select(data, -criteria, -level, -ep_reward)
+    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
+  }
+  else if (data_to_load == 'human'){
     humandata = list()
     for (humandatapath in humandatapaths){
-      path = paste('~/Projects/atari/vgdl/humandata/',humandatapath, sep='')
+      path = paste('~/Projects/atari/vgdl/vgdl/humandata/',humandatapath, sep='')
       d=read.csv(path, header=TRUE, na.strings='NA')
       if (length(humandata)==0){
         humandata = d
@@ -1540,13 +1705,14 @@ load_reward_data = function(data_to_load, dates_or_groups){
     humandata$condition = as.factor('full')
     
     humandata$game_name = as.factor(humandata$game_name)
+    # humandata$cumulative_steps = humandata$cumulative_frames ## if you want to look at game frames
     humandata = select(humandata, -levels_lost, -group, -gameNumber, -gameRound)
     data = humandata
     data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
   }
   
   data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
-  beep(sound=2)
+  # beep(sound=2)
   return (data)
 }
 
@@ -1575,6 +1741,21 @@ load_full_human_data = function(){
 
 data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
 return(data)
+}
+
+remove_string_from_name = function(name){
+  strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
+  for (i in 1:length(strings_to_remove)){
+    string_to_remove = strings_to_remove[i]
+    if (grepl(string_to_remove, name)){
+      keep = substr(name, nchar(string_to_remove)+2, nchar(name))
+      return(keep)
+    }
+    else{
+      keep=name
+    }
+  }
+  return(name)
 }
 
 create_rand_string <- function() {

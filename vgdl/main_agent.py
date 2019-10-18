@@ -28,7 +28,7 @@ RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -41,7 +41,8 @@ class Agent:
         self.filename = None
         self.timestamp = False
         self.task_ID = task_ID
-        self.produce_printout = False
+        self.produce_printout = produce_printout
+        self.movieName = movieName
         ## Loading parameters
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
@@ -327,7 +328,7 @@ class Agent:
     def calculateEntropy(self, theory, spriteDistribution):
         return None
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -435,6 +436,7 @@ class Agent:
 
                 self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
 
+                embed()
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
@@ -474,7 +476,7 @@ class Agent:
                 embed()
 
         if make_movie:
-            self.makeMovie()
+            self.makeMovie(play_movie=play_movie)
 
         endtime = time.time()
 
@@ -559,24 +561,38 @@ class Agent:
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
 
-    def makeMovie(self):
+    def makeMovie(self, play_movie=False):
+
+        VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+
+        print "embedded just before creating movie"
+        embed()
         print "Creating Movie"
         # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
-        movie_dir = "videos/"
+        # movie_dir = "videos/"
+        movie_dir = "videos/"+self.gameFilename
         if not os.path.exists(movie_dir):
             print movie_dir, "didn't exist. making new dir"
             os.makedirs(movie_dir)
 
         round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store' and self.gameFilename in d])
         # video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
-        video_dirname = movie_dir+"/"+self.gameFilename+'_'+str(round_index)+".mp4"
-        images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
+        # video_dirname = movie_dir+"/"+self.gameFilename+'_'+str(round_index)+".mp4"
+        video_dirname = movie_dir+"/"+str(self.movieName)+".mp4"
+        # images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
+        images_dir = "images/tmp/%09d.png"
         com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
         command = "{}".format(com)
         subprocess.call(command, shell=True)
         # empty image directory
         shutil.rmtree("images/tmp/"+self.gameFilename)
         os.makedirs("images/tmp/"+self.gameFilename)
+
+        if play_movie:
+            command = ('open', '-a', 'Quicktime Player', video_dirname)
+            subprocess.Popen(command)
+
         return
 
     def playMultipleEpisodes(self, num_episodes):
@@ -1157,7 +1173,7 @@ class Agent:
                     statesEncountered.append(self.rle._game.getFullState(observe_state=True))
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
-                if display and self.produce_printout:
+                if self.produce_printout:
                     print "score: {}, timestep: {}".format(rle._game.score, rle._game.time)
                     print rle.show(color='blue')
 
@@ -1256,7 +1272,7 @@ class Agent:
             print "score: {}, game step: {}".format(self.rle._game.score, self.rle._game.time)
 
         # t1 = time.time()
-        if self.display_states:
+        if self.produce_printout:
             print ""
             print keyPresses[action]
             print self.rle.show(color='blue')
