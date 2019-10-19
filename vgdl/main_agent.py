@@ -37,7 +37,7 @@ class Agent:
         self.display_states = False
         self.record_states = True
         self.record_video_info = True
-        self.write_video_info = False
+        self.write_video_info = True
         self.saveMidEpisode = False
         self.filename = None
         self.timestamp = False
@@ -619,8 +619,8 @@ class Agent:
         if self.display_text:
             print "initializing RLE"
         # print "Game name:", self.gameFilename
+        print "Starting episode"
         if self.produce_printout:
-            print "Starting episode"
             print ""
             print self.rle.show(color='blue')
 
@@ -733,6 +733,7 @@ class Agent:
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
             p_quitting = p.quitting
+            print "planning..."
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
 
@@ -958,10 +959,11 @@ class Agent:
                     self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
                     self.episodeSaveTime = time.time()
 
-                if self.produce_printout:
-                    print colored('________________________________________________________________', 'white', 'on_red')
-                    print colored("Quitting", 'white', 'on_red')
-                    print colored('________________________________________________________________', 'white', 'on_red')
+                output =          "Quitting.                                                       "
+                # if self.produce_printout:
+                print colored('________________________________________________________________', 'white', 'on_red')
+                print colored(output, 'white', 'on_red')
+                print colored('________________________________________________________________', 'white', 'on_red')
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
 
@@ -979,21 +981,21 @@ class Agent:
 
         score = self.rle._game.score
 
-        if self.produce_printout:
-            if win:
-                output =          "ended episode. Win={}                                         ".format(win)
-            else:
-                output =          "ended episode. Win={}                                        ".format(win)            
-            if win:
-                print colored('________________________________________________________________', 'white', 'on_green')
-                print colored('________________________________________________________________', 'white', 'on_green')
+        # if self.produce_printout:
+        if win:
+            output =          "ended episode. Win={}                                         ".format(win)
+        else:
+            output =          "ended episode. Win={}                                        ".format(win)            
+        if win:
+            # print colored('________________________________________________________________', 'white', 'on_green')
+            print colored('________________________________________________________________', 'white', 'on_green')
 
-                print colored(output, 'white', 'on_green')
-                print colored('________________________________________________________________', 'white', 'on_green')
-            else:
-                print colored('________________________________________________________________', 'white', 'on_red')
-                print colored(output, 'white', 'on_red')
-                print colored('________________________________________________________________', 'white', 'on_red')
+            print colored(output, 'white', 'on_green')
+            print colored('________________________________________________________________', 'white', 'on_green')
+        else:
+            print colored('________________________________________________________________', 'white', 'on_red')
+            print colored(output, 'white', 'on_red')
+            print colored('________________________________________________________________', 'white', 'on_red')
 
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
@@ -1175,7 +1177,7 @@ class Agent:
                 if self.produce_printout:
                     print "score: {}, timestep: {}".format(rle._game.score, rle._game.time)
                     print rle.show(color='blue')
-
+                print "action", self.total_game_steps+rle._game.time
                 rle._game.nextPositions = {}
                 for k, v in rle._game.all_objects.iteritems():
                     rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
@@ -1271,6 +1273,7 @@ class Agent:
             print "score: {}, game step: {}".format(self.rle._game.score, self.rle._game.time)
 
         # t1 = time.time()
+        print "action", self.total_game_steps+self.rle._game.time
         if self.produce_printout:
             print ""
             print keyPresses[action]
