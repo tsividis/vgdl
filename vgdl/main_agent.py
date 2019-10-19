@@ -37,6 +37,7 @@ class Agent:
         self.display_states = False
         self.record_states = True
         self.record_video_info = True
+        self.write_video_info = False
         self.saveMidEpisode = False
         self.filename = None
         self.timestamp = False
@@ -351,7 +352,7 @@ class Agent:
                     os.makedirs(dirname)
                 except:
                     print "failed  to make dir"
-        if self.record_video_info:
+        if self.write_video_info:
             dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
@@ -450,9 +451,10 @@ class Agent:
                     
                 ## will write video data at the end of each episode
                 if self.record_video_info:
+                    fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
+                if self.write_video_info:
                     videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-                    fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
                     with open(videofilename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
                 if self.total_game_steps > MAX_STEPS:
