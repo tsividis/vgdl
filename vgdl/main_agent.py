@@ -436,7 +436,6 @@ class Agent:
 
                 self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
 
-                embed()
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
@@ -566,8 +565,6 @@ class Agent:
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 
-        print "embedded just before creating movie"
-        embed()
         print "Creating Movie"
         # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
         # movie_dir = "videos/"
