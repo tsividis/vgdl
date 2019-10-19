@@ -144,9 +144,10 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     # print game_levels
 
     estimated_time = {
-    'aliens': '10 minutes',
+    'aliens': '40 minutes',
     'tiny_zelda': '1 minute',
     'demo_bait': '3 minutes',
+    'demo_sokoban': '20 minutes',
     'zelda': '5 minutes',
     'bait': '10 hours'
     }
@@ -154,17 +155,16 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
     if args.make_movie:
         print "Playing and producing game-play video for {}".format(game_name)
-        if args.play_movie:
-            print "The video will open automatically in Quicktime after it is made. If it doesn't, please check the 'videos' directory in this folder."
-        else:
-            print "The video will appear in the 'videos' directory in this folder."
+        print "The video will open automatically in Quicktime after it is made. If it doesn't, please check the 'videos' directory in this folder."
     else: 
         print "Playing {}".format(game_name)
 
     if game_name in estimated_time:
-        print "Typical runtime for this game: {}".format(estimated_time[game_name])
+        print "Expected runtime for this game: {}".format(estimated_time[game_name])
     else:
         print "No estimated runtime for this game."
+
+    print ""
 
     video_dirname = 'demo_data_files/EMPA/local/data_for_movies/all_agent_types/all_games'
     if not os.path.exists(video_dirname):
@@ -177,7 +177,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         com = "cp {} {}".format(agent.filename, video_dirname)
         command = "{}".format(com)
         subprocess.call(command, shell=True)
-
+        # embed()
         ## Make movie
         com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py"
         command = "{}".format(com)
