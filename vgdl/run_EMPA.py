@@ -166,7 +166,33 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     else:
         print "No estimated runtime for this game."
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, play_movie=play_movie, heatmap=heatmap)
+    video_dirname = 'demo_data_files/EMPA/local/data_for_movies/all_agent_types/all_games'
+    if not os.path.exists(video_dirname):
+        os.makedirs(video_dirname)
+
+    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, play_movie=False, heatmap=heatmap)
+
+    if make_movie:
+        ## copy data file to temporary video directory
+        com = "cp {} {}".format(agent.filename, video_dirname)
+        command = "{}".format(com)
+        subprocess.call(command, shell=True)
+
+        ## Make movie
+        com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py"
+        command = "{}".format(com)
+        subprocess.call(command, shell=True)
+
+        # if play_movie:
+        #     video_dirname = "../vgdl-movies/vgdl/videos/" ## finish this
+        #     command = ('open', '-a', 'Quicktime Player', video_dirname)
+        #     subprocess.Popen(command)
+
+        ## clear temporary video directory
+        com = "rm {}/*".format(video_dirname)
+        command = "{}".format(com)
+        subprocess.call(command, shell=True)
+
 
     # print game_levels
 
@@ -177,5 +203,10 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     return total_time
 
 # embed()
-# play_trainset(hyperparameter_sets, hyperparameter_index, args)
+play_trainset(hyperparameter_sets, hyperparameter_index, args)
 
+
+
+# fullData = processModelData(dirName,games_to_make=['tiny_zelda'])
+# loadedData = loadEMPAData(fullData)
+# makeEMPAMovies(loadedData)
