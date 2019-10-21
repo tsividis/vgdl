@@ -619,7 +619,8 @@ class Agent:
         if self.display_text:
             print "initializing RLE"
         # print "Game name:", self.gameFilename
-        print "Starting episode"
+        # print "Starting episode"
+        print "Playing level {}".format(self.n_level)
         if self.produce_printout:
             print ""
             print self.rle.show(color='blue')

@@ -8,6 +8,19 @@ import argparse
 import subprocess
 from util import str2bool
 from make_gameplay_videos import *
+from contextlib import contextmanager
+import sys
+
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
+
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
@@ -146,18 +159,17 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     estimated_time = {
     'aliens': '40 minutes',
     'tiny_zelda': '1 minute',
-    'demo_bait': '3 minutes',
+    'demo_aliens': '10 minutes',
+    'demo_bait': '4 minutes',
+    'demo_butterflies': '5 minutes',
     'demo_sokoban': '20 minutes',
+    'demo_zelda': '8 minutes',
     'zelda': '5 minutes',
     'bait': '10 hours'
     }
     print ""
 
-    if args.make_movie:
-        print "Playing and producing game-play video for {}".format(game_name)
-        print "The video will open automatically in Quicktime after it is made. If it doesn't, please check the 'videos' directory in this folder."
-    else: 
-        print "Playing {}".format(game_name)
+    print "Playing {}".format(game_name)
 
     if game_name in estimated_time:
         print "Expected runtime for this game: {}".format(estimated_time[game_name])
@@ -178,10 +190,17 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         command = "{}".format(com)
         subprocess.call(command, shell=True)
         # embed()
-        ## Make movie
-        com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py"
+        ## Make movie and suppress terminal output
+        com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py > /dev/null 2>&1"
+
         command = "{}".format(com)
-        subprocess.call(command, shell=True)
+
+        if args.make_movie:
+            print "Producing game-play video."
+            print "The video will open automatically in Quicktime after it is made. If it doesn't, please check the 'vgdl-movies/vgdl/videos' directory in this folder."
+
+        with suppress_stdout():
+            subprocess.call(command, shell=True)
 
         # if play_movie:
         #     video_dirname = "../vgdl-movies/vgdl/videos/" ## finish this
@@ -198,7 +217,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
     total_time = time.time() - start_time
 
-    print total_time
+    # print total_time
 
     return total_time
 
