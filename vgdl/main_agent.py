@@ -391,7 +391,7 @@ class Agent:
                 continue
             if self.produce_printout:
                 print ""
-                print("Playing level {}".format(n_level))
+                print("Playing level {}".format(n_level+1))
 
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
@@ -620,7 +620,7 @@ class Agent:
             print "initializing RLE"
         # print "Game name:", self.gameFilename
         # print "Starting episode"
-        print "Playing level {}".format(self.n_level)
+        print "Playing level {}".format(self.n_level + 1)
         if self.produce_printout:
             print ""
             print self.rle.show(color='blue')
