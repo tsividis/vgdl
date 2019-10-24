@@ -1,4 +1,5 @@
 setwd('/Users/pedrotsividis/Projects/atari/vgdl')
+## Once you set it, you can load the workspace using load(".RData") !
 
 ## Load helper functions
 source(paste(getwd(), '/TBRL_functions.R', sep=''))
@@ -14,7 +15,7 @@ humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 humandata = load_reward_data('human', NA)
 EMPAdata = load_reward_data('EMPA', EMPA_dates)
 EMPA_variants = filter(EMPAdata, agent_type!='EMPA')
-new_lesions = load_reward_data('EMPA', c('apr4', 'jun3', 'jun22', 'jun23')) ## TODO: rename
+new_lesions = load_reward_data('EMPA', c('apr4', 'jun3', 'jun22', 'jun23'))
 dqndata = load_reward_data('DDQN', NA)
 rainbowdata = load_reward_data('rainbow', NA)
 # randomdata = load_reward_data('random', NA)
@@ -64,7 +65,6 @@ for (agent in unique(new_lesions$agent_type)){
       game_data = filter(agent_data, game_name==game)
       for (subject in unique(game_data$subject_ID)[1:5]){
         first_5_IDs_of_each_lesion_type[i] = subject
-        print(i)
         i = i+1
       }
     }
@@ -74,10 +74,6 @@ new_lesions = filter(new_lesions, subject_ID%in%first_5_IDs_of_each_lesion_type)
 
 alldata = rbind(humandata, EMPAdata, new_lesions, dqndata, rainbowdata)
 human_normed_data = make_human_normed_data(alldata)
-
-
-## Global plot styling
-removeGrid(x = TRUE, y = TRUE)
 
 colors = c('steelblue1', 'slategray2',
            'slateblue1', 'slateblue4', 'mediumpurple1', 'purple1',
@@ -97,6 +93,7 @@ names(colors)=c('EMPA', 'EMPA fail',
 
 ### Learning curve plots
 ## plotting all agents/models
+agents_to_plot = c('human', 'EMPA', 'rainbow 150k', 'DDQN 100k')
 games_to_plot = c('bait', 'zelda', 'butterflies', 'avoidgeorge','frogs','plaqueattack')
 games_in_order = unique(alldata$game_name)[order(unique(alldata$game_name))]
 plots = list()
@@ -106,7 +103,7 @@ for (k in 1:length(games_to_plot)){
   # game = games_in_order[k]
   game = games_to_plot[k]
 
-  max_x = 1000000
+  max_x = 1000
   
   ## used for adding data points to sparse DDQN data
   if(max_x<5000){
@@ -297,6 +294,7 @@ for (k in 1:length(games_to_plot)){
     p=p+scale_x_continuous(breaks=c(0, 250000, 500000, 750000, 1000000),labels=c('0', '250k', '500k', '750k', '1mil'), limits=c(0,1000000))
   }
 
+  p = p+ theme(axis.line=element_line())
   human_kappa = filter(kappa_df, agent_type=='human')$efficiency
   EMPA_kappa = filter(kappa_df, agent_type=='EMPA')$efficiency
   DDQN_kappa = filter(kappa_df, agent_type=='DDQN 100k')$efficiency
@@ -318,46 +316,76 @@ for (k in 1:length(games_to_plot)){
   ggsave(title, plot=p, width=8, height=6)
 }
 
-
-plots_10k_with_rainbow = plots
+## produce full-page plot of all 90 games
 layout = matrix(c(1:90), ncol=6, byrow=TRUE)
-m = multiplot(plotlist = plots_10k_with_rainbow, layout=layout)
+m = multiplot(plotlist = plots, layout=layout)
 ## save 50x30
+
+
+
+## Bootstrap means and CIs in prep for figure 3
+
+humankappadata = calculate_kappas(filter(alldata, agent_type=='human'),step_minimum=NA)
+EMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA'),step_minimum=NA)
+DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
+
+kappadata = rbind(humankappadata, EMPAkappadata, DDQNkappadata)
+
+max_DDQNkappadata = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), kappa=as.numeric())
+non_max_DDQNkappadata = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), kappa=as.numeric())
+for (game in unique(DDQNkappadata$game_name)){
+  game_data = filter(DDQNkappadata, game_name==game)
+  max_DDQNkappadata = rbind(max_DDQNkappadata, filter(game_data, kappa==max(game_data$kappa)))
+  non_max_DDQNkappadata = rbind(non_max_DDQNkappadata, filter(game_data, kappa!=max(game_data$kappa)))
+}
+non_max_DDQNkappadata$agent_type='DDQN 1k' ## hacking this to get a previously-defined light gray color in plots
+
+means_and_CIs = bootstrap_means_and_CIs(kappadata)
 
 
 ## Human-normed figure (figure 3)
 main_plot_agent_types = c('DDQN 100k', 'EMPA')
-s = filter(human_normed_data, agent_type=='EMPA')
-ordered_names = s[order(log(s$human_normed_composite_ratio)),]$formatted_game_name
+s = filter(means_and_CIs, agent_type=='EMPA')
+ordered_names = s[order(log(s$mean)),]$game_name
 p = ggplot()+
-  geom_bar(data=filter(human_normed_data, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(human_normed_composite_ratio, 10)>-3),
-           aes(x=formatted_game_name, y=log(human_normed_composite_ratio), fill=as.factor(agent_type)), stat='identity', position='dodge')+
-  geom_point(data=filter(human_normed_data, agent_type%in%main_plot_agent_types & ((agent_type != 'DDQN 100k'  & !(log(human_normed_composite_ratio, 10)>-3)) | agent_type=='DDQN 100k')),
-             aes(x=formatted_game_name, y=log(human_normed_composite_ratio), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  geom_bar(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_bar(data=filter(means_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+  geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+                 aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
+  geom_point(data=non_max_DDQNkappadata,
+             aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  geom_point(data=max_DDQNkappadata,
+             aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
   scale_x_discrete(limits=ordered_names)+
-  # theme(legend.position="none")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none',panel.background = element_blank())+
-  ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 logtickmarks=(log(tickmarks))
 tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
-p + scale_fill_manual(values=colors,name="Model",
-                      breaks=c("EMPA", "DDQN 100k"),
-                      labels=c("EMPA", "DDQN")) + scale_color_manual(values=colors,name="Model",
-                                                                                         breaks=c("EMPA", "DDQN 100k"),
-                                                                                         labels=c("EMPA", "DDQN"))
+p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p = p + scale_fill_manual(values=colors,name="Model",
+                          breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+                          labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
+                                                                                      breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+                                                                                      labels=c("EMPA", "EMPA fail", "DDQN"))
 ## 14x10
 
 
-## Facet-wrapped plot that shows quartiles (Figure 4)
-agents = c('EMPA', 'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k','rainbow 150k', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
+
+## Prep for figure 4
+## Facet-wrapped plot that shows quartiles!
+agents = c('EMPA', 'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
+
 datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), x4=as.numeric(), x5=as.numeric(), 
                         y1=as.numeric(), y2=as.numeric(), y3=as.numeric(), mean_val=as.numeric(), agent_type=as.character(), model_cluster=as.character())
 for (i in 1:length(agents)){
   agent = agents[i]
+  ## Trying to just add the boxplot data manually
   quantiles = quantile(log(filter(human_normed_data, agent_type==agent)$human_normed_composite_ratio), c(.1, .25, .5, .75, .9))
   mn=mean(log(filter(human_normed_data, agent_type==agent)$human_normed_composite_ratio))
+  
   q1=quantiles[1]
   q2=quantiles[2]
   q3=quantiles[3]
@@ -374,16 +402,16 @@ for (i in 1:length(agents)){
     m_cluster = 'Planner ablations'
   }
   if (agent %in% c('DDQN 1k', 'DDQN 10k', 'DDQN 100k')){
-      m_cluster = 'Deep RL'
+    m_cluster = 'Deep RL'
   }
   if(grepl('rainbow', agent)){
     m_cluster = 'Deep RL'
   }
   if(agent=='random'){
-    m_cluster = 'random'
+    m_cluster = 'Random'
   }
   
-
+  
   y1=.875
   y2=.9
   y3=.925
@@ -445,50 +473,51 @@ for (i in 1:length(agents)){
   
   ##offsets for rainbow
   if(agent=='rainbow 150k'){
-    y1 = y1-.06
-    y2 = y2-.06
-    y3 = y3-.06
-  }
-  if(agent=='rainbow 250k'){
-    y1 = y1-.12
-    y2 = y2-.12
-    y3 = y3-.12
+    y1 = y1-.18
+    y2 = y2-.18
+    y3 = y3-.18
   }
   
   datapoints = rbind(datapoints, data.frame(x1=q1, x2=q2, x3=q3, x4=q4, x5=q5,y1=y1, y2=y2, y3=y3, mean_val=mn, agent_type=agent,model_cluster=m_cluster))
-  }
+}
 
 
-df = filter(human_normed_data, agent%in%agents, !is.na(model_cluster))
+
+df = filter(human_normed_data, agent%in%agents, (!is.na(model_cluster)&model_cluster!='Random') )
 df = transform(df, agent_type=factor(agent_type, levels=c("human", "EMPA", 'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
                                                           'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW',
-                                                          'no subgoals + no gradient + no IW', 'DDQN 1k', 'DDQN 10k', 'DDQN 100k',
-                                                          'rainbow 150k')))
+                                                          'no subgoals + no gradient + no IW',
+                                                          'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow',
+                                                          'DDQN 1k', 'DDQN 10k', 'DDQN 100k' #,
+                                                          # 'random'
+)))
 
 
-datapoints = filter(datapoints, model_cluster%in%c('EMPA', 'Exploration ablations', 'Planner ablations', 'Deep RL'))
 tickmarks = c(10e-8,10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 logtickmarks=(log(tickmarks))
 tickmarks = c('0 (fail)',10e-7,10e-6, 10e-5,10e-4,10e-3,10e-2,10e-1,10e0,10e1,10e2,10e3,10e4)
 p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=agent_type))+
   geom_density(alpha=.8, adjust= 1/10)+
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
-  geom_vline(xintercept=0,linetype='dashed',size=.8)+
+  geom_vline(xintercept=0,linetype='dashed',size=.8)+ ## originally .4
   geom_point(aes(x=mean_val, y=y2), shape=18, data=datapoints, size=7)+
-  geom_segment(aes(x=x1, y=y2, xend=x2, yend=y2), linetype='longdash', data=datapoints, size=1.2)+ ##5-25
+  geom_segment(aes(x=x1, y=y2, xend=x2, yend=y2), linetype='longdash', data=datapoints, size=1.2)+ ##5-25 ## pretty good
+  
   geom_segment(aes(x=x2, y=y2, xend=x4, yend=y2), data=datapoints, size=1.2)+ ##25-75
   geom_segment(aes(x=x2, y=y1, xend=x2, yend=y3), data=datapoints, size=1.2)+ ##25 edge
   geom_segment(aes(x=x4, y=y1, xend=x4, yend=y3), data=datapoints, size=1.2)+ ## 75 edge
   geom_segment(aes(x=x4, y=y2, xend=x5, yend=y2), linetype='longdash', data=datapoints, size=1.2)+ ##75-95
+  
   geom_segment(aes(x=x3, y=y1, xend=x3, yend=y3), data=datapoints, size=1.2)+ ##median line
   
-      theme(legend.title=element_blank(), text=element_text(size=38), #legend.position='none',
-            axis.text.x=element_text(size=34), axis.text.y=element_text(size=34), strip.text.x=element_text(size=44))+
+  theme(legend.title=element_blank(), text=element_text(size=50), legend.position='none',
+        axis.text.x=element_text(size=46), axis.text.y=element_text(size=46), strip.text.x=element_text(size=56))+
+  theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
   scale_x_continuous(breaks=logtickmarks,labels=tickmarks, limits=c(logtickmarks[1], 7.5)) +
   scale_y_continuous(limits=c(0,.95), breaks=c(0,.2,.4,.6,.8), labels=c(0,.2,.4,.6,.8))+
   facet_wrap(~model_cluster, ncol=1)
 p
-## 30x18
+## 30x24
 
 
 ## Plot subjective game ratings
@@ -505,5 +534,32 @@ p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=inter
   facet_wrap(~source_game_name, ncol=3)+xlab('Game variant')+ylab('Interestingness') +scale_x_discrete(breaks=c(0,1,2,3,4),labels=c('original',1,2,3,4))
 p  
 ##save 12x6
+
+
+### Find median humans to pick demo videos
+median_subjects = data.frame(game_name=as.character(), subject_ID=as.character())
+closest_to_empa_subjects = data.frame(game_name=as.character(), subject_ID=as.character())
+for (game in unique(alldata$game_name)){
+  
+  # if( (grepl('push_boulders', game)) | !(grepl('_', game))){
+  human_subs = filter(humandata, game_name==game)
+  empa_subs = filter(EMPAdata, game_name==game, agent_type=='EMPA')
+  first_empa_subj = filter(empa_subs, subject_ID==unique(empa_subs$subject_ID)[1])
+  empa_kappa = calculate_kappa(first_empa_subj,NA)
+  
+  subjects = data.frame(subject_ID=as.character(), kappa=as.numeric())
+  for (subject in unique(human_subs$subject_ID)){
+    subjects = rbind(subjects, data.frame(subject_ID=subject, kappa=calculate_kappa(filter(human_subs, subject_ID==subject),NA)))
+  }
+  subjects = filter(subjects, !is.na(kappa))
+  med = median(subjects$kappa)
+  for (i in 1:length(subjects$kappa)){
+    subjects$distance_to_median[i] = abs(med-subjects$kappa[i])
+    subjects$distance_to_empa[i] = abs(empa_kappa-subjects$kappa[i])
+    
+  }
+  median_subjects = rbind(median_subjects, data.frame(game_name=game, subject_ID=subjects[subjects$distance_to_median==min(subjects$distance_to_median),]$subject_ID[1]))
+  closest_to_empa_subjects = rbind(closest_to_empa_subjects, data.frame(game_name=game, subject_ID=subjects[subjects$distance_to_empa==min(subjects$distance_to_empa),]$subject_ID[1]))
+}
 
 

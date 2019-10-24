@@ -134,7 +134,7 @@ make_human_normed_data = function(dataframe){
   }
   
   
-  outputdata = mutate(outputdata, level_percentage=mean_levels_won/level_num)
+  outputdata = mutate(outputdata, level_percentage = mean_levels_won/level_num)
   outputdata = mutate(outputdata, composite_ratio = level_percentage*level_efficiency)
   
   outputdata$human_normed_composite_ratio=NA
@@ -154,7 +154,6 @@ make_human_normed_data = function(dataframe){
     }
   }
   
-  
   outputdata$formatted_game_name = NA
   for (i in 1:length(outputdata$game_name)){
     outputdata$formatted_game_name[i] = gsub('_', ' ', outputdata$game_name[i])
@@ -171,14 +170,27 @@ make_human_normed_data = function(dataframe){
       outputdata$formatted_game_name[i] = 'explore/exploit 3'
     }
   }
+  agent_types = unique(outputdata$agent_type)
   outputdata$model_cluster = 'none'
-  outputdata[outputdata$agent_type=='EMPA',]$model_cluster = 'EMPA'
-  outputdata[outputdata$agent_type%in%c('e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k'),]$model_cluster = 'Exploration ablations'
-  outputdata[outputdata$agent_type%in%c('no goal gradient', 'no subgoals',  'no subgoals + no gradient',
-                                        'no IW', 'no subgoals + no gradient + no IW'),]$model_cluster = 'Planner ablations'
-  
-  outputdata[outputdata$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'Deep RL'
-  outputdata[outputdata$agent_type%in%c('rainbow 50k', 'rainbow 150k', 'rainbow 250k','rainbow'),]$model_cluster = 'Deep RL'
+  if ('EMPA' %in% agent_types){
+    outputdata[outputdata$agent_type=='EMPA',]$model_cluster = 'EMPA'
+  }
+  if ('e-greedy 1k DS' %in% agent_types | 'e-greedy 2k DS' %in% agent_types |
+      'e-greedy 1k' %in% agent_types | 'e-greedy 1k' %in% agent_types){
+    outputdata[outputdata$agent_type%in%c('e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k'),]$model_cluster = 'Exploration ablations'
+  }
+  if ('no goal gradient' %in% agent_types | 'no subgoals' %in% agent_types | 'no subgoals + no gradient' %in% agent_types |
+      'no IW' %in% agent_types | 'no subgoals + no gradient + no IW' %in% agent_types){
+    outputdata[outputdata$agent_type%in%c('no goal gradient', 'no subgoals',  'no subgoals + no gradient',
+                                          'no IW', 'no subgoals + no gradient + no IW'),]$model_cluster = 'Planner ablations'
+  }
+  if ('DDQN 1k' %in% agent_types | 'DDQN 10k' %in% agent_types | 'DDQN 100k' %in% agent_types){
+    outputdata[outputdata$agent_type%in%c('DDQN 1k', 'DDQN 10k', 'DDQN 100k'),]$model_cluster = 'Deep RL'
+  }
+  if ('rainbow 50k' %in% agent_types | 'rainbow 150k' %in% agent_types | 'rainbow 250k' %in% agent_types |
+      'rainbow' %in% agent_types){
+    outputdata[outputdata$agent_type%in%c('rainbow 50k', 'rainbow 150k', 'rainbow 250k','rainbow'),]$model_cluster = 'Deep RL'
+  }
   # outputdata[outputdata$agent_type=='random',]$model_cluster = 'Random'
   outputdata = transform(outputdata, model_cluster=factor(model_cluster, levels=c('EMPA', 'Exploration ablations', 'Planner ablations', 'Deep RL','Random', NA)))
   
@@ -193,11 +205,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
       # path = paste('~/Projects/atari/vgdl_data_files/',date, '/csv_data/merged_data', sep='')
       d=read.csv(path, header=TRUE, na.strings='NA')
       
-      # if ('exploration_burn_ins' %in% names(d)){
-      #   d$exploration_burn_ins = as.numeric(d$exploration_burn_ins) ## you might want to make this as.numeric()
-      # }else{
-      #   d$exploration_burn_ins = NA
-      # }
+
       
       if(length(data)==0){
         data = d
@@ -234,13 +242,6 @@ load_reward_data = function(data_to_load, dates_or_groups){
       newdata = rbind(newdata, agent_data)
     }
     data = newdata
-    
-    
-    ### e-greedy ones are poorly named?
-    ## You ran 2k N on apr 4
-    ## and you have 2k DS here
-    
-    ##
     
     e_greedy_05='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
     e_greedy_1a='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
@@ -389,8 +390,8 @@ load_reward_data = function(data_to_load, dates_or_groups){
     data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
   }else if (data_to_load == 'DDQN'){
     dqndata = list()
-    for (gamefile in list.files(dqn_path)){
-      filename = paste(dqn_path,'/',gamefile,sep='')
+    for (gamefile in list.files(ddqn_path)){
+      filename = paste(ddqn_path,'/',gamefile,sep='')
       if(grepl('ddqn/', filename)){
         gamenamestart = unlist(gregexpr('ddqn/',filename))+nchar('ddqn/')
         gamenameend = unlist(gregexpr('_DDQN_reward', filename))-1 ##careful; you changed this 8/23/19. used to be +1.
@@ -451,7 +452,6 @@ load_reward_data = function(data_to_load, dates_or_groups){
       }
       
       game = substr(filename, gamenamestart, gamenameend)
-      print(game)
       if (grepl('k_', filename)){
         subject_ID_start = unlist(gregexpr('k_',filename))+2
         subject_ID_end = unlist(gregexpr('.csv', filename))+1
@@ -466,7 +466,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
       d$cumulative_steps = d$steps
       d$subject_ID = as.factor(subject_ID)
       
-      d$agent_type = as.factor("ranbow 150k")
+      d$agent_type = as.factor("rainbow 150k")
 
       d$long_agent_type = d$agent_type
       d$cumulative_wins = as.numeric(0)
@@ -537,7 +537,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
   else if (data_to_load == 'human'){
     humandata = list()
     for (humandatapath in humandatapaths){
-      path = paste('~/Projects/atari/vgdl/vgdl/humandata/',humandatapath, sep='')
+      path = paste(getwd(), '/data_files/humandata/',humandatapath, sep='')
       d=read.csv(path, header=TRUE, na.strings='NA')
       if (length(humandata)==0){
         humandata = d
@@ -659,4 +659,131 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
   datac$ci <- datac$se * ciMult
   
   return(datac)
+}
+
+calculate_kappa = function(subject_data, step_minimum){
+  game = subject_data$game_name[1]
+  if (game %in% c('antagonist', 'antagonist_1', 'antagonist_2', 'bees_and_birds', 'bees_and_birds_1', 
+                  'closing_gates', 'closing_gates_1', 'corridor', 'corridor_1', 
+                  'helper', 'helper_1', 'helper_2', 'preconditions', 'preconditions_1', 'preconditions_2',
+                  'push_boulders', 'push_boulders_1', 'push_boulders_2', 'relational', 'relational_1', 'relational_2',
+                  'surprise', 'surprise_1', 'surprise_2')){
+    level_max = 4
+  }else if (game %in% c('ee', 'ee_1', 'ee_2', 'ee_3')){
+    level_max = 6
+  }else{
+    level_max = 5
+  }
+  
+  last_row = subject_data[length(subject_data$cumulative_steps),]
+  
+  if (last_row$cumulative_steps != 0){
+    kappa = (last_row$level_number/level_max)*(last_row$level_number/last_row$cumulative_steps)
+    if(kappa==0){
+      kappa=1e-7
+    }
+  }
+  else{
+    kappa = NA
+  }
+  
+  if (!is.na(step_minimum)){
+    if(last_row$cumulative_steps<step_minimum & last_row$level_number<3){
+      kappa = NA
+    }
+  }
+  return(kappa)
+}
+
+
+calculate_kappas = function(dataframe, step_minimum){
+  ## make data structure for looking at levels_won for different planner settings (corresponding to runs on different days)
+  kappadata = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), kappa=as.numeric())
+  
+  for (agent in unique(dataframe$agent_type)){
+    agent_games = filter(dataframe, agent_type==agent)
+    for (game in unique(agent_games$game_name)){
+      formatted_game_name = gsub('_', ' ', game)
+      if (game=='ee'){
+        formatted_game_name== 'explore/exploit'
+      }
+      if (game=='ee 1'){
+        formatted_game_name== 'explore/exploit 1'
+      }
+      if (game=='ee 2'){
+        formatted_game_name== 'explore/exploit 2'
+      }
+      if (game=='ee 3'){
+        formatted_game_name== 'explore/exploit 3'
+      }
+      g = filter(agent_games, game_name==game)
+      for (subject in unique(g$subject_ID)){
+        d = filter(g, subject_ID==subject)
+        kappa_score = calculate_kappa(d,step_minimum)
+        ## Exclude the few subjects who logged in but didn't seem to play (cumulative_steps == 0)
+        if (!is.na(kappa_score)){
+          row = data.frame(game_name=formatted_game_name, agent_type=agent, subject_ID=subject, kappa=kappa_score)
+          kappadata = rbind(kappadata, row)
+        }
+        
+      }
+    }
+  }
+  return(kappadata)
+}
+
+bootstrap_kappa_ratio = function(data1, data2){
+  
+  if(data1$game_name[1]%in%c('jaws 2', 'sokoban')){
+    data1_samples = data1 ##edge effect adjustment for two games with <3 successes out of 10 runs.
+    
+  }else{
+    data1_samples = sample_n(data1,length(data1$kappa),replace=TRUE)
+  }
+  
+  data2_samples = sample_n(data2,length(data2$kappa),replace=TRUE)
+  kappa_ratio = mean(data1_samples$kappa)/mean(data2_samples$kappa)
+  
+  return(kappa_ratio)
+}
+
+calculate_CI = function(x){
+  x = x[is.finite(x)] ## remove Inf
+  mu = mean(x)
+  low_high = quantile(x, c(.025,.975))
+  return(c(low_high[1], mu, low_high[2]))
+}
+
+bootstrap_means_and_CIs = function(kappadata){
+  ## Bootstrap 10k samples
+  N=100
+  M=100
+  means_and_CIs = data.frame(game_name=as.character(), agent_type=as.character(), mean=as.numeric(), low_margin=as.numeric(), high_margin=as.numeric())
+  for (game in unique(kappadata$game_name)){
+    data1 = filter(kappadata, agent_type=='EMPA', game_name==game, !is.na(kappa))
+    data2 = filter(kappadata, agent_type=='human', game_name==game, !is.na(kappa))
+    kappa_ratios = numeric(N)
+    all_kappa_ratios = data.frame(values=as.numeric())
+    ## double loop for speedup?
+    for (j in 1:M){
+      for (i in 1:N){
+        kappas = bootstrap_kappa_ratio(data1, data2)
+        kappa_ratios[i] = kappas
+      }
+      all_kappa_ratios = rbind(all_kappa_ratios, data.frame(values=kappa_ratios))
+    }
+    low_mean_high = calculate_CI(all_kappa_ratios$values)
+    
+    ## failure for models counts as 1e-7
+    if(low_mean_high[2]==0){
+      low_mean_high = c(1e-7, 1e-7, 1e-7)
+    }  
+    
+    
+    row = data.frame(game_name=game, agent_type='EMPA', mean=low_mean_high[2], low_margin=low_mean_high[1], high_margin=low_mean_high[3])
+    means_and_CIs = rbind(means_and_CIs, row)
+  }
+  means_and_CIs = transform(means_and_CIs, agent_type=factor(agent_type, levels=c('EMPA', 'EMPA fail')))
+  
+  return(means_and_CIs)
 }
