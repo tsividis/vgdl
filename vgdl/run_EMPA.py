@@ -34,6 +34,8 @@ parser.add_argument('--heatmap', type=str2bool, default=False, help='heatmap')
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
 parser.add_argument('--play_movie', type=str2bool, default=False, help='play_movie')
 parser.add_argument('--produce_printout', type=str2bool, default=False, help='produce_printout')
+parser.add_argument('--color_only', type=str2bool, default=False, help='color_only')
+
 
 args = parser.parse_args()
 game_number = args.game_number
@@ -159,11 +161,11 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     estimated_time = {
     'aliens': '40 minutes',
     'tiny_zelda': '1 minute',
-    'demo_aliens': '10 minutes',
+    'demo_aliens': '5 minutes',
     'demo_bait': '4 minutes',
     'demo_butterflies': '5 minutes',
     'demo_sokoban': '20 minutes',
-    'demo_zelda': '8 minutes',
+    'demo_zelda': '5 minutes',
     'zelda': '5 minutes',
     'bait': '10 hours'
     }
@@ -191,7 +193,15 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         subprocess.call(command, shell=True)
         # embed()
         ## Make movie and suppress terminal output
-        com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py > /dev/null 2>&1"
+
+        if args.color_only:
+            # com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py --color_only True"
+
+            com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py --color_only True > /dev/null 2>&1"
+        else:
+            # com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py --color_only False"
+
+            com = "python ../vgdl-movies/vgdl/make_gameplay_videos.py --color_only False > /dev/null 2>&1"
 
         command = "{}".format(com)
 
@@ -208,16 +218,16 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         #     subprocess.Popen(command)
 
         ## clear temporary video directory
-        com = "rm {}/*".format(video_dirname)
-        command = "{}".format(com)
-        subprocess.call(command, shell=True)
+        # com = "rm {}/*".format(video_dirname)
+        # command = "{}".format(com)
+        # subprocess.call(command, shell=True)
 
 
     # print game_levels
 
     total_time = time.time() - start_time
 
-    # print total_time
+    print total_time
 
     return total_time
 
