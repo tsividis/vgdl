@@ -16,50 +16,41 @@ library(plotly)
 ###################
 # Load data       #
 ###################
-ddqn_path = paste(getwd(),'/data_files/ddqn_interaction_data/interaction_data', sep='')
-dqn_files = list.files(ddqn_path)
-
-dates = list('mar28', 'apr4')
-groups = list.files(paste(getwd(), '/data_files/human_interaction_data'))
-
+ddqn_interaction_path = paste(getwd(),'/data_files/ddqn_interaction_data/interaction_data', sep='')
+ddqn_interaction_files = list.files(ddqn_interaction_path)
+EMPA_interaction_dates = list('mar28', 'apr4')
+human_interaction_files = list.files(paste(getwd(), '/data_files/human_interaction_data', sep=''))
 
 
-### Toggle the below line to alter what you're reading in
-data_to_load = 'EMPA'
-data_to_load = 'human'
-data_to_load = 'DDQN'
-  
-if (data_to_load == 'EMPA'){
-  dates_or_groups = dates
-}else if (data_to_load == 'human'){
-  dates_or_groups = groups
-}else if (data_to_load == 'DDQN'){
-  dates_or_groups = dqn_files
-}
 
-
-## load data
-dates_or_groups_100k=c()
-for (d in dates_or_groups){
+## ddqn data
+ddqn_100k_interactiondata=c()
+for (d in ddqn_interaction_files){
   if (grepl('100k', d) & grepl('seed0', d)){
-    dates_or_groups_100k = c(dates_or_groups_100k, d)
+    ddqn_100k_interactiondata = c(ddqn_100k_interactiondata, d)
   }
 }
-data = load_data(data_to_load, dates_or_groups_100k) #takes a while
-#interactiondata = rbind(humaninteractiondata, empa_interactiondata, dqninteractiondata) ## legacy, in case you need to load old data again.
+ddqninteractiondata = load_interaction_data('DDQN', ddqn_100k_interactiondata) #takes a while
+EMPAinteractiondata = load_interaction_data('EMPA', EMPA_interaction_dates)
+humaninteractiondata = load_interaction_data('human', human_interaction_files)
+
+interactiondata = rbind(humaninteractiondata, EMPAinteractiondata, ddqninteractiondata)
 #interactiondata = select(interactiondata, names(data))
 # interactiondata = filter(interactiondata, short_agent_type!='human')
 
-dqn_with_valence = add_valence_to_data(data)
-dqn_sum_dataframes = make_sum_dataframes(dqn_with_valence)
-
-## now bind to existing data
-interactiondata = rbind(interactiondata, data)
 ## add hand-coded valence
 data_with_valence = add_valence_to_data(interactiondata)
-## calculate with within-agent normalized valence info
 sum_dataframes = make_sum_dataframes(data_with_valence)
 
+
+excluded_games = c('jaws', 'jaws_1', 'jaws_2','missilecommand', 'missilecommand_1', 'missilecommand_4', 'helper', 'helper_1', 'helper_2')
+
+## now bind to existing data
+# interactiondata = rbind(interactiondata, data)
+## add hand-coded valence
+# data_with_valence = add_valence_to_data(interactiondata)
+## calculate with within-agent normalized valence info
+# sum_dataframes = make_sum_dataframes(data_with_valence)
 
 
 ### temporary script for adding subject IDs:
@@ -121,8 +112,6 @@ for (agent in unique(corr_dataframe$short_agent_type)){
 }
 normalized_per_agent_counts = unpacked_corr_dataframe
 normalized_per_agent_counts = filter(normalized_per_agent_counts, !(game_name%in%excluded_games))
-## DON"T RUN THIS COMMAND ONCE YOU've PROCESSED BOULDERDASH
-# normalized_per_agent_counts = filter(normalized_per_agent_counts, !grepl('boulderdash', game_name))
 
 
 ## Raw counts of interactions (used for plotting)
@@ -130,10 +119,8 @@ normalized_per_agent_counts = filter(normalized_per_agent_counts, !(game_name%in
 raw_count_df=data.frame(short_agent_type=as.character(), subject_ID=as.character(), game_name=as.character(), valence=as.character(), raw_count=as.numeric())
 # tmp_dwv = filter(data_with_valence, short_agent_type%in%c('DDQN 100k', 'DDQN 10k', 'DDQN 1k'))
 for (game in unique(data_with_valence$game_name)){
-  print (game)
   game_data = filter(data_with_valence, game_name==game)
   for (subject in unique(game_data$subject_ID)){
-    print (subject)
     subject_data = filter(game_data, subject_ID==subject, grepl('avatar', event_type))
     for (each_valence in unique(data_with_valence$valence)){
       if (!is.na(each_valence)){
@@ -157,126 +144,23 @@ for (game in unique(raw_count_df$game_name)){
 }
 mean_raw_count_df = filter(mean_raw_count_df, !(game_name%in%excluded_games))
 
-create_distance_dataframe = function(count_df, metric, constant){
-  ## count_df: mean_raw_count_df: mean per-subject counts  or normalized_per_agent_counts
-  ## constant is only used for cross-entropy loss
-  ## Choices for metric: 'cosine', 'avg_absolute_difference', 'avg_squared_difference', 'cross-entropy'
-  
-  ### Calculate squared differences of absolute model counts:
-  human_empa=c()
-  human_random=c()
-  human_e_greedy=c()
-  human_ddqn=c()
-  
-  ## Calculate distance between models in absolute counts
-  for (game in unique(count_df$game_name)){
-    game_data = filter(count_df, game_name==game)
-    human_empa = c(human_empa,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
-                                                     filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
-                                                     filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
-                                                     filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
-                                                   c(filter(game_data, short_agent_type=='EMPA', valence=='positive')$mean_count, 
-                                                     filter(game_data, short_agent_type=='EMPA', valence=='instrumental')$mean_count,
-                                                     filter(game_data, short_agent_type=='EMPA', valence=='neutral')$mean_count,
-                                                     filter(game_data, short_agent_type=='EMPA', valence=='negative')$mean_count),
-                                                   metric, constant))
-    human_random = c(human_random,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
-                                                         filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
-                                                         filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
-                                                         filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
-                                                       c(filter(game_data, short_agent_type=='random policy', valence=='positive')$mean_count, 
-                                                         filter(game_data, short_agent_type=='random policy', valence=='instrumental')$mean_count,
-                                                         filter(game_data, short_agent_type=='random policy', valence=='neutral')$mean_count,
-                                                         filter(game_data, short_agent_type=='random policy', valence=='negative')$mean_count),
-                                                       metric, constant))
-    human_e_greedy = c(human_e_greedy,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
-                                                             filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
-                                                             filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
-                                                             filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
-                                                           c(filter(game_data, short_agent_type=='e-greedy .1', valence=='positive')$mean_count, 
-                                                             filter(game_data, short_agent_type=='e-greedy .1', valence=='instrumental')$mean_count,
-                                                             filter(game_data, short_agent_type=='e-greedy .1', valence=='neutral')$mean_count,
-                                                             filter(game_data, short_agent_type=='e-greedy .1', valence=='negative')$mean_count),
-                                                           metric, constant))
-    human_ddqn = c(human_ddqn,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
-                                                     filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
-                                                     filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
-                                                     filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
-                                                   c(filter(game_data, short_agent_type=='DDQN 100k', valence=='positive')$mean_count, 
-                                                     filter(game_data, short_agent_type=='DDQN 100k', valence=='instrumental')$mean_count,
-                                                     filter(game_data, short_agent_type=='DDQN 100k', valence=='neutral')$mean_count,
-                                                     filter(game_data, short_agent_type=='DDQN 100k', valence=='negative')$mean_count),
-                                                   metric, constant))
-  }
-  corr_frame_vert_absolute = data.frame(rbind(
-    cbind(as.character(unique(count_df$game_name)), 'human_empa', human_empa),
-    cbind(as.character(unique(count_df$game_name)), 'human_e_greedy', human_e_greedy),
-    cbind(as.character(unique(count_df$game_name)), 'human_random', human_random),
-    cbind(as.character(unique(count_df$game_name)), 'human_ddqn', human_ddqn)))
-  names(corr_frame_vert_absolute) = c('game_name', 'type', 'distance')
-  
-  if (missing(constant)){
-    constant = ''
-  }
-  corr_frame_vert_absolute$metric = paste(metric, as.character(constant), sep=' ')
-  return(corr_frame_vert_absolute)
-}
 
-# cross_entropy_01 = create_distance_dataframe(mean_raw_count_df, 'cross-entropy',.1)
-# cross_entropy_1 = create_distance_dataframe(mean_raw_count_df,'cross-entropy',1)
-# abs_distance = create_distance_dataframe(mean_raw_count_df,'avg_absolute_difference')
-# sq_distance = create_distance_dataframe(mean_raw_count_df,'avg_squared_difference')
-# all_distances_absolute_counts = rbind(cross_entropy_01, cross_entropy_1, abs_distance, sq_distance)
-
-
-# normalized_cross_entropy_01 = create_distance_dataframe(normalized_per_agent_counts, 'cross-entropy',.1)
-# normalized_cross_entropy_1 = create_distance_dataframe(normalized_per_agent_counts,'cross-entropy',1)
 normalized_abs_distance = create_distance_dataframe(normalized_per_agent_counts,'avg_absolute_difference')
-# normalized_sq_distance = create_distance_dataframe(normalized_per_agent_counts,'avg_squared_difference')
-# all_distances_normalized_counts = rbind(normalized_cross_entropy_01,normalized_cross_entropy_1,normalized_abs_distance,normalized_sq_distance)
-
-## to see actual scores given by each metric for some game:
-filter(all_distances, game_name%in%c('chase'))
-
 normalized_abs_distance_best_models = find_best_model(normalized_abs_distance)
-## top 4: ee_2, chase_1, chase, chase_3, missilecommand_2
-abs_distance_best_models = find_best_model(abs_distance)
-## top 4: sokoban_1, chase, push_boulders_1, relational_2
-cross_entropy_best_models = find_best_model(cross_entropy_01)
-## top 4: chase, ee_2, chase_1, antagonist_1
 
+## Find games on which each model did best
 empa_best = filter(normalized_abs_distance_best_models, type=='human_empa')
 empa_best[order(empa_best$margin),]
 ee_best[order(ee_best$margin),]
 ddqn_best[order(ddqn_best$margin),]
 
-p = ggplot(filter(normalized_abs_distance_best_models, type!='human_random'), aes(x=as.numeric(as.character(margin)), fill=as.factor(type), color=as.factor(type)))
-p=p+geom_density(alpha=.4)+xlab('distance')+ggtitle('Distribution of margins (best_model - second_best)')#+xlim(0,100000)
-p
 
-margin_cutoff = 0.02
-calculate_proportions = function(best_model_df, margin_cutoff){
-  proportion_df = data.frame(type=as.character(), normalized_count=as.numeric(), metric=as.character())
-  z=length(filter(normalized_abs_distance_best_models, margin>margin_cutoff)$margin)
-  for (model in unique(best_model_df$type)){
-    proportion = sum(filter(normalized_abs_distance_best_models, margin>margin_cutoff)$type==model)/z
-    row = data.frame(type=model, normalized_count=proportion, metric=best_model_df$metric[1])
-    proportion_df = rbind(proportion_df, row)
-  }
-
-  return(proportion_df)
-}
-normalized_abs_distance_best_models_with_cutoff = calculate_proportions(filter(normalized_abs_distance_best_models, type!='human_random'), margin_cutoff)
-
+normalized_abs_distance_best_models_with_cutoff = calculate_proportions(filter(normalized_abs_distance_best_models, type!='human_random'), margin_cutoff=0.2)
 normalized_abs_distance$distance=as.numeric(as.character(normalized_abs_distance$distance))
-
-
-## return here
-p = ggplot(filter(normalized_abs_distance, type%in%c('human_empa', 'human_ddqn')), aes(x=distance, fill=type, color=type))+geom_density(alpha=.4)
-p
 
 normalized_abs_distance_new_names=filter(normalized_abs_distance, type%in%c('human_empa', 'human_ddqn'))
 
+## continue here
 normalized_abs_distance_new_names[normalized_abs_distance_new_names$type=='human_empa',]$type=as.factor('EMPA')
 
 unique(normalized_abs_distance$game_name)
@@ -972,31 +856,32 @@ game_data = filter(data_with_valence, game_name==game, grepl('avatar', event_typ
 ####################
 ####################
 
-remove_string_from_name = function(name){
-  strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
-  for (i in 1:length(strings_to_remove)){
-    string_to_remove = strings_to_remove[i]
-    if (grepl(string_to_remove, name)){
-      keep = substr(name, nchar(string_to_remove)+2, nchar(name))
-      return(keep)
-    }
-    else{
-      keep=name
-    }
-  }
-  return(name)
-}
+# remove_string_from_name = function(name){
+#   strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
+#   for (i in 1:length(strings_to_remove)){
+#     string_to_remove = strings_to_remove[i]
+#     if (grepl(string_to_remove, name)){
+#       keep = substr(name, nchar(string_to_remove)+2, nchar(name))
+#       return(keep)
+#     }
+#     else{
+#       keep=name
+#     }
+#   }
+#   return(name)
+# }
 
-load_data = function(data_to_load, dates_or_groups){
+load_interaction_data = function(data_to_load, dates_or_groups){
   data = list()
   for (date_or_group in dates_or_groups){
     if (data_to_load == 'EMPA'){
-      filename = paste('~/Projects/atari/vgdl/',date_or_group, '/csv_data/interaction_data', sep='')
+      filename = paste(getwd(),'/data_files/EMPA/', date_or_group,'/csv_data/interaction_data', sep='')
+      # filename = paste('~/Projects/atari/vgdl/',date_or_group, '/csv_data/interaction_data', sep='')
     }else if (data_to_load == 'human'){
-      filename = paste('~/Projects/atari/vgdl/vgdl/human_interaction_data/', date_or_group, sep='')
-      print(filename)
+      filename = paste(getwd(),'/data_files/human_interaction_data/', date_or_group, sep='')
+            # filename = paste('~/Projects/atari/vgdl/vgdl/human_interaction_data/', date_or_group, sep='')
     }else if (data_to_load == 'DDQN'){
-      filename = paste(ddqn_path, '/', date_or_group, sep='')
+      filename = paste(ddqn_interaction_path, '/', date_or_group, sep='')
     }
     
     d=read.csv(filename, header=TRUE, na.strings='NA')
@@ -1102,13 +987,11 @@ add_zero_count_interactions = function(interactiondata){
     all_event_types = unique(game_subset$event_type)
     avatar_event_types = all_event_types[grepl('avatar', all_event_types)]
     for (subject in unique(game_subset$subject_ID)){
-      print(subject)
       agent_data = filter(game_subset, subject_ID==subject)
       agent_type = unique(agent_data$agent_type)[1]
       modelrun_ID = unique(agent_data$modelrun_ID)[1]
       short_agent_type = unique(agent_data$short_agent_type)[1]
       for (episode in episode_numbers){
-        print(episode)
         subject_episode_combo = filter(game_subset, subject_ID==subject, episode_number==episode)
         ### if this has length 0 then you need to go through all the episode numbers and add rows.
         for (event_type in avatar_event_types){
@@ -1362,18 +1245,14 @@ add_valence_to_data = function(interactiondata){
                                                         'neutral')))))
     }else{
       data$valence = NA
-      print ('did not find game')
       ## omitting jaws (bc shark interactions are good/bad depending on what avatar is carrying)
       ## omitting missilecommand 0 1 4 because there are no direct avatar interactions that are good/bad
       ## omitting helper
     }
-    print(game)
     outdata = rbind(outdata, data)
   }
   return(outdata)
 }
-
-excluded_games = c('jaws', 'jaws_1', 'jaws_2','missilecommand', 'missilecommand_1', 'missilecommand_4', 'helper', 'helper_1', 'helper_2')
 
 make_sum_dataframes = function(data){
   sum_dataframe = data.frame(short_agent_type=as.character(), game_name=as.character(), level=as.numeric(), valence=as.character(), raw_count=as.numeric(),
@@ -1506,71 +1385,79 @@ find_best_model = function(distance_df){
   return(best_model_df)
 }
 
+create_distance_dataframe = function(count_df, metric, constant){
+  ## count_df: mean_raw_count_df: mean per-subject counts  or normalized_per_agent_counts
+  ## constant is only used for cross-entropy loss
+  ## Choices for metric: 'cosine', 'avg_absolute_difference', 'avg_squared_difference', 'cross-entropy'
+  
+  ### Calculate squared differences of absolute model counts:
+  human_empa=c()
+  human_random=c()
+  human_e_greedy=c()
+  human_ddqn=c()
+  
+  ## Calculate distance between models in absolute counts
+  for (game in unique(count_df$game_name)){
+    game_data = filter(count_df, game_name==game)
+    human_empa = c(human_empa,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
+                                                     filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
+                                                     filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
+                                                     filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
+                                                   c(filter(game_data, short_agent_type=='EMPA', valence=='positive')$mean_count, 
+                                                     filter(game_data, short_agent_type=='EMPA', valence=='instrumental')$mean_count,
+                                                     filter(game_data, short_agent_type=='EMPA', valence=='neutral')$mean_count,
+                                                     filter(game_data, short_agent_type=='EMPA', valence=='negative')$mean_count),
+                                                   metric, constant))
+    human_random = c(human_random,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
+                                                         filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
+                                                         filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
+                                                         filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
+                                                       c(filter(game_data, short_agent_type=='random policy', valence=='positive')$mean_count, 
+                                                         filter(game_data, short_agent_type=='random policy', valence=='instrumental')$mean_count,
+                                                         filter(game_data, short_agent_type=='random policy', valence=='neutral')$mean_count,
+                                                         filter(game_data, short_agent_type=='random policy', valence=='negative')$mean_count),
+                                                       metric, constant))
+    human_e_greedy = c(human_e_greedy,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
+                                                             filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
+                                                             filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
+                                                             filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
+                                                           c(filter(game_data, short_agent_type=='e-greedy .1', valence=='positive')$mean_count, 
+                                                             filter(game_data, short_agent_type=='e-greedy .1', valence=='instrumental')$mean_count,
+                                                             filter(game_data, short_agent_type=='e-greedy .1', valence=='neutral')$mean_count,
+                                                             filter(game_data, short_agent_type=='e-greedy .1', valence=='negative')$mean_count),
+                                                           metric, constant))
+    human_ddqn = c(human_ddqn,  calculate_distance(c(filter(game_data, short_agent_type=='human', valence=='positive')$mean_count, 
+                                                     filter(game_data, short_agent_type=='human', valence=='instrumental')$mean_count,
+                                                     filter(game_data, short_agent_type=='human', valence=='neutral')$mean_count,
+                                                     filter(game_data, short_agent_type=='human', valence=='negative')$mean_count),
+                                                   c(filter(game_data, short_agent_type=='DDQN 100k', valence=='positive')$mean_count, 
+                                                     filter(game_data, short_agent_type=='DDQN 100k', valence=='instrumental')$mean_count,
+                                                     filter(game_data, short_agent_type=='DDQN 100k', valence=='neutral')$mean_count,
+                                                     filter(game_data, short_agent_type=='DDQN 100k', valence=='negative')$mean_count),
+                                                   metric, constant))
+  }
+  corr_frame_vert_absolute = data.frame(rbind(
+    cbind(as.character(unique(count_df$game_name)), 'human_empa', human_empa),
+    cbind(as.character(unique(count_df$game_name)), 'human_e_greedy', human_e_greedy),
+    cbind(as.character(unique(count_df$game_name)), 'human_random', human_random),
+    cbind(as.character(unique(count_df$game_name)), 'human_ddqn', human_ddqn)))
+  names(corr_frame_vert_absolute) = c('game_name', 'type', 'distance')
+  
+  if (missing(constant)){
+    constant = ''
+  }
+  corr_frame_vert_absolute$metric = paste(metric, as.character(constant), sep=' ')
+  return(corr_frame_vert_absolute)
+}
 
-###SCRAPS###
-# 
-# corr_frame = data.frame(game_name=as.character(), human_empa=as.numeric(), empa_random=as.numeric(), empa_e_greedy=as.numeric(), 
-#                         human_random=as.numeric(), human_e_greedy=as.numeric(), random_e_greedy=as.numeric())
-# corr_frame = rbind(corr_frame, cbind(as.character(unique(corr_dataframe$game_name)),human_empa, EMPA_random, EMPA_e_greedy, human_random, human_e_greedy, random_e_greedy))
-# names(corr_frame)[1] = 'game_name'
-# corr_frame$nearest_to_human = NA
-# 
-# col_names=c('human_empa', 'human_random', 'human_e_greedy')
-# for (i in 1:length(corr_frame$game_name)){
-#   row_vals = c(as.numeric(as.character(corr_frame[i,]$human_empa)), as.numeric(as.character(corr_frame[i,]$human_random)), as.numeric(as.character(corr_frame[i,]$human_e_greedy)))
-#   if (metric %in% c('avg_absolute_difference', 'avg_squared_difference')){
-#     corr_frame$nearest_to_human[i] = col_names[row_vals==min(row_vals)]
-#   }else{
-#     corr_frame$nearest_to_human[i] = col_names[row_vals==max(row_vals)]
-#   }
-# }
-# 
-# # abs_distances = corr_frame
-# squared_distances = corr_frame
-
-## preparing to plot distribution of distances from second-best
-# distance_frame = data.frame(game_name=as.character(), type=as.character(), distance=as.numeric)
-# for (game in unique(corr_frame$game_name)){
-#   for (model_type in unique(corr_frame_vert$type)){
-#     relevant_row = filter(corr_frame, game_name==game)
-#     row_vals = c(as.numeric(as.character(relevant_row$human_empa)), as.numeric(as.character(relevant_row$human_random)), as.numeric(as.character(relevant_row$human_e_greedy)))
-#     second_best = as.numeric(as.character(sort(row_vals,decreasing=FALSE)[2]))
-#     model_score = as.numeric(as.character(relevant_row[,which(names(corr_frame)==model_type)]))
-#     d_from_s = model_score - second_best
-#     row = data.frame(game_name=game, type=model_type, distance=d_from_s)
-#     distance_frame = rbind(distance_frame, row)
-#   }
-# }
-# ## distribution of distances from second-best
-# p = ggplot(distance_frame, aes(x=distance, fill=type))
-# p = p+geom_density(alpha=.4)+geom_vline(xintercept=0,linetype='dashed',size=.4) +ggtitle('Margin over second-best model, by model')
-# p
-
-# 
-# normalized_counts = data.frame(type=as.character(), count=as.numeric())
-# z=sum(!is.na(corr_frame$nearest_to_human))
-# for (i in 1:length(col_names)){
-#   row=data.frame(type=as.character(col_names[i]), count=sum(!is.na(corr_frame$nearest_to_human) & corr_frame$nearest_to_human==col_names[i])/z)
-#   normalized_counts=rbind(normalized_counts, row)
-# }
-# 
-# ## Plot proportion of times that each model best fits human data
-# p = ggplot(transform(normalized_counts, type=factor(type, levels=c('human_empa','human_e_greedy','human_random'))), aes(x=type, y=count))
-# p = p+geom_bar(stat='identity')+scale_x_discrete(breaks=c('human_empa','human_e_greedy','human_random'),
-#                                                  labels=c("EMPA", "e-greedy", "random policy"))+
-#   ylab('Proportion')+xlab('Model')+ggtitle('Proportion of games best fit by model type')+ylim(0,.7)
-# p
-
-# ## Plot negative interactions for all games:
-# for (game in unique(sum_dataframes$game_name)){
-#   p = ggplot(filter(sum_dataframes, game_name==game, valence=='negative'), aes(x=level, y=raw_count, fill=short_agent_type))
-#   p=p+geom_bar(stat='identity')+theme(axis.text.x = element_text(angle = 90, hjust = 1))+facet_wrap(~short_agent_type,ncol=1)+
-#     ggtitle(paste('negative interactions: ',game,sep=''))+
-#     scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count')
-#   #p
-#   
-#   newdir='~/Projects/atari/vgdl/interaction_plots/negative_interactions_by_level/'
-#   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-#   title = paste(newdir, game, '.png', sep='')
-#   ggsave(title, plot=p, width=15, height=10)  
-# }
+calculate_proportions = function(best_model_df, margin_cutoff){
+  proportion_df = data.frame(type=as.character(), normalized_count=as.numeric(), metric=as.character())
+  z=length(filter(normalized_abs_distance_best_models, margin>margin_cutoff)$margin)
+  for (model in unique(best_model_df$type)){
+    proportion = sum(filter(normalized_abs_distance_best_models, margin>margin_cutoff)$type==model)/z
+    row = data.frame(type=model, normalized_count=proportion, metric=best_model_df$metric[1])
+    proportion_df = rbind(proportion_df, row)
+  }
+  
+  return(proportion_df)
+}

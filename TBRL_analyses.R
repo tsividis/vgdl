@@ -1,15 +1,23 @@
 setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 ## Once you set it, you can load the workspace using load(".RData") !
 
-## Load helper functions
-source(paste(getwd(), '/TBRL_functions.R', sep=''))
-
+## gameplay data
 EMPA_dates = list('mar28')
 lesion_dates = list('jun3', 'jun22', 'jun23')
 ddqn_path = paste(getwd(),'/data_files/ddqn', sep='')
 rainbow_path = paste(getwd(),'/data_files/rainbow', sep='')
 random_path = paste(getwd(),'/data_files/randomdata', sep='')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
+
+## interaction data
+ddqn_interaction_path = paste(getwd(),'/data_files/ddqn_interaction_data/interaction_data', sep='')
+ddqn_interaction_files = list.files(ddqn_interaction_path)
+EMPA_interaction_dates = list('mar28', 'apr4')
+human_interaction_files = list.files(paste(getwd(), '/data_files/human_interaction_data'))
+
+## Load helper functions
+source(paste(getwd(), '/TBRL_functions.R', sep=''))
+
 
 ## Load data. These next few lines take a long time.
 humandata = load_reward_data('human', NA)
