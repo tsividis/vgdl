@@ -21,8 +21,6 @@ ddqn_interaction_files = list.files(ddqn_interaction_path)
 EMPA_interaction_dates = list('mar28', 'apr4')
 human_interaction_files = list.files(paste(getwd(), '/data_files/human_interaction_data', sep=''))
 
-
-
 ## ddqn data
 ddqn_100k_interactiondata=c()
 for (d in ddqn_interaction_files){
@@ -35,52 +33,21 @@ EMPAinteractiondata = load_interaction_data('EMPA', EMPA_interaction_dates)
 humaninteractiondata = load_interaction_data('human', human_interaction_files)
 
 interactiondata = rbind(humaninteractiondata, EMPAinteractiondata, ddqninteractiondata)
-#interactiondata = select(interactiondata, names(data))
-# interactiondata = filter(interactiondata, short_agent_type!='human')
 
 ## add hand-coded valence
 data_with_valence = add_valence_to_data(interactiondata)
 sum_dataframes = make_sum_dataframes(data_with_valence)
 
-
 excluded_games = c('jaws', 'jaws_1', 'jaws_2','missilecommand', 'missilecommand_1', 'missilecommand_4', 'helper', 'helper_1', 'helper_2')
 
-## now bind to existing data
-# interactiondata = rbind(interactiondata, data)
-## add hand-coded valence
-# data_with_valence = add_valence_to_data(interactiondata)
-## calculate with within-agent normalized valence info
-# sum_dataframes = make_sum_dataframes(data_with_valence)
 
-
-### temporary script for adding subject IDs:
-# levels(interactiondata$subject_ID) = c(levels(interactiondata$subject_ID), 'DDQN 100k', 'DDQN 10k', 'DDQN 1k')
-# interactiondata[interactiondata$short_agent_type=='DDQN 100k',]$subject_ID = 'DDQN 100k'
-# interactiondata[interactiondata$short_agent_type=='DDQN 10k',]$subject_ID = 'DDQN 10k'
-# interactiondata[interactiondata$short_agent_type=='DDQN 1k',]$subject_ID = 'DDQN 1k'
-# 
-# 
-# levels(data_with_valence$subject_ID) = c(levels(data_with_valence$subject_ID), 'DDQN 100k', 'DDQN 10k', 'DDQN 1k')
-# data_with_valence[data_with_valence$short_agent_type=='DDQN 100k',]$subject_ID = 'DDQN 100k'
-# data_with_valence[data_with_valence$short_agent_type=='DDQN 10k',]$subject_ID = 'DDQN 10k'
-# data_with_valence[data_with_valence$short_agent_type=='DDQN 1k',]$subject_ID = 'DDQN 1k'
-
-
-# colors=c('grey50', 'steelblue3', 'palegreen3', 'slateblue1', 'slateblue2', 'indianred3')
-# names(colors) = c('DDQN', 'EMPA', 'human', 'e-greedy .05', 'e-greedy .1', 'random policy')
-
-interactioncolors = c('steelblue1',
-           'purple2', #'mediumorchid2',
-           'firebrick2',# 'seagreen3','darkolivegreen1',
-           'palegreen3',# 'tomato2', 'salmon', 
+interactioncolors = c('steelblue1', 'purple2', 'firebrick2', 'palegreen3',
            'gray50', 'gray52', 'gray54',
            'gray50', 'gray52', 'gray54')
-# 'darkslategray3', 'darkslategray2', 'darkslategray1')#, 'mediumpurple2', 'aquamarine3', 'coral3')
+
 names(interactioncolors)=c('EMPA', 'e-greedy', 'random', 'human', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'DDQN', 'DDQN', 'DDQN')
 
 
-
-### important
 corr_dataframe = data.frame(short_agent_type=as.character(), game_name=as.character(), positive=as.numeric(), instrumental=as.numeric(), neutral=as.numeric(), negative=as.numeric())
 for (game in unique(sum_dataframes$game_name)){
   game_data = filter(sum_dataframes, game_name==game)
@@ -113,7 +80,6 @@ for (agent in unique(corr_dataframe$short_agent_type)){
 normalized_per_agent_counts = unpacked_corr_dataframe
 normalized_per_agent_counts = filter(normalized_per_agent_counts, !(game_name%in%excluded_games))
 
-
 ## Raw counts of interactions (used for plotting)
 ## WARNING: This is slow
 raw_count_df=data.frame(short_agent_type=as.character(), subject_ID=as.character(), game_name=as.character(), valence=as.character(), raw_count=as.numeric())
@@ -127,7 +93,6 @@ for (game in unique(data_with_valence$game_name)){
         row = data.frame(short_agent_type=subject_data$short_agent_type[1], subject_ID=subject, game_name=game, valence=each_valence, raw_count=sum(filter(subject_data, valence==each_valence)$count))
         raw_count_df = rbind(raw_count_df, row)
       }
-      
     }
   }
 }
@@ -158,17 +123,9 @@ ddqn_best[order(ddqn_best$margin),]
 normalized_abs_distance_best_models_with_cutoff = calculate_proportions(filter(normalized_abs_distance_best_models, type!='human_random'), margin_cutoff=0.2)
 normalized_abs_distance$distance=as.numeric(as.character(normalized_abs_distance$distance))
 
-normalized_abs_distance_new_names=filter(normalized_abs_distance, type%in%c('human_empa', 'human_ddqn'))
-
-## continue here
-normalized_abs_distance_new_names[normalized_abs_distance_new_names$type=='human_empa',]$type=as.factor('EMPA')
-
-unique(normalized_abs_distance$game_name)
 static_games = c('push_boulders_2', 'push_boulders', 'push_boulders_1', 'preconditions', 'preconditions_1', 'preconditions_2', 'bait', 'bait_1', 'bait_2', 
                  'watergame', 'watergame_1', 'watergame_2', 'relational', 'sokoban', 'sokoban_1', 'sokoban_2', 'ee')
 
-
-saved_normalized_abs_distance = normalized_abs_distance
 normalized_abs_distance$game_type = NA
 normalized_abs_distance$formatted_type = NA
 for (i in 1:length(normalized_abs_distance$game_name)){
@@ -188,19 +145,8 @@ for (i in 1:length(normalized_abs_distance$game_name)){
 }
 
 
-## new supplementary figure
-p = ggplot(filter(normalized_abs_distance, type%in%c('human_empa', 'human_ddqn')), aes(x=formatted_type,y=distance, fill=type, fill=type))+
-  geom_boxplot()+scale_fill_manual(values=c('grey50', 'steelblue1'))+scale_color_manual(values=c('grey50', 'steelblue1'))+coord_flip()+
-  facet_wrap(~game_type, nrow=2)+
-  theme(plot.title=element_text(family='',face='plain', size=26),axis.text.x=element_text(size=22),
-        axis.text.y=element_text(size=22),axis.title.x=element_text(size=24),axis.title.y=element_text(size=24), strip.text.x=element_text(size=22), legend.position='none')+
-  theme(strip.text.x = element_text(margin = margin(.2,0,.2,0, "cm")))+
-  ylab("L1 distance between model and human interaction distributions")+xlab("Model type")+ylim(0,.5)
-p
-
-
+## supplementary figure comparing fast- and slow-paced games
 summary_abs_distance = summarySE(filter(normalized_abs_distance, type%in%c('human_empa', 'human_ddqn')), measurevar='distance', groupvars=c('formatted_type','game_type'))
-
 pd = position_dodge(width=0.5)
 ggplot(summary_abs_distance, aes(x=formatted_type, y=distance, colour=formatted_type, width=.2)) + scale_color_manual(values=c('grey50', 'steelblue1'))+
   geom_errorbar(aes(ymin=distance-ci, ymax=distance+ci), width=.5, position=position_dodge(-1),size=2) +
@@ -212,19 +158,6 @@ ggplot(summary_abs_distance, aes(x=formatted_type, y=distance, colour=formatted_
   facet_wrap(~game_type, nrow=2)+
   coord_flip()
 
-
-          t.test(filter(normalized_abs_distance, type%in%c('human_empa'), game_type=='Static games')$distance, filter(normalized_abs_distance, type%in%c('human_ddqn'), game_type=='Static games')$distance)
-t.test(filter(normalized_abs_distance, type%in%c('human_empa'), game_type=='Dynamic games')$distance, filter(normalized_abs_distance, type%in%c('human_ddqn'), game_type=='Dynamic games')$distance)
-
-
-t.test(filter(normalized_abs_distance, type%in%c('human_empa'), game_type=='Static games')$distance)
-
-
-one_d = data.frame(game_name=filter(normalized_abs_distance, type=='human_empa')$game_name, distance=distance_to_empa/(distance_to_ddqn+distance_to_empa))
-p = ggplot(one_d, aes(x=distance))+geom_density(adjust=1/4, color='palegreen3', fill='palegreen3')
-p
-
-
 ### convert to format for ternary plot
 games_used_in_12_plot = c(group1, group2)
 max_distance = max(as.numeric(as.character(normalized_abs_distance$distance)))
@@ -232,117 +165,7 @@ human_empa = max_distance-as.numeric(as.character(filter(normalized_abs_distance
 human_e_greedy = max_distance-as.numeric(as.character(filter(normalized_abs_distance, type=='human_e_greedy')$distance))
 human_ddqn = max_distance-as.numeric(as.character(filter(normalized_abs_distance, type=='human_ddqn')$distance))
 game_names = filter(normalized_abs_distance, type=='human_empa')$game_name
-df = data.frame(game_names, human_empa, human_e_greedy, human_ddqn)
-df$best_model=NA
-df$used_in_12_plot=5
-for (i in 1:length(df$game_names)){
-  df$best_model[i] = c('human_empa', 'human_e_greedy', 'human_ddqn')[which(df[i,2:4]==max(df[i,2:4]))]
-  if (df$game_names[i]%in%games_used_in_12_plot){
-    df$used_in_12_plot[i] = 10
-  }
-}
 
-
-## Simplex plot
-## see here for a nice example: https://xang1234.github.io/ternary/
-axis <- function(title) {
-  list(
-    title = title,
-    titlefont = list(
-      size = 20
-    ),
-    tickfont = list(
-      size = 20
-    ),
-    tickcolor = 'rgba(0,0,0,0.5)',
-    ticklen = 5,
-    showgrid = FALSE
-  )
-}
-
-similarity_colors = c('steelblue1', 'slateblue1', 'gray50')
-names(similarity_colors) = c('human_empa', 'human_e_greedy', 'human_ddqn')
-
-p <- df %>% 
-  plot_ly() %>%
-  add_trace(
-    type = 'scatterternary',
-    mode = 'markers',
-    a = ~human_empa,
-    b = ~human_e_greedy,
-    c = ~human_ddqn,
-    color = ~best_model,colors=~similarity_colors,
-    # size = ~used_in_12_plot,
-    text = ~game_names,
-    marker = list( 
-      # symbol = 100,
-      # color = '#DB7365',
-      symbol='circle',
-      # alpha=.7,
-      size = 14,
-      # sizemode='diameter',
-      # sizeref=10,
-      line = list('width' = 1)
-    )
-  ) %>% 
-  layout(
-    # title = "Simple Ternary Plot with Markers",
-    ternary = list(
-      # sum = 100,
-      aaxis = axis('EMPA'),
-      baxis = axis('e-greedy EMPA'),
-      caxis = axis('DDQN')
-    )
-  )
-
-p
-
-
-##empa best (hybrid sorting by margin and also coverage and game name variety): 'ee_3', 'relational','preconditions', 'sokoban', 'zelda', 'butterflies_1', 'bait_2'
-## ee best: 'chase', 'missilecommand_2', 'antagonist_2', (or antagonist_1), 'portals_1'
-## ddqn best: 'missilecommand_3', 'closing_gates_1', 
-
-## sokoban, relational, push_boulders all pretty similar for humans
-
-## why is distance 0 in some games, like helper?
-## you can't fiter by the one that has the best model, or you'll have ties and will add too many rows.
-
-## figure out why ddqn used to show up in abs_distance. it actually just couldn't have. distance should have been too big.
-
-## distribution of squared distances per model
-# p = ggplot(corr_frame_vert_absolute_1, aes(x=as.numeric(as.character(distance)), fill=as.factor(type), color=as.factor(type)))
-# p=p+geom_density(alpha=.4)+xlab('distance')+ggtitle('Distribution of cross-entropies')#+xlim(0,100000)
-# p
-
-absolute_counts_no_random = calculate_proportion_of_games_best_fit_by_each_model(filter(abs_distance, type%in%c('human_empa', 'human_e_greedy', 'human_ddqn')))
-absolute_counts = calculate_proportion_of_games_best_fit_by_each_model(abs_distance)
-
-normalized_absolute_counts_no_random = calculate_proportion_of_games_best_fit_by_each_model(filter(normalized_abs_distance, type%in%c('human_empa', 'human_e_greedy', 'human_ddqn')))
-
-# metric_df = normalized_absolute_counts_no_random
-
-metric_df = normalized_abs_distance_best_models_with_cutoff
-p = ggplot(transform(metric_df, type=factor(type, levels=c('human_empa','human_e_greedy', 'human_ddqn'))), aes(x=type, y=normalized_count))
-p = p+geom_bar(stat='identity')+scale_x_discrete(breaks=c('human_empa','human_e_greedy', 'human_ddqn'),
-                                                 labels=c("EMPA", "e-greedy", 'DDQN 100k'), drop=FALSE)+
-  ylab('Proportion')+xlab('Model')+ggtitle(paste('Proportion of games best fit by model type. Metric:', metric_df$metric[1], sep=' '))+ylim(0,.8)
-p
-
-p = ggplot(transform(metric_df, type=factor(type, levels=c('human_empa','human_e_greedy','human_random', 'human_ddqn'))), aes(x=type, y=normalized_count))
-p = p+geom_bar(stat='identity')+scale_x_discrete(breaks=c('human_empa','human_e_greedy','human_random', 'human_ddqn'),
-                                                 labels=c("EMPA", "e-greedy", "random policy", 'DDQN 100k'), drop=FALSE)+
-  ylab('Proportion')+xlab('Model')+ggtitle(paste('Proportion of games best fit by model type. Metric:', metric_df$metric[1], sep=' '))+ylim(0,.7)
-p
-#8,10
-
-## split figure of 12 interaction valence plots into 7,3,2, which roughly corresponds to the normalized counts.
-filter(corr_frame, nearest_to_human=='human_empa')
-filter(corr_frame, nearest_to_human=='human_e_greedy')
-filter(corr_frame, nearest_to_human=='human_random')
-
-mean(human_empa, na.rm=TRUE)
-mean(human_random, na.rm=TRUE)
-mean(human_e_greedy, na.rm=TRUE)
 
 ## unnormalized interactions across levels, for each game
 tickmarks = c(10,100,1000,10000,100000,1000000,10000000)
@@ -350,7 +173,7 @@ logtickmarks=c(.05,log(tickmarks,10))
 tickmarks = c(1,tickmarks)
 for (game in unique(raw_count_df$game_name)){
   ## add random policy again
-  df = transform(filter(raw_count_df, game_name==game), short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 'DDQN 100k')),
+  df = transform(filter(raw_count_df, game_name==game), short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'DDQN 100k')),
             valence=factor(valence, levels=c('positive', 'instrumental', 'neutral', 'negative')))
   
   p = ggplot(filter(df, !is.na(short_agent_type)),
@@ -358,7 +181,8 @@ for (game in unique(raw_count_df$game_name)){
   p=p+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
     scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count (unnormalized)')+
     scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,log(1000000,10)))+ggtitle(game)+theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  p
+  ## center ggtitle, remove background
+  p = p+theme(panel.background = element_blank(), plot.title = element_text(hjust = 0.5))
   newdir='~/Projects/atari/vgdl/interaction_plots/by_valence_all_levels_unnormalized/'
   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
   title = paste(newdir, game, '.png', sep='')
@@ -366,143 +190,9 @@ for (game in unique(raw_count_df$game_name)){
 }
 
 
-## just transform to log in the dataframe and then plot normally.
-df$log_raw_count = log(df$raw_count,10)+.05
-
-## determine groups first. once you have them you can do this.
-group1 = c('bait', 'bees_and_birds', 'corridor', 'ee_3', 'frogs', 'sokoban')
-group2 = c('zelda', 'butterflies', 'chase', 'antagonist_1', 'portals_1', 'closing_gates')
-df = transform(filter(raw_count_df, game_name%in%group1), short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 'DDQN 100k')),
-               valence=factor(valence, levels=c('positive', 'instrumental', 'neutral', 'negative')))
-df$log_raw_count = log(df$raw_count,10)+.05
-p = ggplot(filter(df, !is.na(short_agent_type)),
-           aes(x=valence, y=log_raw_count, fill=short_agent_type))+facet_grid(short_agent_type ~ game_name, scales='free')
-
-                      # aes(x=valence, y=log_raw_count, fill=short_agent_type))+facet_grid(short_agent_type ~ game_name, scales='free',space='free')
-p=p+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
-  scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count (unnormalized)')+
-  scale_y_continuous(breaks=logtickmarks, labels=tickmarks)+theme(panel.spacing.x = unit(2, "lines"))+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  theme(panel.background = element_rect(fill = "gray95",
-                                  colour = "gray95",
-                                  size = 0.5, linetype = "solid"))
-p
-##6x18
-
-## determine groups first. once you have them you can do this.
-group1 = c('ee_3', 'frogs', 'corridor', 'bait', 'bees_and_birds','sokoban')
-group2 = c('antagonist_1', 'zelda', 'chase',  'butterflies','closing_gates', 'portals_1' )
-df = transform(filter(raw_count_df, game_name%in%group1), short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 'DDQN 100k')),
-               valence=factor(valence, levels=c('positive', 'instrumental', 'neutral', 'negative')))
-df = transform(df, game_name=factor(game_name, levels=group1))
-
-# df$log_raw_count = log(df$raw_count,10)+.05
-p = ggplot(filter(df, !is.na(short_agent_type), !is.na(game_name)),
-           aes(x=valence, y=raw_count, fill=short_agent_type))+facet_grid(short_agent_type ~ game_name, scales='free')
-
-# aes(x=valence, y=log_raw_count, fill=short_agent_type))+facet_grid(short_agent_type ~ game_name, scales='free',space='free')
-p=p+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
-  scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count (unnormalized)')+
-  theme(panel.spacing.x = unit(2, "lines"))+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  theme(panel.background = element_rect(fill = "gray95",
-                                        colour = "gray95",
-                                        size = 0.5, linetype = "solid"))
-p
-##6x18
-
-
-
-## ddqn should be best on these: (it is; the plots correspond to what the numbers predict)
-group3 = c('closing_gates_1', 'lemmings_1', 'missilecommand_3', 'sokoban_1', 'surprise_1')
-
-normalized_per_agent_counts
-
-
-###
-### For generating the actual figure for normalized interaction counts.
-## determine groups first. once you have them you can do this.
-# group1 = c('bait', 'bees_and_birds', 'corridor', 'ee_3', 'frogs', 'sokoban')
-# group2 = c('zelda', 'butterflies', 'chase', 'antagonist_1', 'portals_1', 'closing_gates')
-group1 = c('ee_3', 'frogs', 'corridor', 'bait', 'bees_and_birds','sokoban')
-group2 = c('antagonist_1', 'zelda', 'butterflies','closing_gates', 'portals_1','chase')
-# df = transform(filter(normalized_per_agent_counts, game_name%in%group2), short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 'DDQN 100k')),
-#                valence=factor(valence, levels=c('positive', 'instrumental', 'neutral', 'negative')))
-# df = transform(df, game_name=factor(game_name, levels=group2))
-# p = ggplot(filter(df, !is.na(short_agent_type), !is.na(game_name)),
-#            aes(x=valence, y=mean_count, fill=short_agent_type))+facet_grid(short_agent_type ~ game_name, scales='free')
-# p=p+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
-#   scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count (normalized)')+
-#   theme(panel.spacing.x = unit(2, "lines"))+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-#   theme(panel.background = element_rect(fill = "gray95",
-#                                         colour = "gray95",
-#                                         size = 0.5, linetype = "solid"))
-# p
-## 6x18
-
-## interactions by valence, across levels (relative )
-## figure 6A
-for (game in unique(sum_dataframes$game_name)){
-  # for (game in c('ee_3', 'frogs', 'corridor', 'bait', 'bees_and_birds', 'sokoban', 'antagonist', 'zelda', 'butterflies', 'closing_gates', 'portals_1', 'chase')){
-    
-    if (!(game %in% excluded_games)){
-    
-    # distances = filter(corr_frame, game_name==game)
-    distances = filter(corr_frame_vert_absolute, game_name==game)
-    h_e = filter(distances, type=='human_empa')
-    h_eg = filter(distances, type=='human_e_greedy')
-    h_r = filter(distances, type=='human_random')
-    
-    # relevant_distances = paste('\n',metric,'\nhuman-empa:', distances$human_empa, '\nhuman-e-greedy:', distances$human_e_greedy, '\nhuman-random:', distances$human_random, sep=' ')
-    relevant_distances = c()
-    game_title=gsub('_',' ',game)
-    # relevant_distances = paste('\n',metric,'\nhuman-empa:', h_e$distance, '\nhuman-e-greedy:', h_eg$distance, '\nhuman-random:', h_r$distance, sep=' ')
-    
-    data_subset = filter(sum_dataframes, game_name==game)
-    ## renaming model here
-    levels(data_subset$short_agent_type) = c('human', 'DDQN', 'EMPA', 'e-greedy', 'random policy', 'DDQN')
-    # df = transform(data_subset, short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy', 'DDQN')))
-    df = transform(data_subset, short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'DDQN')))
-    
-    p = ggplot(filter(df, !is.na(short_agent_type)), aes(x=valence, y=across_level_normalized_count, fill=short_agent_type))
-    p=p+geom_bar(stat='identity', position='dodge')+ggtitle(paste(game_title, relevant_distances, sep=''))+
-      facet_wrap(~short_agent_type, ncol=1, strip.position='bottom')+ylim(0,1)+
-      scale_fill_manual(name="short_agent_type", values=interactioncolors)+ xlab('Interaction valence')+ylab('Interaction count (normalized)')+
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, size=22),axis.text.y=element_text(size=22),
-            axis.title.x=element_text(size=20),axis.title.y=element_text(size=24),plot.title=element_text(size=26),legend.position='none')
-     p
-    newdir='~/Projects/atari/vgdl/interaction_plots/by_valence_all_levels_large_text_no_DQN/'
-    dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-    title = paste(newdir, game, '.png', sep='')
-    ggsave(title, plot=p, width=4, height=8)
-    # ggsave(title, plot=p, width=5, height=9)  
-    
-  }
-}
-
-
-# ## interactions by valence by level
-# for (game in unique(sum_dataframes$game_name)){
-#   if (!(game %in% c('jaws', 'jaws_1', 'jaws_2', 'missilecommand', 'missilecommand_1', 'missilecommand_4', 'helper', 'helper_1', 'helper_2'))){
-#     
-#     # game_data = filter(sum_dataframes, game_name==game, grepl('avatar', event_type), short_agent_type!='e-greedy')
-#     game_data = transform(filter(sum_dataframes, game_name==game, grepl('avatar', event_type)), short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .05', 'DDQN', 'random policy')))
-#     
-#         game_data = select(game_data, short_agent_type, game_name, level, valence, per_level_normalized_count)
-#     game_data = rbind(game_data, cbind(expand.grid(short_agent_type=unique(game_data$short_agent_type), game_name=unique(game_data$game_name),
-#                                                                                    level=unique(game_data$level), valence=unique(game_data$valence)), 
-#                                                 per_level_normalized_count=NA))
-#     
-#     
-#   p = ggplot(game_data, aes(x=valence, y=per_level_normalized_count, fill=short_agent_type))
-#     p=p+geom_bar(stat='identity', position='dodge')+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ggtitle(game)+facet_wrap(~level, nrow=1)+
-#       scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count (normalized)')
-#     newdir='~/Projects/atari/vgdl/interaction_plots/by_valence_by_level/'
-#     dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-#     title = paste(newdir, game, '.png', sep='')
-#     ggsave(title, plot=p, width=15, height=3)  
-#     }
-# }
-
 ## Collisions with deadly objects.
+### we only have data for 59 games bc that's the number of games that have negative interactions that we coded for.
+
 game_df = data.frame(short_agent_type=as.character(), game_name=as.character(), count=as.numeric())
 # for (game in c('ee_3', 'zelda', 'bait', 'portals_1', 'surprise_1')){
 for (game in unique(data_with_valence$game_name)){
@@ -524,110 +214,10 @@ for (game in unique(data_with_valence$game_name)){
 }
 game_df = filter(game_df, !is.na(short_agent_type))
 game_df$log_count = log(game_df$count,10)+.05
-
 all_level_game_df = game_df
-#first_level_game_df = game_df
-
-### we only have data for 59 games bc that's the number of games that have negative interactions that we coded for.
-### Generate data frame for scatter plots and correlations
-human_cols = filter(all_level_game_df, short_agent_type=='human', game_name!='ee_3')
-human_cols = aggregate(log_count ~ short_agent_type + game_name, human_cols, mean)
-human_cols = arrange(human_cols, as.character(game_name))
-human_cols = select(human_cols, -short_agent_type)
-names(human_cols)[2] = 'human_log_count'
-
-log_scatter_plot_df = data.frame(game_name=as.character(), human_log_count=as.numeric(), short_agent_type=as.character(), model_count=as.numeric())
-
-for (agent in c('EMPA', 'e-greedy .1', 'DDQN 100k')){
-    agent_data = filter(all_level_game_df, short_agent_type==agent, game_name!='ee_3')
-    agent_data = aggregate(log_count ~ short_agent_type + game_name, agent_data, mean)
-    agent_data = arrange(agent_data, as.character(game_name))
-    agent_data = select(agent_data, -game_name)
-    names(agent_data)[2] = 'model_log_count'
-    log_scatter_plot_df = rbind(log_scatter_plot_df,  cbind(human_cols, agent_data))
-}
-names(log_scatter_plot_df)[3] = 'agent_type'
-
-## Scatter plot of negative interactions
-tickmarks = c(10,100,1000,10000,1e5)
-logtickmarks=c(.05,log(tickmarks,10))
-tickmarks = c(1,tickmarks)
-p = ggplot(log_scatter_plot_df, aes(x=human_log_count, y=model_log_count, color=agent_type))
-p = p+geom_point()+xlim(0,3)+ylim(0,5)+geom_abline(intercept=0, slope=1)+geom_smooth(method = "lm")+scale_color_manual(name="agent_type", values=colors)+
-  scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,5))+scale_x_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,3))+
-  xlab('human interaction count')+ylab('model interaction count')
-p
-
-model_human_correlations_logs = data.frame(agent_type=as.character(), correlation=as.numeric())
-for (agent in unique(log_scatter_plot_df$agent_type)){
-  d=filter(log_scatter_plot_df, agent_type==agent)
-  corr = cor(select(d, human_log_count, model_log_count), method='spearman')[2]
-  model_human_correlations_logs = rbind(model_human_correlations_logs, data.frame(agent_type=agent, correlation=corr))
-}
 
 
-human_cols = filter(all_level_game_df, short_agent_type=='human', game_name!='ee_3')
-human_cols = aggregate(count ~ short_agent_type + game_name, human_cols, mean)
-human_cols = arrange(human_cols, as.character(game_name))
-human_cols = select(human_cols, -short_agent_type)
-names(human_cols)[2] = 'human_count'
-
-scatter_plot_df = data.frame(game_name=as.character(), human_log_count=as.numeric(), short_agent_type=as.character(), model_count=as.numeric())
-
-for (agent in c('EMPA', 'e-greedy .1', 'DDQN 100k')){
-  agent_data = filter(all_level_game_df, short_agent_type==agent, game_name!='ee_3')
-  agent_data = aggregate(count ~ short_agent_type + game_name, agent_data, mean)
-  agent_data = arrange(agent_data, as.character(game_name))
-  agent_data = select(agent_data, -game_name)
-  names(agent_data)[2] = 'model_count'
-  scatter_plot_df = rbind(scatter_plot_df,  cbind(human_cols, agent_data))
-}
-names(scatter_plot_df)[3] = 'agent_type'
-
-## Scatter plot of negative interactions
-plots = list()
-for (i in 1:length(unique(scatter_plot_df$agent_type))){
-  agent = unique(scatter_plot_df$agent_type)[i]
-  p = ggplot(filter(scatter_plot_df, agent_type==agent), aes(x=human_count, y=model_count, color=agent_type))
-  p = p+geom_point()+geom_abline(intercept=0, slope=1)+geom_smooth(method = "lm")+scale_color_manual(name="agent_type", values=colors)+
-    xlab('human interaction count')+ylab('model interaction count')
-  plots[[i]] = p
-}
-layout = matrix(c(1:3), ncol=3)
-m = multiplot(plotlist = plots[1:3], layout=layout)
-
-model_human_correlations = data.frame(agent_type=as.character(), correlation=as.numeric())
-for (agent in unique(scatter_plot_df$agent_type)){
-  d=filter(scatter_plot_df, agent_type==agent)
-  corr = cor(select(d, human_count, model_count), method='pearson')[2]
-  model_human_correlations = rbind(model_human_correlations, data.frame(agent_type=agent, correlation=corr))
-}
-
-
-
-
-# ## per-game negative collision count
-# for (game in unique(game_df$game_name)){
-# # for (game in c('bait', 'ee_3', 'zelda', 'portals_1')){
-#   p = ggplot(filter(transform(game_df, short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .05', 'DDQN', 'random policy'))),!is.na(short_agent_type), game_name==game), 
-#              aes(x=short_agent_type, y=log_count, fill=short_agent_type))
-#   p = p+geom_bar(position='dodge',stat='summary', fun.y='mean')+scale_fill_manual(name="short_agent_type", values=colors)+xlab('Agent type')+ylab('Collision count')+
-#   ggtitle(paste('Agent collisions with deadly objects in', game, sep=' '))
-#   
-#   tickmarks = c(10,100,1000,10000)
-#   logtickmarks=c(.05,log(tickmarks,10))
-#   tickmarks = c(1,tickmarks)
-#   p=p+scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,log(10000,10)))
-#   newdir='~/Projects/atari/vgdl/interaction_plots/deadly_collisions/'
-#   dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-#   title = paste(newdir, game, '.png', sep='')
-#   ggsave(title, plot=p, width=10, height=10)  
-# }
-
-tmp_game_subset = c('ee_3', 'frogs', 'push_boulders', 'aliens', 'zelda', 'bait', 'chase', 'bees_and_birds', 'portals', 'preconditions', 'portals_1', 'surprise_1')
 ## log scale per negative collision plot
-## add random policy
-
 all_level_game_df$formatted_game_name = NA
 for (i in 1:length(all_level_game_df$game_name)){
   all_level_game_df$formatted_game_name[i] = gsub('_',' ',all_level_game_df$game_name[i])
@@ -636,50 +226,19 @@ for (i in 1:length(all_level_game_df$game_name)){
 dqn_games = unique(filter(all_level_game_df, short_agent_type=='DDQN 100k')$formatted_game_name)
 dqn_games=dqn_games[order(as.character(dqn_games))]
 
-data_to_plot = filter(transform(all_level_game_df, short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 'DDQN 100k'))), game_name%in%dqn_games)
-# data_to_plot = transform(filter(data_to_plot, game_name%in%tmp_game_subset), game_name=factor(game_name, levels=tmp_game_subset))
+data_to_plot = filter(transform(all_level_game_df, short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .1', 'DDQN 100k'))), formatted_game_name%in%dqn_games)
 data_to_plot = filter(data_to_plot, !is.na(short_agent_type))
 
-data_to_plot$formatted_game_name = NA
-for (i in 1:length(data_to_plot$game_name)){
-  data_to_plot$formatted_game_name[i] = gsub('_',' ',data_to_plot$game_name[i])
-}
-
-
-# saved_data_to_plot = data_to_plot
-# data_to_plot$game_type=NA
+# data_to_plot$formatted_game_name = NA
 # for (i in 1:length(data_to_plot$game_name)){
-#  if(data_to_plot$game_name[i]%in%static_games){
-#    data_to_plot$game_type[i] = 'Static'
-#  } 
-#   else{
-#     data_to_plot$game_type[i] = 'Dynamic'
-#   }
+#   data_to_plot$formatted_game_name[i] = gsub('_',' ',data_to_plot$game_name[i])
 # }
-# ## Figure 6C
-# tickmarks = c(10,100,1000,10000,1e5,1e6)
-# logtickmarks=c(.05,log(tickmarks,10))
-# tickmarks = c(1,tickmarks)
-# levels(data_to_plot$short_agent_type) = c('human', 'EMPA', 'e-greedy', 'DDQN')
-# p = ggplot(filter(data_to_plot, short_agent_type%in%c('human','EMPA','DDQN')),
-#            aes(x=formatted_game_name, y=log(count,10)+.05, fill=short_agent_type))+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
-#   # facet_wrap(~short_agent_type,ncol=1,strip.position='bottom',shrink=TRUE)+
-# facet_grid(vars(short_agent_type), vars(game_type))+
-#     scale_fill_manual(name="short_agent_type", values=interactioncolors)+
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1),
-#         axis.text.y=element_text(size=22),
-#         axis.title.y=element_text(size=24), axis.title.x=element_text(size=24), plot.title=element_text(size=26))+
-#   scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,5.5))+scale_x_discrete(limits=dqn_games)+theme(legend.position="none")+
-#   ## or try limits=c(0,4.5)
-#   ylab('Interactions with deadly items')+xlab('Game name')#+ggtitle('Collisions with deadly objects')
-# p
-
 
 ## Figure 6C
 tickmarks = c(10,100,1000,10000,1e5,1e6)
 logtickmarks=c(.05,log(tickmarks,10))
 tickmarks = c(1,tickmarks)
-levels(data_to_plot$short_agent_type) = c('human', 'EMPA', 'e-greedy', 'DDQN')
+levels(data_to_plot$short_agent_type) = c('human', 'EMPA', 'e-greedy','DDQN')
 p = ggplot(filter(data_to_plot, short_agent_type%in%c('human','EMPA','DDQN')),
            aes(x=formatted_game_name, y=log(count,10)+.05, fill=short_agent_type))+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
   facet_wrap(~short_agent_type,ncol=1,strip.position='bottom',shrink=TRUE)+
@@ -687,166 +246,10 @@ p = ggplot(filter(data_to_plot, short_agent_type%in%c('human','EMPA','DDQN')),
   theme(axis.text.x = element_text(angle = 90, hjust = 1),
         axis.text.y=element_text(size=22),
         axis.title.y=element_text(size=24), axis.title.x=element_text(size=24), plot.title=element_text(size=26))+
-  scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,5.5))+scale_x_discrete(limits=dqn_games)+theme(legend.position="none")+
-## or try limits=c(0,4.5)
+  scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,5.5))+scale_x_discrete(limits=dqn_games)+theme(legend.position="none", panel.background = element_blank())+
  ylab('Interactions with deadly items')+xlab('Game name')#+ggtitle('Collisions with deadly objects')
 p
 ## save as 12x12
-
-# 
-# dqn_games = unique(filter(game_df, short_agent_type=='DDQN')$game_name)
-# data_to_plot = filter(transform(game_df, short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .05', 'random policy', 'DDQN'))), game_name%in%dqn_games)
-# tickmarks = c(10,100,1000,10000)
-# logtickmarks=c(.05,log(tickmarks,10))
-# tickmarks = c(1,tickmarks)
-# p = ggplot(data_to_plot, 
-#            aes(x=game_name, y=log(count,10)+.05, fill=short_agent_type))+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
-#   facet_wrap(~short_agent_type,ncol=1,strip.position='bottom',shrink=TRUE, space='free_y')+
-#   scale_fill_manual(name="short_agent_type", values=colors)+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-#   # scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,4.5))+   #limits=c(0,log(100000,10)
-#   ylab('Interaction count')+xlab('game name')+ggtitle('First-level collisions with deadly object')
-# p
-# 
-# dqn_games = unique(filter(game_df, short_agent_type=='DDQN')$game_name)
-# data_to_plot = filter(transform(game_df, short_agent_type=factor(short_agent_type, levels=c('human', 'EMPA', 'e-greedy .05', 'random policy', 'DDQN'))), game_name%in%dqn_games)
-# tickmarks = c(10,100,1000,10000)
-# logtickmarks=c(.05,log(tickmarks,10))
-# tickmarks = c(1,tickmarks)
-# p = ggplot(data_to_plot, 
-#            aes(x=game_name, y=log(count,10)+.05, fill=short_agent_type))+geom_histogram(stat='summary', fun.y='mean', position='dodge')+
-#   facet_grid(short_agent_type ~ ., space='free_y', scales='free_y')+
-#   scale_fill_manual(name="short_agent_type", values=colors)+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-#   # scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,4.5))+   #limits=c(0,log(100000,10)
-#   ylab('Interaction count')+xlab('game name')+ggtitle('First-level collisions with deadly object')
-# p
-# 
-
-
-
-## aggregate means and then plot margin over mean for each model.
-game_agent_means = data.frame(data_to_plot %>% group_by(short_agent_type,game_name) %>% summarize(mean_count=mean(count, na.rm=TRUE)))
-# game_agent_means$margin_over_worst_model = NA
-
-## plot log ratio of collisions. high bar = good.
-game_agent_means_with_margins = data.frame(short_agent_type=as.character(), game_name=as.character(), mean_count = as.numeric(), margin_over_worst_model=as.numeric())
-for (game in unique(game_agent_means$game_name)){
-  models_for_this_game = filter(game_agent_means, game_name==game)
-  models_for_this_game$margin_over_worst_model = NA
-  worst_mean_count = max(models_for_this_game$mean_count)
-  models_for_this_game$margin_over_worst_model = worst_mean_count/models_for_this_game$mean_count
-  game_agent_means_with_margins = rbind(game_agent_means_with_margins, models_for_this_game)
-  }
-# game_agent_means_with_margins$margin_over_worst_model = game_agent_means_with_margins$margin_over_worst_model+10e-8 ## to avoid log issue
-
-
-p = ggplot(game_agent_means_with_margins, 
-           aes(x=game_name, y=log(margin_over_worst_model,10), fill=short_agent_type))+geom_histogram(stat='summary', fun.y='mean', position='dodge')+facet_wrap(~short_agent_type,ncol=1)+
-  scale_fill_manual(name="short_agent_type", values=colors)+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,log(10000,10)))+
-  ylab('Multiplicative margin over worst model')+xlab('game name')
-p
-
-# p = ggplot(game_agent_means_with_margins, 
-#            aes(x=game_name, y=margin_over_worst_model, fill=short_agent_type))+geom_histogram(stat='summary', fun.y='mean', position='dodge')+facet_wrap(~short_agent_type,ncol=1)+
-#   scale_fill_manual(name="short_agent_type", values=colors)+theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-#   # scale_y_continuous(breaks=logtickmarks, labels=tickmarks, limits=c(0,log(10000,10)))+
-#   ylab('Margin over worst model (in collisions)')+xlab('game name')
-# p
-
-## interactions by valence by level, omitting neutral ones, and only plotting games/levels
-## where EMPA and humans both produced data.
-for (game in unique(sum_dataframes$game_name)){
-  human = filter(sum_dataframes, game_name==game, short_agent_type=='human')
-  empa = filter(sum_dataframes, game_name==game, short_agent_type=='EMPA')
-  if (length(human$per_level_normalized_count)==length(empa$per_level_normalized_count) & sum(human$per_level_normalized_count)>0 & sum(empa$per_level_normalized_count)>0 &
-      (sum(filter(human, valence=='positive')$per_level_normalized_count>0) & sum(filter(human, valence=='negative')$per_level_normalized_count>0) ||
-      (sum(filter(empa, valence=='positive')$per_level_normalized_count>0) & sum(filter(empa, valence=='negative')$per_level_normalized_count>0))) ){
-    
-  p = ggplot(filter(sum_dataframes, game_name==game, valence!='neutral'), aes(x=valence, y=per_level_no_neutral_normalized_count, fill=short_agent_type))
-  p=p+geom_bar(stat='identity', position='dodge')+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ggtitle(game)+facet_wrap(~level, nrow=1)+
-    scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count (normalized)')
-  newdir='~/Projects/atari/vgdl/interaction_plots/by_valence_by_level_no_neutral/'
-  dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-  title = paste(newdir, game, '.png', sep='')
-  ggsave(title, plot=p, width=15, height=3) 
-  }
-}
-
-## interactions by valence by level and agent type (same as above, but grouped by agent type)
-for (game in unique(sum_dataframes$game_name)){
-  p = ggplot(filter(sum_dataframes, game_name==game), aes(x=valence, y=per_level_normalized_count, fill=short_agent_type))
-  p=p+geom_bar(stat='identity', position='dodge')+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ggtitle(game)+facet_grid(level~short_agent_type)+
-    scale_fill_manual(name="short_agent_type", values=colors)+ xlab('interaction valence')+ylab('interaction count (normalized)')
-  
-  newdir='~/Projects/atari/vgdl/interaction_plots/by_valence_by_agent_by_level/'
-  dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-  title = paste(newdir, game, '.png', sep='')
-  ggsave(title, plot=p, width=10, height=15)  
-}
-
-
-## the way to avoid having all the subject_IDs and generating combinations that include them is to calculate the means of each short_agent_type, level_number, event_type category
-
-## interactions by event type
-for (game in unique(data_with_valence$game_name)){
-  
-  # game_data = filter(data_with_valence, game_name==game, grepl('avatar', event_type), short_agent_type!='e-greedy')
-  game_data = filter(data_with_valence, game_name==game, grepl('avatar', event_type))
-  
-    g=data.frame(game_data %>% group_by(game_name, level_number, event_type, short_agent_type, valence)  %>% summarize(mean_count = mean(count,na.rm=TRUE)))
-  g = rbind(g, cbind(expand.grid(game_name=unique(g$game_name),level_number=unique(g$level_number), 
-                                     event_type=unique(g$event_type), short_agent_type=unique(g$short_agent_type),
-                                     valence=unique(g$valence)), mean_count=NA))
-  p = ggplot(g,aes(x=event_type, y=mean_count, fill=short_agent_type))
-  p=p+geom_bar(position='dodge',stat='identity')+theme(axis.text.x = element_text(angle = 90, hjust = 1))+facet_wrap(~level_number,ncol=1)+ggtitle(game)+
-  scale_fill_manual(name="short_agent_type", values=colors)+ylab('mean no. of interactions')
-  # p
-  newdir='~/Projects/atari/vgdl/interaction_plots/by_event_type/'
-  dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-  title = paste(newdir, game, '.png', sep='')
-  ggsave(title, plot=p, width=10, height=15)  
-}
-
-
-## normalized by agent interactions
-for (game in unique(data_with_valence$game_name)){
-  
-  # game_data = filter(data_with_valence, game_name==game, grepl('avatar', event_type), short_agent_type!='e-greedy')
-  game_data = filter(data_with_valence, game_name==game, grepl('avatar', event_type))
-  
-
-  g=data.frame(game_data %>% group_by(game_name, level_number, event_type, short_agent_type, valence)  %>% summarize(mean_count = mean(count,na.rm=TRUE)))
-  g = rbind(g, cbind(expand.grid(game_name=unique(g$game_name),level_number=unique(g$level_number), 
-                                 event_type=unique(g$event_type), short_agent_type=unique(g$short_agent_type),
-                                 valence=unique(g$valence)), mean_count=0))
-  
-  
-  sum_data_for_game = data.frame(short_agent_type=as.character(), game_name=as.character(), level_number=as.numeric(), event_type=as.character(), per_level_normalized_count=as.numeric())
-  
-  for (agent in unique(g$short_agent_type)){
-    agent_data = filter(g, short_agent_type==agent)
-    for (level in unique(g$level_number)){
-      level_agent_data = filter(agent_data, level_number==level)
-      z = sum(level_agent_data$mean_count)
-      for (event in unique(level_agent_data$event_type)){
-        event_level_agent_sum = sum(filter(level_agent_data, event_type==event)$mean_count) ## you're taking the sum here because you had artificially inflated the data frame to contain 0 entries
-        row = data.frame(short_agent_type=agent, game_name=game, level_number=level, event_type=event, per_level_normalized_count=event_level_agent_sum/z)
-        sum_data_for_game = rbind(sum_data_for_game, row)
-        }
-    }
-  }
-  p = ggplot(sum_data_for_game,aes(x=event_type, y=per_level_normalized_count, fill=short_agent_type))
-  p=p+geom_bar(position='dodge',stat='identity')+theme(axis.text.x = element_text(angle = 90, hjust = 1))+facet_wrap(~level_number,ncol=1)+ggtitle(game)+
-    scale_fill_manual(name="short_agent_type", values=colors)+ylab('mean no. of interactions')
-  # p
-  newdir='~/Projects/atari/vgdl/interaction_plots/by_event_type_normalized/'
-  dir.create(newdir, showWarnings = FALSE, recursive=TRUE)
-  title = paste(newdir, game, '.png', sep='')
-  ggsave(title, plot=p, width=10, height=15)  
-}
-
-
-game_data = filter(data_with_valence, game_name==game, grepl('avatar', event_type), short_agent_type!='e-greedy')
 
 
 
@@ -856,20 +259,6 @@ game_data = filter(data_with_valence, game_name==game, grepl('avatar', event_typ
 ####################
 ####################
 
-# remove_string_from_name = function(name){
-#   strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
-#   for (i in 1:length(strings_to_remove)){
-#     string_to_remove = strings_to_remove[i]
-#     if (grepl(string_to_remove, name)){
-#       keep = substr(name, nchar(string_to_remove)+2, nchar(name))
-#       return(keep)
-#     }
-#     else{
-#       keep=name
-#     }
-#   }
-#   return(name)
-# }
 
 load_interaction_data = function(data_to_load, dates_or_groups){
   data = list()
