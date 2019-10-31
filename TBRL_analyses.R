@@ -113,7 +113,7 @@ for (k in 1:length(games_to_plot)){
 
   max_x = 1000
   
-  ## used for adding data points to sparse DDQN data
+  ## used for interpolating data points to sparse DDQN data
   if(max_x<5000){
     step_size=5
   }else if(max_x<100000){
@@ -158,7 +158,6 @@ for (k in 1:length(games_to_plot)){
   }
   ## Add data points for every 'step_size' DDQN time-step, since we can afford to do this and know what the data points are
   ## (as we recorded end-of-episode data and cumulative_wins definitionally don't change before then)
-  ## WARNING: if you ever plotted score, you wouldn't be able to do this. You didn't record score within episodes for DDQN.
   if (max_x<1000000){
   replacement_subjects = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
                               modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
@@ -309,11 +308,6 @@ for (k in 1:length(games_to_plot)){
   kappa_string = paste('Learning efficiency (\u03ba):','\nHuman: ', human_kappa, '\nEMPA: ', 
                        EMPA_kappa, '\nDDQN: ', 
                        DDQN_kappa, sep='')
-  # p=p+annotate("label", x = max_x*.25, y = max_y*.6, label = kappa_string, size=7)
-
-  ## Can get different colors, but if you build up the plot line by line, you won't get automatic centering.
-  # p+annotate("text",x=max_x*.75, y=3, hjust = 0, parse=T, label='"Learning efficiency (\u03ba):"', color="black") +
-    # annotate("text", x =  max_x*.75, y=2.8, hjust = 0, parse=T, label='"Pontiac Firebird"', color="green")
   
   print(length(plots))
   plots[[k]] = p
@@ -328,7 +322,6 @@ for (k in 1:length(games_to_plot)){
 layout = matrix(c(1:90), ncol=6, byrow=TRUE)
 m = multiplot(plotlist = plots, layout=layout)
 ## save 50x30
-
 
 
 ## Bootstrap means and CIs in prep for figure 3
@@ -383,7 +376,6 @@ p = p + scale_fill_manual(values=colors,name="Model",
 
 
 ## Prep for figure 4
-## Facet-wrapped plot that shows quartiles!
 agents = c('EMPA', 'e-greedy 1k DS', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 2k', 'DDQN 100k', 'DDQN 10k', 'DDQN 1k', 'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow', 'no goal gradient', 'no subgoals + no gradient', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW')
 
 datapoints = data.frame(x1=as.numeric(), x2=as.numeric(), x3=as.numeric(), x4=as.numeric(), x5=as.numeric(), 
@@ -509,7 +501,7 @@ p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=a
   scale_fill_manual(values=colors)+ scale_color_manual(values=colors)+ xlab("Human-normed Efficiency") + ylab("Density") + 
   geom_vline(xintercept=0,linetype='dashed',size=.8)+ ## originally .4
   geom_point(aes(x=mean_val, y=y2), shape=18, data=datapoints, size=7)+
-  geom_segment(aes(x=x1, y=y2, xend=x2, yend=y2), linetype='longdash', data=datapoints, size=1.2)+ ##5-25 ## pretty good
+  geom_segment(aes(x=x1, y=y2, xend=x2, yend=y2), linetype='longdash', data=datapoints, size=1.2)+ ##5-25
   
   geom_segment(aes(x=x2, y=y2, xend=x4, yend=y2), data=datapoints, size=1.2)+ ##25-75
   geom_segment(aes(x=x2, y=y1, xend=x2, yend=y3), data=datapoints, size=1.2)+ ##25 edge
@@ -549,7 +541,6 @@ median_subjects = data.frame(game_name=as.character(), subject_ID=as.character()
 closest_to_empa_subjects = data.frame(game_name=as.character(), subject_ID=as.character())
 for (game in unique(alldata$game_name)){
   
-  # if( (grepl('push_boulders', game)) | !(grepl('_', game))){
   human_subs = filter(humandata, game_name==game)
   empa_subs = filter(EMPAdata, game_name==game, agent_type=='EMPA')
   first_empa_subj = filter(empa_subs, subject_ID==unique(empa_subs$subject_ID)[1])

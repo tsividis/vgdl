@@ -1,21 +1,20 @@
 ### Helper functions for TBRL analyses
 
-library(here)
-library(cowplot)
-library("ggplot2")
-library("zoom")
-library("stats")
-library(plyr)
-library("dplyr")
 library("colorspace")
-library("RColorBrewer")
-library(purrr)
-library(zoo)
+library(cowplot)
+library("dplyr")
 library(EnvStats)
-library(grid)
-library(plotrix)
 library(ggExtra)
-
+library("ggplot2")
+library(grid)
+library(here)
+library(plotrix)
+library(plyr)
+library(purrr)
+library("RColorBrewer")
+library("stats")
+library(zoo)
+library("zoom")
 
 remove_string_from_name = function(name){
   strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')

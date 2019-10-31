@@ -1,16 +1,3 @@
-library(cowplot)
-library("ggplot2")
-library("zoom")
-library("stats")
-library(plyr)
-library("dplyr")
-library("colorspace")
-library("RColorBrewer")
-library(purrr)
-library(zoo)
-library(EnvStats)
-library(grid)
-library(plotly)
 
 
 ###################
