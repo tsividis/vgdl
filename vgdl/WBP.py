@@ -942,7 +942,7 @@ class Node():
 
 	def multispritecounter_val(self, theory, term, rle, first_alpha=10000,
 							   second_alpha=100):
-		##WARNING: THis will only work if term.termination.limit==0. Otherwise you could
+		## Warning: This will only work if term.termination.limit==0. Otherwise you could
 		## end up with, say, count(stype)==1 for each constituent stype, meaning the terminations
 		## would all be fulfilled, even though sum([count(stype) for stype in stypes]) != 1.
 
@@ -966,12 +966,9 @@ class Node():
 			compute_second_order = False
 			mult = 1
 
-		# ## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects
-		# ## because of noveltyTerminationConditions.
-		# if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
-		# 	return 0, 10000
+		# ## Don't give heuristic bonus for using the flicker. But the agent is still incentivized to try to make the flicker interact with other objects because of noveltyTerminationConditions.
 
-		## If the terminationRule is precondition-dependent, check that first. Don't give heuristic val if the preconditions aren't fulfilled.
+		## If the terminationRule is precondition-dependent, check that first. Don't give heuristic val if the preconditions aren't fulfilled. As in, if you're curious about Avatar_with_key - red_object, only evaluate proximity between avatar and red if the avatar has the key.
 		if term.termination.args:
 			item, num, negated, operator_name = term.termination.args.item, term.termination.args.num, term.termination.args.negated, term.termination.args.operator_name
 			if negated:
@@ -983,40 +980,24 @@ class Node():
 			try:
 				resource_str = str(rle._game.getAvatars()[0].resources[item])
 			except IndexError:
-				# print "checking whether avatar preconditions are fulfilled"
-				# print rle._game.getAvatars()[0].resources
-				# return 0, 10000
 				return 2 * mult * first_alpha, 10000
 
 			if not eval(resource_str+true_operator+str(num)):
-				# print "checking whether avatar preconditions are fulfilled 2"
-				# print rle._game.getAvatars()[0].resources		
 				return 0, 10000		
-				# return 2 * mult * first_alpha, 10000
-
-
 
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
-			# if 'Flicker' in str(theory.classes[s1][0].vgdlType) or 'Flicker' in str(theory.classes[s2][0].vgdlType):
-				# embed()
 
-			###JOAO
 			if 'Flicker' in str(theory.classes[s1][0].vgdlType) and not ('Flicker' in str(theory.classes[s2][0].vgdlType) or s2=='avatar'):
 				s1 = s2
 				s2 = 'avatar'
-				#print("replaced flicker with avatar")
 
 			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
 			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
-
-			# Second order lesion
-			# if s1 != 'avatar' and s2 != 'avatar':
-			# 	return 0, 10000
 		
 			## Don't return a value for novelty for the mere existence of a projectile that has novelty bonuses
-			if self.WBP.thingWeShoot in theory.classes and self.WBP.thingWeShoot in [s1,s2]: #and 'Flicker' not in str(theory.classes[self.WBP.thingWeShoot][0].vgdlType)
+			if self.WBP.thingWeShoot in theory.classes and self.WBP.thingWeShoot in [s1,s2]:
 				return 0, 10000
 
 			n_sprites = len(s1_positions) if s1_positions else 0
@@ -1042,26 +1023,10 @@ class Node():
 
 			if possiblePairList:
 				n_sprites = len(possiblePairList)
-				# Normalize by number of sprites, enforcing a prior that encourages
-				# goals that involve killing fewer objects
-				# val += 100*(float(mult * second_alpha * distance**2)/(n_sprites**2 * self.WBP.hypotenuse_squared)) + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
-				
+				## Normalize by number of sprites, enforcing a prior that encourages goals that involve killing fewer objects
 				## as you get closer to the item, this quantity increases, contributing to a higher overall score
-				# val += float(mult * second_alpha * distance)/n_sprites**2 + second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
-				val += float(mult * second_alpha * distance /max(self.rle.outdim[0], self.rle.outdim[1]) )#/n_sprites**2 #+ second_alpha * max(self.rle.outdim[0], self.rle.outdim[1])
+				val += float(mult * second_alpha * distance /max(self.rle.outdim[0], self.rle.outdim[1]) )
 
-		# if s1=='c6' and s2=='avatar':
-			# print "novelty val for {}, {}: {}".format(s1, s2, val)
-			# embed()
-		# if term.termination.args and s1=='c4' and s2=='avatar' and self.rle._game.getAvatars():
-		# 	for k,v in self.rle._game.getAvatars()[0].resources.items():
-		# 		if v>3:
-		# 			print "distance: {}. subtractand: {}".format(distance, (float(mult * second_alpha * distance)/n_sprites**2))
-		# 			print "novelty val for {}, {}: {}".format(s1, s2, val)
-		# 			print rle.show()
-					# embed()
-
-			# embed()
 		if n_sprites==0:
 			return val, 10000
 		return val, distance*n_sprites
@@ -1088,14 +1053,13 @@ class Node():
 		multisprite_first_alpha=10000, multisprite_second_alpha=100,
 		novelty_first_alpha=1000, novelty_second_alpha=10, time_alpha=10):
 		
-		##AGH lesion
+		## "No goal gradient" ablations
 		if any([s in self.WBP.lesion for s in ['AGH1', 'AGH3']]):
-			# print "no heuristics"
 			return 0.
 
 		if rle==None:
 			rle = self.rle
-		# print rle.show()
+
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
@@ -1104,17 +1068,11 @@ class Node():
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
 					negative_mult=sprite_negative_mult)
-				# if spritecounter_val!=0:
-					# print("spritecounter_val for {} is equal to {}".format(
-						# term.termination.stype, spritecounter_val))
 				heuristicVal += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
-						first_alpha=multisprite_first_alpha, second_alpha=multisprite_second_alpha)  #500, 5 (normally)
-				# if multispritecounter_val!=0:
-					# print("multispritecounter_val for {} is equal to {}".format(
-						# term.termination.stypes, multispritecounter_val))
+						first_alpha=multisprite_first_alpha, second_alpha=multisprite_second_alpha)
 				heuristicVal += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):
@@ -1126,68 +1084,15 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
-				# if noveltytermination_val!=0:
-					# print("noveltytermination_val for {} and {} is equal to {}".format(
-						# term.termination.s1, term.termination.s2, noveltytermination_val))
-
-				# if self.parent and self.parent.rle._game.score==0 and term.termination.args and term.termination.s1=='c6' and term.termination.s2=='avatar' and noveltytermination_val!=-5000:
-					# ipdb.set_trace()
 				if 'avatar' == term.termination.s2:
 					avatarNoveltyVals.append([self.WBP.annealing*noveltytermination_val,
 						ranking])
 				else:
 					heuristicVal += self.WBP.annealing * noveltytermination_val
-					## Lesions
-					## Warning: the tweak below for lesions isn't correct; it doesn't deal with the way we process novelty for avatar 
-					## terminations (involving avatarNoveltyVals -- see below)
-					# Exploit only
-					# heuristicVal += 0 * self.WBP.annealing * noveltytermination_val
-					# Explore only
-					# heuristicVal += 1000 * self.WBP.annealing * noveltytermination_val
-
-		# boxpenalty = 0
-		# for boxType in self.WBP.boxes:
-		# 	locs = self.WBP.findObjectsInRLE(rle, boxType)
-		# 	for loc in locs:
-		# 		transformedLoc = (loc[0]*30, loc[1]*30)
-		# 		neighbors = [(transformedLoc[0]+30, transformedLoc[1]), (transformedLoc[0]-30, transformedLoc[1]), (transformedLoc[0], transformedLoc[1]+30), (transformedLoc[0], transformedLoc[1]-30)]
-		# 		for neighbor in neighbors:
-		# 			if neighbor in rle._game.positionDict.keys() and any([n.colorName=='DARKGRAY' for n in rle._game.positionDict[neighbor]]):
-		# 				boxpenalty += 1
 
 		if avatarNoveltyVals:
-			# print "chosen avatar novelty val", min(avatarNoveltyVals, key= lambda x: x[1])[0]
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
-		
-		# boxpenalty_mult = 50
-		# print "boxpenalty", boxpenalty*boxpenalty_mult
-		# print "position", self.position_score(self.WBP.position_score_multiplier) 
-		# print "game score", self.rle._game.score
-		# print "sum:", heuristicVal+self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score #+ boxpenalty*boxpenalty_mult
-		# if self.actionSeq:
-			# print actionDict[self.actionSeq[-1]]
-		# print rle.show()
-
-		# resource_bonus = 0
-		# if self.parent:
-		# 	try:
-		# 		for k,v in self.rle._game.getAvatars()[0].resources.items():
-		# 			if v==1 and self.parent.rle._game.getAvatars()[0].resources[k]==0:
-		# 				resource_bonus += 5000
-		# 	except:
-		# 		pass
-		# if resource_bonus>0:
-		# 	print "got resource bonus"
-		# 	print  "sum with resource: ", heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score + resource_bonus
-		# 	embed()
-
-		# self.intrinsic_reward = self.rle._game.score + self.heuristicVal + \
-		# sum(self.rolloutArray) - self.metabolic_cost + self.(-250)
-
-		# heuristicVal += sum(self.rolloutArray)
-
-		# heuristicVal += self.rle._game.score*abs(heuristicVal)
-		
+				
 		return heuristicVal
 
 	def position_score(self, factor=1.):
@@ -1207,99 +1112,32 @@ class Node():
 		newcopy.__class__ = obj.__class__
 		return newcopy
 
-	# def getToCurrentStateProfiler(self):
-	# 	lp = LineProfiler()
-	# 	lp_wrapper = lp(self.getToCurrentState)
-	# 	lp_wrapper()
-	# 	lp.print_stats()
-
-
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
-			## try to copy parent lastState. Then take action and store as current lastState.
-			## if that fails, replay from beginning and store as current lastState
+			## try to copy parent lastState. Then take action and store as current lastState. If that fails, replay from beginning and store as current lastState
 			try:
-				multipleSamples = False
 				vrle = self.fastcopy(self.parent.rle)
-				# vrle = copy.deepcopy(self.parent.rle)
-				
-				# if self.WBP.killer_types:
-				# 	for k in self.WBP.killer_types:
-				# 		## if we think it's stochastic
-				# 		# if any([t in str(self.WBP.theory.classes[k][0].vgdlType) for t in ['Random', 'Chaser']]):
-				# 		if True:
-				# 			for s in vrle._game.sprite_groups[k]:
-				# 				if manhattanDist(vrle._rect2pos(s.rect), vrle._rect2pos(vrle._game.getAvatars()[0].rect)) < self.WBP.safeDistance:
-				# 					# print "closer than safeDistance away from {} {}. need to sample".format(k, self.WBP.theory.classes[k][0].vgdlType)
-				# 					multipleSamples = True
-				# 					break
-				# multipleSamples = False
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
-					if multipleSamples:
-						badOutcomeLimit = 0
-						okOutcomes, badOutcomes = [], []
-						for i in range(10):
-							# print "multiple samples"
-							vrle = self.fastcopy(self.parent.rle)
-							res = vrle.step(a, return_obs=True)
-							terminal, win = res['ended'], res['win']
-							
-							metabolic_cost = 0
+					res = vrle.step(a, return_obs=True)
+					self.terminal, self.win = res['ended'], res['win']
+					self.metabolic_cost = 0
 
-							if (terminal, win) == (True, False):
-								badOutcomes.append((vrle, terminal, win, metabolic_cost))
-							else:
-								okOutcomes.append((vrle, terminal, win, metabolic_cost))
-							if len(badOutcomes)>badOutcomeLimit:
-								break
-						# if len(badOutcomes)>badOutcomeLimit:
-							# print "too many bad outcomes"
-							# embed()
-						self.okOutcomes = okOutcomes
-						self.badOutcomes = badOutcomes
-						if len(badOutcomes)>badOutcomeLimit:
-							# print "got badoutcomes"
-							self.terminal, self.win, self.metabolic_cost = badOutcomes[0][1], badOutcomes[0][2], badOutcomes[0][3]
-							return badOutcomes[0][0], self.terminal, badOutcomes[0][2] #vrle, terminal, win
-						else:
-							self.terminal, self.win, self.metabolic_cost = okOutcomes[0][1], okOutcomes[0][2], okOutcomes[0][3]
-							return okOutcomes[0][0], self.terminal, okOutcomes[0][2] #vrle, terminal, win
-					else:
-						res = vrle.step(a, return_obs=True)
-						self.terminal, self.win = res['ended'], res['win']
-						# embed()
-						# relevantEvents = [t for t in res['effectList'] if t[0] == 'changeResource']
-						self.metabolic_cost = 0
-						# self.terminal, self.win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
 				embed()
 		else:
-			# print "in a reconstructed node"
-			# embed()
 			self.reconstructed=True
-			
-			# print "copy failed; replaying from top"
 			vrle = self.fastcopy(self.rle)
-			# vrle = copy.deepcopy(self.rle)
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
 				res = vrle.step(a, return_obs=True)
-				# self.metabolic_cost += self.metabolics(vrle, res['effectList'], a)
 				self.metabolic_cost = 0
 				self.terminal, self.win = res['ended'], res['win']
-				# self.terminal, self.win = vrle._isDone()
 				i += 1
 		return vrle, self.terminal, self.win
-
-	# def eval_profiler(self):
-	# 	lp = LineProfiler()
-	# 	lp_wrapper = lp(self.eval)
-	# 	lp_wrapper()
-	# 	lp.print_stats()
 
 	def eval(self):
 		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
@@ -1318,18 +1156,15 @@ class Node():
 
 		self.updateNovelty()
 
-		## Try rollouts for aliens?
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
-
 			## if the thing we shoot is a missile, do a rollout
 			if 'Missile' in str(self.WBP.theory.classes[self.WBP.thingWeShoot][0].vgdlType):
 				self.rolloutArray = self.rollout(self.rle, self.WBP.thingWeShoot)
-			# print self.rolloutArray
-			# print "in rollout"
 
+		## Calculate heuristic value
 		self.heuristicVal = self.heuristics(**self.WBP.hyperparameters)
 
-
+		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 
 		try:
@@ -1377,7 +1212,6 @@ class Node():
 
 	def playBack(self, make_movie=False):
 		vrle = copy.deepcopy(self.rle)
-		# vrle = ccopy(self.rle) #5/10/18
 		self.finalStatesEncountered = []
 		terminal = vrle._isDone()[0]
 		i=0
@@ -1393,6 +1227,7 @@ class Node():
 				self.finalStatesEncountered.append(vrle._game.getFullState())
 			terminal = vrle._isDone()[0]
 			i+=1
+
 def gen_color():
 	from vgdl.colors import colorDict
 	color_list = colorDict.values()
@@ -1416,8 +1251,6 @@ def read_gvgai_game(filename):
 
 
 ## For local testing/debugging.
-
-
 
 hyperparameter_sets = [
     {'idx'           : 0,
@@ -1516,7 +1349,7 @@ if __name__ == "__main__":
 		gameFilename = game_name
 
 	else:
-		gameFilename = "examples.gridphysics.theory_variant_frogs_2"
+		gameFilename = "examples.gridphysics.aliens"
 		gameString, levelString = defInputGame(gameFilename, randomize=True)
 		rleCreateFunc = lambda: createRLInputGame(gameFilename)
 		rle = rleCreateFunc()
@@ -1525,9 +1358,6 @@ if __name__ == "__main__":
 	hyperparameters = hyperparameter_sets[hyperparameter_index]
 	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 	max_nodes = 500 if hyperparameters['short_horizon'] else 10000
-	
-	# p = WBP(rle, 'sokoban', hyperparameters=planner_hyperparameters, extra_atom=True, IW_k=2)
-	embed()
 
 	## Initialize planner
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
