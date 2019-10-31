@@ -137,7 +137,7 @@ class Agent:
             self.hyperparameter_index = new_index
             self.hyperparameters = self.hyperparameter_sets[new_index]
             self.shortHorizon = self.hyperparameters['short_horizon']
-            self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+            self.firstOrderHorizon = self.hyperparameters['first_order_horizon']
             if self.shortHorizon == True:
                 self.starting_max_nodes = self.shortHorizonNodes
                 self.max_nodes_annealing = self.shortHorizonAnnealing
@@ -620,7 +620,7 @@ class Agent:
             print "initializing RLE"
         # print "Game name:", self.gameFilename
         # print "Starting episode"
-        print "Playing level {}".format(self.n_level + 1)
+        # print "Playing level {}".format(self.n_level + 1)
         if self.produce_printout:
             print ""
             print self.rle.show(color='blue')
@@ -629,6 +629,7 @@ class Agent:
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle._game.getObjects()
+
         annealing = 1
         ## Start storing encountered states.
         effectsEncountered = []
