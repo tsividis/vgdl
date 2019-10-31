@@ -8,6 +8,7 @@ BasicGame
       monsterQuick > RandomNPC cooldown=2 cons=6 color=BROWN
       monsterNormal > RandomNPC cooldown=4 cons=8 color=PINK
       monsterSlow > RandomNPC cooldown=8 cons=12 color=GOLD
+    fire > Immovable color=RED
     wall > Immovable autotiling=true color=DARKGRAY
 
 
@@ -17,12 +18,19 @@ BasicGame
     1 > monsterQuick
     2 > monsterNormal
     3 > monsterSlow
+    f > fire
     w > wall
 
 
   InteractionSet
     avatar wall  > stepBack
     avatar goal    > nothing
+    avatar fire > killSprite
+    fire avatar > killSprite
+    enemy fire > nothing
+    fire enemy > nothing
+    fire sword > killSprite
+    sword fire > killSprite
     goal avatar  > killIfOtherHasMore resource=key limit=1
     monsterSlow sword > changeScore value=2
     monsterSlow sword > killSprite

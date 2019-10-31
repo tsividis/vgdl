@@ -5,12 +5,12 @@ BasicGame
         missile > Missile
             sam  > orientation=UP    color=PINK singleton=True
             bomb > orientation=DOWN  color=RED  cooldown=2 #speed=0.5
-        alien   > Bomber       stype=bomb   prob=0.01  cooldown=3 speed=0.8
+        alien   > Bomber       stype=bomb   prob=0.03  cooldown=3 speed=0.8
             alienGreen > color=LIGHTGREEN
             alienBlue > color=GOLD
         portal  > invisible=True hidden=True
-            portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=8   total=10 color=LIGHTGRAY
-            portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=4   total=10 color=LIGHTGRAY
+            portalSlow  > SpawnPoint   stype=alienBlue  spawnCooldown=8   total=7 color=LIGHTGRAY
+            portalFast  > SpawnPoint   stype=alienGreen  spawnCooldown=4   total=7 color=LIGHTGRAY
 
     LevelMapping
         0 > base
