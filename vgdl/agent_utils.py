@@ -1,15 +1,11 @@
 from ontology import distributionInitSetup
 from WBP import *
-# from mcts import *
-# from qlearner import *
-# from aStar import *
 import time
 from termcolor import colored
 
 def translateEvents(events, all_objects, rle):
 	if events is None:
 		return None
-	# all_objects = rle._game.getObjects()
 
 	def getObjectColor(objectID):
 		if objectID is None:
@@ -37,11 +33,7 @@ def translateEvents(events, all_objects, rle):
 
 	outlist = []
 	for event in events:
-		# if 'EOS' in event:
-		# 	print "in translateEvents"
-		# 	embed()
 		try:
-			# print 'in translateEvents', event
 			if len(event) > 3:
 				tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
 				for k in event[3].keys():
@@ -72,13 +64,8 @@ def observe(rle, obsSteps, bestSpriteTypeDict, display=False):
 		print "observing for {} steps".format(obsSteps)
 	if obsSteps>0:
 		for i in range(obsSteps):
-			# print rle.show()
-			# t1 = time.time()
 			spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-			# print "step 1 took {} seconds".format(time.time()-t1)
-			# t1 = time.time()
 			spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
-			# print "step 2 took {} seconds".format(time.time()-t1)
 			rle.step((0,0))
 			if display:
 				print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
@@ -94,15 +81,8 @@ def observe(rle, obsSteps, bestSpriteTypeDict, display=False):
 					pass
 			rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
 
-			# pinkID = [k for k in rle._game.all_objects.keys() if rle._game.all_objects[k]['features']['color']=='PINK'][0]
-			# print "prev position", rle._game.previousPositions[pinkID]
-			# print "memoryDict", rle._game.objectMemoryDict[pinkID]
-			# print "curr position", rle._game.all_objects[pinkID]['sprite'].rect
-			# t1 = time.time()
 			spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
-			# print "step 3 took {} seconds".format(time.time()-t1)
 	else:
 		spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
 		spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
-		# spriteInduction(rle._game, step=3)
 	return

@@ -296,6 +296,10 @@ class Agent:
             initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
+
+        ### Edit hypotheses for cultural-transmission experiment here.
+        ## initialTheory.interactionSet is the list to modify.
+
         self.hypotheses = [initialTheory]
         self.symbolDict = generateSymbolDict(self.rle)
         return gameObject
@@ -872,7 +876,7 @@ class Agent:
                     plannerNodes = p.total_nodes_opened if i==0 else 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
-                    
+
                     ## For an incomplete ablation
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle._game.score
