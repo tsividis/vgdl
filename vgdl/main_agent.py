@@ -306,6 +306,10 @@ class Agent:
             initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
+
+        ### Edit hypotheses for cultural-transmission experiment here.
+        ## initialTheory.interactionSet is the list to modify.
+        
         self.hypotheses = [initialTheory]
         self.symbolDict = generateSymbolDict(self.rle)
         return gameObject
