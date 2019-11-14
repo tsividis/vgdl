@@ -44,21 +44,20 @@ class Agent:
         self.task_ID = task_ID
         self.produce_printout = produce_printout
         self.movieName = movieName
-        ## Loading parameters
+        ## Main params are loaded from hyperparameters.py
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
         self.annealingFactor = 1. # meaningless
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
-        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] # Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
-        self.IW_k = IW_k # Only using IW 1 now.
+        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
+        self.IW_k = IW_k # Only using IW 1
         self.extra_atom_allowed = extra_atom_allowed # Adding optional extra atom to IW
         self.epsilon_greedy = False # Ablation
-        self.hybrid = False # Not used
-        self.switch_to_exploit_step = 1000 # Only used for e-greedy ablation
+        self.switch_to_exploit_step = 1000 # Used for e-greedy ablation
         self.absolute_max_nodes = 50000 # Just a convenience parameter
-        self.shortHorizonNodes = 500 ## This isn't used. but you need to clean the code up a bit to actually delete it.
-        self.shortHorizonAnnealing = 1.05 ## This isn't used, either. but you need to clean the code up a bit to actually delete it.
+        self.shortHorizonNodes = 500 ## This isn't used, but code needs further cleanup to actually delete it.
+        self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
         self.metacontroller_params = metacontroller_sets[metacontroller_index]
         self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
         self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
@@ -71,13 +70,17 @@ class Agent:
         self.safeDistance = self.metacontroller_params['safeDistance']
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
-        ##AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
+        ## Planner ablations
+        ## AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
         self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else []
+        ## Additonal lesions (not completed)
         self.dynamic_type_lesion = self.metacontroller_params['dynamic_type_lesion'] if 'dynamic_type_lesion' in self.metacontroller_params else []
         self.interaction_lesion = self.metacontroller_params['interaction_lesion'] if 'interaction_lesion' in self.metacontroller_params else []
         self.interaction_lesion_replacement = self.metacontroller_params['interaction_lesion_replacement'] if 'interaction_lesion_replacement' in self.metacontroller_params else []
         self.disallowed_events = self.interaction_lesion
 
+        ## Planner ignores objects thought to move randomly and objects that don't persist (e.g. swords that flash
+        ## in and out of existence) when applying IW criteria
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
         else:
@@ -90,6 +93,8 @@ class Agent:
             self.starting_max_nodes = self.longHorizonNodes
             self.max_nodes_annealing = self.longhorizonAnnealing
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
+
+        ## Longer-format param_ID string. Use this if you want all the info (e.g., for hyperparameter tuning)
         # self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_PL={}_DTL={}_IL={}_ILR={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
         #         self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
         #         self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
@@ -97,8 +102,10 @@ class Agent:
         #         self.noNewObjectNum, self.objectNumberTrackingLimit, 
         #         self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
         #         self.objectsWhoseLocationWeIgnoreString)
+        
         self.param_ID = "eG={}_PL={}".format(self.epsilon_greedy, self.planner_lesion)
         self.param_ID = self.param_ID+'_batchID='+str(0)
+    
     
         self.conservative = False
         self.regrounding = 1
@@ -132,6 +139,7 @@ class Agent:
 
         self.todo_delete = True
 
+    ## start copy-paste here
     def hyperparameterSwitch(self, new_index):
         if new_index!=self.hyperparameter_index:
             self.hyperparameter_index = new_index
@@ -153,6 +161,7 @@ class Agent:
         return planner_hyperparameters
 
     def initializeEnvironment(self):
+        ## Initialize game environment
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
@@ -161,6 +170,7 @@ class Agent:
         return
 
     def initializeRLEFromGame(self):
+        ## Part of a method for faster state copying, used in planner, etc.
         gameString, levelString = self.gameString, self.levelString
         if gameString == None or levelString == None:
             gameString, levelString = defInputGame(self.gameFilename, randomize=False)
@@ -199,7 +209,7 @@ class Agent:
         return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
     def setSpritePositions(self, rle, Vrle, hypothesis):
-        ## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
+        ## Sets positions of objects in Vrle to what they were in the rle. E.g., if we want to start a simulation according to the model specified by 'hypothesis' at the state contained in 'rle', this will return Vrle: a playable game whose rules run according to the model.
 
         old_sprite_groups = Vrle._game.sprite_groups
         for k in old_sprite_groups.keys():
@@ -214,11 +224,8 @@ class Agent:
                     if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
                         try:
                             ## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
-                            # embed()
 
                             orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
-                            # if color=='RED':
-                                # embed()
                             if orientation == (0,0):
                                 # print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
                                 pass
@@ -229,7 +236,7 @@ class Agent:
 
                         except KeyError:
                             sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
-                            # pass
+
         for k,v in Vrle._game.sprite_groups.items():
             for sprite in v:
                 if sprite not in Vrle._game.kill_list:
@@ -242,7 +249,7 @@ class Agent:
 
 
     def initializeVrle(self, hypothesis):
-        ## Simulatable world in agent's head given 'hypothesis', including object goal
+        ## Returns simulatable world in agent's head given 'hypothesis', including object goal
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
                  "./theory_files/{}.py".format(self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
@@ -256,7 +263,7 @@ class Agent:
         return Vrle
 
     def VrleInitPhase(self, flexible_goals=False):
-        ## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
+        ## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses. In practice we only use one.
         VRLEs = []
 
         for hypothesis in self.hypotheses[0:1]:
@@ -275,7 +282,10 @@ class Agent:
         ## candidate models.
         if learnSprites:
             if not self.skipInduction:
-                ## need to run this for one step to get a theory so we can calculate initial entropy. Then we run it another 14 times.
+                ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
+
+                ## need to run this for one step to get a complete theory object so we can calculate initial entropy (entropy is no longer used but code remains).
+                ## Then we run it another 14 times.
                 self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
                 spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
                     self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
@@ -296,10 +306,6 @@ class Agent:
             initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
-
-        ### Edit hypotheses for cultural-transmission experiment here.
-        ## initialTheory.interactionSet is the list to modify.
-
         self.hypotheses = [initialTheory]
         self.symbolDict = generateSymbolDict(self.rle)
         return gameObject
@@ -311,6 +317,7 @@ class Agent:
             self.observe(self.rle, 0, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
         else:
             self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
+            ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
         for k,v in self.rle._game.getObjects().items():
@@ -325,12 +332,14 @@ class Agent:
             for hypothesis in self.hypotheses:
                 newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
         except:
-            print "failed in addNewObjectsToTheory"
+            pass
+            # print "failed in addNewObjectsToTheory"
             # embed()
         self.hypotheses = newHypotheses
 
 
     def calculateEntropy(self, theory, spriteDistribution):
+        ## Was going to use this for additional ablations
         return None
 
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
@@ -348,14 +357,17 @@ class Agent:
         self.timestamp = timestamp
         if self.record_states:
             # dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename) # old data location
-            dirname = "demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
+            # print "in main_agent"
+            # print os.getcwd()
+            dirname = "../data/demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
             self.filename = filename
             if not os.path.exists(dirname):
                 try:
+                    # print "path didn't exist; making", dirname
                     os.makedirs(dirname)
                 except:
-                    print "failed  to make dir"
+                    print "failed  to make dir {} in main_agent.py".format(dirname)
         if self.write_video_info:
             dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(dirname):
@@ -373,7 +385,8 @@ class Agent:
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
         loadedState = False
         loaded_n_level=0
-        # embed()
+
+        ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
         if curriculumSaveFile in os.listdir(curriculumDir):
             try:
                 print "found saved curriculum state"
@@ -395,7 +408,7 @@ class Agent:
                 continue
             if self.produce_printout:
                 print ""
-                print("Playing level {}".format(n_level+1))
+                print("Playing level {}".format(n_level + 1))
 
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
@@ -433,7 +446,6 @@ class Agent:
                     allStatesEncountered.extend(statesEncountered)
 
                 i += 1
-                # print "Finished in ", time.time() - t1
 
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
@@ -486,6 +498,7 @@ class Agent:
         endtime = time.time()
 
     def compactify(self, rle, planner_nodes=0):
+        ## Used for saving minimal state
         current_time = time.time()
         gameObject = rle._game
         ended, win = rle._isDone()
@@ -538,25 +551,6 @@ class Agent:
         plt.savefig(filename, bbox_inches='tight', pad_inches=0)
         plt.close()
 
-    def makeSummaryPlot(self, allEffectsEncountered):
-        import matplotlib.pyplot as plt
-        import importlib
-
-        mod = importlib('vgdl.colors')
-        colors = [cl[0].color for cl in self.hypotheses[0].classes.values()]
-        for color in colors:
-            times_touched_per_level = []
-            for level in allEffectsEncountered:
-                times_touched = len([effect
-                    for attempt in level
-                    for effect in attempt
-                    if ((effect[1]==color and effect[2]=='DARKBLUE')
-                        or (effect[2]==color and effect[1]=='DARKBLUE'))])
-                times_touched_per_level.append(times_touched)
-            color_to_plot = [float(value)/255 for value in getattr(mod, color)]
-            plt.plot(times_touched_per_level, color=color_to_plot)
-        plt.show()
-
 
     def makeImages(self):
         ## Used for making videos. First we save all states from all episodes as images, then we stitch together into a video.
@@ -587,6 +581,8 @@ class Agent:
         images_dir = "images/tmp/%09d.png"
         com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
         command = "{}".format(com)
+        print "images/tmp contents:", os.getcwd()
+        print "in main agent:", command
         subprocess.call(command, shell=True)
         # empty image directory
         shutil.rmtree("images/tmp/"+self.gameFilename)
@@ -597,21 +593,6 @@ class Agent:
             subprocess.Popen(command)
 
         return
-
-    def playMultipleEpisodes(self, num_episodes):
-        i=0
-        gameObject = None
-        wins, scores = [], []
-        win = False
-        while i<num_episodes:
-            gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject, flexible_goals=False,first_time_playing_level=False)
-            wins.append(win)
-            scores.append(score)
-            i+=1
-        VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
-        if self.produce_printout:
-            print "Won {} out of {} episodes.".format(sum(wins), i)
 
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
@@ -624,7 +605,7 @@ class Agent:
             print "initializing RLE"
         # print "Game name:", self.gameFilename
         # print "Starting episode"
-        # print "Playing level {}".format(self.n_level + 1)
+        print "Playing level {}".format(self.n_level + 1)
         if self.produce_printout:
             print ""
             print self.rle.show(color='blue')
@@ -633,8 +614,8 @@ class Agent:
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle._game.getObjects()
-
         annealing = 1
+
         ## Start storing encountered states.
         effectsEncountered = []
         statesEncountered = []
@@ -646,6 +627,7 @@ class Agent:
         self.last_recorded_time = time.time()
         if self.record_states:
             compactStates.append(self.compactify(self.rle))
+        
         ## Initialize memory of object positions
         self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
         for k, v in self.rle._game.all_objects.iteritems():
@@ -667,7 +649,7 @@ class Agent:
                 [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
         if self.saveMidEpisode:
-            ## if we get a loadedState because of interrupted runs on the clsuter, do things with it here.
+            ## if we get a loadedState because of interrupted runs on the clsuter, load it here.
             episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
             curriculumDir = 'savedCurricula'
             if episodeSaveFile in os.listdir(curriculumDir):
@@ -700,6 +682,8 @@ class Agent:
 
         steps = self.rle._game.time
         emptyPlans = 0
+        
+        ## Main episode loop
         while not ended:
 
             if self.saveMidEpisode:
@@ -716,7 +700,7 @@ class Agent:
 
             self.max_nodes = self.stored_max_nodes
 
-            ## you don't need to worry about annealing, since you don't anneal up for shortHorizon planning.
+            ## You don't anneal max_nodes up for shortHorizon planning. Randomly pick a horizon from [200,500,1000] each time. (Did this to save on compute -- doing 1k each time would be strictly better).
             if self.shortHorizon and self.shortHorizonRandomChoice:
                 self.max_nodes = random.choice(self.shortHorizonRandomChoice)
 
@@ -796,9 +780,8 @@ class Agent:
                 if self.display_text:
                     print "planning with hyperparameter index {}".format(self.hyperparameter_index)
                     print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
-                # embed()
 
-                if conservative: #aka 'stall'
+                if conservative: #aka 'stall' mode
                     ## Replan in new mode
                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
@@ -864,7 +847,7 @@ class Agent:
                     print colored(g, 'green')
                 print "==============================================================="
 
-            ## Acting/learning/monitoring need to re-plan
+            ## Acting/learning/monitoring the need to re-plan
             if not quitting:
                 for i, action in enumerate(solution):
                     self.hypotheses[0].dryingPaint = set()
@@ -873,10 +856,12 @@ class Agent:
                         t1 = time.time()
 
                     effects = []
+
+                    ## Storing info on search budget
                     plannerNodes = p.total_nodes_opened if i==0 else 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
-
+                    
                     ## For an incomplete ablation
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle._game.score
@@ -890,6 +875,7 @@ class Agent:
                         print "executeStep took {} seconds".format(time.time()-t1)
                     sys.stdout.flush()
                     
+                    ## We're using rle._game for a bookkeeping between learning and planning modules
                     self.rle._game.nextPositions = {}
                     for k, v in self.rle._game.all_objects.iteritems():
                         self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
@@ -911,7 +897,7 @@ class Agent:
                     if ended:
                         break
 
-                    ## Make sure you're far enough from unpredictable dangerous objects.
+                    ## Make sure agent is far enough from unpredictable dangerous objects.
                     # Check for disparities between plan and reality
                     # (e.g. stochastic effects)
                     if (i+1)%self.regrounding==0:
@@ -919,34 +905,8 @@ class Agent:
                         if (not takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
                             break
 
-                    if self.reground_for_npcs: ## this is just exercising caution when near random objects, irrespective of whether they kill us or not
-                        try:
-                            random_npc_colors = [self.hypotheses[0].classes[k][0].color for k in self.hypotheses[0].classes.keys() if self.hypotheses[0].classes[k] and 'Random' in str(self.hypotheses[0].classes[k][0].vgdlType)]
-                            random_npc_classes = [k for k in self.rle._game.sprite_groups.keys() if self.rle._game.sprite_groups[k] and self.rle._game.sprite_groups[k][0].colorName in random_npc_colors]
-                            random_npc_positions = []
-
-                            for c in random_npc_classes:
-                                for element in self.rle._game.sprite_groups[c]:
-                                    if element not in self.rle._game.kill_list:
-                                        random_npc_positions.append(self.rle._rect2pos(element.rect))
-
-                            avatar_positions = [self.rle._rect2pos(avatar.rect)
-                                 for avatar in self.rle._game.getAvatars()]
-
-                            possiblePairList = [manhattanDist(avatar, rand)
-                                for avatar in avatar_positions
-                                for rand in random_npc_positions]
-                            if min(possiblePairList) < self.safeDistance:
-                                if self.produce_printout:
-                                    print("Close to RandomNPC, regrounding")
-                                # embed()
-                                break
-
-                        except ValueError:
-                            pass
-
             else:
-                ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
+                ## Agent failed the game either because it made a mistake itcouldn't recover from or because search timed out.
                 ## Search more deeply next time.
                 curr_max_nodes = self.max_nodes
                 self.max_nodes *= self.max_nodes_annealing
@@ -987,13 +947,11 @@ class Agent:
 
         score = self.rle._game.score
 
-        # if self.produce_printout:
         if win:
             output =          "ended episode. Win={}                                         ".format(win)
         else:
             output =          "ended episode. Win={}                                        ".format(win)            
         if win:
-            # print colored('________________________________________________________________', 'white', 'on_green')
             print colored('________________________________________________________________', 'white', 'on_green')
 
             print colored(output, 'white', 'on_green')
@@ -1007,7 +965,7 @@ class Agent:
         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
-        ## Have we died the same way (i.e., killed by the same object) multiple times?
+        ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
         count = 1
         for i in range(1, len(episodeRecord)):
             if episodeRecord[i][0]==False and episodeRecord[i][1]==episodeRecord[i-1][1]:
@@ -1039,7 +997,7 @@ class Agent:
             return False
 
     def checkForMovingTypes(self, rle, hypothesis):
-        ## Another check for whether we're in slow-moving games (where only we generate motion)
+        ## Another check for whether agent is in slow-moving games (where it's the only entity that generates motion)
         if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
             thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
         else:
@@ -1056,7 +1014,7 @@ class Agent:
 
     def checkForDangerOrAvatarMisLocation(self, rle, hypothesis, objectPositionsArray, i):
         
-        ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where we predicted it would be), or if Avatar ended up in a location we didn't predict.
+        ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
 
         regroundingFlag = False
         rleDict, hypDict = {}, {}
@@ -1094,7 +1052,6 @@ class Agent:
                       'episodeCompactStates': episodeCompactStates}
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
-        # f.close()
 
     def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
         if 'pedro' in os.getcwd():
@@ -1153,7 +1110,7 @@ class Agent:
             return False
 
     def manageNewObjects(self, hypotheses):
-        ## Add newly-seen objects.
+        ## Add newly-seen objects to object-type distribution
         current_objects = self.rle._game.getObjects()
         for k in current_objects.keys():
             spriteName = current_objects[k]['sprite'].name
@@ -1162,13 +1119,15 @@ class Agent:
                     print "new object", spriteName
                 self.all_objects[k] = current_objects[k]
                 distributionInitSetup(self.rle._game, k)
-                ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
+                ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep, as likelihood function hasn't been seeded for these objects.
                 self.rle._game.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
 
         return hypotheses
 
     def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False, hypothesis=None):
+        ## Agent just observes the state for 'obsSteps' steps and updates object-type distribution.
+        ## if called with obsSteps==0, it'll just initialize the object-type distribution
         if display and self.produce_printout:
             print "observing for {} steps".format(obsSteps)
         if obsSteps>0:
@@ -1206,10 +1165,11 @@ class Agent:
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
 
+        ## Takes the specified action and does bookkeeping
+
         theory_change_flag = False
 
         if not self.skipInduction:
-            # t1 = time.time()
             spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 1 took {} seconds.".format(time.time()-t1)
             t1 = time.time()
@@ -1236,7 +1196,8 @@ class Agent:
 
             self.rle.agentStatePrev = agentState
 
-        # If agent is killed before we get agentState
+        ## If agent is killed before we grab its agentState,
+        ## use what's printed in the effect label to get it. 
         except (IndexError, AttributeError) as e:
             ignored_negative_change = False
             for e in res['effectList']:
@@ -1265,7 +1226,7 @@ class Agent:
         else:
             distributionsHaveChanged = False
  
-        ## First interaction-rule lesion:
+        ## First interaction-rule ablation (not used)
         effects = self.rle._game.effectListByColor
         if self.interaction_lesion_replacement == 'nothing':
             for i,e in enumerate(effects):
@@ -1290,6 +1251,7 @@ class Agent:
 
         newEffects = False
 
+        ## If any collisions occurred
         if effects:
             if self.display_text:
                 print effects
@@ -1333,6 +1295,8 @@ class Agent:
         self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
             not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
+        ## Ideally you'd update the model at every step, but it takes a lot of time
+        ## so: Update when a new event happens (in which case you definitely need to update it), or when your MAP object-type hypothesis has changed for some class (in which case you definitely need to update it), or if we don't have a super-large number of time-steps in our history, do it sometimes (with probability .2)
         if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
             if self.display_text:
@@ -1357,7 +1321,7 @@ class Agent:
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
-        ## We need to update termination conditions even when we haven't seen a new event,
+        ## We also need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
         oldTerminationSet = set(hypotheses[0].terminationSet)
         if event['effectList'] and run_induction:
@@ -1378,7 +1342,7 @@ class Agent:
         return hypotheses, theory_change_flag, effects
 
 
-
+## For local usage/testing/debugging. Not used.
 if __name__ == "__main__":
 
     filename = "examples.gridphysics.theory_overload"
@@ -1442,3 +1406,4 @@ if __name__ == "__main__":
 
     ##and use this line
     # agent.playCurriculum(level_game_pairs=None)
+
