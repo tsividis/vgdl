@@ -1,0 +1,1537 @@
+from util import *
+from core import colorDict, VGDLParser, sys, keyPresses
+from ontology import *
+from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
+SpriteCounterRule, MultiSpriteCounterRule, NoveltyRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
+generateTheoryFromGame
+import os, subprocess, shutil
+from collections import defaultdict
+from hyperparameters import hyperparameter_sets, metacontroller_sets
+import WBP
+import importlib
+import numpy as np
+from math import log
+import random
+import cPickle, cloudpickle, pickle
+import time
+from datetime import datetime
+import copy
+from metaplanner import translateEvents, observe
+from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
+from termcolor import colored
+from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+
+MAX_STEPS = 1000000
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
+AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
+RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
+AimedFlakAvatar, InertialAvatar, MarioAvatar]
+
+
+class Agent:
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, max_rand_steps=0, epsilon_greedy=0, random_policy=False, init_hypothesis=None, task_ID=0):
+        self.modelType = modelType
+        self.gameFilename = gameFilename
+        self.outpath = None ## set in playCurriculum and then used in outputlesionsnapshot for writing all the theories learned in a particular run of playCurriculum into a single folder.
+        self.gameString = None
+        self.levelString = None
+        self.display_text = False
+        self.display_states = True
+        self.record_states = True
+        self.record_video_info = True
+        self.saveMidEpisode = False
+        self.filename = None
+        self.hyperparameter_sets = hyperparameter_sets
+        self.hyperparameter_index = hyperparameter_index
+        self.hyperparameters = hyperparameter_sets[hyperparameter_index]
+        self.timestamp = False
+        self.annealingFactor = 1.
+        self.shortHorizon = self.hyperparameters['short_horizon']#False
+        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+        self.IW_k = IW_k
+        self.task_ID = task_ID
+        self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
+        self.epsilon_greedy = epsilon_greedy
+        self.hybrid = False
+        self.absolute_max_nodes = 50000 ## just a convenience parameter
+        self.shortHorizonNodes = 500 ## this isn't used.
+        self.metacontroller_params = metacontroller_sets[metacontroller_index]
+        ## Metacontroller parameters
+        self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
+        self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
+        self.longhorizonAnnealing = self.metacontroller_params['longhorizonAnnealing']
+        self.shortHorizonRandomChoice = self.metacontroller_params['shortHorizonRandomChoice']
+        self.conservative_max_nodes = self.metacontroller_params['conservative_max_nodes']
+        self.extra_atom = self.metacontroller_params['extra_atom']
+        self.noNewObjectNum = self.metacontroller_params['noNewObjectNum']
+        self.objectLocationTrackingLimit = self.metacontroller_params['objectLocationTrackingLimit']
+        self.safeDistance = self.metacontroller_params['safeDistance']
+        self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
+        self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
+        self.random_policy = random_policy
+        #N=Normal, DS=Delayed switch out of short-term planning (by changing self.noNewObjectNum), DF=delayed game forfeit after failure to plan in a level (by changing self.absolute_max_nodes)
+        #SN=smart-normal ('explore' step fulfills curiosity; 'exploit fulfills win'). 
+        #SS=smart-sequential. Same as above, but it's first explore everything, then exploit everything.
+        ## Also note that changing nonewobjectnum will delay quitting, as only long-term planning anneals up such that you'd ever reach absolute_max_nodes.
+        self.epsilon_greedy_variant = self.metacontroller_params['epsilon_greedy_variant']
+        self.switch_to_exploit_step = self.metacontroller_params['switch_to_exploit_step'] ## only used for e-greedy lesion
+        self.allow_long_range = self.metacontroller_params['allow_long_range'] ## for the exploration lesion we want to optionally disable long-range planning
+
+        if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
+            self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
+        else:
+            self.objectsWhoseLocationWeIgnore = ['Flicker', 'Random']
+        self.objectsWhoseLocationWeIgnoreString = ''.join([s[0] for s in self.objectsWhoseLocationWeIgnore]) if self.objectsWhoseLocationWeIgnore else 'None'
+
+        if self.shortHorizon == True:
+            self.starting_max_nodes = self.shortHorizonNodes
+            self.max_nodes_annealing = self.shortHorizonAnnealing
+        else:
+            self.starting_max_nodes = self.longHorizonNodes
+            self.max_nodes_annealing = self.longhorizonAnnealing
+        
+        self.param_ID = "rand={}_eG={}_egv={}_fe={}_sTE={}".format(self.random_policy, 
+                self.epsilon_greedy, self.epsilon_greedy_variant, self.final_epsilon,
+                self.switch_to_exploit_step)
+        self.param_ID = self.param_ID+'_batchID='+str(0)
+        print self.param_ID
+
+        self.conservative = False
+        self.regrounding = 1
+        self.reground_for_npcs = False
+
+        self.hypotheses = []
+        self.symbolDict = None
+        self.finalEventList = []
+        self.finalEffectList = set()
+        self.finalTimeStepList = []
+        self.statesEncountered = []
+        self.rleHistory = []
+        self.episodeRecord = []
+        self.fakeInteractionRules = []
+        self.all_objects = {}
+        self.bestSpriteTypeDict = defaultdict(lambda : {})
+        self.spriteUpdateDict = defaultdict(lambda : 0)
+        self.max_game_time_observed = 0
+        self.best_params = None
+        self.seen_resources = []
+        self.seen_limits = []
+        self.new_objects = {}
+        self.actionSeqLength = 0.
+        self.skipInduction = False
+
+        self.total_game_steps = 0
+        self.total_planner_steps = 0
+        self.levels_won = 0
+
+        self.todo_delete = True
+
+        self.max_rand_steps = max_rand_steps ## not used
+        self.init_hypothesis = init_hypothesis
+        if self.init_hypothesis is not None:
+            self.exploration_burn_ins = self.init_hypothesis.burn_ins
+        else:
+            self.exploration_burn_ins = 'NA'
+
+    def hyperparameterSwitch(self, new_index):
+        if new_index!=self.hyperparameter_index:
+            self.hyperparameter_index = new_index
+            self.hyperparameters = self.hyperparameter_sets[new_index]
+            self.shortHorizon = self.hyperparameters['short_horizon']
+            self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+            if self.shortHorizon == True:
+                self.starting_max_nodes = self.shortHorizonNodes
+                self.max_nodes_annealing = self.shortHorizonAnnealing
+            else:
+                self.starting_max_nodes = self.longHorizonNodes
+                self.max_nodes_annealing = self.longhorizonAnnealing
+            self.max_nodes = self.starting_max_nodes
+            self.stored_max_nodes = self.max_nodes
+
+            if self.display_text:
+                print "Switching hyperparameters to {}".format(new_index)
+        planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+        return planner_hyperparameters
+
+    def initializeEnvironment(self):
+        if self.gameString==None or self.levelString==None:
+            self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
+        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
+        self.rle = self.rleCreateFunc()
+        self.rle._game.spriteUpdateDict = self.spriteUpdateDict
+        return
+
+    def initializeRLEFromGame(self):
+        gameString, levelString = self.gameString, self.levelString
+        if gameString == None or levelString == None:
+            gameString, levelString = defInputGame(self.gameFilename, randomize=False)
+        rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+        rle = rleCreateFunc()
+        return rle
+
+    def fastcopy(self, rle):
+
+        newRle = self.initializeRLEFromGame()
+        newRle._obstypes = ccopy(rle._obstypes)
+        if hasattr(rle, '_gravepoints'):
+            newRle._gravepoints = ccopy(rle._gravepoints)
+        newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
+        newRle._game.kill_list = ccopy(rle._game.kill_list)
+        # newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
+        newRle._game.time = ccopy(rle._game.time)
+        newRle._game.score = ccopy(rle._game.score)
+        newRle._game.keystate = ccopy(rle._game.keystate)
+        newRle.symbolDict = ccopy(rle.symbolDict)
+        newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
+
+        return newRle
+
+    def outputLesionSnapshot(self, theory, steps):
+
+        picklepath = '{}/{:06}steps.pkl'.format(self.outpath, steps)
+        file = open(picklepath, 'wb')
+        pickle.dump(theory, file)
+        file.close()
+
+
+    def getSpritesByColor(self, rle, color):
+        outList = []
+        for k in rle._game.sprite_groups.keys():
+            if rle._game.sprite_groups[k] and rle._game.sprite_groups[k][0].colorName==color:
+                outList.extend(rle._game.sprite_groups[k])
+        if outList:
+            return outList
+        else:
+            return None
+
+    def findNearestSprite(self, sprite, spriteList):
+        ## returns the sprite in spriteList whose location best matches the location of sprite.
+        return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+
+    def setSpritePositions(self, rle, Vrle, hypothesis):
+        ## Sets positions of objects in Vrle to what they were in the rle. Bypasses clunky VGDL level description.
+
+        old_sprite_groups = Vrle._game.sprite_groups
+        for k in old_sprite_groups.keys():
+            if old_sprite_groups[k]:
+                color = Vrle._game.sprite_groups[k][0].colorName
+                matchingSpritesInRLE = self.getSpritesByColor(rle, color)
+                for sprite in old_sprite_groups[k]:
+                    matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
+                    sprite.rect = matchingSprite.rect
+                    sprite.lastmove = matchingSprite.lastmove
+                    sprite.ID2 = matchingSprite.ID
+                    if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
+                        try:
+                            ## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
+                            # embed()
+
+                            orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
+                            # if color=='RED':
+                                # embed()
+                            if orientation == (0,0):
+                                # print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
+                                pass
+                            #     embed()
+
+                            else:
+                                sprite.orientation = orientation
+
+                        except KeyError:
+                            # print "Failed to get params for Missile in main_agent"
+                            # embed()
+                            sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
+                            # pass
+        for k,v in Vrle._game.sprite_groups.items():
+            for sprite in v:
+                if sprite not in Vrle._game.kill_list:
+                    loc = (sprite.rect.left, sprite.rect.top)
+                    if loc in Vrle._game.positionDict.keys():
+                        Vrle._game.positionDict[loc].append(sprite)
+                    else:
+                        Vrle._game.positionDict[loc] = [sprite]
+        return
+
+
+    def initializeVrle(self, hypothesis):
+        gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
+                 "./theory_files/{}.py".format(self.gameFilename))
+        Vrle = createMindEnv(gameString, levelString, output=False)
+
+        self.setSpritePositions(self.rle, Vrle, hypothesis)
+        try:
+            Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+            Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
+        except (IndexError, AttributeError) as e:
+            pass
+        return Vrle
+
+    def VrleInitPhase(self, flexible_goals=False, updateTermins=True):
+        ## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses
+        VRLEs = []
+
+        for hypothesis in self.hypotheses[0:1]:
+            tempHypothesis = copy.deepcopy(hypothesis)
+            tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+            tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
+            if not flexible_goals and updateTermins:
+                tempHypothesis.updateTerminations()
+            VRLEs.append(self.initializeVrle(tempHypothesis))
+
+        return VRLEs
+
+    def initializeHypotheses(self, allObjects, statesEncountered, compactStates, learnSprites=True):
+        
+        if self.init_hypothesis:
+            initialTheory = self.init_hypothesis
+            gameObject = Game(self.gameString)
+            print "initialized hypotheses with:", initialTheory
+            print "burn-ins that created it:", initialTheory.burn_ins
+        else:
+            if learnSprites:
+                if not self.skipInduction:
+                    ## need to run this for one step to get a theory so we can calculate initial entropy. Then we
+                    ## run it another 14 times.
+                    self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
+                    spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+                        self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
+                    self.rle._game.exceptedObjects = exceptedObjects
+                    gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+                    initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+
+                    self.observe(self.rle, 14, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
+                else:
+                    self.observe(self.rle, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)                
+                spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, \
+                    self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
+                self.rle._game.exceptedObjects = exceptedObjects
+                gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+                initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
+            else:
+                gameObject = Game(self.gameString)
+                initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
+
+        avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
+        self.hypotheses = [initialTheory]
+        self.symbolDict = generateSymbolDict(self.rle)
+        return gameObject
+
+    def completeHypotheses(self, allObjects, statesEncountered, compactStates, first_time_playing_level):
+        previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
+        current_colors = [o['type']['color'] for o in allObjects.values()]
+        if all([c in previous_colors for c in current_colors]):
+            self.observe(self.rle, 0, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## observe a couple steps so that you're not completely clueless about object movements when you're restarting a level.
+        else:
+            self.observe(self.rle, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## observe many steps so that you're not completely clueless about object movements for the new level
+
+        ## Make sure any objects that appeared while we were observing are reflected in allObjects
+        for k,v in self.rle._game.getObjects().items():
+            if k not in allObjects:
+                allObjects[k] = v
+
+        spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, allObjects, self.rle._game.spriteUpdateDict, 
+                self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
+        gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+        newHypotheses = []
+        for hypothesis in self.hypotheses:
+            newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
+        self.hypotheses = newHypotheses
+
+    def calculateEntropy(self, theory, spriteDistribution):
+        ## not used
+        return True
+
+
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False):
+        """ Plays a game level until it wins, then moves to the next one until
+        completion. """
+        starttime = time.time()
+        if not level_game_pairs:
+            level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
+        episodes = []
+        allEffectsEncountered = []
+        self.make_movie = make_movie
+
+        gamepath = './lesions/rand_exploration/{}'.format(self.gameFilename)
+        # pickles the theory and saves it in the gameName folder as {s}steps{n}
+        # where s=steps and n=a counter so we don't overwrite earlier runs
+        try:
+            os.makedirs(gamepath)
+        except:
+            # already exists, yay
+            pass
+
+        batch_number = len([f for f in os.listdir(gamepath) if 'DS_Store' not in f])
+
+        self.outpath = gamepath+'/{}'.format(batch_number)
+        try:
+            os.makedirs(self.outpath)
+        except:
+            pass
+
+        ## used for time-stamping data related to this particular run of the model.
+        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
+        self.timestamp = timestamp
+        if self.record_states:
+            dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename)
+            self.filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+            if not os.path.exists(dirname):
+                try:
+                    os.makedirs(dirname)
+                except:
+                    print "failed  to make dir"
+        if self.record_video_info:
+            dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
+            if not os.path.exists(dirname):
+                try:
+                    os.makedirs(dirname)
+                except:
+                    pass
+
+        if self.make_movie:
+            if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
+                shutil.rmtree("images/tmp/"+self.gameFilename)
+            os.makedirs("images/tmp/"+self.gameFilename)
+
+        print "timestamp", self.timestamp
+        print "param_ID", self.param_ID
+        curriculumDir = 'savedCurricula'
+        if curriculumDir not in os.listdir('.'):
+            os.makedirs(curriculumDir)
+        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+        loadedState = False
+        loaded_n_level=0
+        # embed()
+        if curriculumSaveFile in os.listdir(curriculumDir):
+            try:
+                print "found saved curriculum state"
+                loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
+                loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
+                self = loadedState['agent'] ## load saved agent
+                ## self.filename will get overloaded here
+                print "loaded curriculum state"
+            except:
+                os.remove(curriculumDir+'/'+episodeSaveFile)
+                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+
+        j=0
+        flexible_goals = False
+        fullStateEpisodes, episodeCompactStates = {}, {}
+        for n_level, level_game in enumerate(level_game_pairs):
+
+            if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
+                continue
+
+            print("Playing level {}".format(n_level))
+            (self.gameString, self.levelString) = level_game
+            self.max_nodes = self.starting_max_nodes
+            self.stored_max_nodes = self.max_nodes
+            win = False
+            gameObject = None
+
+            i=0
+            if loadedState:
+                i=loadedState['agent'].within_level_iteration
+                episodeCompactStates = loadedState['episodeCompactStates']
+            levelEffectsEncountered = []
+            allStatesEncountered = []
+            allCompactStates = []
+            t1 = time.time()
+            
+            if i==0:
+                first_time_playing_level = True
+            else:
+                first_time_playing_level = False
+            quit_level = False
+            while not win and not quit_level and self.total_game_steps<MAX_STEPS:
+                self.n_level = n_level
+                self.within_level_iteration = i
+                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+                self.total_game_steps += steps
+                allCompactStates.append(compactStates)
+                episode_results = (n_level, steps, win, score, self.total_planner_steps)
+                episodes.append(episode_results)
+
+
+                if self.make_movie:
+                    self.statesEncountered = statesEncountered
+                    self.makeImages()
+                
+                if self.record_video_info:
+                    allStatesEncountered.extend(statesEncountered)
+
+                i += 1
+                print "Finished in ", time.time() - t1
+
+                episodeCompactStates[n_level] = allCompactStates
+                fullStateEpisodes[n_level] = allStatesEncountered
+
+                self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
+                ## will write all previous episodes to the file at the end of each episode, after the random-exploration phase
+                if self.record_states:
+                    gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+                    episodeList = [v for k,v in sorted(episodeCompactStates.items())]
+                    print "n_level", n_level
+                    print "most recent episode was of length {}. Game step is {}".format(len(episodeList[-1][-1]), steps)
+                    with open(self.filename, 'wb') as f:
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_ins':self.exploration_burn_ins, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
+
+                if win:
+                    self.n_level += 1
+                    self.within_level_iteration = 0
+                ## will write video data at the end of each episode
+                if self.record_video_info:
+                    videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+                    gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
+                    fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
+                    with open(videofilename, 'wb') as f:
+                        cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'exploration_burn_ins':self.exploration_burn_ins, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
+                    f.close()
+
+                if self.init_hypothesis and self.total_game_steps>MAX_STEPS:
+                    print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
+                    return
+
+                if self.saveMidEpisode:
+                    # ## if the episode ends, delete the mid-episode file we were saving.
+                    episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+                    os.remove(curriculumDir+'/'+episodeSaveFile)
+                    print "finished an episode; removing episodeSaveFile"
+
+                if heatmap:
+                    self.makeHeatmap(allStatesEncountered, 'heatmap_{}_level_{}_{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
+
+            if flexible_goals:
+                ## When you embed, you can manually input changes in theory. See flexible_goals.py for an example.
+                print "in main_agent; playing with flexible_goals"
+                embed()
+
+        endtime = time.time()
+
+    def compactify(self, rle, planner_nodes=0):
+        gameObject = rle._game
+        ended, win = rle._isDone()
+        state = {'timestep': gameObject.time,
+                 'score': gameObject.score,
+                 'planner_settings': self.hyperparameter_index,
+                 'planner_nodes': planner_nodes, ## how many nodes were searched to determine this particular action? 0 if this is resulting from a cached plan.
+                 'ended': ended,
+                 'win': win,
+                 'entropy': rle._game.H,
+                 'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
+                        for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list],
+                 'events': list(rle._game.effectListByClass)
+                 }
+        return state
+
+    def makeHeatmap(self, statesEncountered, filename):
+        from vgdl.plotting import featurePlot
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import NullLocator
+        import numpy as np
+
+
+        states = [(s['objects']['avatar'].keys()[0][0],s['objects']['avatar'].keys()[0][1],s['frame']) for s in statesEncountered
+                  if (not s['observe_state']) and s['objects']['avatar'].keys()]
+        width, height = self.rle._game.width, self.rle._game.height
+        correction_factor = self.rle._game.screensize[0]/width
+        corrected_states = [(s[0]/correction_factor, s[1]/correction_factor, i) for i,s in enumerate(states)]
+
+        m = np.zeros((width, height))
+        Xs, Ys = [],[]
+
+        block_size = 30
+        prev_state = (None, None)
+        set_first_frame = False
+
+        for s in corrected_states:
+            frame = s[2]
+            x = int(round(s[0]))
+            y = int(round(s[1]))
+            if (x,y) != prev_state and (frame!=0 or not set_first_frame):
+                m[x, y] += 1
+
+            prev_state = (x,y)
+            if frame == 0:
+                set_first_frame = True
+
+        plt.imshow(m.T, cmap='viridis')
+        plt.gca().set_axis_off()
+        plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+            hspace = 0, wspace = 0)
+        plt.margins(0, 0)
+        plt.gca().xaxis.set_major_locator(NullLocator())
+        plt.gca().yaxis.set_major_locator(NullLocator())
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0)
+        plt.close()
+
+    def makeSummaryPlot(self, allEffectsEncountered):
+        import matplotlib.pyplot as plt
+        import importlib
+
+        mod = importlib('vgdl.colors')
+        colors = [cl[0].color for cl in self.hypotheses[0].classes.values()]
+        for color in colors:
+            times_touched_per_level = []
+            for level in allEffectsEncountered:
+                times_touched = len([effect
+                    for attempt in level
+                    for effect in attempt
+                    if ((effect[1]==color and effect[2]=='DARKBLUE')
+                        or (effect[2]==color and effect[1]=='DARKBLUE'))])
+                times_touched_per_level.append(times_touched)
+            color_to_plot = [float(value)/255 for value in getattr(mod, color)]
+            plt.plot(times_touched_per_level, color=color_to_plot)
+        plt.show()
+
+
+    def makeImages(self):
+        VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = self.gameFilename, parameter_string=self.param_ID, padding=10)
+
+    def makeMovie(self):
+
+        print "Creating Movie"
+        movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
+
+        if not os.path.exists(movie_dir):
+            print movie_dir, "didn't exist. making new dir"
+            os.makedirs(movie_dir)
+        round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store'])
+        video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+        images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
+        com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+        command = "{}".format(com)
+        subprocess.call(command, shell=True)
+        # empty image directory
+        shutil.rmtree("images/tmp/"+self.gameFilename)
+        os.makedirs("images/tmp/"+self.gameFilename)
+        return
+
+    def playMultipleEpisodes(self, num_episodes):
+        i=0
+        gameObject = None
+        wins, scores = [], []
+        win = False
+        while i<num_episodes:
+            gameObject, win, score, statesEncountered, _ = self.playEpisode(gameObject, flexible_goals=False,first_time_playing_level=False)
+            wins.append(win)
+            scores.append(score)
+            i+=1
+        VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
+        print "Won {} out of {} episodes.".format(sum(wins), i)
+
+    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
+        from vgdl.util import manhattanDist
+
+        episodeSaveTime = time.time() ## in seconds
+        quit_level = False
+        ## Initialize external environment
+        self.initializeEnvironment()
+        if self.display_text:
+            print "initializing RLE"
+        print "Game name:", self.gameFilename
+        print self.rle.show(color='blue')
+
+        self.quits = 0
+        self.longHorizonObservations = 0
+        self.previous_objects = self.all_objects if self.all_objects else {}
+        self.all_objects= self.rle._game.getObjects()
+        annealing = 1
+        ## Start storing encountered states.
+        effectsEncountered = []
+        statesEncountered = []
+        compactStates = [] ## for analysis
+
+        if self.make_movie or self.record_video_info:
+            statesEncountered.append(self.rle._game.getFullState())
+        
+        if self.record_states:
+            compactStates.append(self.compactify(self.rle))
+
+        ## Initialize memory of object positions
+        self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
+        for k, v in self.rle._game.all_objects.iteritems():
+            self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+            self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+
+        ## initialize theory if necessary.
+        if len(self.hypotheses) == 0:
+            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, compactStates, learnSprites=True)
+            if self.display_text:
+                print "initializing hypotheses"
+        else:
+            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, compactStates, first_time_playing_level)
+            if self.display_text:
+                print "had hypotheses -- completing them."
+            # If theory is being carried over, falsify termination hypotheses
+            # given new level state
+            if not flexible_goals:
+                [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
+
+        if self.saveMidEpisode:
+            ## if we get a loadedState, do things with it here.
+            episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+            curriculumDir = 'savedCurricula'
+            if episodeSaveFile in os.listdir(curriculumDir):
+                try:
+                    loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
+                    self = loadedState['agent']
+                    # embed()
+                    effectsEncountered = loadedState['effectsEncountered']
+                    statesEncountered = loadedState['statesEncountered']
+                    compactStates = loadedState['compactStates']
+                    annealing = loadedState['annealing']
+                    print "just loaded episode state"
+                except:
+                    os.remove(curriculumDir+'/'+episodeSaveFile)
+                    print "failed to load episode state. Deleting the corrupted file and continuing with this episode as though we hadn't saved anything."
+
+        ## Do beginning-of-episode resource-management.
+        resources = self.rle._game.getAvatars()[0].resources
+        for resource, val in resources.items():
+            if resource not in self.seen_resources and val>0:
+                self.seen_resources.append(resource)
+                self.hypotheses[0].resource_limits[resource] = self.rle._game.resources_limits[resource]
+            if resource not in self.seen_limits and val==self.rle._game.resources_limits[resource]:
+                self.seen_limits.append(resource)
+
+        ended, win = self.rle._isDone()
+
+        legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            legalActions.append(K_SPACE)
+        print "legal actions: {}".format(legalActions)
+
+        steps = self.rle._game.time
+        emptyPlans = 0
+        
+        #######################################
+        ######## LOOP FOR THIS EPISODE ########
+        #######################################
+        while not ended:
+
+            if self.saveMidEpisode:
+                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                self.episodeSaveTime = time.time()
+
+            drew_random_action = False
+            
+            ### Decide whether to take a random step
+            if self.epsilon_greedy or self.random_policy:
+                ## calculate epsilon value according to annealing schedule
+                steps_so_far = self.total_game_steps+steps
+                if  steps_so_far < self.switch_to_exploit_step:
+                    epsilon = 1.-steps_so_far*((1-self.final_epsilon)/self.switch_to_exploit_step)
+                else:
+                    epsilon = self.final_epsilon
+                print "steps so far {}. epsilon {}".format(steps_so_far, epsilon)
+
+                if self.random_policy or random.random()<epsilon:
+                    print "taking a random step"
+                    drew_random_action = True
+
+            self.max_nodes = self.stored_max_nodes
+
+            if self.total_game_steps+steps > MAX_STEPS:
+                score = self.rle._game.score
+                quit_level = False
+                if self.saveMidEpisode:
+                    self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                    self.episodeSaveTime = time.time()
+                return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
+            updateTermins = True
+            if self.init_hypothesis or (self.epsilon_greedy and not self.hybrid and not drew_random_action):
+                print "removing noveltyTerminations from the theory"
+                ## Remove noveltyTerminations from the theory.
+                def is_not_novelty_rule(rule):
+                    return not isinstance(rule, NoveltyRule)
+                self.hypotheses[0].terminationSet = filter(is_not_novelty_rule, self.hypotheses[0].terminationSet)
+                updateTermins = False
+
+            ## initialize one or many VRLEs according to hypothesis-selection method
+            theoryRLEs = self.VrleInitPhase(flexible_goals, updateTermins)
+
+            quitting = False
+
+
+            print "{} steps this episode. {} steps across all episodes".format(steps, self.total_game_steps+steps)
+
+
+            ##############################
+            ##### IF MOVING RANDOMLY #####
+            ##############################
+            if drew_random_action:
+
+                # do random moves
+                action = np.random.choice(legalActions)
+
+                self.hypotheses[0].dryingPaint = set()
+
+                ##############################################
+                ############### step #########################
+                ##############################################
+
+                plannerNodes = 0
+                t1 = time.time()
+                hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                    run_induction = not flexible_goals)
+
+                steps +=1
+
+                if self.total_game_steps+steps > MAX_STEPS:
+                    score = self.rle._game.score
+                    quit_level = False
+                    if self.saveMidEpisode:
+                        self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                        self.episodeSaveTime = time.time()
+                    return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+                
+                if self.display_text:
+                    print "executeStep took {} seconds".format(time.time()-t1)
+                sys.stdout.flush()
+
+                ##############################################
+                ##### STORE EFFECTS OF TAKING STEP ###########
+                ##############################################
+                self.rle._game.nextPositions = {}
+                for k, v in self.rle._game.all_objects.iteritems():
+                    self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+                    try:
+                        if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+                            self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+                    except KeyError:
+                        print "THERE WAS A KEY ERROR IN playEpisode"
+                        pass
+                self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+
+                effectsEncountered.extend(effects)
+                
+
+                ###############################################
+                ########### STORE CURRENT HYPOTHESIS #########
+                ###############################################
+
+                if theory_change_flag:
+                    self.hypotheses = hypotheses
+                    print 'theory changed'
+                    hypotheses[0].display()
+                    ## store what steps we get theory changes in
+                    f = open('theoryChanges_{}.txt'.format(self.gameFilename), 'a')
+                    f.write('\n\nnew theory change at step {}\n'.format(self.total_game_steps+steps))
+                    oldout = sys.stdout
+                    sys.stdout = f
+                    hypotheses[0].display()
+                    sys.stdout = oldout
+                    f.close()
+                    self.outputLesionSnapshot(self.hypotheses[0], self.total_game_steps+steps)
+                    # break
+
+
+            #############################################
+            ##### IF NOT MOVING RANDOMLY ################
+            #############################################
+            else:       
+                filter_novelty = False
+                if self.init_hypothesis is not None or (self.epsilon_greedy and not self.hybrid and not drew_random_action):
+                    filter_novelty = True
+                    print "filter novelty", filter_novelty
+
+                planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+
+                ## you don't need to worry about annealing, since you don't anneal up for shortHorizon planning.
+                if self.shortHorizon and self.shortHorizonRandomChoice:
+                    self.max_nodes = random.choice(self.shortHorizonRandomChoice)
+
+                print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+                print "max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
+
+                ## Initialize planner
+                p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                    seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                    firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
+                    extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+                    objectLocationTrackingLimit=self.objectLocationTrackingLimit, filter_novelty=filter_novelty)
+                p_quitting = p.quitting
+                bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                self.total_planner_steps += p.total_nodes_opened
+                print "total planner steps in main_agent:", self.total_planner_steps
+
+                if bestNode is not None:
+                    solution = p.solution
+                    gameString_array = p.gameString_array
+                    objectPositionsArray = objectPositionsArray[::-1]
+                    if solution and self.display_text:
+                        print "got solution"
+                else:
+                    solution = []
+
+                if not solution:
+                    ## If we're repeatedly dying in the same way, just switch hyperparameters blindly.
+                    if self.checkForRepeatedDeaths(self.episodeRecord, 2):
+                        if self.hyperparameter_index == 1:
+                            new_index = 1 ## don't switch away from idx_1
+                            conservative = False
+                        elif self.hyperparameter_index == 3:
+                            if self.allow_long_range:
+                                if self.display_text:
+                                    print "Repeated deaths. Switching to long-range planning"
+                                new_index = 1
+                            else:
+                                new_index = 3
+                            conservative = False
+                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+
+                    elif self.hyperparameter_index == 3:
+                        movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
+                        if self.rle._game.time>compactStates[-1]['timestep']:
+                            scoreChange = self.rle._game.score!=compactStates[-1]['score']
+                        else:
+                            scoreChange = True
+                        print "moving types: {}".format(movingTypes)
+                        print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
+                        print "scoreChange: {}".format(scoreChange)
+                        if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
+                                (not movingTypes or (movingTypes and not scoreChange)):
+                            if self.allow_long_range:
+                                print "switching to long-range planning"
+                                ## switch to long-range planning
+                                new_index = 1
+                            else:
+                                new_index = 3
+                            planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+                            conservative = False
+                        else:
+                            # if self.display_text:
+                            print "planning conservatively"
+                            new_index = 3
+                            planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+                            conservative = True
+                            self.stored_max_nodes = self.max_nodes ##taking annealing into account
+                            self.max_nodes = 50
+                    else:
+                        conservative = False
+
+                    if self.display_text:
+                        print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+                        print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
+
+                    if conservative:
+                        ## Replan in new mode
+                        p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                            seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                            firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
+                            extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+                            objectLocationTrackingLimit=self.objectLocationTrackingLimit, filter_novelty=filter_novelty)
+                        p_quitting = p.quitting
+                        bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                        self.total_planner_steps += p.total_nodes_opened
+                        if bestNode is not None:
+                            solution = p.solution
+                            gameString_array = p.gameString_array
+                            objectPositionsArray = objectPositionsArray[::-1]
+                            if solution and self.display_text:
+                                print "got solution"
+                        else:
+                            solution = []
+                takingRandomSteps = False
+                if (not solution) or p_quitting:
+                    if self.extra_atom_allowed:
+                        print "turning on extra atom"
+                        self.extra_atom = True
+                    if self.longHorizonObservations<self.longHorizonObservationLimit:
+                        print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
+                        plannerNodes = p.total_nodes_opened
+                        solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+                        for i in range(self.random_steps_on_plan_failure):
+                            solution.append(random.choice(legalActions))
+                        self.longHorizonObservations += 1
+                        takingRandomSteps = True
+                    else:
+                        plannerNodes = p.total_nodes_opened
+                        action = 0
+                        hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                            run_induction = not flexible_goals)
+                        quitting = True
+                        if self.total_game_steps+steps> MAX_STEPS:
+                            score = self.rle._game.score
+                            quit_level = False
+                            if self.saveMidEpisode:
+                                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                                self.episodeSaveTime = time.time()
+
+                            return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+                
+                self.actionSeqLength += len(solution)
+
+                if solution and not p.quitting and not takingRandomSteps and self.display_states:
+                    print "============================================="
+                    print "got solution of length", len(solution)
+                    print colored(p.gameString_array[0], 'green')
+                    for i,g in enumerate(p.gameString_array[1:]):
+                        print actionDict[solution[i]]
+                        print colored(g, 'green')
+                    print "============================================="
+
+                ###########################################################
+                ############ IF PLANNER DOES NOT TELL YOU TO QUIT #########
+                ############# THEN EXECUTE PLAN ###########################
+                ###########################################################
+                if not quitting:
+                    for i, action in enumerate(solution):
+                        self.hypotheses[0].dryingPaint = set()
+
+                        if self.display_text:
+                            t1 = time.time()
+                        effects = []
+                        plannerNodes = p.total_nodes_opened if i==0 else 0
+                        hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                            run_induction = not flexible_goals)
+
+                        steps +=1
+
+                        if self.total_game_steps+steps> MAX_STEPS:
+                            score = self.rle._game.score
+                            quit_level = False
+                            if self.saveMidEpisode:
+                                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                                self.episodeSaveTime = time.time()
+                            return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
+                        if self.display_text:
+                            print "executeStep took {} seconds".format(time.time()-t1)
+                        sys.stdout.flush()
+                        
+                        self.rle._game.nextPositions = {}
+                        for k, v in self.rle._game.all_objects.iteritems():
+                            self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+                            try:
+                                if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+                                    self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+                            except KeyError:
+                                pass
+                        self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+
+                        effectsEncountered.extend(effects)
+
+                        if theory_change_flag:
+                            self.hypotheses = hypotheses
+                            print 'theory changed'
+                            hypotheses[0].display()
+                            break
+
+
+                        ended, win = self.rle._isDone()
+
+                        self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
+                        
+                        if ended:
+                            break
+
+                        ## Make sure you're far enough from unpredictable dangerous objects.
+                        # Check for disparities between plan and reality
+                        # (e.g. stochastic effects)
+                        if (i+1)%self.regrounding==0:
+
+                            if (not takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
+                                break
+
+                else:
+                    ## You failed the game either because you made a mistake you couldn't recover from or because you timed out in your search.
+                    ## Search more deeply next time.
+                    curr_max_nodes = self.max_nodes
+                    self.max_nodes *= self.max_nodes_annealing
+                    self.stored_max_nodes = self.max_nodes
+                    print "annealing up from {} to {} nodes".format(curr_max_nodes, self.max_nodes)
+                    if self.max_nodes > self.absolute_max_nodes:
+                        print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.max_nodes/self.max_nodes_annealing)
+                        self.max_nodes /= self.max_nodes_annealing
+                        ## for the delayed level forfeit variant, we should anneal longhorizon max nodes back to their original number because otherwise we'll always be one anneal away from quitting a level
+                        if 'DF' in self.epsilon_greedy_variant:
+                            self.max_nodes = self.starting_max_nodes
+                        self.stored_max_nodes = self.max_nodes
+                        quit_level = True
+                    win, effects = False, []
+                    self.episodeRecord.insert(0, (win, effects))
+                    if self.saveMidEpisode:
+                        self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                        self.episodeSaveTime = time.time()
+                    print colored('________________________________________________________________', 'white', 'on_red')
+                    print colored("Quitting", 'white', 'on_red')
+                    print colored('________________________________________________________________', 'white', 'on_red')
+                    return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
+
+            annealing *= self.annealingFactor
+            ended, win = self.rle._isDone()
+            
+            if ended:
+                self.episodeRecord.insert(0, (win, effects))
+            
+            if ended and not win and self.rle._game.time==2000:
+                print "lost on timeout. switching hyperparameters"
+                self.hyperparameterSwitch(new_index=1)
+
+        score = self.rle._game.score
+
+        output =          "ended episode. Win={}                                           ".format(win)
+        if win:
+            print colored('________________________________________________________________', 'white', 'on_green')
+            print colored('________________________________________________________________', 'white', 'on_green')
+
+            print colored(output, 'white', 'on_green')
+            print colored('________________________________________________________________', 'white', 'on_green')
+        else:
+            print colored('________________________________________________________________', 'white', 'on_red')
+            print colored(output, 'white', 'on_red')
+            print colored('________________________________________________________________', 'white', 'on_red')
+
+
+        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
+    def checkForRepeatedDeaths(self, episodeRecord, cutoff):
+        count = 1
+        for i in range(1, len(episodeRecord)):
+            if episodeRecord[i][0]==False and episodeRecord[i][1]==episodeRecord[i-1][1]:
+                count+=1
+            else:
+                break
+        if count>cutoff:
+            return True
+        else:
+            return False
+
+    def noNewObjectsInAWhile(self, rle, age_cutoff):
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
+        else:
+            thingWeShoot = None         
+        
+        min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if (item not in self.rle._game.kill_list and item.name not in [thingWeShoot, 'avatar'])])
+
+        try:
+            time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle._game.kill_list if item.name!=thingWeShoot])
+        except:
+            time_since_last_kill = self.rle._game.time
+
+        if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
+            return True
+        else:
+            return False
+
+    def checkForMovingTypes(self, rle, hypothesis):
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
+        else:
+            thingWeShoot = None    
+        moving_types = [k for k in hypothesis.classes.keys() if k!=thingWeShoot and any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
+        moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
+        movingTypes = False
+        if moving_colors:
+            for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+                if s.colorName in moving_colors:
+                    movingTypes = True
+                    break
+        return movingTypes
+
+    def checkForMovingKillerTypes(self, rle, hypothesis):
+        killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+        moving_killer_types = [k for k in killer_types if any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
+        killer_colors = [hypothesis.classes[k][0].color for k in moving_killer_types]
+        danger = False
+        if killer_colors:
+            for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+                if s.colorName in killer_colors:
+                    danger = True
+                    break
+        if danger and random.random()>.5:
+            return True
+        else:
+            return False
+
+    def checkForDangerOrAvatarMisLocation(self, rle, hypothesis, objectPositionsArray, i):
+        regroundingFlag = False
+
+        rleDict, hypDict = {}, {}
+
+        for s in [item for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist if item not in objectPositionsArray[i+1]._game.kill_list]:
+            hypDict[s.ID2] = s
+
+        killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+        killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
+
+        for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+            ## If the object isn't in our predicted environment or the positions vary
+            ## if it's an object we're worried about
+            if s.name=='avatar' or s.colorName in killer_colors:
+                if s.ID not in hypDict and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+
+                    regroundingFlag=True
+                    print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
+                    break
+                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                    print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
+                            s, self.rle._game.getAvatars()[0], manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+                            'white', 'on_yellow')
+                    regroundingFlag=True
+                    break
+                rleDict[s.ID] = s
+        return regroundingFlag
+
+    def saveCurriculumState(self, filename, episodeCompactStates):
+        if 'pedro' in os.getcwd():
+            return
+        savedState = {'agent':self,
+                      'episodeCompactStates': episodeCompactStates}
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+
+    def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
+        if 'pedro' in os.getcwd():
+            return
+        print "starting to save episode state"
+        savedState = {'agent':self,
+                      'effectsEncountered': effectsEncountered,
+                      'statesEncountered': statesEncountered,
+                      'compactStates': compactStates,
+                      'annealing': annealing
+                      }
+        filepath = 'savedCurricula/'+filename
+        with open(filepath, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+        print "done saving state"
+        # embed()
+        # f.close()
+
+    def loadState(self, filename):
+        with open(filename, 'r') as f:
+            loadedState = cloudpickle.load(f)
+        # f.close()
+        return loadedState
+
+
+    def saveState(self):
+        filename = 'saved_state'
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(self, f)
+        return
+
+    def matchEventToRuleByIDAndSpriteName(self, event, rule):
+        # Check if the two objects involved in the
+        # event are the same as those in the novelty
+        # termination rule (invariant by order)
+
+        if event[1] not in self.hypotheses[0].spriteObjects:
+            self.hypotheses[0].addSpriteToTheory(event[1])
+        if event[2] not in self.hypotheses[0].spriteObjects:
+            self.hypotheses[0].addSpriteToTheory(event[2])
+    
+        try:
+            hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
+            hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
+        except:
+            print "hypslot problem in main agent"
+            embed()
+
+
+        if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
+            if not rule.preconditions:
+                return True
+            else:
+                if not all([p.check(self.rle.agentStatePrev) for p in list(rule.preconditions)]):
+                    return False
+                else:
+                    return True
+        else:
+            return False
+
+    def manageNewObjects(self, hypotheses):
+        ## Add newly-seen objects.
+        current_objects = self.rle._game.getObjects()
+        for k in current_objects.keys():
+            spriteName = current_objects[k]['sprite'].name
+            if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
+                if self.display_text:
+                    print "new object", spriteName
+                self.all_objects[k] = current_objects[k]
+                distributionInitSetup(self.rle._game, k)
+                ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep.
+                self.rle._game.ignoreList.append(k)
+                self.new_objects[spriteName] = 0
+
+        return hypotheses
+
+    def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False, hypothesis=None):
+        if display:
+            print "observing for {} steps".format(obsSteps)
+        if obsSteps>0:
+            for i in range(obsSteps):
+                spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+                spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+                rle.step((0,0))
+                if self.make_movie or self.record_video_info:
+                    statesEncountered.append(self.rle._game.getFullState(observe_state=True))
+                ## if we're past the move-randomly phase
+                if self.record_states:
+                    compactStates.append(self.compactify(self.rle))
+                if display:
+                    print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
+                    print rle.show(color='blue')
+
+                rle._game.nextPositions = {}
+                for k, v in rle._game.all_objects.iteritems():
+                    rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
+                    try:
+                        if rle._game.previousPositions[k] != rle._game.nextPositions[k]:
+                            rle._game.objectMemoryDict[k] = copy.deepcopy(rle._game.previousPositions[k])
+                    except KeyError:
+                        pass
+                rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
+                spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
+                if hypothesis:
+                    rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
+                    compactStates[-1]['entropy'] = rle._game.H
+        else:
+            spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
+            spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
+            if hypothesis:
+                rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
+        return
+
+    def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
+
+        theory_change_flag = False
+
+        if not self.skipInduction:
+            spriteInduction(self.rle._game, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            t1 = time.time()
+            spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        try:
+            agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+        except IndexError:
+            agentState = defaultdict(lambda: 0)
+
+        lastScore = self.rle._game.score
+        res = self.rle.step(action)
+
+        try:
+            agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+
+            for e in res['effectList']:
+                if 'changeResource' in e:
+                    changes = e[3]
+                    if changes['value'] < 0:
+                        # undo one negative change to account for eventhandler ordering
+                        agentState[changes['resource']] -= changes['value']
+                        break
+
+            self.rle.agentStatePrev = agentState
+
+        # If agent is killed before we get agentState
+        except (IndexError, AttributeError) as e:
+            ignored_negative_change = False
+            for e in res['effectList']:
+                if 'changeResource' in e:
+                    changes = e[3]
+                    if changes['value'] > 0 or ignored_negative_change:
+                        agentState[changes['resource']] += changes['value']
+                    else:
+                        agentState[changes['resource']] += 0
+                        ignored_negative_change = True
+            self.rle.agentStatePrev = agentState
+        for k,v in agentState.items():
+            agentState[k] = max(0, v)
+
+        t1 = time.time()
+        hypotheses = self.manageNewObjects(hypotheses)
+
+        if self.make_movie or self.record_video_info:
+            statesEncountered.append(self.rle._game.getFullState())
+
+        if self.record_states:
+            compactStates.append(self.compactify(self.rle, plannerNodes))
+
+        t1 = time.time()
+        if not self.skipInduction:
+            distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        else:
+            distributionsHaveChanged = False
+
+        effects = self.rle._game.effectListByColor
+
+        if self.display_states:
+            print "score: {}, game tick: {}".format(self.rle._game.score, self.rle._game.time)
+        
+        if self.display_states:
+            print ""
+            print keyPresses[action]
+            print self.rle.show(color='blue')
+
+        event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
+            'gameState': None, 'rle': self.rle}
+
+        newEffects = False
+
+        if effects:
+            if self.display_text:
+                print effects
+            # #  PRECONDITIONS HANDLING
+            # # Current assumptions:
+            # # - Only one resource can change for each timestep
+            # # - The first time a resource changes, it goes from 0 to a positive
+            # #   value
+            for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
+                resource = change_resource_effect['resource']
+                val = change_resource_effect['value']
+                limit = change_resource_effect['limit']
+                if (resource not in self.seen_resources and val>0):
+                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
+                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+                    self.seen_resources.append(resource)
+                    hypotheses[0].resource_limits[resource] = limit
+                    theory_change_flag = True
+                    print "theory_change_flag because of resource {} not in seen_resources".format(resource)
+                    newEffects = True
+                    self.finalEffectList = set()
+
+                if agentState[resource]>=limit and resource not in self.seen_limits:
+                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
+                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+                    self.seen_limits.append(resource)
+                    print "theory_change_flag because of resource {} not in seen_limits".format(resource)
+                    theory_change_flag = True
+                    newEffects = True
+                    self.finalEffectList = set()
+
+            self.finalEventList.append(event)
+            newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
+            self.finalTimeStepList.append(newTimeStep)
+            for e in effects:
+                compactEvent = (e[0], e[1], e[2])
+                if compactEvent not in self.finalEffectList:
+                    self.finalEffectList.add(compactEvent)
+                    # if self.display_text:
+                    print "New event: {}".format(compactEvent)
+                    newEffects = True
+            # newEffects = True
+        
+        self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
+            not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+
+
+        if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
+
+            print "new event", newEffects, "distributions changed", distributionsHaveChanged
+
+            if newEffects or distributionsHaveChanged:
+                theory_change_flag = True
+
+            t1 = time.time()
+            sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.rle._game.spriteDistribution, self.all_objects, 
+                    self.rle._game.spriteUpdateDict, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
+
+            game_object = Game(spriteInductionResult=sample)
+            
+            terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
+
+            trace = (self.finalTimeStepList, terminationCondition)
+
+            t1 = time.time()
+            hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
+            verbose=False, existingTheories=hypotheses))
+
+            if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
+                theory_change_flag = True
+                print "theory_change_flag because theory comparison failed."
+
+
+        ## We need to update termination conditions even when we haven't seen a new event,
+        ## because the state is informative about termination conditions.
+
+        oldTerminationSet = set(hypotheses[0].terminationSet)
+        if event['effectList'] and run_induction:
+            [t.updateTerminations(event=event) for t in hypotheses]
+        
+        self.rle._game.H = self.calculateEntropy(hypotheses[0], self.rle._game.spriteDistribution)
+        statesEncountered[-1]['entropy'] = self.rle._game.H
+        print "entropy", self.rle._game.H
+        
+        if set([t for t in hypotheses[0].terminationSet if t.ruleType!='NoveltyRule']) != set([t for t in oldTerminationSet if t.ruleType!='NoveltyRule']):
+            print "theory change flag because of terminationSet Change"
+            theory_change_flag = True
+
+        if theory_change_flag and not distributionsHaveChanged and self.display_text:
+            print "changed theory:"
+            hypotheses[0].display()
+
+        return hypotheses, theory_change_flag, effects
+
+
+
+if __name__ == "__main__":
+
+
+    filename = "examples.gridphysics.theory_overload"
+
+    level_game_pairs = None
+    # Playing GVG-AI games
+    def read_gvgai_game(filename):
+        with open(filename, 'r') as f:
+            new_doc = []
+            g = gen_color()
+            for line in f.readlines():
+                new_line = (" ".join([string if string[:4]!="img="
+                    else "color={}".format(next(g))
+                    for string in line.split(" ")]))
+                new_doc.append(new_line)
+            new_doc = "\n".join(new_doc)
+        return new_doc
+
+    def gen_color():
+        from vgdl.colors import colorDict
+        color_list = colorDict.values()
+        color_list = [c for c in color_list if c not in ['UUWSWF']]
+        for color in color_list:
+            yield color
+
+    gvggames = ['aliens', 'boulderdash', 'butterflies', 'chase', 'frogs',  # 0-4
+        'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']  # 5-9
+
+    # gameName = gvggames[5]
+
+    # gvgname = "../gvgai/training_set_1/{}".format(gameName)
+
+    # gameString = read_gvgai_game('{}.txt'.format(gvgname))
+
+
+    # level_game_pairs = []
+    # for level_number in range(5):
+        # with open('{}_lvl{}.txt'.format(    gvgname, level_number), 'r') as level:
+            # level_game_pairs.append([gameString, level.read()])
+
+    ##uncomment this line to run local games
+    gameName = filename
+
+    hyperparameter_sets = [{'idx'           : 2,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     }]
+
+    agent = Agent('full', gameName, hyperparameter_sets[0])
+
+    ##then pass this down for multiple episodes
+    gameObject = None
+    agent.playCurriculum(level_game_pairs=level_game_pairs)
+
+    ##and use this line
+    # agent.playCurriculum(level_game_pairs=None)
