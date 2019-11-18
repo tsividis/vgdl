@@ -5,32 +5,32 @@ VGDL example: a simplified variant of the classic space-invaders.
 '''
 
 
-level = """
-wwwwwww
-w     w
-w1    w
-w     w
-w     w
-w     w
-w     w
-w     w
-w A   w
-wwwwwww
-"""
-
-
 # level = """
-# wwwwwwwwwww
-# w         w
-# w1        w
-# w00       w
-# w00       w
-# w         w
-# w         w
-# w         w
-# w A       w
-# wwwwwwwwwww
+# wwwwwww
+# w     w
+# w1    w
+# w     w
+# w     w
+# w     w
+# w     w
+# w     w
+# w A   w
+# wwwwwww
 # """
+
+
+level = """
+wwwwwwwwwww
+w         w
+w1        w
+w b       w
+w         w
+w         w
+w         w
+w         w
+w A       w
+wwwwwwwwwww
+"""
 
 
 # level = """
@@ -86,16 +86,17 @@ game="""
 BasicGame
     SpriteSet
         base    > Immovable    color=WHITE
-        avatar  > FlakAvatar   stype=sam
+        avatar  > FlakAvatar   stype=sam speed=0.35
         missile > Missile
             sam  > orientation=UP    color=BLUE singleton=True
-            bomb > orientation=DOWN  color=RED  speed=1 #.5
+            bomb > orientation=DOWN  color=RED  speed=1 width=0.25#.5
         alien   > Bomber       stype=bomb   prob=0.01  cooldown=3 speed=1 #.75
         portal  > SpawnPoint   stype=alien  cooldown=16   total=3
     
     LevelMapping
         0 > base
         1 > portal
+        b > bomb
         
     InteractionSet
         avatar  EOS  > stepBack
