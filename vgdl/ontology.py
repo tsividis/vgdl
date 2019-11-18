@@ -285,6 +285,9 @@ class ContinuousPhysics(GridPhysics):
         return sqrt((r1.top - r2.top) ** 2
                     + (r1.left - r2.left) ** 2)
 
+    def displacement(self, r1, r2):
+        return (r1.left-r2.left, r1.top-r2.top)
+
 class NoFrictionPhysics(ContinuousPhysics):
     friction = 0
 
@@ -1584,7 +1587,7 @@ def bounceDirection(sprite, partner, game, friction=0): # FLAG
 
 
 def wallBounce(sprite, partner, game, friction=0): # FLAG
-    """ Bounce off orthogonally to the wall. """
+    """ Flips x or y orientation """
     if not oncePerStep(sprite, game, 'lastbounce'):
         return
     sprite.speed *= (1. - friction)
