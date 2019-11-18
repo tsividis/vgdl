@@ -1463,6 +1463,25 @@ def bounceForward(sprite, partner, game): # FLAG
     return ('bounceForward', sprite.ID, partner.ID)
 
 
+def bounceForwardContinuous(sprite, partner, game): # FLAG
+    """ The partner sprite pushed, so if possible move in the opposite direction. """
+    """ Not implemented yet. Right now the pushing object has sideways and downward direction, where in the game itself the object doesn't move down because the interaction with the floor prevents it. But since its displacement first has a downward element, this is getting passed to 'sprite', and then when 'sprite' does a passiveMovement, it just gets ireflected in its position.
+    Likely fix: make it an activeMovement on 'sprite's' part. Hopefully the events will then process the stepBack.
+    Alternatively you can just hack this to test manually for whether there should be any downward component, and then cancel it before doing an update on sprite."""
+
+    print sprite.rect
+    if sprite.speed is None:
+        sprite.speed = 1.
+    displacement = partner.physics.displacement(partner.rect, partner.lastrect)
+    sprite.orientation = displacement
+    sprite.physics.passiveMovement(sprite)
+    print sprite.rect
+    # embed()
+    # sprite.physics.activeMovement(sprite, displacement)
+    game._updateCollisionDict(sprite)
+    return ('bounceForward', sprite.ID, partner.ID)
+
+
 def conveySprite(sprite, partner, game):
     """ Moves the partner in target direction by some step size. """
     tmp = sprite.lastrect
