@@ -5,7 +5,7 @@ BasicGame
         avatar > BreakoutAvatar speed=2.0
         ball > Missile orientation=DOWN speed=15 color=ORANGE physicstype=NoFrictionPhysics width=0.25 height=0.5
             
-    TerminationSet # from the perspective of player 1 (on the left)
+    TerminationSet
         SpriteCounter stype=goal limit=0 win=True   
         SpriteCounter stype=ball limit=0 win=False
            

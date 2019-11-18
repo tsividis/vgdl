@@ -2,11 +2,11 @@ game = """
 BasicGame
     SpriteSet
         goal > Immovable color=RED
-        avatar > HorizontalAvatar speed=0.35
+        avatar > BreakoutAvatar speed=0.35#HorizontalAvatar speed=0.35
         ball > Missile orientation=DOWN speed=15 color=ORANGE physicstype=NoFrictionPhysics
         lost > Immovable color=BLACK
             
-    TerminationSet # from the perspective of player 1 (on the left)
+    TerminationSet
         SpriteCounter stype=goal limit=0 win=True   
         SpriteCounter stype=ball limit=0 win=False
            
