@@ -554,7 +554,7 @@ class MovingAvatar(VGDLSprite, Avatar):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN, K_a, K_s, K_d, K_w
         res = []
         # res += [RIGHT]
-        if self.alternate_keys:
+        if self.alternate_keys: # momchil fMRI keys!!!
             if   game.keystate[K_d]: res += [RIGHT]
             elif game.keystate[K_a]:  res += [LEFT]
             if   game.keystate[K_w]:    res += [UP]
@@ -564,6 +564,10 @@ class MovingAvatar(VGDLSprite, Avatar):
             elif game.keystate[K_LEFT]:  res += [LEFT]
             if   game.keystate[K_UP]:    res += [UP]
             elif game.keystate[K_DOWN]:  res += [DOWN]
+
+            if len(game.playback_states) > 0 and (game.keystate[K_RIGHT] or game.keystate[K_LEFT] or game.keystate[K_UP] or game.keystate[K_DOWN]):
+                print 'key!'
+                #embed()
         return res
 
     def update(self, game):
@@ -2086,9 +2090,24 @@ def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
 
     return False
 
-def getKL(spriteDistribution1, spriteDistribution2):
-    d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
-    return scipy.stats.entropy(d1,d2)
+# compute KL divergence between prior Q and posterior P distributions over sprites
+# the sprites in Q must all be in P
+# for the new sprites in P that are not in Q, assume uniform prior TODO momchil think about it
+# assumes sprites are independent
+#
+def getKL(spriteDistribution_P, spriteDistribution_Q):
+    #d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()] TODO rm
+    assert all(s in spriteDistribution_P.keys() for s in spriteDistribution_Q.keys())
+    KL = 0 
+    for sprite in spriteDistribution_P.keys():
+        P = [prob for params, prob in spriteDistribution_P[sprite].iteritems()]
+        if sprite not in spriteDistribution_Q.keys():
+            # new sprite -- assume uniform
+            Q = [1] * len(P) 
+        else:
+            Q = [prob for params, prob in spriteDistribution_Q[sprite].iteritems()]
+        KL += scipy.stats.entropy(P, Q) # assume independent sprites
+    return KL
 
 
 def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):

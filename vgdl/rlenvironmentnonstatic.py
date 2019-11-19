@@ -37,7 +37,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     description = "RLEnvironment interface to VGDL."
 
     # If the visualization is enabled, all actions will be reflected on the screen.
-    visualize = False
+    visualize = False 
     # visualize = True
     # In that case, optionally wait a few milliseconds between actions?
     actionDelay = 0
@@ -236,6 +236,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         pass
 
     def _isDone(self, getTermination=False):
+        # TODO momchil rm me
+        #return self._game.ended, self._game.win
+
         # remember reward if the final state ends the game
         # self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==  False) else 1 if x.name=='SpriteCounter' else 2)
         self._game.terminations.sort(key=lambda x: 0 if (x.name=='NoveltyTermination') else 1 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==  False) else 2 if x.name=='SpriteCounter' else 3)
@@ -334,28 +337,169 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-
-        if action in possible_actions:
-            self._game.keystate[action] = True
-
+        revActionDict = {'space': K_SPACE, 'up': K_UP, 'down': K_DOWN, 'left': K_LEFT, 'right': K_RIGHT, 'none': 0}
 
         if self.visualize:
             self._game._clearAll(self.visualize)
 
-        self._game.new_sprites = []
-        # update sprites
-        if onlyavatar:
-            if action != 0:
-                self._avatar.update(self._game)
+
+        if self._game.playback_states:
+            # off-policy learning from human action/state replay
+            # 
+            self._game.new_sprites = [] # momchil: taken care of? TODO no....
+
+            try:
+                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=True)
+            except:
+                print "agent playback is failing!"
+                embed()
+
+            keyPressType = self._game.playback_states[self._game.playback_index]['keyPressType']
+            action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
+            if keyPressType:
+                action = revActionDict[keyPressType] 
+                assert self._game.keystate[action] 
+
+            events = self._game.effectList
+
+            self._game.playback_index += 1
 
         else:
-            for s in self._game:
-                if action == 0 and s == self._avatar:
-                        continue
-                if s not in self._game.kill_list:
-                        s.update(self._game)
 
-        events = self._game._eventHandling()
+            self._game.new_sprites = []
+
+            # update sprites
+            if onlyavatar:
+                if action != 0:
+                    self._avatar.update(self._game)
+
+            else:
+                for s in self._game:
+                    if action == 0 and s == self._avatar:
+                            continue
+                    if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
+                            s.update(self._game)
+
+            events = self._game._eventHandling()
+        '''
+        # momchil: hybrid -- just choose actions from replay
+        if self._game.playback_states:
+            state = self._game.playback_states[self._game.playback_index]
+            keyPressType = state['keyPressType']
+            action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
+            if keyPressType:
+                action = revActionDict[keyPressType] 
+                self._game.keystate[action] = True
+
+            print keyPressType, ' -------------------------------- '
+            if self._game.time >= 5 and not len(state['effectList']) > 0 and not state['keyPressType'] and not state['ended']:
+                print 'w th f'
+                embed()
+
+        else:
+            # default case: agent is playing
+            #
+            if action in possible_actions:
+                self._game.keystate[action] = True  #TODO momchil wtf is this
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #self._game.new_sprites = []
+        ## update sprites
+        #if onlyavatar:
+        #    if action != 0:
+        #        self._avatar.update(self._game)
+
+        #else:
+        #    for s in self._game:
+        #        if action == 0 and s == self._avatar:
+        #                continue
+        #        if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
+        #                s.update(self._game)
+
+
+        #if self._game.playback_states:
+        #    getstate = self._game.getFullState(keyPressType)
+
+        #if self._game.playback_states and self._game.playback_index == 9:
+        #    # BINGO -- this breaks it!! momchil TODO fix!!
+        #    state = self._game.getFullState(keyPressType)
+        #    before = self._game.sprite_groups.copy()
+        #    self._game.setFullState(state, cheap=True)
+        #    after = self._game.sprite_groups.copy()
+
+
+
+        if self._game.playback_states:
+
+            try:
+                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=True, deoffset=True)
+            except:
+                print "agent playback is failing!"
+                embed()
+                assert False
+
+            events = self._game.effectList
+
+
+        #events = self._game._eventHandling()
+
+
+        if self._game.playback_states:
+            print '      _performAction: idx = ', self._game.playback_index
+            print events
+
+            if self._game.playback_index == 9:
+                print 'nine'
+                #embed()
+
+            self._game.playback_index += 1
+
+
+
+
+
+        '''
+
+
+
+
+
+
+        if self._game.playback_states:
+            if len(self._game.collision_eff) != self._game.playback_states[self._game.playback_index - 1]['collision_effLen']:
+                print 'wrong collision_effLen!'
+                embed()
+                assert False
+            if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
+                print 'wrong effectListLen!'
+                embed()
+                assert False
+            if len(self._game.kill_list) != self._game.playback_states[self._game.playback_index - 1]['kill_listLen']: 
+                print 'wrong kill_listLen!'
+                embed()
+                assert False
+            if len(self._game.sprite_groups) != self._game.playback_states[self._game.playback_index - 1]['sprite_groupsLen']: 
+                print 'wrong sprite_groupsLen!'
+                embed()
+                assert False
+            # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
+            #if len(self._game.new_sprites) != self._game.playback_states[self._game.playback_index - 1]['new_spritesLen']:
+            #    print 'wrong new_spritesLen!'
+            #    embed()
+
+        # momchil: save event, destroy self.game, re-init self.game (.reset, etc) from saved state => make sure still works
 
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
@@ -381,7 +525,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
         # print "after adding gravepoints"
         # embed()
-        return events
+        return events, action
 
         # if self.visualize:
         #     self._game._clearAll(self.visualize)
@@ -414,11 +558,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             action = (0,0)
         pre_step_score = self._game.score
         # t1 = time.time()
-        events = self._performAction(action)
+        events, action = self._performAction(action)
         # embed()
         # observation = self._getSensors()
 
         self._game.time+=1
+        print 'time = ', self._game.time, '           game = ', self._game, '      self = ', self
+
         observation = self._getSensors() if return_obs else None
         if getTermination:
             (ended, won, termination) = self._isDone(getTermination=True)
@@ -456,7 +602,17 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             # return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events}
         # else:
             # return {}
-        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
+
+        # momchil: TODO rm 
+        if self._game.playback_states and self._game.playback_index == len(self._game.playback_states):
+            ended = True
+            won = True
+            self._game.ended = ended
+            self._game.win = won
+            print 'ENDED'
+            embed()
+
+        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination, 'action': action}
 
 ## the game in the agent's 'head'
 def defTheoryTest():

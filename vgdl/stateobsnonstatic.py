@@ -257,3 +257,4 @@ class StateObsHandlerNonStatic(object):
             return ns
         else:
             return ns
+

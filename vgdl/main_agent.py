@@ -3,11 +3,12 @@ from core import colorDict, VGDLParser, sys, keyPresses
 from ontology import *
 from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
 SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame
+generateTheoryFromGame, getPosterior
 import os, subprocess, shutil
 from collections import defaultdict
 from hyperparameters import hyperparameter_sets, metacontroller_sets
 from math import log
+from pprint import pprint
 import WBP
 import importlib
 import numpy as np
@@ -33,12 +34,15 @@ class Agent:
         self.gameFilename = gameFilename
         self.gameString = None
         self.levelString = None
+        self.playback_states = None
+        self.record_fMRIRegressors = False
+        self.hypothesesPosterior = None
         self.display_text = False
         self.display_states = False
         self.record_states = True
         self.record_video_info = True
         self.write_video_info = True
-        self.saveMidEpisode = False
+        self.saveMidEpisode = False # momchil - false
         self.filename = None
         self.timestamp = False
         self.task_ID = task_ID
@@ -158,6 +162,8 @@ class Agent:
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
         self.rle = self.rleCreateFunc()
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
+        if self.playback_states:
+            self.rle._game.playback_states = self.playback_states
         return
 
     def initializeRLEFromGame(self):
@@ -333,7 +339,7 @@ class Agent:
     def calculateEntropy(self, theory, spriteDistribution):
         return None
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -364,6 +370,9 @@ class Agent:
             if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
+
+        if self.record_fMRIRegressors:
+            curriculumRegressors = []
 
         # print "timestamp", self.timestamp
         # print "param_ID", self.param_ID
@@ -397,7 +406,27 @@ class Agent:
                 print ""
                 print("Playing level {}".format(n_level+1))
 
-            (self.gameString, self.levelString) = level_game
+            if playback:
+                (self.gameString, self.levelString, self.playback_states) = level_game
+            else:
+                (self.gameString, self.levelString) = level_game
+                self.playback_states = None # TODO momchil undo
+
+            if self.record_fMRIRegressors:
+                self.regressors = {
+                    'spriteKL': [],
+                    'interactionKL': [],
+                    'terminationKL': [],
+                    'sampleKL': [],
+                    'MAPloglik': [],
+                    'MAPlogpost': [],
+                    'theory_change_flag': [],
+                    'sprite_change_flag': [],
+                    'interaction_change_flag': [],
+                    'termination_change_flag': [],
+                    'theoryDist': []
+                }
+
             self.max_nodes = self.starting_max_nodes
             self.stored_max_nodes = self.max_nodes
             win = False
@@ -480,10 +509,15 @@ class Agent:
                 print "in main_agent; playing with flexible_goals"
                 embed()
 
+            if self.record_fMRIRegressors:
+                curriculumRegressors.append(self.regressors)
+
         if make_movie:
             self.makeMovie(play_movie=play_movie)
 
         endtime = time.time()
+
+        return curriculumRegressors
 
     def compactify(self, rle, planner_nodes=0):
         current_time = time.time()
@@ -563,6 +597,7 @@ class Agent:
         # params_to_print_to_video = self.param_ID
         params_to_print_to_video = ''
         game_name_to_print_to_video = self.gameFilename
+
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
 
@@ -673,6 +708,7 @@ class Agent:
             if episodeSaveFile in os.listdir(curriculumDir):
                 try:
                     loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
+
                     self = loadedState['agent']
                     effectsEncountered = loadedState['effectsEncountered']
                     statesEncountered = loadedState['statesEncountered']
@@ -712,6 +748,7 @@ class Agent:
                 if self.saveMidEpisode:
                     self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
                     self.episodeSaveTime = time.time()
+
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             self.max_nodes = self.stored_max_nodes
@@ -740,6 +777,7 @@ class Agent:
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
             p_quitting = p.quitting
             print "planning..."
+            p.max_nodes = 2 # TODO momchil
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
 
@@ -843,6 +881,9 @@ class Agent:
                     action = 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
+                    print 'HYPOTHESIS' # momchil
+                    hypotheses[0].display()
+
                     quitting = True
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle._game.score
@@ -876,6 +917,8 @@ class Agent:
                     plannerNodes = p.total_nodes_opened if i==0 else 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
+                    print 'HYPOTHESIS 2' # momchil
+                    hypotheses[0].display()
 
                     ## For an incomplete ablation
                     if self.total_game_steps+steps > MAX_STEPS:
@@ -906,6 +949,8 @@ class Agent:
                         self.hypotheses = hypotheses
                         break
                     ended, win = self.rle._isDone()
+
+                    #ended = self.rle._game.ended # TODO momchil rm me
 
                     self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
                     if ended:
@@ -975,6 +1020,8 @@ class Agent:
 
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
+
+            ended = self.rle._game.ended # TODO momchil rm me
             
             if ended:
                 self.episodeRecord.insert(0, (win, effects))
@@ -1092,6 +1139,7 @@ class Agent:
             return
         savedState = {'agent':self,
                       'episodeCompactStates': episodeCompactStates}
+       
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
         # f.close()
@@ -1107,6 +1155,7 @@ class Agent:
                       'annealing': annealing
                       }
         filepath = 'savedCurricula/'+filename
+
         with open(filepath, 'wb') as f:
             cloudpickle.dump(savedState, f)
         print "done saving state"
@@ -1171,13 +1220,18 @@ class Agent:
     def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False, hypothesis=None):
         if display and self.produce_printout:
             print "observing for {} steps".format(obsSteps)
+
         if obsSteps>0:
             for i in range(obsSteps):
+
+                if self.record_fMRIRegressors:
+                    spriteDistributionPrev = self.rle._game.spriteDistribution.copy()
+
                 spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                rle.step((0,0))
+                rle.step((0,0))  # TODO momchil ensure this works with replay
                 if self.make_movie or self.record_video_info:
-                    statesEncountered.append(self.rle._game.getFullState(observe_state=True))
+                    statesEncountered.append(self.rle._game.getFullState(observe_state=True)) # momchil
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
                 if self.produce_printout:
@@ -1197,16 +1251,24 @@ class Agent:
                 if hypothesis:
                     rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
                     compactStates[-1]['entropy'] = rle._game.H
+
+                if self.record_fMRIRegressors:
+                    spriteKL = getKL(self.rle._game.spriteDistribution, spriteDistributionPrev)
+                    self.regressors['spriteKL'].append((spriteKL, self.rle._game.time))
         else:
             spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             if hypothesis:
                 rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
+
         return
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
 
         theory_change_flag = False
+
+        if self.record_fMRIRegressors:
+            spriteDistributionPrev = self.rle._game.spriteDistribution.copy()
 
         if not self.skipInduction:
             # t1 = time.time()
@@ -1222,6 +1284,13 @@ class Agent:
 
         lastScore = self.rle._game.score
         res = self.rle.step(action)
+
+        if self.rle._game.playback_states:
+            # off-policy training from human replay
+            #
+            action = res['action']
+        print 'action ============================ ', action
+        pprint(res)
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
@@ -1262,6 +1331,10 @@ class Agent:
         t1 = time.time()
         if not self.skipInduction:
             distributionsHaveChanged = spriteInduction(self.rle._game, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+
+            if self.record_fMRIRegressors:
+                spriteKL = getKL(self.rle._game.spriteDistribution, spriteDistributionPrev)
+                self.regressors['spriteKL'].append((spriteKL, self.rle._game.time))
         else:
             distributionsHaveChanged = False
  
@@ -1348,11 +1421,23 @@ class Agent:
             game_object = Game(spriteInductionResult=sample)
             
             terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
-            trace = (self.finalTimeStepList, terminationCondition)
+            trace = (self.finalTimeStepList, terminationCondition) # momchil do we ever empty finalTimeStepList? across levels/games?
 
             t1 = time.time()
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
             verbose=False, existingTheories=hypotheses))
+
+            if self.record_fMRIRegressors:
+                # calculate postarior of old hypotheses
+                P = getPosterior(self.hypotheses, self.finalTimeStepList)
+                if self.hypothesesPosterior: # posterior on prev timestep
+                    # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
+                    # (need to exclude latest timesteps when computing likelihood though)
+                    sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
+                    self.regressors['sampleKL'].append((sampleKL, self.rle._game.time))
+
+                # calculate posterior using new hypotheses for next timestep
+                self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
 
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
@@ -1374,6 +1459,12 @@ class Agent:
         if theory_change_flag and not distributionsHaveChanged and self.display_text:
             print "changed theory:"
             hypotheses[0].display()
+
+        if self.record_fMRIRegressors:
+            self.regressors['theory_change_flag'].append((theory_change_flag, self.rle._game.time))
+            self.regressors['sprite_change_flag'].append((distributionsHaveChanged, self.rle._game.time))
+            self.regressors['interaction_change_flag'].append((hypotheses[0].__dict__ != self.hypotheses[0].__dict__, self.rle._game.time))
+            self.regressors['termination_change_flag'].append((set(hypotheses[0].terminationSet) != oldTerminationSet, self.rle._game.time))
 
         return hypotheses, theory_change_flag, effects
 
