@@ -1,0 +1,33 @@
+
+
+to install on mac, 
+
+conda deactivate
+conda create -n pedro python=2
+conda activate pedro
+
+brew install ffmpeg
+
+python -m pip install -U pygame --user
+python -m pygame.examples.aliens
+
+pip install numpy
+pip install scipy
+pip install IPython line_profiler ipdb
+python -m examples.gridphysics.aliens
+
+
+also see https://www.pygame.org/wiki/GettingStarted
+
+
+
+pip install pymongo
+
+
+pip install fmri_requirements.txt
+
+
+brew install mongo
+mongorestore
+
+

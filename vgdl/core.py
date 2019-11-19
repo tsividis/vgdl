@@ -1,16 +1,18 @@
+# -*- coding: utf-8 -*-
 '''
 Video game description language -- parser, framework and core game classes.
 
 @author: Tom Schaul
 '''
 import pygame
-from random import choice
+import random
+import hashlib
 from tools import Node, indentTreeParser
 from collections import defaultdict
 from tools import roundedPoints
 from colors import *
 import os, shutil
-import datetime
+from datetime import datetime
 import uuid
 import subprocess
 import glob
@@ -25,22 +27,311 @@ import time
 import os
 import uuid
 from util import getObjectColor
+import json 
+import bson
+import zlib
 
 # ---------------------------------------------------------------------
 #     Constants
 # ---------------------------------------------------------------------
 
 
-disableContinuousKeyPress = True
+disableContinuousKeyPress = False
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
                     (0,1): pygame.K_DOWN, (0,-1): pygame.K_UP}
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar', 0:'none'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 
+# fMRI helpers
+# TODO momchil put somewhere else
+def dispSymbol(symbol, size, color, center, screen):
+    font = pygame.font.SysFont('SegoeUISymbol', size) # TODO init in constructor
+    textsurf = font.render(symbol, True, color) 
+    rect = textsurf.get_rect()
+    rect.center = center
+    screen.blit(textsurf, rect)
+    return rect
+
+def waitForKeypress(clock, key):
+    then = time.time()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+
+            if event.type == pygame.KEYDOWN:
+                if event.unicode == key:
+                    return
+
+        pygame.display.update()
+
+        clock.tick(60)
+
+
 class VGDLParser(object):
     """ Parses a string into a Game object. """
     verbose = False
+
+    @staticmethod
+    def compress(state):
+        return zlib.compress(bson.encode(state))
+
+    @staticmethod
+    def decompress(zstate):
+        return bson.decode(zlib.decompress(zstate))
+
+    @staticmethod
+    def fMRI_showAlphabets(alphabets):
+        # display all sprite symbols as a sanity check
+        #
+        block_size = (30,30)
+        height = len(alphabets)
+        width = max([len(a) for a in alphabets])
+
+        black = (0,0,0)
+        white = (255,255,255)
+
+        # init screen
+        pygame.init()
+        clock = pygame.time.Clock()
+
+        fMRI_screensize = (1200,900)
+        fMRI_screen = pygame.display.set_mode(fMRI_screensize)
+
+        fMRI_bg = pygame.Surface(fMRI_screensize)
+        fMRI_bg.fill(black)
+        fMRI_screen.blit(fMRI_bg, (0, 0))
+
+        from ontology import LIGHTGRAY
+        screensize = (width*block_size[0], height*block_size[1])
+        offset = (int((fMRI_screensize[0] - screensize[0])/2), int((fMRI_screensize[1] - screensize[1])/2))
+        background = pygame.Surface(screensize)
+        background.fill(LIGHTGRAY)
+        fMRI_screen.blit(background, offset)
+
+        for i in range(len(alphabets)):
+            alphabet = alphabets[i]
+            for j in range(len(alphabet)):
+                sym = unichr(alphabet[j])
+                x = j * block_size[0] + offset[0]
+                y = i * block_size[1] + offset[1]
+                center = (x + int(block_size[0]/2), y + int(block_size[1]/2))
+                dispSymbol(sym, int(block_size[1] * 0.9), black, center, fMRI_screen)
+
+        waitForKeypress(clock, ' ')
+
+    @staticmethod
+    def fMRI_playRun(subj, run_id, db, seed):
+        # Play a given fMRI run for given subject
+        #
+
+        black = (0,0,0)
+        white = (255,255,255)
+
+        # init screen
+        pygame.init()
+        clock = pygame.time.Clock()
+
+        fMRI_screensize = (1200,900)
+        fMRI_screen = pygame.display.set_mode(fMRI_screensize)
+
+        fMRI_bg = pygame.Surface(fMRI_screensize)
+        fMRI_bg.fill(black)
+        fMRI_screen.blit(fMRI_bg, (0, 0))
+
+        def dispText(text, fontsize, pos, color=white):
+            font = pygame.font.Font('freesansbold.ttf',fontsize)
+            textsurf = font.render(text, True, color)
+            rect = textsurf.get_rect()
+            rect.center = pos
+            fMRI_screen.blit(textsurf, rect)
+
+        def pauseForDuration(duration):
+            then = time.time()
+            while time.time() - then < duration:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return
+
+                pygame.display.update()
+
+                clock.tick(60)
+
+        def fullScreenText(text, duration, fontsize=80, color=white):
+            fMRI_screen.blit(fMRI_bg, (0, 0))
+            pos = (int(fMRI_screensize[0]/2), int(fMRI_screensize[1]/2))
+            dispText(text, fontsize, pos, color)
+            pauseForDuration(duration)
+
+
+        def displayScore(name, score, win):
+            fMRI_screen.blit(fMRI_bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[1],200)) # TODO super inefficient...
+            dispText(name, 40, (int(fMRI_screensize[0]/2), 40))
+            dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 100))
+            if win is not None:
+                if win == True:
+                    text = 'You WON!'
+                elif win == False:
+                    text = 'You LOST...'
+                elif win == -1: # TODO const momchil
+                    text = 'TIMEOUT'
+                dispText(text, 70, (int(fMRI_screensize[0]/2), 170))
+
+
+        # from https://goshippo.com/blog/measure-real-size-any-python-object/
+	def get_size(obj, seen=None):
+	    """Recursively finds size of objects"""
+	    size = sys.getsizeof(obj)
+	    if seen is None:
+		seen = set()
+	    obj_id = id(obj)
+	    if obj_id in seen:
+		return 0
+	    # Important mark as seen *before* entering recursion to gracefully handle
+	    # self-referential objects
+	    seen.add(obj_id)
+	    if isinstance(obj, dict):
+		size += sum([get_size(v, seen) for v in obj.values()])
+		size += sum([get_size(k, seen) for k in obj.keys()])
+	    elif hasattr(obj, '__dict__'):
+		size += get_size(obj.__dict__, seen)
+	    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+		size += sum([get_size(i, seen) for i in obj])
+	    return size
+
+        #
+        # run run
+        #
+
+        games = subj['games']
+        seed = subj['seed']
+        run = subj['runs'][run_id]
+        blocks = run['blocks']
+
+        fullScreenText('Please keep your head as still as possible', 0, 50)
+        #waitForKeypress(clock, ' ') TODO enable
+
+        fullScreenText('Waiting for scanner trigger...', 0, 50, (150, 150, 150))
+        #waitForKeypress(clock, '=') TODO enable
+
+        run_start_time = time.time()
+        run['scan_start_time'] = run_start_time # the single most important timestamp
+        run_time = 0 # estimated run time; used for correcting 
+        drift = 0
+
+        fullScreenText('+', run['prerun_interval'])
+        run_time += run['prerun_interval']
+
+        for b in range(len(blocks)):
+            block = blocks[b]
+            assert block['block_id'] == b
+
+            game = block['game']
+            interblock_interval = block['interblock_interval']
+            instances = block['instances']
+            descs = game['descs']
+            levels = game['levels']
+            alphabet = game['alphabet']
+            assert games[block['game_id']] == game
+            
+            run['blocks'][b]['start_time'] = time.time()
+            fullScreenText(game['fake_name'], interblock_interval)
+            run_time += interblock_interval
+
+            for i in range(len(instances)):
+                instance = instances[i]
+                assert instance['instance_id'] == i
+
+                desc_id = instance['desc_id']
+                level_id = instance['level_id']
+                duration = instance['duration']
+                interplay_interval = instance['interplay_interval']
+
+                game_str = descs[desc_id]
+                level_str = levels[level_id]
+
+                instance_start_time = time.time() 
+                instance_end_time = instance_start_time + duration - drift # adjust instance duration to correct for drift
+
+                run['blocks'][b]['instances'][i]['start_time'] = instance_start_time 
+
+                for p in range(100): # TODO const
+                    print 'Subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (subj['subj_id'], run_id, b, i, p, game['name'], game['fake_name'], desc_id, level_id)
+
+                    g = VGDLParser().parseGame(game_str)
+                    g.randomizeColors(seed, game_str)
+                    g.assignSymbols(alphabet)
+                    g.buildLevel(level_str, fMRI_screensize)
+
+                    timeleft = instance_end_time - interplay_interval - time.time()
+
+                    play_start_time = time.time() 
+                    dispFn = lambda score, win: displayScore(game['fake_name'], score, win)
+                    win, score, allStates, actions, events = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft)
+                    play_end_time = time.time()
+
+                    #print 'events size: ', get_size(events), ' b for ', len(events), ' states'
+                    #print '  = ', get_size(events)/1000000/(play_end_time - play_start_time), ' MB/s'
+
+                    #print 'states size: ', get_size(allStates), ' b for ', len(allStates), ' states'
+                    #print '  = ', get_size(allStates)/1000000/(play_end_time - play_start_time), ' MB/s'
+
+                    pauseForDuration(interplay_interval/2) # to show message while we save states below (takes a while)
+
+                    then = time.time()
+                    
+                    zstates = VGDLParser.compress({'states': allStates}) # dummy dict
+
+                    #print 'zstates size: ', get_size(zstates), ' b for ', len(allStates), ' states'
+                    #print '  = ', get_size(zstates)/1000000/(play_end_time - play_start_time), ' MB/s'
+
+                    play = {
+                        'subj_id': subj['subj_id'],
+                        'run_id': run_id,
+                        'block_id': b,
+                        'instance_id': i,
+                        'play_id': p,
+                        'game_id': block['game_id'],
+                        'game_name': game['name'],
+                        'fake_name': game['fake_name'],
+                        'desc_id': desc_id,
+                        'level_id': level_id,
+                        'game_str': game_str,
+                        'level_str': level_str,
+                        'start_time': play_start_time,
+                        'end_time': play_end_time,
+                        'win': win,
+                        'score': score,
+                        'zstates': bson.binary.Binary(zstates),
+                        'actions': actions,
+                        'events': events
+                    }
+                    db.plays.insert(play)
+
+                    print 'saving took ', time.time() - then, ' s'
+
+                    pauseForDuration(interplay_interval/2)
+
+                    if time.time() >= instance_end_time - interplay_interval:
+                        break
+
+                run['blocks'][b]['instances'][i]['end_time'] = time.time()
+
+                run_time += duration
+                actual_run_time = time.time() - run_start_time
+                drift = actual_run_time - run_time # correct for temporal drift over time 
+                print 'running run time: ', run_time, actual_run_time, drift 
+
+            run['blocks'][b]['end_time'] = time.time()
+
+        run['postrun_interval_start_time'] = time.time()
+        fullScreenText('+', run['postrun_interval'])
+        run['end_time'] = time.time()
+
+        run['subj_id'] = subj['subj_id'] # important!
+        db.runs.insert(run)
+
 
     @staticmethod
     def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None):
@@ -60,9 +351,31 @@ class VGDLParser(object):
             if playback_states:
                 g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string)
             else:
-                g.startGame(headless, persist_movie)
+                win, score, allStates, _, _ = g.startGame(headless, persist_movie)
 
         return g
+
+    @staticmethod
+    def fMRI_replayGame(game_str, map_str, playback_states):
+        black = (0,0,0)
+        white = (255,255,255)
+
+        # init screen
+        pygame.init()
+        clock = pygame.time.Clock()
+
+        fMRI_screensize = (1200,900)
+        fMRI_screen = pygame.display.set_mode(fMRI_screensize)
+
+        fMRI_bg = pygame.Surface(fMRI_screensize)
+        fMRI_bg.fill(black)
+        fMRI_screen.blit(fMRI_bg, (0, 0))
+
+        g = VGDLParser().parseGame(game_str)
+        g.buildLevel(map_str, fMRI_screensize)
+        g.uiud = uuid.uuid4()
+        g.playback_states = playback_states
+        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen)
 
 
     @staticmethod
@@ -99,6 +412,7 @@ class VGDLParser(object):
                 self.parseTerminations(c.children)
             if c.content == "ConditionalSet":
                 self.parseConditions(c.children)
+
         return self.game
 
     def _eval(self, estr):
@@ -326,7 +640,7 @@ class BasicGame(object):
         self.kill_list=[]
         self.all_killed=[] # All items that have been killed
 
-    def buildLevel(self, lstr):
+    def buildLevel(self, lstr, fMRI_screensize=None):
         from ontology import stochastic_effects
         lines = [l for l in lstr.split("\n") if len(l)>0]
         lengths = map(len, lines)
@@ -339,7 +653,12 @@ class BasicGame(object):
         # rescale pixels per block to adapt to the level
         # self.block_size = max(2,int(800./max(self.width, self.height)))
         self.block_size = 30
-        self.screensize = (self.width*self.block_size, self.height*self.block_size)
+        margin = 0 # TODO momchil where is it ; jk it's padding
+        self.screensize = (self.width*(self.block_size + margin), self.height*(self.block_size + margin)) # TODO undo
+        if fMRI_screensize is not None:
+            self.offset = (int((fMRI_screensize[0] - self.screensize[0])/2), int((fMRI_screensize[1] - self.screensize[1])/2))
+        else:
+            self.offset = (0, 0)
 
         # set up resources
         for res_type, (sclass, args, _) in self.sprite_constr.iteritems():
@@ -361,10 +680,10 @@ class BasicGame(object):
             for col, c in enumerate(l):
                 if c in self.char_mapping:
                     pos = (col*self.block_size, row*self.block_size)
-                    self._createSprite(self.char_mapping[c], pos)
+                    self._createSprite(self.char_mapping[c], pos, offset=self.offset)
                 elif c in self.default_mapping:
                     pos = (col*self.block_size, row*self.block_size)
-                    self._createSprite(self.default_mapping[c], pos)
+                    self._createSprite(self.default_mapping[c], pos, offset=self.offset)
 
 
         self.kill_list=[]
@@ -434,9 +753,58 @@ class BasicGame(object):
 
     def randomizeAvatar(self):
         if len(self.getAvatars()) == 0:
-            self._createSprite(['avatar'], choice(self.emptyBlocks()))
+            self._createSprite(['avatar'], random.choice(self.emptyBlocks()))
 
-    def _createSprite(self, keys, pos):
+    def randomizeColors(self, subj_seed, game_str):
+        keys = []
+        colors = []
+        for key, (sclass, args, _) in self.sprite_constr.iteritems():
+            if 'color' in args:
+                keys.append(key)
+                colors.append(args['color'])
+
+        # TODO momchil doesn't work b/c diff games have diff palettes
+        '''
+        # avatar color is const for given subject
+        random.seed(subj_seed)
+        print 'seed = ', subj_seed
+
+        ai = keys.index('avatar')
+        ci = random.choice(range(len(colors)))
+        print 'ci ', ci
+        self.sprite_constr['avatar'][1]['color'] = colors[ci]
+
+        del keys[ai]
+        del colors[ci]
+        '''
+
+        # all other colors are the same for each subject-game pair
+        game_seed = int(hashlib.sha1(game_str).hexdigest(), 16) % (10 ** 8)
+        random.seed(subj_seed + game_seed)
+
+        random.shuffle(colors)
+        for i in range(len(keys)):
+            key = keys[i]
+            self.sprite_constr[key][1]['color'] = colors[i]
+
+
+    def assignSymbols(self, alphabet):
+        keys = []
+        for key, (sclass, args, _) in self.sprite_constr.iteritems():
+            if 'color' in args:
+                keys.append(key)
+                assert 'symbol' not in args
+
+        alphabet = [unichr(c) for c in alphabet]
+
+        print alphabet
+
+        for i in range(len(keys)):
+            key = keys[i]
+            self.sprite_constr[key][1]['symbol'] = alphabet[i]
+
+
+    def _createSprite(self, keys, pos, offset=(0, 0)):
         res = []
         for key in keys:
 
@@ -455,7 +823,7 @@ class BasicGame(object):
                         break
             if anyother:
                 continue
-            s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, **args)
+            s = sclass(pos=pos, size=(self.block_size, self.block_size), offset=offset, name=key, **args)
             s.stypes = stypes
             if key in self.sprite_groups:
                 self.sprite_groups[key].append(s)
@@ -474,7 +842,7 @@ class BasicGame(object):
     def _createSprite_cheap(self, key, pos):
         """ The same, but without the checks, which speeds things up during load/saving"""
         sclass, args, stypes = self.sprite_constr[key]
-        s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, **args)
+        s = sclass(pos=pos, size=(self.block_size, self.block_size), offset=self.offset, name=key, **args)
         s.stypes = stypes
         if key in self.sprite_groups:
             self.sprite_groups[key].append(s)
@@ -483,19 +851,27 @@ class BasicGame(object):
         self.num_sprites += 1
         return s
 
-    def _initScreen(self, size, headless):
+    def _initScreen(self, size, headless, screen=None, offset=None):
+        if offset is None:
+            offset = (0, 0)
+
         if(headless):
+            assert screen is None
             os.environ["SDL_VIDEODRIVER"] = "dummy"
             pygame.display.init()
             self.screen = pygame.display.set_mode((1,1))
             self.background = pygame.Surface(size)
         else:
             from ontology import LIGHTGRAY
-            pygame.init()
-            self.screen = pygame.display.set_mode(size)
+            if screen is None:
+                pygame.init()
+                self.screen = pygame.display.set_mode(size)
+            else:
+                # fMRI
+                self.screen = screen
             self.background = pygame.Surface(size)
             self.background.fill(LIGHTGRAY)
-            self.screen.blit(self.background, (0,0))
+            self.screen.blit(self.background, offset)
 
     def set_caption(self, text):
         pygame.display.set_caption(str(text))
@@ -581,7 +957,7 @@ class BasicGame(object):
                 obj_list[ob.ID] = {'sprite': sprite, 'position':(ob.rect.left, ob.rect.top), 'features':features, 'type': type_vector}
         return obj_list
 
-    def getFullState(self, as_string=False, observe_state=False):
+    def getFullState(self, as_string=True, observe_state=False, keyPressType=None, event=None): # momchil note: strings so we can dump to json
         """ Return a dictionary that allows full reconstruction of the game state,
         e.g. for the load/save functionality. """
         # TODO: make sure this list is complete/correct -- maybe a naming convention would be easier,
@@ -613,10 +989,15 @@ class BasicGame(object):
               'win': self.win,
               'entropy': self.H,
               'objects': obs,
-              'observe_state':observe_state}
+              'observe_state':observe_state,
+              'dt': datetime.now(),
+              'ts': time.time(),
+              'key': keyPressType,
+              'event': event
+              }
         return fs
 
-    def setFullState(self, fs, as_string=False):
+    def setFullState(self, fs, as_string=True):
         """ Reset the game to be exactly as defined in the fullstate dict. """
         self.reset()
         self.score = fs['score']
@@ -636,8 +1017,8 @@ class BasicGame(object):
                     else:
                         s.__setattr__(a, val)
 
-    def getFullStateColorized(self,as_string=False):
-        fs = self.getFullState(as_string=as_string)
+    def getFullStateColorized(self,as_string=True,keyPressType=None,event=None):
+        fs = self.getFullState(as_string=as_string, keyPressType=keyPressType, event=event)
 
         fs_colorized = deepcopy(fs)
         fs_colorized['objects'] = {}
@@ -948,12 +1329,15 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string=''):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None):
         """
         Main method to display a previously-run game.
         """
-        # ----------- Initialization ---------- #
-        self._initScreen(self.screensize,headless)
+        # ----------- Initialization ----------
+
+
+        self._initScreen(self.screensize,headless,screen,self.offset)
+        self.offset = (0,0) # TODO hack momchil fixme -- b/c sprites are already offset
 
         pygame.display.flip()
         self.reset()
@@ -973,7 +1357,7 @@ class BasicGame(object):
         name = 'tmp_buggy_name'
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
-        timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
+        timestamp = datetime.strftime(datetime.now(), '%Y_%m_%d_%H_%M_%S')
         game_output = "output/{}_{}.txt".format(name, timestamp)
         sprite_output = "output/{}_{}_sprites.txt".format(name,timestamp)
 
@@ -1040,21 +1424,38 @@ class BasicGame(object):
 
             allStates.append(self.getFullState())
 
-            if(make_images):
-                tmp_dir = "images/tmp/"+gameName+"/"
-                img_index = len([d for d in os.listdir(tmp_dir) if d != '.DS_Store'])
-                tmpl = '{tmp_dir}%09d.png'.format(img_index, tmp_dir = tmp_dir)
-                if padding and (i==0 or i==len(self.playback_states)-1): ## add padding to first and last frame.
-                    for j in range(padding):
-                        pygame.image.save(self.screen, tmpl%(img_index+j))
-                else:
-                    pygame.image.save(self.screen, tmpl%img_index)
+            if(make_images or persist_movie):
+
+                if make_images:
+                    tmp_dir = "images/tmp/"+gameName+"/"
+                    img_index = len([d for d in os.listdir(tmp_dir) if d != '.DS_Store'])
+                    tmpl = '{tmp_dir}%09d.png'.format(img_index, tmp_dir = tmp_dir)
+                    if padding and (i==0 or i==len(self.playback_states)-1): ## add padding to first and last frame.
+                        for j in range(padding):
+                            pygame.image.save(self.screen, tmpl%(img_index+j))
+                    else:
+                        pygame.image.save(self.screen, tmpl%img_index)
+
+                if persist_movie:
+                    tmp_dir = "./temp/"
+                    tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
+                    pygame.image.save(self.screen, tmpl%i)
+
                 i+=1
 
             VGDLSprite.dirtyrects = []
-            # allStates.append(self.getFullState())
+            #allStates.append(self.getFullState())
 
             self.playback_index += 1
+
+        if(persist_movie):
+            self.video_file = "./videos/" +  str(self.uiud) + ".mp4"
+            #call = ["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ]
+            call = ["ffmpeg -r 30 -f image2  -i ", tmpl, " -vcodec libx264 -crf 25  -pix_fmt yuv420p ", self.video_file]
+            call = ' '.join(call) 
+            print call
+            subprocess.call(call, shell=True)
+            [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
         terminationCondition = {'ended': True, 'win':win, 'time':self.time}
@@ -1097,12 +1498,12 @@ class BasicGame(object):
     #     return
 
 
-    def startGame(self, headless, persist_movie, make_images=False, make_movie=False):
+    def startGame(self, headless, persist_movie, make_images=False, make_movie=False, screen=None, displayScoreFn=None, fMRI_timeout=None):
         """
         Main method to run game.
         """
         # ----------- Initialization ----------
-        self._initScreen(self.screensize,headless)
+        self._initScreen(self.screensize,headless,screen,self.offset)
         # print "screensize: {}".format(self.screensize)
         pygame.display.flip()
         self.reset()
@@ -1117,6 +1518,8 @@ class BasicGame(object):
 
         lastKeyPress=(0,0,1) # PT: initialize to fake keypress index
         lastKeyPressTime=0 #PT
+        lastKeyPressActualTime = time.time()
+        continuousKeyPressCount = 0
 
         # Logging
         f = sys.argv[0]
@@ -1125,7 +1528,7 @@ class BasicGame(object):
         name = 'tmp_buggy_name'
         gamelog = "{}.log".format(name)
         #logging.basicConfig(filename=gamelog, level=logging.INFO)
-        timestamp = datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d_%H_%M_%S')
+        timestamp = datetime.strftime(datetime.now(), '%Y_%m_%d_%H_%M_%S')
         game_output = "output/{}_{}.txt".format(name, timestamp)
         sprite_output = "output/{}_{}_sprites.txt".format(name,timestamp)
 
@@ -1144,7 +1547,7 @@ class BasicGame(object):
         sprite_types = [Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile]
         self.all_objects = self.getAllObjects() #self.getObjects() # Save all objects, some which may be killed in game
         ##figure out keypress type:
-        disableContinuousKeyPress = all([item.physicstype.__name__=='GridPhysics' for sublist in self.sprite_groups.values() for item in sublist])
+        #disableContinuousKeyPress = all([item.physicstype.__name__=='GridPhysics' for sublist in self.sprite_groups.values() for item in sublist]) momchil: enable for fMRI
 
         self.spriteDistribution = {}
         self.movement_options = {}
@@ -1180,26 +1583,42 @@ class BasicGame(object):
             # get action pressed
             self.keystate = pygame.key.get_pressed()
 
+            keyPressType = None
+
             # # PT: Disables mistaken contiguous key presses, prints to terminal
             if disableContinuousKeyPress and not self.playback_states:
-                keyPressType = None
                 if self.keystate != emptyKeyState:
                     if (self.time-lastKeyPressTime)<2 and self.keystate==lastKeyPress:
                         self.keystate = emptyKeyState
-                    else:
-                        lastKeyPress = self.keystate
-                        # if self.keystate[pygame.K_RETURN] and self.playback_actions:
-                        #     self.keystate = list(self.keystate)
-                        #     self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
-                        #     self.keystate = tuple(self.keystate)
-                        #     self.playback_index += 1
-
-                        if lastKeyPress.index(1) in keyPresses.keys():
-                            keyPressType = keyPresses[lastKeyPress.index(1)]
-                            # print keyPressType
-
 
                     lastKeyPressTime = self.time
+
+            # momchil: slow down initial key press for fMRI
+            if ~disableContinuousKeyPress and not self.playback_states: # allow key hold
+
+                if self.keystate != emptyKeyState: # key pressed
+                        continuousKeyPressCount += 1
+                        if continuousKeyPressCount == 1 or (continuousKeyPressCount > 1 and time.time() - lastKeyPressActualTime > 0.1):
+                            lastKeyPressActualTime = time.time()
+                        else:
+                            self.keystate = emptyKeyState
+                else:
+                    continuousKeyPressCount = 0 # key lifted
+
+            # if, after accounting for continuous key presses, we still have a key press
+            #
+            if self.keystate != emptyKeyState and not self.playback_states:
+                lastKeyPress = self.keystate
+                # if self.keystate[pygame.K_RETURN] and self.playback_actions:
+                #     self.keystate = list(self.keystate)
+                #     self.keystate[actionToKeyPress[self.playback_actions[self.playback_index]]] = True
+                #     self.keystate = tuple(self.keystate)
+                #     self.playback_index += 1
+
+                if lastKeyPress.index(1) in keyPresses.keys():
+                    keyPressType = keyPresses[lastKeyPress.index(1)]
+                    #print keyPressType
+
 
 
             # # load/save handling
@@ -1225,12 +1644,15 @@ class BasicGame(object):
                 keyPressType = keyPressPrev
 
             if keyPressType is not None:
-                self.actions.append(keyPressType)
+                self.actions.append((keyPressType, time.time()))
             collision_objects = set()
 
+            event = None
             if self.effectList:
-                state = self.getFullState()
-                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList, 'gameState': self.getFullStateColorized()}
+                event = {'agentState': agentState, 'agentAction': keyPressType, 'effectList': self.effectList}
+                #event['gameState'] = self.getFullStateColorized() momchil: redundant & too big
+                event['ts'] = time.time()
+                event['dt'] = datetime.now()
                 finalEventList.append(event)
 
                 # Get objects involved in the effectList
@@ -1245,9 +1667,18 @@ class BasicGame(object):
             # Termination #1
             for t in self.terminations:
                 self.ended, win = t.isDone(self)
+
+                timed_out = False
+                if fMRI_timeout and time.time() - t1 > fMRI_timeout:
+                    self.ended = True
+                    timed_out = True
+
                 if self.ended:
-                    if win:
-                        # self.score += 1
+                    if timed_out:
+                        self.win = -1 # TODO momchil const
+                        #self.score += 0 # do not penalize for fMRI timeouts
+                    elif win:
+                        #self.score += 1
                         # winning a game always gives a positive score.
                         # if self.score <= 0:
                         #     self.score = 1
@@ -1261,13 +1692,21 @@ class BasicGame(object):
                         # self.score -=1 ## Added 3/16/17
                         print time.time()-t1, len(self.actions), win, self.score
                         print "Game lost. Score=%s" % self.score
+
                     # np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
-                    allStates.append(self.getFullState())
+
+                    # TODO momchil dedupe / sanity
+                    if displayScoreFn:
+                        displayScoreFn(self.score, self.win)
+                    self._drawAll()
+                    pygame.display.update(VGDLSprite.dirtyrects)
+
+                    allStates.append(self.getFullState(keyPressType=keyPressType, event=event)) # cannot do colorized; playback fails TODO investigate
 
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
                     print "ended in {} steps".format(self.time)
-                    return win, self.score
+                    return win, self.score, allStates, self.actions, finalEventList
                     # pygame.quit()
                     # sys.exit()
                     # break
@@ -1300,9 +1739,12 @@ class BasicGame(object):
                 break
 
             #### in manual game-play mode ####
+            if displayScoreFn:
+                displayScoreFn(self.score, self.win)
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
-            # allStates.append(self.getFullState())
+
+            allStates.append(self.getFullState(keyPressType=keyPressType, event=event)) # cannot do colorized; playback fails TODO investigate
 
             #if(headless):
             if(persist_movie):
@@ -1318,7 +1760,11 @@ class BasicGame(object):
         if(persist_movie):
             print "Creating Movie"
             self.video_file = "./videos/" +  str(self.uiud) + ".mp4"
-            subprocess.call(["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ])
+            #call = ["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ]
+            call = ["ffmpeg -r 30 -f image2  -i ", tmpl, " -vcodec libx264 -crf 25  -pix_fmt yuv420p ", self.video_file]
+            call = ' '.join(call) 
+            print call
+            subprocess.call(call, shell=True)
             [os.remove(f) for f in glob.glob(tmp_dir + "*" + str(self.uiud) + "*")]
 
         # Print entire history of effects
@@ -1353,7 +1799,7 @@ class BasicGame(object):
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
         #print len(self.actions), win, self.score
-        return win, self.score
+        return win, self.score, allStates, self.actions, finalEventList
 
 
     def getPossibleActions(self):
@@ -1453,15 +1899,18 @@ class VGDLSprite(object):
     def __hash__(self):
         return hash(self.ID)
 
-    def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, img=None, **kwargs):
+    def __init__(self, pos, size=(10,10), offset=(0,0), color=None, speed=None, cooldown=None, physicstype=None, img=None, symbol=None, **kwargs):
         from ontology import GridPhysics
+        pos = (pos[0] + offset[0], pos[1] + offset[1])  # TODO momchil params
         self.rect = pygame.Rect(pos, size)
+        self.offset = offset
         self.x = pos[0]
         self.y = pos[1]
         self.img_path = img
         if img is not None:
             self.draw_arrow = False
         self.lastrect = self.rect.copy()
+        self.symbol = symbol
         self.physicstype = physicstype or self.physicstype or GridPhysics
         self.physics = self.physicstype()
         self.physics.gridsize = size
@@ -1480,7 +1929,7 @@ class VGDLSprite(object):
         else:
             self.colorName = str(self.color)
 
-        #self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
+        #self.color = color or self.color or (random.choice(self.COLOR_DISC), random.choice(self.COLOR_DISC), random.choice(self.COLOR_DISC))
         for name, value in kwargs.iteritems():
             try:
                 self.__dict__[name] = value
@@ -1540,6 +1989,8 @@ class VGDLSprite(object):
         if self.img_path != None and '.png' not in self.img_path:
             self.img_path = self.img_path+'.png'
 
+        # colored squares
+        #
         if self.is_avatar:
             '''
             rounded = roundedPoints(shrunk)
@@ -1556,7 +2007,7 @@ class VGDLSprite(object):
                 pygame.draw.rect(screen, self.color, shrunk)
             # pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
             r = self.rect.copy()
-        elif not self.is_static:
+        elif not self.is_static or self.symbol is not None:
             #rounded = roundedPoints(shrunk)
             #pygame.draw.polygon(screen, self.color, rounded)
             if self.img_path != None:
@@ -1577,10 +2028,22 @@ class VGDLSprite(object):
                 #    _drawImage(gphx, game, r)
             else:
                 #print("No we didn't get image")
-                r = screen.fill(self.color, shrunk)
+                r = screen.fill(self.color, shrunk) # momchil: overwrites symbols
+
         if self.resources:
             self._drawResources(game, screen, shrunk)
         VGDLSprite.dirtyrects.append(r)
+
+        if self.symbol is not None:
+            # symbols (fMRI)
+            #
+            # get font from https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm
+            color = (255 - self.color[0], 255 - self.color[1], 255 - self.color[2])
+
+            rect = dispSymbol(self.symbol, int(self.rect.height * 0.7), color, self.rect.center, screen)
+            r = rect.copy() # TODO just rect?
+            VGDLSprite.dirtyrects.append(r)
+
 
     def _drawResources(self, game, screen, rect):
         """ Draw progress bars on the bottom third of the sprite """
@@ -1601,7 +2064,10 @@ class VGDLSprite(object):
             offset += barheight
 
     def _clear(self, screen, background, double=False):
-        r = screen.blit(background, self.rect, self.rect)
+        rect = self.rect.copy() # fMRI hack: since we offset the sprites, we need to un-offset when referencing in the surface's coordinate frame
+        rect.left -= self.offset[0]
+        rect.top -= self.offset[1]
+        r = screen.blit(background, self.rect, rect)
         VGDLSprite.dirtyrects.append(r)
         if double:
             r = screen.blit(background, self.lastrect, self.lastrect)

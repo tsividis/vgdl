@@ -1,0 +1,1 @@
+{"options":{},"indexes":[{"v":1,"key":{"_id":1},"name":"_id_","ns":"heroku_7lzprs54.subjects"},{"v":1,"key":{"createdAt":1},"name":"createdAt_1","ns":"heroku_7lzprs54.subjects","expireAfterSeconds":3600,"background":true}]}
