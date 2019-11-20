@@ -7,7 +7,7 @@ from IPython import embed
 import argparse
 import subprocess
 from util import str2bool
-from make_gameplay_videos import *
+#from make_gameplay_videos import *
 from contextlib import contextmanager
 import sys
 
@@ -233,7 +233,6 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
 # embed()
 play_trainset(hyperparameter_sets, hyperparameter_index, args)
-
 
 
 # fullData = processModelData(dirName,games_to_make=['tiny_zelda'])

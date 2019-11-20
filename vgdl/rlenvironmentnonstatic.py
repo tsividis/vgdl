@@ -47,6 +47,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, **kwargs):
         game = _createVGDLGame( gameDef, levelDef )
+        #print("after")
+        #print(gameDef)
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
         self.visualize = visualize

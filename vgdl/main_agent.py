@@ -155,6 +155,8 @@ class Agent:
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
+        #print("before")
+        #print(self.gameString)
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
         self.rle = self.rleCreateFunc()
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
@@ -382,7 +384,7 @@ class Agent:
                 self = loadedState['agent'] ## load saved agent
                 ##self.filename will get overloaded here.
                 print "loaded curriculum state"
-            except:
+            except KeyError:
                 os.remove(curriculumDir+'/'+episodeSaveFile)
                 print "failed to load curriculum state. deleting corrupted file and starting from scratch"
 
@@ -1112,7 +1114,7 @@ class Agent:
         print "done saving state"
 
     def loadState(self, filename):
-        with open(filename, 'r') as f:
+        with open(filename, 'rb') as f:
             loadedState = cloudpickle.load(f)
         # f.close()
         return loadedState

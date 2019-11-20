@@ -715,7 +715,8 @@ class Theory(object):
 		existing_classes = [key for key in self.classes if key[0] == 'c']
 		max_num = max([int(c[1:]) for c in existing_classes])
 		class_num = max_num+1
-		newClassName = 'c'+str(class_num)
+		newClassName = color
+		print(newClassName)
 		return newClassName
 
 	def addSpriteToTheory(self, color, vgdlType='default', args=None):
