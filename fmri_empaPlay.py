@@ -7,12 +7,72 @@ import json
 import sys
 import csv
 from collections import defaultdict
-from vgdl import core, agent
+from vgdl import core
 from IPython import embed
+from vgdl.main_agent import Agent
 
-# USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id*] [instance_id*] [play_id*]
+# USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
 # * - optional
 # copied from fmri_replay.py
+
+# from load_games.py TODO dedupe
+hyperparameter_sets = [
+    {'idx'           : 0,
+     'short_horizon' : False,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 1,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10.,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 2,
+     'short_horizon' : False,
+     'first_order_horizon': False,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1,
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 3,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': 10, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 50,
+     },
+    {'idx'           : 4,
+     'short_horizon' : True,
+     'first_order_horizon': True,
+     'sprite_first_alpha': 10000,
+     'sprite_second_alpha': 100,
+     'sprite_negative_mult': .1, #normally .1
+     'multisprite_first_alpha': 10000,
+     'multisprite_second_alpha': 100,
+     'novelty_first_alpha': 5000,
+     'novelty_second_alpha': 10,
+     }
+]
 
 client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
@@ -32,7 +92,7 @@ if __name__ == '__main__':
 
     plays = db.plays.find(query)
 
-    level_game_pairs = []
+    all_pairs = {}
 
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
@@ -42,7 +102,6 @@ if __name__ == '__main__':
         assert game_str == play['game_str']
         assert level_str == play['level_str']
 
-        # TODO video name formatted 
         print 'EMPA playing subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
         #zstates = play['zstates']
@@ -51,11 +110,18 @@ if __name__ == '__main__':
 
 
         #core.VGDLParser.fMRI_replayGame(play['game_str'], play['level_str'], states)
-        level_game_pairs.append([play['game_str'], play['level_str']])
+
+        if game['name'] not in all_pairs:
+            all_pairs[game['name']] = [] 
+        all_pairs[game['name']].append([play['game_str'], play['level_str']])
 
 
-    embed()
 
-    agent = agent.Agent('full', None)
-    agent.testCurriculum(level_game_pairs=level_game_pairs)
+    for game_name, level_game_pairs in all_pairs.iteritems():
+        print 'Playing game ', game_name, ': ', len(level_game_pairs), ' instances'
 
+        # defaults from load_games.py 
+        # python -m vgdl.load_games --game_name tiny_zelda
+        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
+
+        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False)
