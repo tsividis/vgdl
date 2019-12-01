@@ -957,7 +957,7 @@ class BasicGame(object):
                 obj_list[ob.ID] = {'sprite': sprite, 'position':(ob.rect.left, ob.rect.top), 'features':features, 'type': type_vector}
         return obj_list
 
-    def getFullState(self, as_string=True, observe_state=False, keyPressType=None, event=None): # momchil note: strings so we can dump to json
+    def getFullState(self, as_string=True, observe_state=False, keyPressType=None): # momchil note: strings so we can dump to json
         """ Return a dictionary that allows full reconstruction of the game state,
         e.g. for the load/save functionality. """
         # TODO: make sure this list is complete/correct -- maybe a naming convention would be easier,
@@ -992,8 +992,10 @@ class BasicGame(object):
               'observe_state':observe_state,
               'dt': datetime.now(),
               'ts': time.time(),
+              'gt': self.time,
               'key': keyPressType,
-              'event': event
+              'effectList': self.effectList,
+              'new_sprites': self.new_sprites
               }
         return fs
 
@@ -1017,8 +1019,8 @@ class BasicGame(object):
                     else:
                         s.__setattr__(a, val)
 
-    def getFullStateColorized(self,as_string=True,keyPressType=None,event=None):
-        fs = self.getFullState(as_string=as_string, keyPressType=keyPressType, event=event)
+    def getFullStateColorized(self,as_string=True,keyPressType=None):
+        fs = self.getFullState(as_string=as_string, keyPressType=keyPressType)
 
         fs_colorized = deepcopy(fs)
         fs_colorized['objects'] = {}
@@ -1594,7 +1596,7 @@ class BasicGame(object):
                     lastKeyPressTime = self.time
 
             # momchil: slow down initial key press for fMRI
-            if ~disableContinuousKeyPress and not self.playback_states: # allow key hold
+            if not disableContinuousKeyPress and not self.playback_states: # allow key hold
 
                 if self.keystate != emptyKeyState: # key pressed
                         continuousKeyPressCount += 1
@@ -1701,7 +1703,7 @@ class BasicGame(object):
                     self._drawAll()
                     pygame.display.update(VGDLSprite.dirtyrects)
 
-                    allStates.append(self.getFullState(keyPressType=keyPressType, event=event)) # cannot do colorized; playback fails TODO investigate
+                    allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
 
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
@@ -1744,7 +1746,7 @@ class BasicGame(object):
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
 
-            allStates.append(self.getFullState(keyPressType=keyPressType, event=event)) # cannot do colorized; playback fails TODO investigate
+            allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
 
             #if(headless):
             if(persist_movie):

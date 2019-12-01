@@ -13,7 +13,7 @@ from vgdl.main_agent import Agent
 
 # USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
 # * - optional
-# copied from fmri_replay.py
+# copied from fmri_empaPlay.py
 
 # from load_games.py TODO dedupe
 hyperparameter_sets = [
@@ -93,7 +93,6 @@ if __name__ == '__main__':
     plays = db.plays.find(query)
 
     all_pairs = {}
-    all_regressors = {}
 
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
@@ -105,22 +104,14 @@ if __name__ == '__main__':
 
         print 'EMPA playing subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
+        zstates = play['zstates']
+        states = core.VGDLParser.decompress(zstates)
+        states = states['states'] # dummy dict
+
+
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
-            all_regressors[game['name']] = [] 
-        all_pairs[game['name']].append([play['game_str'], play['level_str']])
-
-        # pre-populate regressors object for each play with identifier info
-        # extract the regressors later in Agent
-        reg = {
-            '_play_mongo_id': play['_id'],
-            'subj_id': play['subj_id'],
-            'run_id': play['run_id'],
-            'block_id': play['block_id'],
-            'instance_id': play['instance_id'],
-            'play_id': play['play_id']
-        }
-        all_regressors[game['name']].append(reg)
+        all_pairs[game['name']].append([play['game_str'], play['level_str'], states]) # TODO OOM?
 
 
 
@@ -130,18 +121,8 @@ if __name__ == '__main__':
     for game_name, level_game_pairs in all_pairs.iteritems():
         print 'Playing game ', game_name, ': ', len(level_game_pairs), ' instances'
 
-        regs = all_regressors[game_name] 
-        assert len(regs) == len(level_game_pairs)
-
         # defaults from load_games.py 
         # python -m vgdl.load_games --game_name tiny_zelda
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
 
-        agent.record_fMRIRegressors = True
-        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False)
-        assert(len(self.curriculumRegressors) == len(regs))
-
-        for i in range(len(agent.curriculumRegressors)): # for each play
-            reg = regs[i]
-            reg['regressors'] = agent.curriculumRegressors[i]
-            db.regressors.insert(reg)
+        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, playback=True)

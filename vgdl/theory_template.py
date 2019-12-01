@@ -243,6 +243,21 @@ class ruleCluster(object):
 def printInteractionSet(interactionSet):
 		print [i.display() for i in interactionSet]
 
+# calculate posterior of set of hypotheses
+#
+def getPosterior(hypotheses, timesteps):
+    posts = [0] * len(hypotheses)
+
+    logliks = [sum([h.likelihood(ts) for ts in timesteps]) for h in hypotheses]
+    liks = np.exp(logliks)
+
+    priors = [h.prior() for h in hypotheses]
+
+    posts = np.multiply(liks, priors)
+    posts = np.divide(posts, sum(posts))
+
+    return posts.tolist()
+
 class Theory(object):
 	"""
 	A VGDL description of a game. Corresponds to a 'model' in the TBRL write-up.
