@@ -259,16 +259,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         else:
             return False, False
 
-    """
-    def sensors_profiler(self, state=None):
-        lp = LineProfiler()
-        lp_wrapper = lp(self._getSensors)
-        output = lp_wrapper(state)
-        lp.print_stats()
-
-        return output
-    """
-
     def _getSensors(self, state=None):
         # Get position and orientation
         if state is None:
@@ -383,41 +373,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # embed()
         return events
 
-        # if self.visualize:
-        #     self._game._clearAll(self.visualize)
-
-        # # update screen
-        # if self.visualize:
-        #     self._game._drawAll()
-        #     pygame.display.update(VGDLSprite.dirtyrects)
-        #     VGDLSprite.dirtyrects = []
-        #     pygame.time.wait(self.actionDelay)
-
-        # if self.recordingEnabled:
-        #     self._previous_state = self._last_state
-        #     self._last_state = self.getState()
-        #     self._allEvents.append((self._previous_state, action, self._last_state))
-
-    """
-    def step_profiler(self, action):
-        lp = LineProfiler()
-        lp_wrapper = lp(self.step)
-        output = lp_wrapper(action)
-        lp.print_stats()
-
-        return output
-    """
-
     def step(self, action, return_obs=False, getTermination=False, getEffectList=False):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
-        # t1 = time.time()
         events = self._performAction(action)
-        # embed()
-        # observation = self._getSensors()
-
         self._game.time+=1
         observation = self._getSensors() if return_obs else None
         if getTermination:
@@ -451,71 +412,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         self._game.positionDict[loc].append(sprite)
                     else:
                         self._game.positionDict[loc] = [sprite]
-        # print time.time()-t1
-        # if getEffectList:
-            # return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events}
-        # else:
-            # return {}
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
-
-## the game in the agent's 'head'
-def defTheoryTest():
-    from examples.gridphysics.theorytest import game, level
-    print level[0]
-    print game[0]
-    return (game, level)
-
-def defVirtualGame():
-    from examples.gridphysics.virtualGame import game, level
-    return (game, level)
-
-def defVirtualGame2():
-    from examples.gridphysics.virtualGame2 import game, level
-    return (game, level)
-
-def defMaze():
-    from examples.gridphysics.mazes import maze_game, maze_level_1
-    return( maze_game, maze_level_1 )
-
-def defSimpleGame1():
-    from examples.gridphysics.simpleGame1 import game, level
-    return (game, level)
-
-def defSimpleGame3():
-    from examples.gridphysics.simpleGame3 import push_game, box_level
-    return (push_game, box_level)
-
-def defSimpleGame4(r=False):
-    if r:
-        from examples.gridphysics.simpleGame4 import game, level1, level2, level3
-        level = random.choice([level1, level2, level3])
-    else:
-        from examples.gridphysics.simpleGame4 import game, level
-    return (game, level)
-
-def defSimpleGame5():
-    from examples.gridphysics.simpleGame5 import game, level
-    return (game, level)
-
-def defSimpleGame_missile():
-    from examples.gridphysics.simpleGame_missile import game, level
-    return (game, level)
-
-def defspriteInduction4():
-    from examples.gridphysics.spriteInduction4 import game, level
-    return (game, level)
-
-def deftextTheory():
-    from examples.gridphysics.textTheory import game, level
-    return (game, level)
-
-def defFrogs():
-    from examples.gridphysics.frogs import frog_game, frog_level
-    return (frog_game, frog_level)
-
-def defAliens():
-    from examples.gridphysics.aliens import aliens_game, aliens_level
-    return (aliens_game, aliens_level)
 
 def try_int(s):
     "Convert to integer if possible."
@@ -562,36 +459,6 @@ def _createVGDLGame( gameSpec, levelSpec ):
     game.uiud = uuid.uuid4()
     return game
 
-def playTestMaze():
-    game = _createVGDLGame( *defMaze() )
-    headless = False
-    persist_movie = False
-    game.startGame(headless,persist_movie)
-
-def playTestSimpleGame1():
-    game = _createVGDLGame( *defSimpleGame1() )
-    headless = False
-    persist_movie = False
-    game.startGame(headless,persist_movie)
-
-def playTestSimpleGame3():
-    game = _createVGDLGame( *defSimpleGame3() )
-    headless = False
-    persist_movie = False
-    game.startGame(headless,persist_movie)
-
-def playTestFrogs():
-    game = _createVGDLGame( *defFrogs() )
-    headless = False
-    persist_movie = False
-    game.startGame(headless,persist_movie)
-
-def playTestAliens():
-    game = _createVGDLGame( *defAliens() )
-    headless = False
-    persist_movie = False
-    game.startGame(headless,persist_movie)
-
 # Test some of the observation and action specs
 def testSpecs():
     game = _createVGDLGame( *defMaze() )
@@ -627,68 +494,20 @@ def _verify( obs, targetObs ):
         return False
     return True
 
-##TODO: Add these functions here to make a new game.
-## That is, Make the def createRLSimpleGame1...
-##          and define defSimpleGame1...
-## Star in these args unzips the tuple.
-# simple maze test, moved to goal and win
-
-
 def createMindEnv(game, level, output=False, obsType=OBSERVATION_GLOBAL ):
     if output:
         print game
         print level
     return RLEnvironmentNonStatic( game, level, observationType=obsType )
 
-def createRLVirtualGame( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defVirtualGame(), observationType=obsType )
-
-def createRLVirtualGame2( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defVirtualGame2(), observationType=obsType )
-
-def createRLMaze( obsType=OBSERVATION_LOCAL ):
-    return RLEnvironmentNonStatic( *defMaze(), observationType=obsType )
-
-def createRLSimpleGame1( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defSimpleGame1(), observationType=obsType )
-
-def createRLSimpleGame3( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defSimpleGame3(), observationType=obsType )
-
-def createRLSimpleGame4( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defSimpleGame4(r=False), observationType=obsType )
-
-def createRLSimpleGame4_random( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defSimpleGame4(r=True), observationType=obsType )
-
-def createRLSimpleGame5( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defSimpleGame5(), observationType=obsType )
-
-def createRLSimpleGame_missile( obsType=OBSERVATION_GLOBAL ):
-    return RLEnvironmentNonStatic( *defSimpleGame_missile(), observationType=obsType )
-
-def createRLspriteInduction4(obsType = OBSERVATION_GLOBAL):
-    return RLEnvironmentNonStatic( *defspriteInduction4(), observationType=obsType)
-
-def createRLtextTheory(obsType = OBSERVATION_GLOBAL):
-    return RLEnvironmentNonStatic( *deftextTheory(), observationType=obsType)
-
-def createRLFrogs( obsType=OBSERVATION_LOCAL ):
-    return RLEnvironmentNonStatic( *defFrogs(), observationType=obsType )
-
-def createRLAliens( obsType=OBSERVATION_LOCAL ):
-    return RLEnvironmentNonStatic( *defAliens(), observationType=obsType )
-
 def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     game_file = importlib.import_module(filename)
     return RLEnvironmentNonStatic(game_file.game, game_file.level, \
             observationType = obsType)
 
-
 def createRLInputGameFromStrings(game, level):
     return RLEnvironmentNonStatic(game, level, \
             observationType = OBSERVATION_GLOBAL)
-
 
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLMaze( obsType )
@@ -735,117 +554,6 @@ def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
         if verify:
             _verify( res, {'pcontinue': 0, 'reward': 1, 'observation': [ 0.,  1.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.]} )
 
-def testSimpleGame1(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
-    rle = createRLSimpleGame1 ( obsType )
-
-    # uncomment following two lines to see the walk (causes internal warning)
-    #rle.visualize = True
-    for i in range(0,numEpisodes):
-
-        if reuseGame:
-            # Purely for testing: reuse the game and by calling _postInitReset(True).
-            # This should be faster but self.setState(_initstate) in _postInitReset()
-            # causes the game to slow down with hunreds of calls.
-             rle._postInitReset(True)
-        else:
-            # Re-create the game.
-            rle = createRLSimpleGame1( obsType )
-
-        # rle = createRLSimpleGame1( obsType )
-        print "in testSimpleGame1"
-        embed()
-
-
-
-def testFrogs(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
-    rle = createRLFrogs ( obsType )
-
-    # uncomment following two lines to see the walk (causes internal warning)
-    #rle.visualize = True
-    for i in range(0,numEpisodes):
-
-        if reuseGame:
-            # Purely for testing: reuse the game and by calling _postInitReset(True).
-            # This should be faster but self.setState(_initstate) in _postInitReset()
-            # causes the game to slow down with hunreds of calls.
-             rle._postInitReset(True)
-        else:
-            # Re-create the game.
-            rle = createRLFrogs( obsType )
-
-        # rle = createRLSimpleGame1( obsType )
-        print "in testFrogs"
-        embed()
-
-def testSimpleGame_missile(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
-    rle = createRLSimpleGame_missile( obsType )
-
-    # uncomment following two lines to see the walk (causes internal warning)
-    #rle.visualize = True
-    for i in range(0,numEpisodes):
-
-        if reuseGame:
-            # Purely for testing: reuse the game and by calling _postInitReset(True).
-            # This should be faster but self.setState(_initstate) in _postInitReset()
-            # causes the game to slow down with hunreds of calls.
-             rle._postInitReset(True)
-        else:
-            # Re-create the game.
-            rle = createRLSimpleGame1( obsType )
-
-        # rle = createRLSimpleGame1( obsType )
-        print "in testSimpleGame1"
-        embed()
-
-def testAliens(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
-    rle = createRLAliens ( obsType )
-
-    # uncomment following two lines to see the walk (causes internal warning)
-    #rle.visualize = True
-    for i in range(0,numEpisodes):
-
-        if reuseGame:
-            # Purely for testing: reuse the game and by calling _postInitReset(True).
-            # This should be faster but self.setState(_initstate) in _postInitReset()
-            # causes the game to slow down with hunreds of calls.
-             rle._postInitReset(True)
-        else:
-            # Re-create the game.
-            rle = createRLAliens( obsType )
-
-        print "in testAliens"
-        embed()
-
-        # res = rle.step(0) #up
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        # res = rle.step(1) #left (there's a wall so expect no change in observations)
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        # res = rle.step(3) #right
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-
-        # # Hop backwards and forwards
-        # for j in range (0,int(numJogOnSpot)):
-        #     res = rle.step(1) #left
-        #     if verify:
-        #         _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        #     res = rle.step(3) #right
-        #     if verify:
-        #         _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-
-        # res = rle.step(3) #right
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.,  0.]} )
-        # res = rle.step(3) #right
-        # if verify:
-        #     _verify( res, {'pcontinue': 1, 'reward': 0, 'observation': [ 0.,  0.,  0.,  0.,  1.,  0.,  1.,  0.,  0.,  0.]} )
-        # res = rle.step(0) #up
-        # if verify:
-        #     _verify( res, {'pcontinue': 0, 'reward': 1, 'observation': [ 0.,  1.,  0.,  0.,  1.,  0.,  0.,  0.,  0.,  0.]} )
-
-
 def defaultTest():
     print("testSpecs()")
     testSpecs()
@@ -859,7 +567,6 @@ def defaultTest():
     testMaze(1, 2, True, False, OBSERVATION_LOCAL)
 
 if __name__ == "__main__":
-    # playTestSimpleGame1()
     parser = argparse.ArgumentParser()
     parser.add_argument("--numEpisodes", default=1, help="Number of episodes to run",
                     type=int)
