@@ -67,7 +67,6 @@ class VGDLEnvAndres(object):
                     ['agent_type', 'subject_ID', 'modelrun_ID', 'game_name', 'game_level', 'episode_number', 'event_name',
                      'count'])
 
-
     ### For Gym API
     def set_level(self, intended_level, intended_steps):
         self.Env.lvl = intended_level
@@ -77,6 +76,9 @@ class VGDLEnvAndres(object):
     def get_level(self):
         return self.Env.lvl
 
+    def check_that_avatar_is_alive(self):
+    	return self.Env.check_that_avatar_is_alive()
+
     def step(self, action):
         if self.steps>= 1000000:
             sys.exit()
@@ -84,7 +86,8 @@ class VGDLEnvAndres(object):
         self.episode_steps += 1
         self.append_gif()
         self.reward , self.game_over, self.win = self.Env.step(action)
-        if len(self.Env.current_env._game.sprite_groups['avatar']) > 0:
+
+        if self.check_that_avatar_is_alive():
             self.avatar_position_data['episodes'][-1].append((self.Env.current_env._game.sprite_groups['avatar'][0].rect.left,
 			self.Env.current_env._game.sprite_groups['avatar'][0].rect.top,
 			self.Env.current_env._game.time,
@@ -217,6 +220,9 @@ class VGDLEnv():
 		self.current_env = self.env_list[lvl]
 		self.current_env.softReset()
 
+	def check_that_avatar_is_alive(self):
+		return self.current_env.check_that_avatar_is_alive()
+
 	def step(self, action):
 
 		prev_score = self.current_env._game.score
@@ -261,7 +267,6 @@ class VGDLEnv():
 			rle.visualize = True
 			if headless:
 				os.environ["SDL_VIDEODRIVER"] = "dummy"
-			#pdb.set_trace()
 			pygame.init()
 
 			return rle

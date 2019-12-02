@@ -414,6 +414,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         self._game.positionDict[loc] = [sprite]
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
 
+    def check_that_avatar_is_alive(self):
+        return len(self._game.sprite_groups['avatar']) > 0
+
 def try_int(s):
     "Convert to integer if possible."
     try: return int(s)
