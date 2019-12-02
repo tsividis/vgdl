@@ -3,7 +3,7 @@ from WBP import *
 import time
 from termcolor import colored
 
-def translateEvents(events, all_objects, rle):
+def translate_events(events, all_objects, rle):
 	if events is None:
 		return None
 
@@ -46,7 +46,7 @@ def translateEvents(events, all_objects, rle):
 			elif len(event)==2:
 				outlist.append((event[0], get_object_color(event[1])))
 		except:
-			print "translateEvents failed"
+			print "translate_events failed"
 			embed()
 
 	#Make sure events in timestep are unique (don't want to double-count things)

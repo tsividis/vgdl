@@ -16,7 +16,7 @@ import cPickle, cloudpickle, pickle
 import time
 from datetime import datetime
 import copy
-from metaplanner import translateEvents, observe
+from metaplanner import translate_events, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
