@@ -138,10 +138,10 @@ if __name__ == '__main__':
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
 
         agent.record_fMRIRegressors = True
-        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False)
-        assert(len(self.curriculumRegressors) == len(regs))
+        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False)
+        assert(len(curriculumRegressors) == len(regs))
 
-        for i in range(len(agent.curriculumRegressors)): # for each play
+        for i in range(len(curriculumRegressors)): # for each play
             reg = regs[i]
-            reg['regressors'] = agent.curriculumRegressors[i]
+            reg['regressors'] = curriculumRegressors[i]
             db.regressors.insert(reg)

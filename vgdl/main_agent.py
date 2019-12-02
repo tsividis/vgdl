@@ -35,7 +35,6 @@ class Agent:
         self.levelString = None
         self.playback_states = None
         self.record_fMRIRegressors = False
-        self.curriculumRegressors = [] 
         self.hypothesesPosterior = None
         self.display_text = False
         self.display_states = False
@@ -372,7 +371,7 @@ class Agent:
             os.makedirs("images/tmp/"+self.gameFilename)
 
         if self.record_fMRIRegressors:
-            self.curriculumRegressors = [] # TODO (momchil) local var?
+            curriculumRegressors = []
 
         # print "timestamp", self.timestamp
         # print "param_ID", self.param_ID
@@ -510,12 +509,14 @@ class Agent:
                 embed()
 
             if self.record_fMRIRegressors:
-                self.curriculumRegressors.append(self.regressors)
+                curriculumRegressors.append(self.regressors)
 
         if make_movie:
             self.makeMovie(play_movie=play_movie)
 
         endtime = time.time()
+
+        return curriculumRegressors
 
     def compactify(self, rle, planner_nodes=0):
         current_time = time.time()
@@ -1410,7 +1411,7 @@ class Agent:
             game_object = Game(spriteInductionResult=sample)
             
             terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
-            trace = (finalTimeStepList, terminationCondition) # momchil do we ever empty finalTimeStepList? across levels/games?
+            trace = (self.finalTimeStepList, terminationCondition) # momchil do we ever empty finalTimeStepList? across levels/games?
 
             t1 = time.time()
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
@@ -1418,16 +1419,15 @@ class Agent:
 
             if self.record_fMRIRegressors:
                 # calculate postarior of old hypotheses
-                P = [h.posterior(finalTimeStepList) for h in self.hypotheses]
+                P = getPosterior(self.hypotheses, self.finalTimeStepList)
                 if self.hypothesesPosterior: # posterior on prev timestep
                     # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
                     # (need to exclude latest timesteps when computing likelihood though)
                     sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
-                    regressors['sampleKL'].append(sampleKL, self.rle._game.time))
+                    self.regressors['sampleKL'].append((sampleKL, self.rle._game.time))
 
                 # calculate posterior using new hypotheses for next timestep
-                self.hypothesesPosterior = [h.posterior(finalTimeStepList) for h in hypotheses]
-
+                self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
 
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True

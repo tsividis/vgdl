@@ -994,8 +994,8 @@ class BasicGame(object):
               'ts': time.time(),
               'gt': self.time,
               'key': keyPressType,
-              'effectList': self.effectList,
-              'new_sprites': self.new_sprites
+           #   'effectList': self.effectList,
+           #   'new_sprites': self.new_sprites
               }
         return fs
 
