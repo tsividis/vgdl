@@ -1,3 +1,4 @@
+import collections
 import csv
 import cPickle
 import itertools
@@ -26,6 +27,11 @@ def normalize(array):
 def manhattan_distance(a, b):
 	return abs(a[0]-b[0])+abs(a[1]-b[1])
 
+
+"""Dictionaries"""
+def sort_dictionary_by_key(dictionary):
+	sorted_dict = collections.OrderedDict(dictionary)
+	return sorted_dict
 
 """File I/O and strings"""
 def write_to_csv(foldername, filename, game):
