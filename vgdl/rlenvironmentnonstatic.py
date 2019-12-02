@@ -19,7 +19,7 @@ import random
 import math
 import importlib
 from colors import *
-from util import factorize, objectsToSymbol
+from util import factorize, assign_symbols_to_objects
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
 import time
@@ -167,7 +167,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     if 'avatar' in v:
                         symbol = 'A'
                     else:
-                        symbol = objectsToSymbol(self, v, self.symbolDict)
+                        symbol = assign_symbols_to_objects(self, v, self.symbolDict)
                 
                 if symbol in ['A', 'X']:
                     symbol = colored(symbol, 'red')

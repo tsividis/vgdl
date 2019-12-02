@@ -261,7 +261,7 @@ class AStar:
 	# 	else:
 	# 		return 0.
 
-	def manhattanDistance(self, avatarLoc, goalLoc):
+	def manhattan_distanceance(self, avatarLoc, goalLoc):
 		return abs(avatarLoc[0]-goalLoc[0]) + abs(avatarLoc[1] - goalLoc[1])
 
 	def bestNode(self):
@@ -289,7 +289,7 @@ class AStar:
 			if not terminal:
 				avatarLoc, goalLoc = self.findAvatarInRLE(newRLE), self.findObjectInRLE(newRLE, 'goal')
 				try:
-					h = self.manhattanDistance(avatarLoc, goalLoc)
+					h = self.manhattan_distanceance(avatarLoc, goalLoc)
 				except:
 					print "couldn't find h"
 					embed()
@@ -312,7 +312,7 @@ class AStar:
 		total_reward = 0.	
 		avatarLoc, goalLoc = self.findAvatarInRLE(rle), self.findObjectInRLE(rle, 'goal')
 		try:
-			node = Node(rle, s, None, (0,0), 0., self.manhattanDistance(avatarLoc, goalLoc), terminal, win)
+			node = Node(rle, s, None, (0,0), 0., self.manhattan_distanceance(avatarLoc, goalLoc), terminal, win)
 		except:
 			print "couldn't make node becuase of manhattan distance"
 			embed()

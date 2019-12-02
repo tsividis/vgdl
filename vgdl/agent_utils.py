@@ -7,7 +7,7 @@ def translateEvents(events, all_objects, rle):
 	if events is None:
 		return None
 
-	def getObjectColor(objectID):
+	def get_object_color(objectID):
 		if objectID is None:
 			return None
 		elif objectID == 'EOS':
@@ -35,16 +35,16 @@ def translateEvents(events, all_objects, rle):
 	for event in events:
 		try:
 			if len(event) > 3:
-				tmp = [event[0], getObjectColor(event[1]), getObjectColor(event[2])]
+				tmp = [event[0], get_object_color(event[1]), get_object_color(event[2])]
 				for k in event[3].keys():
 					if k=='stype':
-						event[3][k] = getObjectColor(event[3][k])
+						event[3][k] = get_object_color(event[3][k])
 				tmp.extend(event[3:])
 				outlist.append(tuple(tmp))
 			if len(event)==3:
-				outlist.append((event[0], getObjectColor(event[1]), getObjectColor(event[2])))
+				outlist.append((event[0], get_object_color(event[1]), get_object_color(event[2])))
 			elif len(event)==2:
-				outlist.append((event[0], getObjectColor(event[1])))
+				outlist.append((event[0], get_object_color(event[1])))
 		except:
 			print "translateEvents failed"
 			embed()

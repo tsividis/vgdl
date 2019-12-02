@@ -24,7 +24,7 @@ from IPython import embed
 import time
 import os
 import uuid
-from util import getObjectColor
+from util import get_object_color
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -859,7 +859,7 @@ class BasicGame(object):
                 elif len(element)>3:
                     for k in element[3].keys():
                         if k=='stype':
-                            element[3][k] = getObjectColor(element[3][k], all_objects, self, colorDict)
+                            element[3][k] = get_object_color(element[3][k], all_objects, self, colorDict)
                     colorTuple = (element[0], color1, color2, element[3])
                 full_collision_eff_by_color.append(colorTuple)
             new_collision_eff_by_class.add(element_tuple)

@@ -446,14 +446,14 @@ class WBP():
 					avatar = current.rle._game.getAvatars()[0]
 					killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
 					if killer_sprites:
-						nearest = findNearestSprite(avatar, killer_sprites)
-						if manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
+						nearest = find_nearest_sprite(avatar, killer_sprites)
+						if manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
 							current_actions = [0]
 						else:
 							current_actions = self.actions
 							if self.display:
 								print "didn't change current_actions; will plan normally"
-								print "nearest dangerous sprite:", manhattanDist(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
+								print "nearest dangerous sprite:", manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
 
 			except (IndexError, AttributeError, TypeError) as e:
 				print "Problem checking missile-shooting conditions."
@@ -630,7 +630,7 @@ class Node():
 					newRle._game.kill_list = v[:]
 			elif 'defaultdict' in ctype or 'dict' in ctype:
 				if k != 'sprite_groups':
-					newRle._game.__dict__[k] = ccopy(v)
+					newRle._game.__dict__[k] = quickcopy(v)
 				else:
 					new_sprite_groups = defaultdict(list)
 					for group_name, group in rle._game.sprite_groups.iteritems():
@@ -643,15 +643,15 @@ class Node():
 									for attr in sprite.__dict__.keys():
 										if hasattr(sprite, attr):
 											setattr(new_sprite, attr, getattr(sprite, attr))
-									setattr(new_sprite, 'resources', ccopy(sprite.__dict__['resources']))
+									setattr(new_sprite, 'resources', quickcopy(sprite.__dict__['resources']))
 								except:
 									embed()
 								new_sprite_groups[group_name].append(new_sprite)
 					newRle._game.sprite_groups = new_sprite_groups
 			elif 'vgdl' in ctype:
-				newRle._game.__dict__[k] = ccopy(v)
+				newRle._game.__dict__[k] = quickcopy(v)
 			else:
-				setattr(newRle._game, k, ccopy(v))
+				setattr(newRle._game, k, quickcopy(v))
 		return newRle
 
 	def rollout(self, Vrle, thingWeShoot):
@@ -856,7 +856,7 @@ class Node():
 				# were not yet observed will have their distance penalized twice
 				# as much when none of those objects is an avatar. This implies
 				# that avatar novel interactions will be favored over other ones
-				possiblePairList = [manhattanDist(obj, pos)
+				possiblePairList = [manhattan_distance(obj, pos)
 					 for pos in kill_positions
 					 for obj in stype_positions]
 
@@ -914,7 +914,7 @@ class Node():
 						# as much when none of those objects is an avatar. This implies
 						# that avatar novel interactions will be favored over other ones
 						try:
-							possiblePairList = np.array([manhattanDist(obj1, obj2)
+							possiblePairList = np.array([manhattan_distance(obj1, obj2)
 								for obj1 in obj1_positions
 								for obj2 in obj2_positions])
 						except:
@@ -1009,10 +1009,10 @@ class Node():
 				# as much when none of those objects is an avatar. This implies
 				# that non-avatar novel interactions will be favored over others
 
-				possiblePairList = [manhattanDist(obj, pos)
+				possiblePairList = [manhattan_distance(obj, pos)
 					 for pos in s2_positions
 					 for obj in s1_positions
-					 if manhattanDist(obj, pos) != 0]
+					 if manhattan_distance(obj, pos) != 0]
 				distance = min(possiblePairList)
 					 # This is a trick to avoid getting distance 0 for objects
 					 # of same type. If the list turns out to be empty, it will

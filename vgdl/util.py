@@ -21,7 +21,7 @@ def normalize(array):
 	else:
 		return [a/z for a in array]
 
-def manhattanDist(a, b):
+def manhattan_distance(a, b):
 	return abs(a[0]-b[0])+abs(a[1]-b[1])
 
 def factorize(rle, n):
@@ -44,11 +44,11 @@ def factorize(rle, n):
 
 	return decomposition
 
-def findNearestSprite(sprite, spriteList):
+def find_nearest_sprite(sprite, spriteList):
 	## returns the sprite in spriteList whose location best matches the location of sprite.
 	return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 		
-def objectsToSymbol(rle, objects, symbolDict):
+def assign_symbols_to_objects(rle, objects, symbolDict):
 	objects = [rle._game.sprite_groups[o][0].colorName for o in objects]
 	try:
 		if len(objects)==1:
@@ -67,10 +67,10 @@ def objectsToSymbol(rle, objects, symbolDict):
 			return ALNUM[idx]
 	except:
 		# import ipdb; ipdb.set_trace()
-		print "objectsToSymbol problem."
+		print "assign_symbols_to_objects problem."
 		embed()
 
-def getObjectColor(objectID, all_objects, game, colorDict):
+def get_object_color(objectID, all_objects, game, colorDict):
 	if objectID is None:
 		return None
 	elif objectID == 'EOS':
@@ -94,7 +94,7 @@ def getObjectColor(objectID, all_objects, game, colorDict):
 		color = [all_objects[k]['type']['color'] for k in all_objects.keys() if all_objects[k]['sprite'].name==objectName][0]
 		return color
 
-def extendColorDict(num):
+def extend_color_dict(num):
 	for i in range(num):
 		colorName = make_random_name(CAPCHARS)
 		color = (random.choice(range(256)), random.choice(range(256)), random.choice(range(256)))
@@ -132,7 +132,7 @@ def write_to_csv(foldername, filename, game):
 			score = None
 		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, planner_steps, score))
 	f.close()
-def ccopy(obj):
+def quickcopy(obj):
 	return cPickle.loads(cPickle.dumps(obj))
 
 def str2bool(v):

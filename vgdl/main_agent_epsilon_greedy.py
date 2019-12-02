@@ -172,17 +172,17 @@ class Agent:
     def fastcopy(self, rle):
 
         newRle = self.initializeRLEFromGame()
-        newRle._obstypes = ccopy(rle._obstypes)
+        newRle._obstypes = quickcopy(rle._obstypes)
         if hasattr(rle, '_gravepoints'):
-            newRle._gravepoints = ccopy(rle._gravepoints)
-        newRle._game.sprite_groups = ccopy(rle._game.sprite_groups)
-        newRle._game.kill_list = ccopy(rle._game.kill_list)
-        # newRle._game.lastcollisions = ccopy(rle._game.lastcollisions)
-        newRle._game.time = ccopy(rle._game.time)
-        newRle._game.score = ccopy(rle._game.score)
-        newRle._game.keystate = ccopy(rle._game.keystate)
-        newRle.symbolDict = ccopy(rle.symbolDict)
-        newRle._game.sprite_groups['avatar'][0].resources = ccopy(rle._game.sprite_groups['avatar'][0].resources)
+            newRle._gravepoints = quickcopy(rle._gravepoints)
+        newRle._game.sprite_groups = quickcopy(rle._game.sprite_groups)
+        newRle._game.kill_list = quickcopy(rle._game.kill_list)
+        # newRle._game.lastcollisions = quickcopy(rle._game.lastcollisions)
+        newRle._game.time = quickcopy(rle._game.time)
+        newRle._game.score = quickcopy(rle._game.score)
+        newRle._game.keystate = quickcopy(rle._game.keystate)
+        newRle.symbolDict = quickcopy(rle.symbolDict)
+        newRle._game.sprite_groups['avatar'][0].resources = quickcopy(rle._game.sprite_groups['avatar'][0].resources)
 
         return newRle
 
@@ -204,7 +204,7 @@ class Agent:
         else:
             return None
 
-    def findNearestSprite(self, sprite, spriteList):
+    def find_nearest_sprite(self, sprite, spriteList):
         ## returns the sprite in spriteList whose location best matches the location of sprite.
         return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
@@ -217,7 +217,7 @@ class Agent:
                 color = Vrle._game.sprite_groups[k][0].colorName
                 matchingSpritesInRLE = self.getSpritesByColor(rle, color)
                 for sprite in old_sprite_groups[k]:
-                    matchingSprite = self.findNearestSprite(sprite, matchingSpritesInRLE)
+                    matchingSprite = self.find_nearest_sprite(sprite, matchingSpritesInRLE)
                     sprite.rect = matchingSprite.rect
                     sprite.lastmove = matchingSprite.lastmove
                     sprite.ID2 = matchingSprite.ID
@@ -624,7 +624,7 @@ class Agent:
         print "Won {} out of {} episodes.".format(sum(wins), i)
 
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
-        from vgdl.util import manhattanDist
+        from vgdl.util import manhattan_distance
 
         episodeSaveTime = time.time() ## in seconds
         quit_level = False
@@ -1167,14 +1167,14 @@ class Agent:
             ## If the object isn't in our predicted environment or the positions vary
             ## if it's an object we're worried about
             if s.name=='avatar' or s.colorName in killer_colors:
-                if s.ID not in hypDict and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID not in hypDict and manhattan_distance(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                     regroundingFlag=True
                     print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
                     break
-                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                     print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                            s, self.rle._game.getAvatars()[0], manhattanDist(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+                            s, self.rle._game.getAvatars()[0], manhattan_distance(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                             'white', 'on_yellow')
                     regroundingFlag=True
                     break

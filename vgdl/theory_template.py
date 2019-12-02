@@ -8,7 +8,7 @@ from ontology import *
 from collections import defaultdict
 import operator
 import time, math
-from util import factorize, objectsToSymbol
+from util import factorize, assign_symbols_to_objects
 from rlenvironmentnonstatic import createMindEnv
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
@@ -2390,7 +2390,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 		for c in range(rle.outdim[1]):
 			if state[r][c] > 0:
 				try:
-					symbol = objectsToSymbol(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
+					symbol = assign_symbols_to_objects(rle, rle.getObjectsFromNumber(state[r][c]), symbolDict)
 					mappedState[r][c] = symbol
 				except:
 					print "in map"
