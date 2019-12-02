@@ -1,14 +1,16 @@
-from IPython import embed
+import csv
+import cPickle
 import itertools
 import os
 import random
-import csv
-import cPickle
+from IPython import embed
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
 
+
+"""Math"""
 def softmax(w, t = 1.0):
 	e = np.exp(np.array(w) / t)
 	dist = e / np.sum(e)
@@ -24,6 +26,42 @@ def normalize(array):
 def manhattan_distance(a, b):
 	return abs(a[0]-b[0])+abs(a[1]-b[1])
 
+
+"""File I/O and strings"""
+def write_to_csv(foldername, filename, game):
+	dirname = 'model_results'
+	if dirname not in os.listdir('.'):
+		os.makedirs(dirname)
+	if filename not in os.listdir(dirname+'/'+foldername+'/'):
+		f = open(dirname+'/'+foldername+'/'+filename, 'w+') #newfile and write
+		writer = csv.writer(f)
+		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
+	else:
+		f = open(dirname+foldername+'/'+filename, 'a+') ##append, but also read.
+		writer = csv.writer(f)
+	episodes = game['episodes']
+	steps, levels_won, score, planner_steps = 0, 0, 0, 0
+	for episode in episodes:
+		steps += episode[1]
+		planner_steps += episode[-1]
+		levels_won += episode[2]
+		if episode[3] is not None:
+			score +=episode[3]
+		else:
+			score = None
+		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, planner_steps, score))
+	f.close()
+
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
+"""VGDL-specific"""
 def factorize(rle, n):
 	## Decomposes into a list of numbers that are incides of [avatar, rle._obstypes.keys()]
 	## that correspond to which indices are present in n
@@ -94,51 +132,8 @@ def get_object_color(objectID, all_objects, game, colorDict):
 		color = [all_objects[k]['type']['color'] for k in all_objects.keys() if all_objects[k]['sprite'].name==objectName][0]
 		return color
 
-def extend_color_dict(num):
-	for i in range(num):
-		colorName = make_random_name(CAPCHARS)
-		color = (random.choice(range(256)), random.choice(range(256)), random.choice(range(256)))
-		print colorName + '=' + str(color)
-		colorDict[str(color)] = colorName
-	print colorDict
 
-def make_random_name(chars):
-	import random
-	name = ''
-	for i in range(6):
-		name+=random.choice(chars)
-	return name
-
-def write_to_csv(foldername, filename, game):
-	dirname = 'model_results'
-	if dirname not in os.listdir('.'):
-		os.makedirs(dirname)
-	if filename not in os.listdir(dirname+'/'+foldername+'/'):
-		f = open(dirname+'/'+foldername+'/'+filename, 'w+') #newfile and write
-		writer = csv.writer(f)
-		writer.writerow(('subject', 'condition', 'gameName', 'levels_won', 'steps', 'planner_steps', 'score'))
-	else:
-		f = open(dirname+foldername+'/'+filename, 'a+') ##append, but also read.
-		writer = csv.writer(f)
-	episodes = game['episodes']
-	steps, levels_won, score, planner_steps = 0, 0, 0, 0
-	for episode in episodes:
-		steps += episode[1]
-		planner_steps += episode[-1]
-		levels_won += episode[2]
-		if episode[3] is not None:
-			score +=episode[3]
-		else:
-			score = None
-		writer.writerow((game['modelType'], game['condition'], game['gameName'], levels_won, steps, planner_steps, score))
-	f.close()
+"""Other"""
 def quickcopy(obj):
 	return cPickle.loads(cPickle.dumps(obj))
 
-def str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
