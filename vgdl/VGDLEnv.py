@@ -106,8 +106,6 @@ class VGDLEnvAndres(object):
             self.event_dict[e] += 1
 
         self.episode_reward += self.reward
-        #self.reward = max(-1.0, min(self.reward, 1.0))
-        #self.last_screen = self.current_screen
         self.state = self.get_screen()
 
         if self.game_over or self.episode_steps > self.timeout:
@@ -168,12 +166,10 @@ class VGDLEnvAndres(object):
         misc.imsave('altered.png', np.rollaxis(self.get_screen().cpu().numpy()[0], 0, 3))
 
     def get_screen(self):
-        # imageio.imsave('sample.png', self.Env.render())
         screen = self.Env.render()
         screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
         screen = cv2.resize(screen, dsize=(84,84), interpolation=cv2.INTER_CUBIC)
         screen_1channel = np.mean(screen, axis=2)
-        #return screen
         return screen_1channel
 
     def save_gif(self):
@@ -261,10 +257,7 @@ class VGDLEnv():
 
 			rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
 
-			# (self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, positions=None, **kwargs)
-
 			rle = rleCreateFunc()
-			# import pdb; pdb.set_trace()
 			rle.visualize = True
 			if headless:
 				os.environ["SDL_VIDEODRIVER"] = "dummy"
@@ -282,7 +275,6 @@ class VGDLEnv():
 
 		file_list = {}
 		for file in os.listdir(games_folder):
-			# import pdb; pdb.set_trace()
 			if 'DS' not in file:
 
 				if 'expt_ee' in game_name:
@@ -308,13 +300,13 @@ class VGDLEnv():
 		env_list = {}
 
 		num_levels = len(file_list.keys())-1
+		
 		if 'expt_ee' in game_name:
 			num_levels = int(len(file_list.keys())/2)
 
 		for lvl_idx in range(num_levels):
 
 			if 'expt_ee' in game_name:
-
 				with open('{}/{}'.format(games_folder, file_list['game_{}'.format(lvl_idx)]), 'r') as game:
 					gameString = game.read()
 
