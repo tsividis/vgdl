@@ -138,6 +138,7 @@ if __name__ == '__main__':
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
 
         agent.record_fMRIRegressors = True
+        # TODO momchil CAREFUL with saved curricula! might reload old agent; figure out how to deal with it
         curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False)
         assert(len(curriculumRegressors) == len(regs))
 

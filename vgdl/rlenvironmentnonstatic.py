@@ -349,18 +349,20 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._game.new_sprites = [] # momchil: taken care of?
 
             try:
-                self._game.setFullState(self._game.playback_states[self.playback_index])
+                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=True)
             except:
-                print "playback is failing!"
+                print "agent playback is failing!"
                 embed()
 
-            keyPressType = self._game.playback_states[self.playback_index]['key']
+            keyPressType = self._game.playback_states[self._game.playback_index]['key']
             action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
             if keyPressType:
                 action = revActionDict[keyPressType] 
                 self._game.keystate[action] = True
 
-            self.playback_index += 1
+            events = self._game.effectList
+
+            self._game.playback_index += 1
         else:
             # default case: agent is playing
             #
@@ -377,7 +379,17 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     if s not in self._game.kill_list:
                             s.update(self._game)
 
-        events = self._game._eventHandling() # momchil load from playback state? fulleffectlist, etc?
+            events = self._game._eventHandling() # momchil load from playback state? fulleffectlist, etc?
+
+
+        if self._game.playback_states:
+            if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
+                print 'wrong effectListLen!'
+                embed()
+            # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
+            #if len(self._game.new_sprites) != self._game.playback_states[self._game.playback_index - 1]['new_spritesLen']:
+            #    print 'wrong new_spritesLen!'
+            #    embed()
 
         # momchil: save event, destroy self.game, re-init self.game (.reset, etc) from saved state => make sure still works
 

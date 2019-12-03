@@ -41,7 +41,7 @@ class Agent:
         self.record_states = True
         self.record_video_info = True
         self.write_video_info = True
-        self.saveMidEpisode = False # momchil
+        self.saveMidEpisode = False # momchil - false
         self.filename = None
         self.timestamp = False
         self.task_ID = task_ID
@@ -162,7 +162,7 @@ class Agent:
         self.rle = self.rleCreateFunc()
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
         if self.playback_states:
-            self.rle._game.playback_states = playback_states
+            self.rle._game.playback_states = self.playback_states
         return
 
     def initializeRLEFromGame(self):
@@ -596,6 +596,7 @@ class Agent:
         # params_to_print_to_video = self.param_ID
         params_to_print_to_video = ''
         game_name_to_print_to_video = self.gameFilename
+
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
 
@@ -746,6 +747,7 @@ class Agent:
                 if self.saveMidEpisode:
                     self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
                     self.episodeSaveTime = time.time()
+
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             self.max_nodes = self.stored_max_nodes
@@ -774,6 +776,7 @@ class Agent:
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
             p_quitting = p.quitting
             print "planning..."
+            p.max_nodes = 2 # TODO momchil
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
 

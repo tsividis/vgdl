@@ -92,9 +92,9 @@ assert(len(game_names) == len(fake_names))
 nruns = 3 # per subject
 prerun_interval = 1 # sec, how long for scanner to settle
 postrun_interval = 1 # sec, how long for HRF to settle
-nblocks = 2 # per run
-ninstances = 3 # per block
-duration = 30 # instance duration (sec)
+nblocks = 1 # per run
+ninstances = 1 # per block
+duration = 20 # instance duration (sec)
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
 
@@ -186,6 +186,9 @@ if __name__ == '__main__':
     run_id = int(sys.argv[2])
 
     subj = get_subj(subj_id)
+
+    run_length = prerun_interval + postrun_interval + nblocks * interblock_interval + nblocks * ninstances * duration
+    print 'run length = ', run_length, 's = ', run_length/60.0, 'min = ', run_length/2.0, 'TRs'
 
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)

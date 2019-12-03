@@ -25,7 +25,6 @@ import re
 from IPython import embed
 import time
 import os
-import uuid
 from util import getObjectColor
 import json 
 import bson
@@ -277,7 +276,7 @@ class VGDLParser(object):
                     #print 'states size: ', get_size(allStates), ' b for ', len(allStates), ' states'
                     #print '  = ', get_size(allStates)/1000000/(play_end_time - play_start_time), ' MB/s'
 
-                    pauseForDuration(interplay_interval/2) # to show message while we save states below (takes a while)
+                    pauseForDuration(interplay_interval/2.0) # to show message while we save states below (takes a while)
 
                     then = time.time()
                     
@@ -311,7 +310,7 @@ class VGDLParser(object):
 
                     print 'saving took ', time.time() - then, ' s'
 
-                    pauseForDuration(interplay_interval/2)
+                    pauseForDuration(interplay_interval/2.0)
 
                     if time.time() >= instance_end_time - interplay_interval:
                         break
@@ -349,7 +348,7 @@ class VGDLParser(object):
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, deoffset=True)
             else:
                 win, score, allStates, _, _ = g.startGame(headless, persist_movie)
 
@@ -375,7 +374,7 @@ class VGDLParser(object):
         g.buildLevel(map_str, fMRI_screensize)
         g.uiud = uuid.uuid4()
         g.playback_states = playback_states
-        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen)
+        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen, deoffset=False)
 
 
     @staticmethod
@@ -994,24 +993,39 @@ class BasicGame(object):
               'ts': time.time(),
               'gt': self.time,
               'key': keyPressType,
-           #   'effectList': self.effectList,
-           #   'new_sprites': self.new_sprites
+              'effectList': self.effectList,
+              'effectListLen': len(self.effectList), # sanity
+              'new_spritesLen': len(self.new_sprites), # sanity
+              'kill_listLen': len(self.kill_list),
+              'collision_effLen': len(self.collision_eff),
+              'sprite_groupsLen': len(self.sprite_groups),
+            #  'new_sprites': self.new_sprites
               }
         return fs
 
-    def setFullState(self, fs, as_string=True):
+    def setFullState(self, fs, as_string=True, cheap=True, deoffset=False):
         """ Reset the game to be exactly as defined in the fullstate dict. """
         self.reset()
         self.score = fs['score']
         self.ended = fs['ended']
+        self.effectList = fs['effectList']
         for key, ss in fs['objects'].iteritems():
             self.sprite_groups[key] = [] ## Added 4/31/17
             for ID, attrs in ss.iteritems():
-                try:
-                    p = attrs['x'], attrs['y']
-                except:
-                    p = attrs[x], attrs[y]
-                s = self._createSprite_cheap(key, p)
+
+                if deoffset:
+                    attrs['x'] -= attrs['offset'][0]
+                    attrs['y'] -= attrs['offset'][1]
+                    attrs['offset'] = (0,0)
+
+                p = attrs['x'], attrs['y']
+
+                if cheap:
+                    s = self._createSprite_cheap(key, p)
+                else:
+                    res = self._createSprite([key], p)
+                    s = res[0]
+
                 for a, val in attrs.iteritems():
                     if a == 'resources':
                         for r, v in val.iteritems():
@@ -1331,12 +1345,11 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, deoffset=True):
         """
         Main method to display a previously-run game.
         """
         # ----------- Initialization ----------
-
 
         self._initScreen(self.screensize,headless,screen,self.offset)
         self.offset = (0,0) # TODO hack momchil fixme -- b/c sprites are already offset
@@ -1393,7 +1406,7 @@ class BasicGame(object):
 
             self._clearAll()
             try:
-                self.setFullState(self.playback_states[self.playback_index])
+                self.setFullState(self.playback_states[self.playback_index], deoffset=deoffset)
                 current_state = self.playback_states[self.playback_index]
             except:
                 print "playback is failing"
@@ -1903,7 +1916,8 @@ class VGDLSprite(object):
 
     def __init__(self, pos, size=(10,10), offset=(0,0), color=None, speed=None, cooldown=None, physicstype=None, img=None, symbol=None, **kwargs):
         from ontology import GridPhysics
-        pos = (pos[0] + offset[0], pos[1] + offset[1])  # TODO momchil params
+
+        pos = (pos[0] + offset[0], pos[1] + offset[1])  # TODO momchil don't do it; only use for plotting the rects (screws with replay with diff screen sizes)
         self.rect = pygame.Rect(pos, size)
         self.offset = offset
         self.x = pos[0]

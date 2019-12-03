@@ -5,11 +5,14 @@ from datetime import datetime
 
 import json
 import sys
+import uuid
 import csv
 from collections import defaultdict
 from vgdl import core
 from IPython import embed
 from vgdl.main_agent import Agent
+
+import pygame
 
 # USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
 # * - optional
@@ -108,11 +111,56 @@ if __name__ == '__main__':
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
 
+        new_states = states[0:5] # TODO momchil undo
+        for i,state in enumerate(states[5:]):
+            if len(state['effectList']) > 0 or state['key']:
+                new_states.append(state)
+
+        del new_states[6:-6]
 
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
-        all_pairs[game['name']].append([play['game_str'], play['level_str'], states]) # TODO OOM?
+        all_pairs[game['name']].append([play['game_str'], play['level_str'], new_states]) # TODO OOM? momchil rm new_states
 
+        #core.VGDLParser.fMRI_replayGame(play['game_str'], play['level_str'], new_states) working
+        core.VGDLParser.playGame(play['game_str'], play['level_str'], new_states, \
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos", padding=10) 
+
+        '''
+        game_str = play['game_str']
+        map_str = play['level_str']
+        g = core.VGDLParser().parseGame(game_str)
+        g.uiud = uuid.uuid4()
+        g.buildLevel(map_str)
+        g.playback_states = new_states
+        g.startPlaybackGame(headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir='videos', padding=10, gameName='', parameter_string='')
+        sys.exit(0)
+        ''' # don't work
+
+        '''
+        black = (0,0,0)
+        white = (255,255,255)
+
+        pygame.init()
+        clock = pygame.time.Clock()
+
+        fMRI_screensize = (1200,900)
+        fMRI_screen = pygame.display.set_mode(fMRI_screensize)
+
+        fMRI_bg = pygame.Surface(fMRI_screensize)
+        fMRI_bg.fill(black)
+        fMRI_screen.blit(fMRI_bg, (0, 0))
+        fMRI_screensize = (1200,900)
+
+        game_str = play['game_str']
+        map_str = play['level_str']
+        g = core.VGDLParser().parseGame(game_str)
+        g.uiud = uuid.uuid4()
+        g.buildLevel(map_str)
+        g.playback_states = new_states
+        g.startPlaybackGame(headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir='videos', padding=10, gameName='', parameter_string='', deoffset=True)
+        '''
+        #sys.exit(0)
 
 
     # for each game, play all instances as part of one curriculum
@@ -125,4 +173,5 @@ if __name__ == '__main__':
         # python -m vgdl.load_games --game_name tiny_zelda
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
 
+        agent.record_fMRIRegressors = True
         agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, playback=True)
