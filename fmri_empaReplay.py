@@ -113,11 +113,13 @@ if __name__ == '__main__':
 
         new_states = states[0:5] # TODO momchil undo
         for i,state in enumerate(states[5:]):
-            if len(state['effectList']) > 0 or state['key']:
+           if len(state['effectList']) > 0 or state['keyPressType'] or state['ended']:
                 new_states.append(state)
 
         #del new_states[6:-6]
         #new_states = states
+
+        #embed()
 
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 

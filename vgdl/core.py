@@ -638,6 +638,7 @@ class BasicGame(object):
         self.num_sprites = 0
         self.kill_list=[]
         self.all_killed=[] # All items that have been killed
+        self.keystate = emptyKeyState
 
     def buildLevel(self, lstr, fMRI_screensize=None):
         from ontology import stochastic_effects
@@ -1001,7 +1002,8 @@ class BasicGame(object):
               'dt': datetime.now(),
               'ts': time.time(),
               'gt': self.time,
-              'key': keyPressType,
+              'keystate': self.keystate,
+              'keyPressType': keyPressType,
               'effectList': self.effectList,
               'effectListByColor': list(self.effectListByColor),
               'effectListByClass': list(self.effectListByClass),
@@ -1021,6 +1023,7 @@ class BasicGame(object):
         self.reset()
         self.time = tt # TODO momchil better fix; need for empaReplay
 
+        self.keystate = fs['keystate']
         self.score = fs['score']
         self.ended = fs['ended']
         self.effectList = fs['effectList']

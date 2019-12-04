@@ -8,6 +8,7 @@ import os, subprocess, shutil
 from collections import defaultdict
 from hyperparameters import hyperparameter_sets, metacontroller_sets
 from math import log
+from pprint import pprint
 import WBP
 import importlib
 import numpy as np
@@ -409,7 +410,7 @@ class Agent:
                 (self.gameString, self.levelString, self.playback_states) = level_game
             else:
                 (self.gameString, self.levelString) = level_game
-                self.playback_states = None
+                self.playback_states = None # TODO momchil undo
 
             if self.record_fMRIRegressors:
                 self.regressors = {
@@ -949,6 +950,8 @@ class Agent:
                         break
                     ended, win = self.rle._isDone()
 
+                    #ended = self.rle._game.ended # TODO momchil rm me
+
                     self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
                     if ended:
                         break
@@ -1017,6 +1020,8 @@ class Agent:
 
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
+
+            #ended = self.rle._game.ended # TODO momchil rm me
             
             if ended:
                 self.episodeRecord.insert(0, (win, effects))
@@ -1285,6 +1290,7 @@ class Agent:
             #
             action = res['action']
         print 'action ============================ ', action
+        pprint(res)
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)

@@ -554,7 +554,7 @@ class MovingAvatar(VGDLSprite, Avatar):
         from pygame.locals import K_LEFT, K_RIGHT, K_UP, K_DOWN, K_a, K_s, K_d, K_w
         res = []
         # res += [RIGHT]
-        if self.alternate_keys:
+        if self.alternate_keys: # momchil fMRI keys!!!
             if   game.keystate[K_d]: res += [RIGHT]
             elif game.keystate[K_a]:  res += [LEFT]
             if   game.keystate[K_w]:    res += [UP]
@@ -564,6 +564,10 @@ class MovingAvatar(VGDLSprite, Avatar):
             elif game.keystate[K_LEFT]:  res += [LEFT]
             if   game.keystate[K_UP]:    res += [UP]
             elif game.keystate[K_DOWN]:  res += [DOWN]
+
+            if len(game.playback_states) > 0 and (game.keystate[K_RIGHT] or game.keystate[K_LEFT] or game.keystate[K_UP] or game.keystate[K_DOWN]):
+                print 'key!'
+                #embed()
         return res
 
     def update(self, game):
