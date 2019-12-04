@@ -116,15 +116,16 @@ if __name__ == '__main__':
             if len(state['effectList']) > 0 or state['key']:
                 new_states.append(state)
 
-        del new_states[6:-6]
+        #del new_states[6:-6]
+        #new_states = states
 
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
         all_pairs[game['name']].append([play['game_str'], play['level_str'], new_states]) # TODO OOM? momchil rm new_states
 
         #core.VGDLParser.fMRI_replayGame(play['game_str'], play['level_str'], new_states) working
-        core.VGDLParser.playGame(play['game_str'], play['level_str'], new_states, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos", padding=10) 
+        #core.VGDLParser.playGame(play['game_str'], play['level_str'], new_states, \
+        #    persist_movie=True, make_images=True, make_movie=True, movie_dir="videos", padding=10) 
 
         '''
         game_str = play['game_str']

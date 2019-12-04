@@ -46,5 +46,8 @@ if __name__ == '__main__':
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
 
+        embed()
+
+
         core.VGDLParser.fMRI_replayGame(play['game_str'], play['level_str'], states)
 

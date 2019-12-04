@@ -376,16 +376,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 for s in self._game:
                     if action == 0 and s == self._avatar:
                             continue
-                    if s not in self._game.kill_list:
+                    if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
                             s.update(self._game)
+
+            # momchil note the update, _eventHandling order is reversed from startGame
 
             events = self._game._eventHandling() # momchil load from playback state? fulleffectlist, etc?
 
 
         if self._game.playback_states:
-            if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
-                print 'wrong effectListLen!'
-                embed()
+            pass
+            #if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
+            #    print 'wrong effectListLen!'
+            #    embed()
+            #if len(self._game.kill_list) != self._game.playback_states[self._game.playback_index - 1]['kill_listLen']: TODO fix! broken rn; so is getAvatar()
+            #    print 'wrong kill_listLen!'
+            #    embed()
             # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
             #if len(self._game.new_sprites) != self._game.playback_states[self._game.playback_index - 1]['new_spritesLen']:
             #    print 'wrong new_spritesLen!'
@@ -455,6 +461,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # observation = self._getSensors()
 
         self._game.time+=1
+        print 'time = ', self._game.time, '           game = ', self._game, '      self = ', self
+
         observation = self._getSensors() if return_obs else None
         if getTermination:
             (ended, won, termination) = self._isDone(getTermination=True)

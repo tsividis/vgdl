@@ -1284,6 +1284,7 @@ class Agent:
             # off-policy training from human replay
             #
             action = res['action']
+        print 'action ============================ ', action
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)

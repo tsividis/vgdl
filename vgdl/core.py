@@ -894,10 +894,15 @@ class BasicGame(object):
             return len([s for s in self if key in s.stypes])-deleted
 
     def getSprites(self, key):
+        #if key in self.sprite_groups:
+        #    return [s for s in self.sprite_groups[key] if s not in self.kill_list]
+        #else:
+        #    return [s for s in self if key in s.stypes and s not in self.kill_list]
+        # momchil: we need the killed sprites for theory induction TODO
         if key in self.sprite_groups:
-            return [s for s in self.sprite_groups[key] if s not in self.kill_list]
+            return [s for s in self.sprite_groups[key]]
         else:
-            return [s for s in self if key in s.stypes and s not in self.kill_list]
+            return [s for s in self if key in s.stypes]
 
     def getAvatars(self):
         """ The currently alive avatar(s) """
@@ -983,6 +988,10 @@ class BasicGame(object):
                 if s.resources:
                     attrs['resources'] = dict(s.resources)
 
+        kill_list_ID = []
+        for s in self.kill_list:
+            kill_list_ID.append(s.ID)
+
         fs = {'score': self.score,
               'ended': self.ended,
               'win': self.win,
@@ -994,6 +1003,9 @@ class BasicGame(object):
               'gt': self.time,
               'key': keyPressType,
               'effectList': self.effectList,
+              'effectListByColor': list(self.effectListByColor),
+              'effectListByClass': list(self.effectListByClass),
+              'kill_list_ID': kill_list_ID,
               'effectListLen': len(self.effectList), # sanity
               'new_spritesLen': len(self.new_sprites), # sanity
               'kill_listLen': len(self.kill_list),
@@ -1005,10 +1017,16 @@ class BasicGame(object):
 
     def setFullState(self, fs, as_string=True, cheap=True, deoffset=False):
         """ Reset the game to be exactly as defined in the fullstate dict. """
+        tt = self.time
         self.reset()
+        self.time = tt # TODO momchil better fix; need for empaReplay
+
         self.score = fs['score']
         self.ended = fs['ended']
         self.effectList = fs['effectList']
+        self.effectListByClass = set([tuple(_) for _ in fs['effectListByClass']])
+        self.effectListByColor = [tuple(_) for _ in fs['effectListByColor']]
+        self.kill_list = []
         for key, ss in fs['objects'].iteritems():
             self.sprite_groups[key] = [] ## Added 4/31/17
             for ID, attrs in ss.iteritems():
@@ -1032,6 +1050,9 @@ class BasicGame(object):
                             s.resources[r] = v
                     else:
                         s.__setattr__(a, val)
+
+                if s.ID in fs['kill_list_ID']:
+                    self.kill_list.append(s) # TODO momchil test
 
     def getFullStateColorized(self,as_string=True,keyPressType=None):
         fs = self.getFullState(as_string=as_string, keyPressType=keyPressType)
@@ -1709,6 +1730,9 @@ class BasicGame(object):
                         print "Game lost. Score=%s" % self.score
 
                     # np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
+                    
+                    # clear collision events for state logging TODO momchil make sure it works
+                    self._eventHandling()
 
                     # TODO momchil dedupe / sanity
                     if displayScoreFn:
@@ -1742,24 +1766,25 @@ class BasicGame(object):
 
             ## Update actual sprite positions.
             for s in list(self):
-                s.update(self)
+                if s not in self.kill_list: # TODO momchil to be consistent w/ RLE._performAction
+                    s.update(self)
                 # if s.colorName=='RED' and s.rect.top==120:
                     # print s.lastrect, s.rect
 
             # handle collision effects
             self._eventHandling()
 
+            allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
+
             # Termination #2 : Avatars have been killed
             if len(self.getAvatars()) == 0:
-                break
+                break # TODO momchil
 
             #### in manual game-play mode ####
             if displayScoreFn:
                 displayScoreFn(self.score, self.win)
             self._drawAll()
             pygame.display.update(VGDLSprite.dirtyrects)
-
-            allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
 
             #if(headless):
             if(persist_movie):

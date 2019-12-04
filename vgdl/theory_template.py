@@ -922,7 +922,11 @@ class Theory(object):
 
 			rle = event['rle']
 			for event in relevantEvents:
-				candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
+                                try:
+                                    candidateSpriteType = [o for o in rle._game.sprite_groups if len(rle._game.sprite_groups[o])>0 and rle._game.sprite_groups[o][0].colorName == event[1]][0]
+                                except:
+                                    print 'uh oh!'
+                                    embed()
 				if len([o for o in rle._game.sprite_groups[candidateSpriteType] if o not in rle._game.kill_list]) == 0:
 
 					## If the game didn't end, you can't win or lose based on this particular class being 0
