@@ -939,6 +939,12 @@ class BasicGame(object):
                              'airsteering',
                              'strength',
                              ]
+    ignoredattributes = [ 
+                             'physicstype',
+                             'physics',
+                             'rect',
+                             'lastrect',
+                             ]
 
     def getAllObjects(self):
         ID_dict = {}
@@ -974,6 +980,14 @@ class BasicGame(object):
             obs[key] = ss
             for s in self.getSprites(key):
                 pos = (s.rect.left, s.rect.top)
+
+                if s.rect.left != s.x or s.rect.top != s.y:
+                    print 'mismatch!' #
+                    # momchil note: b/c we call VGDLSprite.update() (which sets .x = .rect.x etc) before moving the avatar
+                    # .rect is the updated coordinate
+                    #embed()
+                    #assert False
+
                 attrs = {}
                 while pos in ss:
                     # two objects of the same type in the same location, we need to disambiguate
@@ -986,8 +1000,8 @@ class BasicGame(object):
                 for a, val in s.__dict__.iteritems():
                     if a not in ias:
                         attrs[a] = val
-                if s.resources:
-                    attrs['resources'] = dict(s.resources)
+                #if s.resources:
+                #    attrs['resources'] = dict(s.resources)
 
         kill_list_ID = []
         for s in self.kill_list:
@@ -1019,20 +1033,34 @@ class BasicGame(object):
 
     def setFullState(self, fs, as_string=True, cheap=True, deoffset=False):
         """ Reset the game to be exactly as defined in the fullstate dict. """
-        tt = self.time
-        self.reset()
-        self.time = tt # TODO momchil better fix; need for empaReplay
+        #tt = self.time
+        #self.reset()
+        #self.time = tt # TODO momchil better fix; need for empaReplay
 
-        self.keystate = fs['keystate']
-        self.score = fs['score']
-        self.ended = fs['ended']
-        self.effectList = fs['effectList']
-        self.effectListByClass = set([tuple(_) for _ in fs['effectListByClass']])
-        self.effectListByColor = [tuple(_) for _ in fs['effectListByColor']]
-        self.kill_list = []
+        #self.keystate = fs['keystate']
+        #self.score = fs['score']
+        #self.ended = fs['ended']
+        #self.effectList = fs['effectList']
+        #self.effectListByClass = set([tuple(_) for _ in fs['effectListByClass']])
+        #self.effectListByColor = [tuple(_) for _ in fs['effectListByColor']]
+        #self.kill_list = []
+
+        # momchil: BINGO -- it's in here
         for key, ss in fs['objects'].iteritems():
             self.sprite_groups[key] = [] ## Added 4/31/17
-            for ID, attrs in ss.iteritems():
+            for pos, attrs in ss.iteritems():
+
+                # the pos from s.rect is the updated position
+                # x and y are 1 state behind because of sprite update logic
+                if as_string:
+                    pos = eval(pos)
+                if len(pos) != 2:
+                    print 'pos'
+                    embed()
+                    assert False
+                assert len(pos) == 2 # TODO momchil take care of overlapping sprites
+                attrs['x'] = int(pos[0])
+                attrs['y'] = int(pos[1])
 
                 if deoffset:
                     attrs['x'] -= attrs['offset'][0]
@@ -1048,14 +1076,14 @@ class BasicGame(object):
                     s = res[0]
 
                 for a, val in attrs.iteritems():
-                    if a == 'resources':
-                        for r, v in val.iteritems():
-                            s.resources[r] = v
-                    else:
+                   # if a == 'resources':
+                   #     for r, v in val.iteritems():
+                   #         s.resources[r] = v
+                   # else:
                         s.__setattr__(a, val)
 
-                if s.ID in fs['kill_list_ID']:
-                    self.kill_list.append(s) # TODO momchil test
+        #        if s.ID in fs['kill_list_ID']:
+        #            self.kill_list.append(s) # TODO momchil test
 
     def getFullStateColorized(self,as_string=True,keyPressType=None):
         fs = self.getFullState(as_string=as_string, keyPressType=keyPressType)

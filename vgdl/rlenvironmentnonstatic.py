@@ -378,14 +378,24 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 print 'w th f'
                 embed()
 
-            self._game.playback_index += 1
-
         else:
-
             # default case: agent is playing
             #
             if action in possible_actions:
                 self._game.keystate[action] = True  #TODO momchil wtf is this
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         self._game.new_sprites = []
         # update sprites
@@ -400,16 +410,69 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
                         s.update(self._game)
 
+
+        if self._game.playback_states:
+            getstate = self._game.getFullState(keyPressType)
+
+        if self._game.playback_states and self._game.playback_index == 9:
+            # BINGO -- this breaks it!! momchil TODO fix!!
+            state = self._game.getFullState(keyPressType)
+            before = self._game.sprite_groups.copy()
+            self._game.setFullState(state, cheap=True)
+            after = self._game.sprite_groups.copy()
+
+
+
+        #if self._game.playback_states:
+
+        #    try:
+        #        self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=True)
+        #    except:
+        #        print "agent playback is failing!"
+        #        embed()
+
+
         events = self._game._eventHandling()
 
 
         if self._game.playback_states:
+            print '      _performAction: idx = ', self._game.playback_index
+            print events
+
+            if self._game.playback_index == 9:
+                print 'nine'
+                #embed()
+
+            self._game.playback_index += 1
+
+
+
+
+
+
+
+
+
+
+
+
+        if self._game.playback_states:
+            if len(self._game.collision_eff) != self._game.playback_states[self._game.playback_index - 1]['collision_effLen']:
+                print 'wrong collision_effLen!'
+                embed()
+                assert False
             if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
                 print 'wrong effectListLen!'
                 embed()
+                assert False
             if len(self._game.kill_list) != self._game.playback_states[self._game.playback_index - 1]['kill_listLen']: 
                 print 'wrong kill_listLen!'
                 embed()
+                assert False
+            if len(self._game.sprite_groups) != self._game.playback_states[self._game.playback_index - 1]['sprite_groupsLen']: 
+                print 'wrong sprite_groupsLen!'
+                embed()
+                assert False
             # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
             #if len(self._game.new_sprites) != self._game.playback_states[self._game.playback_index - 1]['new_spritesLen']:
             #    print 'wrong new_spritesLen!'
