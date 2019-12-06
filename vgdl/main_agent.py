@@ -256,8 +256,8 @@ class Agent:
 
         self.setSpritePositions(self.rle, Vrle, hypothesis)
         try:
-            Vrle._game.getAvatars()[0].resources = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
-            Vrle._game.getAvatars()[0].orientation = copy.deepcopy(self.rle._game.getAvatars()[0].orientation)
+            Vrle.getAvatars()[0].resources = copy.deepcopy(self.rle.getAvatars()[0].resources)
+            Vrle.getAvatars()[0].orientation = copy.deepcopy(self.rle.getAvatars()[0].orientation)
         except (IndexError, AttributeError) as e:
             pass
         return Vrle
@@ -324,7 +324,7 @@ class Agent:
             ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
-        for k,v in self.rle._game.getObjects().items():
+        for k,v in self.rle.getObjects().items():
             if k not in allObjects:
                 allObjects[k] = v
 
@@ -617,7 +617,7 @@ class Agent:
         self.quits = 0
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
-        self.all_objects= self.rle._game.getObjects()
+        self.all_objects= self.rle.getObjects()
         annealing = 1
 
         ## Start storing encountered states.
@@ -626,7 +626,7 @@ class Agent:
         compactStates = [] ## for easy analysis of score over time.
 
         if self.make_movie or self.record_video_info:
-            statesEncountered.append(self.rle._game.getFullState())
+            statesEncountered.append(self.rle.getFullState())
         
         self.last_recorded_time = time.time()
         if self.record_states:
@@ -669,8 +669,9 @@ class Agent:
                     os.remove(curriculumDir+'/'+episodeSaveFile)
                     print "failed to load episode state. Deleting the corrupted file and continuing with this episode as though we hadn't saved anything."
 
+
         ## Do beginning-of-episode Avatar resource-management.
-        resources = self.rle._game.getAvatars()[0].resources
+        resources = self.rle.getAvatars()[0].resources
         for resource, val in resources.items():
             if resource not in self.seen_resources and val>0:
                 self.seen_resources.append(resource)
@@ -991,7 +992,7 @@ class Agent:
         min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if (item not in self.rle._game.kill_list and item.name not in [thingWeShoot, 'avatar'])])
 
         try:
-            time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle._game.kill_list if item.name!=thingWeShoot])
+            time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle.getDeadSprites() if item.name!=thingWeShoot])
         except:
             time_since_last_kill = self.rle._game.time
 
@@ -1032,16 +1033,16 @@ class Agent:
         for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
             ## If the object isn't in our predicted environment or the positions vary
             if s.name=='avatar' or s.colorName in killer_colors:
-                if s.ID not in hypDict and manhattan_distance(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID not in hypDict and manhattan_distance(s.rect, self.rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                     regroundingFlag=True
                     if self.produce_printout:
                         print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
                     break
-                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, self.rle._game.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, self.rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                     if self.produce_printout:
                         print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                            s, self.rle._game.getAvatars()[0], manhattan_distance(s.rect, self.rle._game.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+                            s, self.rle.getAvatars()[0], manhattan_distance(s.rect, self.rle.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                             'white', 'on_yellow')
                     regroundingFlag=True
                     break
@@ -1115,7 +1116,7 @@ class Agent:
 
     def manageNewObjects(self, hypotheses):
         ## Add newly-seen objects to object-type distribution
-        current_objects = self.rle._game.getObjects()
+        current_objects = self.rle.getObjects()
         for k in current_objects.keys():
             spriteName = current_objects[k]['sprite'].name
             if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
@@ -1140,7 +1141,7 @@ class Agent:
                 spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
-                    statesEncountered.append(self.rle._game.getFullState(observe_state=True))
+                    statesEncountered.append(self.rle.getFullState(observe_state=True))
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
                 if self.produce_printout:
@@ -1180,15 +1181,19 @@ class Agent:
             spriteInduction(self.rle._game, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 2 took {} seconds".format(time.time()-t1)
         try:
-            agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+            agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
         lastScore = self.rle._game.score
         res = self.rle.step(action)
 
+        if self.rle._game.sprite_groups!=self.rle.sprite_groups:
+            print "unequal sprite groups"
+            embed()
+
         try:
-            agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)
+            agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
 
             for e in res['effectList']:
                 if 'changeResource' in e:
@@ -1220,7 +1225,7 @@ class Agent:
         hypotheses = self.manageNewObjects(hypotheses)
 
         if self.make_movie or self.record_video_info:
-            statesEncountered.append(self.rle._game.getFullState())
+            statesEncountered.append(self.rle.getFullState())
         if self.record_states:
             compactStates.append(self.compactify(self.rle, plannerNodes))
 

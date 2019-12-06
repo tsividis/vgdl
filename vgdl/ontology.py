@@ -1080,8 +1080,6 @@ class NoveltyTermination(Termination):
         resourcePassed = False
         ## self.args lets us do precondition-dependent terminations.
         if self.args:
-            # print "got noveltytermination args"
-            # embed()
             if type(self.args)==dict:
                 item, num, negated, operator_name = self.args['item'], self.args['num'], eval(self.args['negated']), self.args['operator_name']
             else:
@@ -1092,7 +1090,6 @@ class NoveltyTermination(Termination):
             else:
                 true_operator = operator_name
             try:
-                # resource_str = str(game.getAvatars()[0].resources[item])
                 if item in game.lastAvatarResources:
                     resource_str = str(game.lastAvatarResources[item])
                 else:

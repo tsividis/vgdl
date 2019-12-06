@@ -271,7 +271,6 @@ class BasicGame(object):
         self.singletons = []
         # collision effects (ordered by execution order)
         self.collision_eff = []
-
         self.playback_states = []
         self.playback_index = 0
         # for reading levels
@@ -281,8 +280,6 @@ class BasicGame(object):
         # conditional criteria
         self.conditions = []
         # resource properties
-        #self.resources_limits = defaultdict(lambda: 2)
-        #self.resources_colors = defaultdict(lambda: GOLD)
         self.resources_limits = defaultdict(int)
         self.resources_colors = defaultdict(str)
 

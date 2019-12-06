@@ -80,6 +80,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
+        self.sprite_groups = self._game.sprite_groups
 
     # Get definition of the observation data expected
     def observationSpec(self):
@@ -89,7 +90,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         indices = factorize(self, n)
         allItems = ['avatar']+sorted(self._obstypes.keys())[::-1]
         return [allItems[i] for i in indices]
-
 
     def makeSymbolDict(self):
         inverseMapping = dict()
@@ -234,6 +234,27 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def close():
         pass
+
+    def getAvatars(self):
+        return self._game.getAvatars()
+
+    def getObjects(self):
+        return self._game.getObjects()
+
+    def getFullState(self, as_string=False, observe_state=False):
+        return self._game.getFullState(as_string, observe_state)
+
+    def getTime(self):
+        return self._game.time
+
+    def getScore(self):
+        return self._game.score
+
+    # def getSpritesByType(self):
+    #     return self._game.sprite_groups
+
+    def getDeadSprites(self):
+        return self._game.kill_list
 
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game

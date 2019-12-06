@@ -85,7 +85,7 @@ class VGDLEnvAndres(object):
         self.steps += 1
         self.episode_steps += 1
         self.append_gif()
-        self.reward , self.game_over, self.win = self.Env.step(action)
+        self.reward, self.game_over, self.win = self.Env.step(action)
 
         if self.check_that_avatar_is_alive():
             self.avatar_position_data['episodes'][-1].append((self.Env.current_env._game.sprite_groups['avatar'][0].rect.left,
@@ -94,6 +94,7 @@ class VGDLEnvAndres(object):
 			self.Env.lvl))
         else:
             print("AVATAR_ERROR_IGNORE")
+            embed()
             self.game_over = True 
         ## PEDRO: 2. Store events that occur at each timestep
         timestep_events = set()
