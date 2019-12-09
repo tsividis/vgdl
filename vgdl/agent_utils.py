@@ -57,32 +57,3 @@ def translate_events(events, all_objects, rle):
 	if len(uniqueEventList)>0:
 		print uniqueEventList
 	return uniqueEventList
-
-
-def observe(rle, memory, obsSteps, bestSpriteTypeDict, display=False):
-	if display:
-		print "observing for {} steps".format(obsSteps)
-	if obsSteps>0:
-		for i in range(obsSteps):
-			spriteInduction(rle._game, memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-			spriteInduction(rle._game, memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
-			rle.step((0,0))
-			if display:
-				print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
-				print rle.show(color='blue')
-
-			memory.nextPositions = {}
-			for k, v in rle._game.all_objects.iteritems():
-				memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
-				try:
-					if memory.previousPositions[k] != memory.nextPositions[k]:
-						rle._game.objectMemoryDict[k] = copy.deepcopy(memory.previousPositions[k])
-				except KeyError:
-					pass
-			memory.previousPositions = copy.deepcopy(memory.nextPositions)
-
-			spriteInduction(rle._game, memory, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
-	else:
-		spriteInduction(rle._game, memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict)
-		spriteInduction(rle._game, memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict)
-	return
