@@ -31,6 +31,7 @@ class Memory:
     def __init__(self):
         self.objectMemoryDict = {}
         self.previousPositions = {}
+        self.nextPositions = {}
         self.spriteUpdateDict = defaultdict(lambda : 0)
 
 class Agent:
@@ -232,7 +233,7 @@ class Agent:
                         try:
                             ## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
 
-                            orientation = tuple(np.sign(np.array(self.memory.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
+                            orientation = tuple(np.sign(np.array(self.memory.previousPositions[matchingSprite.ID]) - np.array(self.memory.objectMemoryDict[matchingSprite.ID])))
                             if orientation == (0,0):
                                 # print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
                                 pass
@@ -636,9 +637,9 @@ class Agent:
             compactStates.append(self.compactify(self.rle))
         
         ## Initialize memory of object positions
-        self.rle._game.objectMemoryDict, self.memory.previousPositions = {}, {}
+        self.memory.objectMemoryDict, self.memory.previousPositions = {}, {}
         for k, v in self.rle._game.all_objects.iteritems():
-            self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+            self.memory.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
             self.memory.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
         ## initialize theory if necessary.
@@ -889,7 +890,7 @@ class Agent:
                         self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
                         try:
                             if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                                self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+                                self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
                         except KeyError:
                             pass
                     self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
@@ -1156,7 +1157,7 @@ class Agent:
                     self.memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
                     try:
                         if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                            rle._game.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+                            self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
                     except KeyError:
                         pass
                 self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
