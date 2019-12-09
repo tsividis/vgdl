@@ -232,7 +232,7 @@ class Agent:
                         try:
                             ## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
 
-                            orientation = tuple(np.sign(np.array(self.rle._game.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
+                            orientation = tuple(np.sign(np.array(self.memory.previousPositions[matchingSprite.ID]) - np.array(self.rle._game.objectMemoryDict[matchingSprite.ID])))
                             if orientation == (0,0):
                                 # print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
                                 pass
@@ -636,10 +636,10 @@ class Agent:
             compactStates.append(self.compactify(self.rle))
         
         ## Initialize memory of object positions
-        self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
+        self.rle._game.objectMemoryDict, self.memory.previousPositions = {}, {}
         for k, v in self.rle._game.all_objects.iteritems():
             self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-            self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+            self.memory.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
 
         ## initialize theory if necessary.
         if len(self.hypotheses) == 0:
@@ -884,15 +884,15 @@ class Agent:
                     sys.stdout.flush()
                     
                     ## We're using rle._game for a bookkeeping between learning and planning modules
-                    self.rle._game.nextPositions = {}
+                    self.memory.nextPositions = {}
                     for k, v in self.rle._game.all_objects.iteritems():
-                        self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+                        self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
                         try:
-                            if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
-                                self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+                            if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
+                                self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
                         except KeyError:
                             pass
-                    self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+                    self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
 
                     effectsEncountered.extend(effects)
                     steps +=1
@@ -1151,15 +1151,15 @@ class Agent:
                     print "score: {}, timestep: {}".format(rle._game.score, rle._game.time)
                     print rle.show(color='blue')
                 print "action", self.total_game_steps+rle._game.time
-                rle._game.nextPositions = {}
+                self.memory.nextPositions = {}
                 for k, v in rle._game.all_objects.iteritems():
-                    rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
+                    self.memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
                     try:
-                        if rle._game.previousPositions[k] != rle._game.nextPositions[k]:
-                            rle._game.objectMemoryDict[k] = copy.deepcopy(rle._game.previousPositions[k])
+                        if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
+                            rle._game.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
                     except KeyError:
                         pass
-                rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
+                self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
                 spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
                 if hypothesis:
                     rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)

@@ -71,15 +71,15 @@ def observe(rle, memory, obsSteps, bestSpriteTypeDict, display=False):
 				print "score: {}, game tick: {}".format(rle._game.score, rle._game.time)
 				print rle.show(color='blue')
 
-			rle._game.nextPositions = {}
+			memory.nextPositions = {}
 			for k, v in rle._game.all_objects.iteritems():
-				rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
+				memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
 				try:
-					if rle._game.previousPositions[k] != rle._game.nextPositions[k]:
-						rle._game.objectMemoryDict[k] = copy.deepcopy(rle._game.previousPositions[k])
+					if memory.previousPositions[k] != memory.nextPositions[k]:
+						rle._game.objectMemoryDict[k] = copy.deepcopy(memory.previousPositions[k])
 				except KeyError:
 					pass
-			rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
+			memory.previousPositions = copy.deepcopy(memory.nextPositions)
 
 			spriteInduction(rle._game, memory, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
 	else:
