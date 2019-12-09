@@ -28,7 +28,13 @@ def manhattan_distance(a, b):
 	return abs(a[0]-b[0])+abs(a[1]-b[1])
 
 
-"""Dictionaries"""
+"""Lists & Dictionaries"""
+
+def are_lists_equal(list1, list2):
+	if any([item not in list2 for item in list1]) or any([item not in list1 for item in list2]):
+		return False
+	return True
+
 def sort_dictionary_by_key(dictionary):
 	sorted_dict = collections.OrderedDict(dictionary)
 	return sorted_dict

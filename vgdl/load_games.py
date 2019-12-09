@@ -6,6 +6,7 @@ import os
 from IPython import embed
 import argparse
 from util import str2bool
+from collections import defaultdict
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
@@ -138,13 +139,12 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     gameObject = None
     # print game_levels
 
-    estimated_time = {
-    'aliens': '10 minutes',
-    'tiny_zelda': '1 minute',
-    'demo_bait': '3 minutes',
-    'zelda': '5 minutes',
-    'bait': '10 hours'
-    }
+    estimated_time = defaultdict(lambda: 'unknown')
+    estimated_time['aliens'] = '10 minutes'
+    estimated_time['tiny_zelda'] = '1 minute'
+    estimated_time['demo_bait'] = '3 minutes'
+    estimated_time['zelda'] = '5 minutes'
+    estimated_time['bait'] = '10 hours'
     print ""
 
     if args.make_movie:

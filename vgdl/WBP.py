@@ -191,8 +191,7 @@ class WBP():
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
-			objLocs = [rle._rect2pos(element.rect) for element in rle._game.sprite_groups[objName]
-			if element not in rle._game.kill_list]
+			objLocs = [rle._rect2pos(sprite.rect) for sprite in rle.getAliveSprites() if sprite.name==objName]
 		except:
 			return []
 		return objLocs
@@ -1203,7 +1202,7 @@ class Node():
 			for s in vrle._game.sprite_groups[objType]:
 				if s.ID not in self.WBP.objIDs.keys():
 					if s.name=='bullet':
-						s.ID = len([o for o in vrle._game.sprite_groups[objType] if o not in vrle._game.kill_list])
+						s.ID = len(vrle.getAliveSpritesByName(s.name))
 					else:
 						s.ID = len(vrle._game.sprite_groups[objType])
 					self.WBP.objIDs[s.ID] = (len(self.WBP.objIDs.keys())+1) * 100 * (self.rle.outdim[0]*self.rle.outdim[1]+self.WBP.padding)

@@ -249,16 +249,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def getScore(self):
         return self._game.score
 
-    def getSpritesByType(self):
+    def getSpriteGroups(self):
         return self._game.sprite_groups
 
     def getAliveSprites(self):
         aliveSprites = []
-        for spriteList in self.getSpritesByType().values():
+        for spriteList in self.getSpriteGroups().values():
             for sprite in spriteList:
                 if sprite not in self.getDeadSprites():
                     aliveSprites.append(sprite)
         return aliveSprites
+
+    def getAliveSpritesByName(self, spriteName):
+        if spriteName in self.getSpriteGroups():
+            return [sprite for sprite in self.getSpriteGroups()[spriteName] if sprite not in self.getDeadSprites()]
+        else:
+            return []
 
     def getDeadSprites(self):
         return self._game.kill_list
