@@ -237,14 +237,13 @@ class Agent:
                         except KeyError:
                             sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
 
-        for k,v in Vrle._game.sprite_groups.items():
-            for sprite in v:
-                if sprite not in Vrle._game.kill_list:
-                    loc = (sprite.rect.left, sprite.rect.top)
-                    if loc in Vrle._game.positionDict.keys():
-                        Vrle._game.positionDict[loc].append(sprite)
-                    else:
-                        Vrle._game.positionDict[loc] = [sprite]
+        for sprite in Vrle.getAliveSprites():
+            loc = (sprite.rect.left, sprite.rect.top)
+            if loc in Vrle._game.positionDict.keys():
+                Vrle._game.positionDict[loc].append(sprite)
+            else:
+                Vrle._game.positionDict[loc] = [sprite]
+
         return
 
 
@@ -514,10 +513,8 @@ class Agent:
                  'ended': ended,
                  'win': win,
                  'entropy': rle._game.H,
-                 'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) 
-                        for sublist in gameObject.sprite_groups.values() for s in sublist if s not in gameObject.kill_list],
+                 'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) for s in rle.getAliveSprites()],
                  'events': list(rle._game.effectListByClass)
-
                  }
         self.last_recorded_time = current_time
         return state
@@ -989,7 +986,7 @@ class Agent:
         else:
             thingWeShoot = None         
         
-        min_age = min([item.lastmove for sublist in self.rle._game.sprite_groups.values() for item in sublist if (item not in self.rle._game.kill_list and item.name not in [thingWeShoot, 'avatar'])])
+        min_age = min([sprite.lastmove for sprite in rle.getAliveSprites() if sprite.name not in [thingWeShoot, 'avatar']])
 
         try:
             time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle.getDeadSprites() if item.name!=thingWeShoot])
@@ -1011,7 +1008,7 @@ class Agent:
         moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
         movingTypes = False
         if moving_colors:
-            for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+            for s in self.rle.getAliveSprites():
                 if s.colorName in moving_colors:
                     movingTypes = True
                     break
@@ -1024,13 +1021,13 @@ class Agent:
         regroundingFlag = False
         rleDict, hypDict = {}, {}
 
-        for s in [item for sublist in objectPositionsArray[i+1]._game.sprite_groups.values() for item in sublist if item not in objectPositionsArray[i+1]._game.kill_list]:
+        for s in objectPositionsArray[i+1].getAliveSprites():
             hypDict[s.ID2] = s
 
         killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
         killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
 
-        for s in [item for sublist in self.rle._game.sprite_groups.values() for item in sublist if item not in self.rle._game.kill_list]:
+        for s in self.rle.getAliveSprites():
             ## If the object isn't in our predicted environment or the positions vary
             if s.name=='avatar' or s.colorName in killer_colors:
                 if s.ID not in hypDict and manhattan_distance(s.rect, self.rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
