@@ -29,6 +29,7 @@ AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 class Memory:
     def __init__(self):
+        self.ignoreList = []
         self.objectMemoryDict = {}
         self.previousPositions = {}
         self.nextPositions = {}
@@ -294,18 +295,18 @@ class Agent:
                 ## need to run this for one step to get a complete theory object so we can calculate initial entropy (entropy is no longer used but code remains).
                 ## Then we run it another 14 times.
                 self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
-                spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.memory,
+                spriteTypeHypothesis, _, self.best_params = sampleFromDistribution(self.rle._game, self.memory,
                     self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
-                self.rle._game.exceptedObjects = exceptedObjects
+                # self.rle._game.exceptedObjects = exceptedObjects
                 gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
                 initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
                 self.observe(self.rle,  self.memory, 3, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
             else:
                 self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)                
-            spriteTypeHypothesis, exceptedObjects, _, self.best_params = sampleFromDistribution(self.rle._game, self.memory,
+            spriteTypeHypothesis, _, self.best_params = sampleFromDistribution(self.rle._game, self.memory,
                 self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
-            self.rle._game.exceptedObjects = exceptedObjects
+            # self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
             initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
         else:
@@ -335,7 +336,7 @@ class Agent:
             if k not in allObjects:
                 allObjects[k] = v
 
-        spriteTypeHypothesis, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
+        spriteTypeHypothesis, _, self.best_params= sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         newHypotheses = []
         try:
@@ -1129,7 +1130,7 @@ class Agent:
                 self.all_objects[k] = current_objects[k]
                 distributionInitSetup(self.rle._game, k)
                 ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep, as likelihood function hasn't been seeded for these objects.
-                self.rle._game.ignoreList.append(k)
+                self.memory.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
 
         return hypotheses
@@ -1191,7 +1192,7 @@ class Agent:
 
         lastScore = self.rle._game.score
         res = self.rle.step(action)
-
+        
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
 
@@ -1315,7 +1316,7 @@ class Agent:
                 theory_change_flag = True
 
             t1 = time.time()
-            sample, exceptedObjects, _, self.best_params= sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
+            sample, _, self.best_params= sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
 
             game_object = Game(spriteInductionResult=sample)
             

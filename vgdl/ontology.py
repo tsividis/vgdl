@@ -1937,7 +1937,8 @@ def sampleFromDistribution(game, memory, curr_distribution, all_objects, bestSpr
         for obj_type in types:
             s = Sprite(vgdlType=ResourcePack, color=obj_type)
             sample.append(s)
-        return sample, exceptions, distributionsHaveChanged, best_params
+        memory.exceptions = exceptions
+        return sample, distributionsHaveChanged, best_params
 
     for obj_type in types:
         
@@ -2047,8 +2048,8 @@ def sampleFromDistribution(game, memory, curr_distribution, all_objects, bestSpr
         except:
             print "failed to find matching object in sampleFromDistribution"
             embed()
-
-    return sample, exceptions, distributionsHaveChanged, best_params
+    memory.exceptions = exceptions
+    return sample, distributionsHaveChanged, best_params
 
 # def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
 
@@ -2166,7 +2167,7 @@ def spriteInduction(game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, o
             sprite_obj = objects[sprite]["sprite"]
 
 
-            if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in game.ignoreList and sprite_obj.name != 'avatar':
+            if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in memory.ignoreList and sprite_obj.name != 'avatar':
                 # only update the distribution in this fashion if there are no events for this
                 # time step involving this sprite.
 
@@ -2187,10 +2188,10 @@ def spriteInduction(game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, o
             bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
 
         # t1 = time.time()
-        sample, exceptions, distributionsHaveChanged, _ = sampleFromDistribution(game, memory, game.spriteDistribution, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+        sample, distributionsHaveChanged, _ = sampleFromDistribution(game, memory, game.spriteDistribution, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
 
     ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
-    game.ignoreList = []
+    memory.ignoreList = []
     return distributionsHaveChanged
 
 

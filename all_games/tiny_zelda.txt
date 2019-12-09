@@ -11,6 +11,7 @@ BasicGame
     box1 > Immovable color=PURPLE
     box2 > Immovable color=ORANGE
     box3 > Immovable color=LIGHTBLUE
+    missile > Missile color=RED speed=1 orientation=RIGHT
     wall > Immovable autotiling=true color=DARKGRAY
 
 
@@ -23,6 +24,7 @@ BasicGame
     4 > box1
     5 > box2
     6 > box3
+    m > missile
     w > wall
 
 
@@ -34,6 +36,8 @@ BasicGame
     avatar box3 > stepBack
     box3 avatar > stepBack
     avatar wall  > stepBack
+    missile wall > reverseDirection
+    wall missile > nothing
     wall avatar > nothing
     avatar goal    > nothing
     goal avatar  > killIfOtherHasMore resource=key limit=1
