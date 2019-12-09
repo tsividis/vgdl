@@ -1188,10 +1188,6 @@ class Agent:
         lastScore = self.rle._game.score
         res = self.rle.step(action)
 
-        if self.rle._game.sprite_groups!=self.rle.sprite_groups:
-            print "unequal sprite groups"
-            embed()
-
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
 

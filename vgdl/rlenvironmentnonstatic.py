@@ -80,7 +80,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
-        self.sprite_groups = self._game.sprite_groups
 
     # Get definition of the observation data expected
     def observationSpec(self):
@@ -250,8 +249,16 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def getScore(self):
         return self._game.score
 
-    # def getSpritesByType(self):
-    #     return self._game.sprite_groups
+    def getSpritesByType(self):
+        return self._game.sprite_groups
+
+    def getAliveSprites(self):
+        aliveSprites = []
+        for spriteList in self.getSpritesByType().values():
+            for sprite in spriteList:
+                if sprite not in self.getDeadSprites():
+                    aliveSprites.append(sprite)
+        return aliveSprites
 
     def getDeadSprites(self):
         return self._game.kill_list
