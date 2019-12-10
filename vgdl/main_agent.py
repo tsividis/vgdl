@@ -120,6 +120,7 @@ class Agent:
         # self.selective_regrounding = True ## not used
         self.reground_for_npcs = False ## delete this and the code that checks it, since you haven't used it in ages.
 
+        self.distribution = None
         self.hypotheses = []
         self.symbolDict = None
         self.finalEventList = []
@@ -281,6 +282,8 @@ class Agent:
         ## Creates initial hypothesis objects by observing the game,
         ## doing initial inference over sprite types, and returning partial
         ## candidate models.
+
+        self.distribution = SpriteDistribution()
         if learnSprites:
             if not self.skipInduction:
                 ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
@@ -288,7 +291,7 @@ class Agent:
                 ## need to run this for one step to get a complete theory object so we can calculate initial entropy (entropy is no longer used but code remains).
                 ## Then we run it another 14 times.
                 self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
-                spriteTypeHypothesis, _, self.best_params = sampleFromDistribution(self.rle._game, self.memory,
+                spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDistribution(self.rle._game, self.memory,
                     self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
                 # self.rle._game.exceptedObjects = exceptedObjects
                 gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -297,7 +300,7 @@ class Agent:
                 self.observe(self.rle,  self.memory, 3, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
             else:
                 self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)                
-            spriteTypeHypothesis, _, self.best_params = sampleFromDistribution(self.rle._game, self.memory,
+            spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDistribution(self.rle._game, self.memory,
                 self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
             # self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -329,7 +332,7 @@ class Agent:
             if k not in allObjects:
                 allObjects[k] = v
 
-        spriteTypeHypothesis, _, self.best_params= sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
+        spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         newHypotheses = []
         try:
@@ -1135,8 +1138,8 @@ class Agent:
             print "observing for {} steps".format(obsSteps)
         if obsSteps>0:
             for i in range(obsSteps):
-                spriteInduction(rle._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                spriteInduction(rle._game, self.memory, step=2,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                spriteInduction(rle._game, self.memory, self.distribution, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                spriteInduction(rle._game, self.memory, self.distribution, step=2,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
                     statesEncountered.append(self.rle.getFullState(observe_state=True))
@@ -1155,13 +1158,13 @@ class Agent:
                     except KeyError:
                         pass
                 self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
-                spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
+                spriteInduction(rle._game, self.memory, self.distribution, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
                 if hypothesis:
                     rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
                     compactStates[-1]['entropy'] = rle._game.H
         else:
-            spriteInduction(rle._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-            spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+            spriteInduction(rle._game, self.memory, self.distribution, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+            spriteInduction(rle._game, self.memory, self.distribution, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             if hypothesis:
                 rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
         return
@@ -1173,10 +1176,10 @@ class Agent:
         theory_change_flag = False
 
         if not self.skipInduction:
-            spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+            spriteInduction(self.rle._game, self.memory, self.distribution, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 1 took {} seconds.".format(time.time()-t1)
             t1 = time.time()
-            spriteInduction(self.rle._game, self.memory, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+            spriteInduction(self.rle._game, self.memory, self.distribution, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 2 took {} seconds".format(time.time()-t1)
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
@@ -1230,7 +1233,7 @@ class Agent:
 
         t1 = time.time()
         if not self.skipInduction:
-            distributionsHaveChanged = spriteInduction(self.rle._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            distributionsHaveChanged = spriteInduction(self.rle._game, self.memory, self.distribution, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         else:
             distributionsHaveChanged = False
  
@@ -1314,7 +1317,7 @@ class Agent:
                 theory_change_flag = True
 
             t1 = time.time()
-            sample, _, self.best_params= sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
+            sample, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
 
             game_object = Game(spriteInductionResult=sample)
             
