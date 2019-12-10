@@ -7,8 +7,23 @@ import random
 
 avatar_states = [0,1,2]
 conditions = ['collision']
-effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
+effects = ['Kill_a', 'Kill_b', 'Kill_c', 'kill_e', 'BounceForward', 'CloneSprite', 'PickUp', 'PullWith', 'StepBack', 'ChangeOrientation', 'HorizontalTeleport', 'Win', 'Lose']
 
+
+## Do this better, i.e., populate it automatically from the descriptions in conditions.py and effects.py
+predicateFieldDict = {
+	'InstanceCount': ('class', 'int', 'comp'),
+	'SetAttribute': ('key', 'val')
+
+	## when you populate the rest, like SetAttribute, InventoryEval, etc.,
+	## you should just make some assumptions, such as:
+	## Player can have score and inv
+	## other objects can have inv
+}
+
+
+## You're only detecting conditions for classes that exist in the game,
+## but because effects are currently not constructed modularly (e.g., you have kill_a and kill_b as unitary effects), you currently are able to detect effects about objects that don't exist in the game.
 
 class State:
 	def __init__(self):
@@ -120,12 +135,17 @@ class Detector:
 		self.effect_false_negative_rates = defaultdict(lambda: parameters['effect_false_negative_rates'])
 		self.condition_false_positive_rates = defaultdict(lambda: parameters['condition_false_positive_rates'])
 		self.effect_false_positive_rates = defaultdict(lambda: parameters['effect_false_positive_rates'])
+		self.effect_false_positive_rates['Win'] = 0 ## list these elsewhere
+		self.effect_false_negative_rates['Win'] = 0
+		self.effect_false_positive_rates['Lose'] = 0 ## list these elsewhere
+		self.effect_false_negative_rates['Lose'] = 0
 
 		for rule in self.rules:
 			for condition in rule.conditions:
 				if condition.classes:
 					for c in condition.classes:
 						self.classes_in_game.add(c)
+
 		self.classes_in_game = list(self.classes_in_game)
 
 	def detect_rule(self, state, rule):

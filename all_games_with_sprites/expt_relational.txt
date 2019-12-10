@@ -1,0 +1,52 @@
+BasicGame frame_rate=30
+    SpriteSet
+        floor > Immovable
+        probe > Immovable color=BLUE img=oryx/potion1
+        converter1 > Immovable color=RED img=oryx/potion3
+        converter2 > Immovable color=PURPLE img=oryx/potion2
+        converter3 > Immovable color=PINK img=oryx/potion4
+        box1 > Immovable color=ORANGE img=oryx/wall4
+        fire > Immovable color=YELLOW img=oryx/fire1
+        avatar > MovingAvatar color=WHITE img=oryx/genie1
+        poison > Immovable color=BLACK
+        wall > Immovable color=DARKGRAY img=oryx/wall11
+    LevelMapping
+        . > floor
+        w > wall floor
+        a > box1 floor
+        b > box2 floor
+        f > fire floor
+        x > probe floor
+        e > converter1 floor
+        z > converter3 floor
+        y > converter2 floor
+        p > poison floor
+        A > avatar floor
+
+    InteractionSet
+        avatar wall > stepBack
+        avatar fire > stepBack
+        box avatar > bounceForward
+        box probe > stepBack
+        probe box > stepBack
+        box box > stepBack
+        box wall > stepBack
+        probe wall > stepBack
+        converter wall > stepBack
+        probe converter > stepBack
+        converter1 box > bounceForward
+        converter1 avatar > transformTo stype=fire
+        box converter2 > transformTo stype=fire
+        converter2 fire > killSprite
+        box fire > stepBack
+        probe probe > stepBack
+        probe avatar > bounceForward
+        converter3 avatar > transformTo stype=box1
+        probe fire > killSprite
+        fire probe > killSprite
+        avatar converter > nothing
+        avatar poison > killSprite
+    TerminationSet
+        SpriteCounter stype=avatar  limit=0 win=False
+        SpriteCounter stype=probe limit=0 win=True bonus=10
+        Timeout limit=2000 win=False

@@ -1,0 +1,37 @@
+BasicGame
+    SpriteSet
+        floor > Immovable img=newset/floor1
+        avatar > MovingAvatar color=DARKBLUE img=oryx/vampire1
+        goal > Passive color=GOLD img=oryx/diamond1
+        box > Passive color=RED img=oryx/diamond3
+        medicine > Resource limit=4 color=WHITE img=oryx/potion2
+        poison > Resource limit=3 color=SCJPNE img=oryx/potion5
+        suit > Resource limit=1 color=GREEN
+        wall > Immovable color=DARKGRAY img=oryx/wall3
+    LevelMapping
+        0 > hole floor
+        b > box floor
+        m > medicine floor
+        p > poison floor
+        s > suit floor
+        w > wall floor
+        g > goal floor
+        A > avatar floor
+        . > floor
+
+    InteractionSet
+        avatar wall > stepBack
+        medicine avatar > killSprite
+        avatar poison > killIfHasLess resource=medicine limit=-1
+        avatar poison > changeResource resource=medicine value=-1
+        avatar medicine > changeResource resource=medicine value=1
+        box avatar > killSprite
+        poison avatar > killSprite
+        box wall    > undoAll
+        box poison > undoAll
+        box medicine > undoAll
+        goal avatar > killSprite
+    TerminationSet
+        SpriteCounter stype=avatar  limit=0 win=False
+        SpriteCounter stype=goal limit=0 win=True bonus=10
+        Timeout limit=2000 win=False

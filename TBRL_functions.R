@@ -753,13 +753,14 @@ calculate_CI = function(x){
   return(c(low_high[1], mu, low_high[2]))
 }
 
-bootstrap_means_and_CIs = function(kappadata){
+bootstrap_means_and_CIs = function(kappadata, data1_type){
   ## Bootstrap 10k samples
-  N=100
-  M=100
+  N=10
+  M=10
   means_and_CIs = data.frame(game_name=as.character(), agent_type=as.character(), mean=as.numeric(), low_margin=as.numeric(), high_margin=as.numeric())
   for (game in unique(kappadata$game_name)){
-    data1 = filter(kappadata, agent_type=='EMPA', game_name==game, !is.na(kappa))
+    
+    data1 = filter(kappadata, agent_type==data1_type, game_name==game, !is.na(kappa))
     data2 = filter(kappadata, agent_type=='human', game_name==game, !is.na(kappa))
     kappa_ratios = numeric(N)
     all_kappa_ratios = data.frame(values=as.numeric())
@@ -782,7 +783,7 @@ bootstrap_means_and_CIs = function(kappadata){
     row = data.frame(game_name=game, agent_type='EMPA', mean=low_mean_high[2], low_margin=low_mean_high[1], high_margin=low_mean_high[3])
     means_and_CIs = rbind(means_and_CIs, row)
   }
-  means_and_CIs = transform(means_and_CIs, agent_type=factor(agent_type, levels=c('EMPA', 'EMPA fail')))
+  means_and_CIs = transform(means_and_CIs, agent_type=factor(agent_type, levels=c(data1_type, paste(data1_type, ' fail', sep=''))))
   
   return(means_and_CIs)
 }

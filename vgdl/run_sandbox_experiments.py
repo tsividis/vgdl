@@ -27,40 +27,70 @@ if not os.path.isdir(dirname):
 
 
 
-r1 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
+aa_kill_a = Rule(conditions=[Condition('Collision', ('a', 'a'))], effect=Effect('Kill_a'))
 
-r2 = Rule(conditions=[Condition('collision', ('a', 'b'))], effect=Effect('kill_a'))
+ab_kill_a = Rule(conditions=[Condition('Collision', ('a', 'b'))], effect=Effect('Kill_a'))
 
-r3 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
+abp_kill_a = Rule(conditions=[Condition('Collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('Kill_a'))
 
-r4 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
+abp_kill_b = Rule(conditions=[Condition('Collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('Kill_b'))
 
-r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
+ab_win = Rule(conditions=[Condition('Collision', ('a', 'b'))], effect=Effect('Win'))
 
-r5b = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_c'))
+abp_win = Rule(conditions=[Condition('Collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('win'))
 
-r6 = Rule(conditions=[Condition('collision', ('a', 'd'))], effect=Effect('pickUp'))
+abp_stepBack = Rule(conditions=[Condition('Collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('StepBack'))
 
-r7 = Rule(conditions=[Condition('collision', ('b', 'c'))], effect=Effect('kill_b'))
+ac_lose = Rule(conditions=[Condition('Collision', ('a', 'c'))], effect=Effect('Lose'))
 
-r7b = Rule(conditions=[Condition('collision', ('b', 'c'))], effect=Effect('bounceForward'))
+ac_kill_a = Rule(conditions=[Condition('Collision', ('a', 'c'))], effect=Effect('Kill_a'))
 
-r8 = Rule(conditions=[Condition('collision', ('b', 'd'))], effect=Effect('kill_b'))
+ac_kill_c = Rule(conditions=[Condition('Collision', ('a', 'c'))], effect=Effect('Kill_c'))
 
-r9 = Rule(conditions=[Condition('collision', ('b', 'e'))], effect=Effect('kill_b'))
+ad_lose = Rule(conditions=[Condition('Collision', ('a', 'd'))], effect=Effect('Lose'))
 
-r10 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('kill_c'))
+ad_kill_a = Rule(conditions=[Condition('Collision', ('a', 'd'))], effect=Effect('kill_a'))
 
-r11 = Rule(conditions=[Condition('collision', ('e', 'd'))], effect=Effect('bounceForward'))
+ae_kill_a = Rule(conditions=[Condition('Collision', ('a', 'e'))], effect=Effect('kill_a'))
+
+ae_cor = Rule(conditions=[Condition('Collision', ('a', 'e'))], effect=Effect('ChangeOrientationRelative'))
+
+af_pickUp = Rule(conditions=[Condition('Collision', ('a', 'f'))], effect=Effect('PickUp'))
+
+af_pull = Rule(conditions=[Condition('Collision', ('a', 'f'))], effect=Effect('PullWith'))
+
+ab_cor = Rule(conditions=[Condition('Collision', ('a', 'b'))], effect=Effect('ChangeOrientationRelative'))
+
+bc_kill_b = Rule(conditions=[Condition('Collision', ('b', 'c'))], effect=Effect('Kill_b'))
+
+bc_bounceforward = Rule(conditions=[Condition('Collision', ('b', 'c'))], effect=Effect('BounceForward'))
+
+bd_kill_b = Rule(conditions=[Condition('Collision', ('b', 'd'))], effect=Effect('Kill_b'))
+
+be_kill_b = Rule(conditions=[Condition('Collision', ('b', 'e'))], effect=Effect('Kill_b'))
+
+cd_kill_c = Rule(conditions=[Condition('Collision', ('c', 'd'))], effect=Effect('Kill_c'))
+
+ce_hteleport = Rule(conditions=[Condition('Collision', ('c', 'e'))], effect=Effect('HorizontalTeleport'))
+
+de_hteleport = Rule(conditions=[Condition('Collision', ('d', 'e'))], effect=Effect('HorizontalTeleport'))
+
+de_kill_e = ed_bounceforward = Rule(conditions=[Condition('Collision', ('d', 'e'))], effect=Effect('kill_e'))
+
+ed_bounceforward = Rule(conditions=[Condition('Collision', ('e', 'd'))], effect=Effect('BounceForward'))
+
+fd_co = Rule(conditions=[Condition('Collision', ('f', 'd'))], effect=Effect('ChangeOrientation'))
+
+fe_hteleport= Rule(conditions=[Condition('Collision', ('f', 'e'))], effect=Effect('HorizontalTeleport'))
 
 
 
-
-rulesets = {#'set1': {r1, r2, r3, r4, r5},
-			#'set2': {r3, r4},
-			# 'set3': {r1, r2, r3, r4, r5, r6, r7, r8}
-			'assemblyline': {r2, r7, r8, r9, r10, r11}
-			# 'cause_overlap': {r5, r5b, r7, r7b}
+rulesets = {#'set1': {aa_kill_a, ab_kill_a, ab_killa, abp_stepBack, ac_kill_a},
+			#'set2': {ab_kill_a, abp_stepBack},
+			# 'assemblyline': {ac_kill_a, bc_kill_b, bd_kill_b, be_kill_b, ad_kill_a, cd_kill_c, fd_co, ae_cor, ab_cor},
+			'zelda': {abp_kill_b, abp_win, ab_kill_a, bd_kill_b, ac_kill_a, cd_kill_c, ae_kill_a, de_kill_e, af_pickUp},
+			# 'frogger': {ab_win, ac_kill_a, ac_lose, ad_kill_a, ad_lose, ce_hteleport, de_hteleport, fe_hteleport, af_pull}
+			# 'cause_overlap': {ac_kill_a, ac_kill_ab, bc_kill_b, bc_bounceforward}
 			}
 
 parameters = {
@@ -73,48 +103,48 @@ parameters = {
 }
 
 
-# condition_false_negative_ranges = np.array(range(0,1,1))/10.
-# condition_false_positive_ranges = np.array(range(0,1,1))/10.
-# effect_false_negative_ranges = np.array(range(0,3,1))/10.
-# effect_false_positive_ranges = np.array(range(0,3,1))/10.
+condition_false_negative_ranges = np.array(range(0,3,1))/10.
+condition_false_positive_ranges = np.array(range(0,3,1))/10.
+effect_false_negative_ranges = np.array(range(0,3,1))/10.
+effect_false_positive_ranges = np.array(range(0 	,3,1))/10.
 
-# data = []
-# model_dict = defaultdict(lambda: [])
-# for params in itertools.product(*[condition_false_negative_ranges, condition_false_positive_ranges, effect_false_negative_ranges, effect_false_positive_ranges]):
+data = []
+model_dict = defaultdict(lambda: [])
+for params in itertools.product(*[condition_false_negative_ranges, condition_false_positive_ranges, effect_false_negative_ranges, effect_false_positive_ranges]):
 
 
-# 	parameters['condition_false_negative_rates'] = params[0]
-# 	parameters['condition_false_positive_rates'] = params[1]
-# 	parameters['effect_false_negative_rates'] = params[2]
-# 	parameters['effect_false_positive_rates'] = params[3]
+	parameters['condition_false_negative_rates'] = params[0]
+	parameters['condition_false_positive_rates'] = params[1]
+	parameters['effect_false_negative_rates'] = params[2]
+	parameters['effect_false_positive_rates'] = params[3]
 
-# 	condition_vals = str('cfn: {}, cfp: {}'.format(params[0], params[1])) 
-# 	effect_vals = str('efn: {}, efp: {}'.format(params[2], params[3])) 
-# 	param_name = condition_vals + ' ' + effect_vals
-# 	print param_name
+	condition_vals = str('cfn: {}, cfp: {}'.format(params[0], params[1])) 
+	effect_vals = str('efn: {}, efp: {}'.format(params[2], params[3])) 
+	param_name = condition_vals + ' ' + effect_vals
+	print param_name
 
-# 	for i in range(50,1000,50):
-# 		score, models = run_experiments(rules, i, parameters, 10)
-# 		data.append((param_name, condition_vals, effect_vals, i, score))
-# 		# data.append((param_name, i, score))
-# 		model_dict[param_name].append((score, models))
+	for ruleset_name,ruleset in rulesets.items():
+		for i, steps in enumerate(range(0,500,20)):
+			score, events, models = run_experiments(ruleset, steps, parameters, 10)
+			data.append((ruleset_name, param_name, condition_vals, effect_vals, steps, score, events))
+			model_dict[param_name].append((score, events, models))
 
 
 
 #########
-data = []
-model_dict = defaultdict(lambda: [])
-condition_vals = str('cfp: {}, cfn: {}'.format(parameters['condition_false_positive_rates'], parameters['condition_false_negative_rates'])) 
-effect_vals = str('efp: {}, efn: {}'.format(parameters['effect_false_positive_rates'], parameters['effect_false_negative_rates'])) 
-param_name = condition_vals + ' ' + effect_vals
+# data = []
+# model_dict = defaultdict(lambda: [])
+# condition_vals = str('cfp: {}, cfn: {}'.format(parameters['condition_false_positive_rates'], parameters['condition_false_negative_rates'])) 
+# effect_vals = str('efp: {}, efn: {}'.format(parameters['effect_false_positive_rates'], parameters['effect_false_negative_rates'])) 
+# param_name = condition_vals + ' ' + effect_vals
 
-# print param_name
+# # print param_name
 
-for ruleset_name,ruleset in rulesets.items():
-	for i, steps in enumerate(range(0,500,20)):
-		score, events, models = run_experiments(ruleset, steps, parameters, 10)
-		data.append((ruleset_name, param_name, condition_vals, effect_vals, steps, score, events))
-		model_dict[param_name].append((score, events, models))
+# for ruleset_name,ruleset in rulesets.items():
+# 	for i, steps in enumerate(range(0,500,20)):
+# 		score, events, models = run_experiments(ruleset, steps, parameters, 10)
+# 		data.append((ruleset_name, param_name, condition_vals, effect_vals, steps, score, events))
+# 		model_dict[param_name].append((score, events, models))
 
 
 

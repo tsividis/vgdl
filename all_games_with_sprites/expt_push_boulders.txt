@@ -1,0 +1,49 @@
+BasicGame frame_rate=30
+    SpriteSet
+        floor > Immovable img=newset/floor1
+        avatar > MovingAvatar color=DARKBLUE img=oryx/axeman1 
+        goal > Immovable color=PINK img=oryx/doorclosed1
+        poison1 > Immovable color=ORANGE img=oryx/mineral1
+        poison2 > Immovable color=GOLD img=oryx/mineral2
+        poison3 > Immovable color=DARKGRAY img=oryx/mineral3
+        box1 > Immovable color=GREEN img=oryx/wall4
+        box2 > Immovable color=LIGHTBLUE img=oryx/wall2
+        wall > Immovable color=DARKGRAY img=oryx/wall1
+    LevelMapping
+        . > floor
+        p > poison1 floor
+        q > poison2 floor
+        1 > box1 floor
+        2 > box2 floor
+        w > wall floor
+        g > goal floor
+        z > poison3 floor
+        A > avatar floor
+    InteractionSet
+        avatar wall > stepBack
+        avatar poison1 > killSprite
+        avatar poison2 > killSprite
+        avatar poison3 > killSprite
+        goal avatar > killSprite
+        box1 avatar > bounceForward
+        box2 avatar  > killSprite
+        poison1 wall > stepBack
+        poison2 wall > stepBack
+        poison3 wall > stepBack
+        goal box1 > stepBack
+        goal box2 > stepBack
+        goal wall > stepBack
+        goal poison1 > stepBack
+        goal poison2 > stepBack
+        box1 wall    > stepBack
+        box1 box2    > nothing
+        box2 wall    > stepBack
+        box1 box1 > stepBack
+        poison1 box1 > killSprite
+        poison2 box1 > bounceForward
+        poison1 box2 > stepBack
+        poison2 box2 >stepBack
+    TerminationSet
+        SpriteCounter stype=goal    limit=0 win=True bonus=10
+        SpriteCounter stype=avatar  limit=0 win=False
+        Timeout limit=2000 win=False

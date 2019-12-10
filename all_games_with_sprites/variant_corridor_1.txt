@@ -1,0 +1,101 @@
+BasicGame
+    SpriteSet
+	floor > Immovable color=DARKGRAY img=oryx/floor3_0
+        wall > Immovable color=DARKGRAY img=oryx/gold1
+        mover >
+            fastR > Missile speed=.8 cooldown=1 orientation=RIGHT color=BLUE img=oryx/fireright1
+            fastL > Missile speed=.8 cooldown=1 orientation=LEFT color=LIGHTBLUE img=oryx/fireleft1
+            mediumR > Missile speed=.4 cooldown=1 orientation=RIGHT color=ORANGE img=oryx/fireright2
+            mediumL > Missile speed=.4 cooldown=1 orientation=LEFT color=LIGHTORANGE img=oryx/fireleft2
+            slowR > Missile speed=.2 cooldown=1 orientation=RIGHT color=LIGHTGREEN img=oryx/fireright3
+            slowL > Missile speed=.2 cooldown=1 orientation=LEFT color=GREEN img=oryx/fireleft3        
+        spawn > SpawnPoint color=DARKGRAY 
+            fastRSpawn > stype=fastR spawnCooldown=100 total=30 img=oryx/floor3_0
+            fastLSpawn > stype=fastL spawnCooldown=100 total=30 img=oryx/floor3_0
+            mediumRSpawn > stype=mediumR spawnCooldown=75 total=40 img=oryx/floor3_0
+            mediumLSpawn > stype=mediumL spawnCooldown=75 total=40 img=oryx/floor3_0
+            slowRSpawn > stype=slowR spawnCooldown=50 total=40 img=oryx/floor3_0
+            slowLSpawn > stype=slowL spawnCooldown=50 total=40 img=oryx/floor3_0
+        padding > Immovable color=YELLOW img=oryx/slime1
+        goal  > Immovable color=LIGHTRED img=oryx/dooropen1
+        avatar > ShootAvatar color=DARKBLUE stype=bullet img=newset/girl2
+        bullet > Missile color=PURPLE img=oryx/orb2
+
+    InteractionSet
+        bullet padding > nothing
+        padding bullet > nothing
+        bullet goal > nothing
+        goal bullet > nothing
+        bullet bullet > nothing
+        bullet avatar > nothing
+        avatar bullet > nothing
+        bullet EOS > killSprite
+        EOS bullet > nothing
+        bullet spawn > nothing
+        spawn bullet > nothing
+        bullet wall > killSprite
+        wall bullet > nothing
+        avatar padding > nothing
+        padding avatar > nothing
+        mover padding > killSprite
+        padding mover > nothing
+        spawn spawn > nothing
+        spawn mover > nothing
+        mover spawn >nothing
+        spawn avatar > nothing
+        avatar spawn >nothing
+        mover mover > nothing
+        goal mover > nothing
+        mover goal > nothing
+        goal avatar > killSprite
+        avatar goal > nothing
+        avatar wall > stepBack
+        wall avatar > nothing
+        goal wall > stepBack
+        wall goal > stepBack
+        mover wall > stepBack
+        wall mover > nothing
+        avatar mover > killSprite
+        mover avatar > killSprite
+
+        mediumL bullet > transformTo stype=slowL
+        bullet mediumL > killSprite
+        mediumR bullet > transformTo stype=slowR
+        bullet mediumR > killSprite
+
+        fastL bullet > transformTo stype=mediumL
+        bullet fastL > killSprite
+        fastR bullet > transformTo stype=mediumR
+        bullet fastR > killSprite
+
+        slowL bullet > transformTo stype=fastL
+        bullet slowL > killSprite
+        slowR bullet > transformTo stype=fastR
+        bullet slowR > killSprite
+
+    
+    LevelMapping
+        g > goal floor
+        h > fastR floor
+        n > mediumR floor
+        t > slowR floor
+        f > fastL floor
+        m > mediumL floor
+        s > slowL floor
+        6 > fastRSpawn floor
+        5 > fastLSpawn floor
+        4 > mediumRSpawn floor
+        3 > mediumLSpawn floor
+        2 > slowRSpawn floor
+        1 > slowLSpawn foor
+        A > avatar floor
+        B > avatar
+        p > padding floor
+	w > wall floor
+	. > floor
+
+    TerminationSet
+        SpriteCounter stype=avatar win=False
+        SpriteCounter stype=goal win=True bonus=10
+        Timeout limit=2000 win=False
+

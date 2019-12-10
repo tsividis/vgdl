@@ -1,0 +1,76 @@
+BasicGame
+  SpriteSet
+    floor > Immovable randomtiling=0.9 img=oryx/floor3 hidden=True
+    goal  > Immovable color=GREEN img=oryx/doorclosed1
+    key   > Resource color=ORANGE limit=3 img=oryx/key2
+    sword > OrientedFlicker singleton=True color=BLUE img=oryx/slash1
+    avatar  > ShootAvatar   stype=sword color=DARKBLUE img=oryx/swordman1
+    enemy >
+      monsterQuick > RandomNPC cooldown=2 color=BROWN img=oryx/bat1
+      monsterNormal > RandomNPC cooldown=4 color=PINK img=oryx/spider2
+      monsterSlow > RandomNPC cooldown=8 color=GOLD img=oryx/scorpion1
+    wall > Immovable color=DARKGRAY img=oryx/wall3
+
+
+  LevelMapping
+    g > floor goal
+    + > floor key
+    1 > floor monsterQuick
+    2 > floor monsterNormal
+    3 > floor monsterSlow
+    w > floor wall
+    . > floor
+    A > floor avatar
+
+
+  InteractionSet
+    avatar wall  > stepBack
+    avatar goal    > nothing
+    goal avatar  > killIfOtherHasMore resource=key limit=3
+    monsterSlow sword > changeScore value=2
+    monsterSlow sword > killSprite
+    monsterQuick sword > changeScore value=2
+    monsterQuick sword > killSprite
+    monsterNormal sword > changeScore value=2
+    monsterNormal sword > killSprite
+
+    monsterSlow monsterSlow > stepBack
+    monsterSlow monsterQuick > stepBack
+    monsterSlow monsterNormal > stepBack
+    monsterQuick monsterNormal > stepBack
+    monsterNormal monsterNormal > stepBack
+    monsterQuick monsterQuick > stepBack
+
+    avatar monsterSlow > changeScore value=-1
+    avatar monsterSlow > killSprite
+    avatar monsterQuick > changeScore value=-1
+    avatar monsterQuick > killSprite
+    avatar monsterNormal > changeScore value=-1
+    avatar monsterNormal > killSprite
+
+    avatar key > changeScore value=1
+    avatar key   > changeResource resource=key value=1
+    key avatar    > killSprite
+
+    monsterQuick wall > stepBack
+    monsterNormal wall > stepBack
+    monsterSlow wall > stepBack
+
+    monsterSlow key > nothing
+    monsterQuick key > nothing
+    monsterNormal key > nothing
+
+    monsterSlow goal > nothing
+    monsterNormal goal > nothing
+    monsterFast goal > nothing
+
+    sword goal > nothing
+    sword key > nothing
+    sword wall > nothing
+    sword avatar > nothing
+    sword sword > nothing
+
+  TerminationSet
+    SpriteCounter stype=goal   win=True bonus=10
+    SpriteCounter stype=avatar win=False
+    Timeout limit=2000 win=False

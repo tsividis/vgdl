@@ -2,7 +2,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 ## Once you set it, you can load the workspace using load(".RData") !
 
 ## gameplay data
-EMPA_dates = list('mar28')
+EMPA_dates = list('mar28', 'apr4')
 refactor_dates = list('refactor_feb13')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
@@ -14,6 +14,9 @@ humandata = load_reward_data('human', NA)
 EMPAdata = load_reward_data('EMPA', EMPA_dates)
 rEMPAdata = load_reward_data('EMPA', refactor_dates)
 rEMPAdata$agent_type = as.factor('EMPA_refactor')
+
+##Load subjective game ratings
+ratings = load_ratings()
 
 ## Remove subject-game pairs where the subject said they'd played the game before.
 played_before = filter(ratings, played.before=='Yes')
@@ -302,6 +305,7 @@ m = multiplot(plotlist = plots, layout=layout)
 humankappadata = calculate_kappas(filter(alldata, agent_type=='human'),step_minimum=NA)
 EMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA'),step_minimum=NA)
 rEMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA_refactor'),step_minimum=NA)
+
 DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
 
 kappadata = rbind(humankappadata, EMPAkappadata, rEMPAkappadata)
@@ -315,7 +319,43 @@ for (game in unique(DDQNkappadata$game_name)){
 }
 non_max_DDQNkappadata$agent_type='DDQN 1k' ## hacking this to get a previously-defined light gray color in plots
 
-means_and_CIs = bootstrap_means_and_CIs(kappadata)
+means_and_CIs = bootstrap_means_and_CIs(kappadata, 'EMPA')
+#EMPAmeans_and_CIs = bootstrap_means_and_CIs(kappadata, 'EMPA')
+rEMPAmeans_and_CIs = bootstrap_means_and_CIs(kappadata, 'EMPA_refactor')
+rEMPAmeans_and_CIs$agent_type = as.factor('EMPA_refactor')
+
+mean_and_CI_diffs = data.frame(game_name=as.character(), agent_type=as.character(), mean=as.numeric())
+for (game in unique(means_and_CIs$game_name)){
+  diff = rEMPAmeans_and_CIs[rEMPAmeans_and_CIs$game_name==game,]$mean / means_and_CIs[means_and_CIs$game_name==game,]$mean
+  row = data.frame(game_name=game, agent_type='EMPA_refactor', mean=diff)
+  mean_and_CI_diffs = rbind(mean_and_CI_diffs, row)
+}
+
+main_plot_agent_types = c('EMPA_refactor', 'EMPA')
+s = mean_and_CI_diffs
+ordered_names = s[order(log(s$mean)),]$game_name
+p = ggplot()+
+  geom_bar(data=filter(mean_and_CI_diffs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_bar(data=filter(mean_and_CI_diffs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+  #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+  #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
+  # geom_point(data=non_max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  # geom_point(data=max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+logtickmarks=(log(tickmarks))
+tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p = p+scale_fill_manual(values=colors)
+p
+
+
 
 
 ## Human-normed figure (figure 3)
@@ -327,7 +367,35 @@ p = ggplot()+
            aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
   geom_bar(data=filter(means_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
            aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
-  geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+  #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+   #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
+  # geom_point(data=non_max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  # geom_point(data=max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+logtickmarks=(log(tickmarks))
+tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p = p+scale_fill_manual(values=colors)
+p
+# p = p + scale_fill_manual(values=colors,name="Model",
+                          # breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+                          # labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
+                          #                                                             breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+                          #                                                             labels=c("EMPA", "EMPA fail", "DDQN"))
+## 14x10
+
+
+p = ggplot()+
+  geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+  geom_linerange(data=filter(rEMPAmeans_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
                  aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
   # geom_point(data=non_max_DDQNkappadata,
   #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
@@ -341,12 +409,7 @@ tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 p = p+scale_fill_manual(values=colors)
-# p = p + scale_fill_manual(values=colors,name="Model",
-                          # breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
-                          # labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
-                          #                                                             breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
-                          #                                                             labels=c("EMPA", "EMPA fail", "DDQN"))
-## 14x10
+p
 
 
 
