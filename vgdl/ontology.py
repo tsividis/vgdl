@@ -1813,53 +1813,6 @@ def initializeDistributionArgs(sprite_type, objectColors, dynamic_type_lesion=[]
     return paramList
 
 
-def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
-
-    epsilon_prob = 0.000005
-
-    # For computing the new normalized likelihoods, we proceed as follows:
-
-    # The normalized likelihood for a given observation sequence o_1, ... o_t-1 given a parameter p_j is:
-    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i))
-    #
-    # We want to arrive at the new normalized likelihoods p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i))
-    #
-    # We first compute the ratio between the normalization constants:
-    # sum_i(p(o_1, .., o_t-1, o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j)) =
-    # sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j))
-    #
-    # Now, we can get the new normalized likelihood by doing:
-    # p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i)) =
-    #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i)) *
-    #   p(o_t|p_j)
-    #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
-
-
-    normalization_ratio = 0
-    alpha = 1.
-
-    if sprite in curr_distribution.keys():
-        for param_combination in curr_distribution[sprite].keys():
-            if outcome in movement_options[sprite][param_combination].keys():
-                if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
-                    normalization_ratio += curr_distribution[sprite][param_combination] * (movement_options[sprite][param_combination][outcome]**alpha)
-                else:
-                    normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
-            else:
-                normalization_ratio += curr_distribution[sprite][param_combination] * epsilon_prob
-
-    if sprite in curr_distribution.keys():
-        for param_combination in curr_distribution[sprite].keys():
-            if outcome in movement_options[sprite][param_combination].keys():
-                if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
-                    curr_distribution[sprite][param_combination] *= ((movement_options[sprite][param_combination][outcome]**alpha) / normalization_ratio)
-                else:
-                    curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
-            else:
-                curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
-
-    return curr_distribution
-
 
 class SpriteDistribution():
     def __init__(self):
@@ -1887,6 +1840,53 @@ class SpriteDistribution():
             game.all_objects[sprite] = game.getObjects()[sprite]
 
         game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
+
+    def updateDistribution(self, game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
+
+        epsilon_prob = 0.000005
+
+        # For computing the new normalized likelihoods, we proceed as follows:
+
+        # The normalized likelihood for a given observation sequence o_1, ... o_t-1 given a parameter p_j is:
+        #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i))
+        #
+        # We want to arrive at the new normalized likelihoods p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i))
+        #
+        # We first compute the ratio between the normalization constants:
+        # sum_i(p(o_1, .., o_t-1, o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j)) =
+        # sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_j(p(o_1, .., o_t-1|p_j))
+        #
+        # Now, we can get the new normalized likelihood by doing:
+        # p(o_1, ..., o_t-1, o_t|p_j) / sum_i(p(o_1, .., o_t-1, o_t|p_i)) =
+        #   p(o_1, ..., o_t-1|p_j) / sum_i(p(o_1, .., o_t-1|p_i)) *
+        #   p(o_t|p_j)
+        #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
+
+
+        normalization_ratio = 0
+        alpha = 1.
+
+        if sprite in curr_distribution.keys():
+            for param_combination in curr_distribution[sprite].keys():
+                if outcome in movement_options[sprite][param_combination].keys():
+                    if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
+                        normalization_ratio += curr_distribution[sprite][param_combination] * (movement_options[sprite][param_combination][outcome]**alpha)
+                    else:
+                        normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
+                else:
+                    normalization_ratio += curr_distribution[sprite][param_combination] * epsilon_prob
+
+        if sprite in curr_distribution.keys():
+            for param_combination in curr_distribution[sprite].keys():
+                if outcome in movement_options[sprite][param_combination].keys():
+                    if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
+                        curr_distribution[sprite][param_combination] *= ((movement_options[sprite][param_combination][outcome]**alpha) / normalization_ratio)
+                    else:
+                        curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
+                else:
+                    curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
+
+        return curr_distribution
 
     def spriteInduction(self, game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):
             """
@@ -1971,7 +1971,7 @@ class SpriteDistribution():
 
                         outcome = objects[sprite]["position"]
 
-                        game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
+                        game.spriteDistribution = self.updateDistribution(game, sprite, game.spriteDistribution, \
                                                   game.movement_options, outcome, missileOrientationClustering=True)
 
                         memory.spriteUpdateDict[sprite] += 1
