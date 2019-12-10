@@ -2161,47 +2161,9 @@ class SpriteDistribution():
 
         return sample, distributionsHaveChanged, best_params
 
-# def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
-
-#     all_objects = game.all_objects
-#     curr_distribution = game.spriteDistribution
-#     changes = False
-#     exceptions = []
-
-#     ## We don't do sprite inference for the avatar and for Flak
-#     non_avatar_keys = []
-#     for k in all_objects.keys():
-#         if all_objects[k]['sprite'].name is not 'avatar':
-#             non_avatar_keys.append(k)
-
-#     types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions)) ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately and not doing inference about it.
-#     for obj_type in types:
-#         ## find the most-updated object, use that one for the sprite hypothesis.
-#         options = [k for k in all_objects.keys() if all_objects[k]['type']['color'] == obj_type]
-#         k = max(options, key=lambda x:spriteUpdateDict[x])
-
-#         oldDistribution = bestSpriteTypeDict[obj_type]['distribution']
-
-#         if spriteUpdateDict[k] >= bestSpriteTypeDict[obj_type]['count']: ## If we have more observations in the current episode than in our memory, use the current distribution
-
-#             if k not in curr_distribution.keys():
-#                 print k, "not in curr_distribution"
-#                 embed()
-#             sprite_possibilities = curr_distribution[k]
-#         else:
-#             sprite_possibilities = bestSpriteTypeDict[obj_type]['distribution']
-
-#         newDistribution = sprite_possibilities
-
-#     return False
-
 def getKL(spriteDistribution1, spriteDistribution2):
     d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
     return scipy.stats.entropy(d1,d2)
-
-
-
-
 
 def softmax(w, t = 1.0):
     e = np.exp(np.array(w) / t)
