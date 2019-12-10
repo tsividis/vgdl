@@ -1191,10 +1191,10 @@ class Agent:
         lastScore = self.rle.getScore()
         res = self.rle.step(action)
 
-        if self.total_game_steps+self.rle.getTime()>10:
+        # if self.total_game_steps+self.rle.getTime()>10:
             # self.hypotheses[0].spriteObjects['PINK'].display()
             # embed()
-            assert self.hypotheses[0].spriteObjects['PINK'].stype=='PURPLE'
+            # assert self.hypotheses[0].spriteObjects['PINK'].stype=='PURPLE'
 
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
