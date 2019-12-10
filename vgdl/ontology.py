@@ -1889,6 +1889,111 @@ class SpriteDistribution():
     def __init__(self):
         self.distribution = {}
 
+    def spriteInduction(self, game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):
+            """
+            game = a BasicGame object
+            game.spriteDistribution is a dictionary of the following form:
+            {sprite: {sprite_type: {'prob': PROBABILITY OF SPRITE TYPE, 'args': {'speed': {A VALUE OF SPEED: PROBABILITY OF THAT VALUE}}},
+            ...}, ...}
+            game.spriteDistribution tells you the probability of a sprite being being a particular type. It also
+            tells you the probability distribution over values for each parameter (e.g. speed, orientation).
+            game.movement_options is a dictionary of the following form:
+            {sprite: {sprite_type: {attributeTuple: {sprite position: probability of that sprite position},...},
+            ...}, ...}
+            game.movement_options tells you the probability of a sprite being in a particular position, given a certain
+            setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
+            """
+            distributionsHaveChanged = False
+
+            if step==0:
+            ## Prep for sprite induction
+                objects = game.getObjects()
+                for sprite in objects:
+                    ## color keys hard-coded for objects that occur in v. large number in our games: walls, water, etc. For these objects we just grab their type (They don't move) rather than updating all the hypotheses for each object token at each time step. Saving on compute.
+                    if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
+                        distributionInitSetup(game, sprite, dynamic_type_lesion)
+            elif step==1:
+                ## Sprite Induction Part 1:
+                ## every time you act, make sure there aren't new objects
+                ## if there are, update spriteDistribution etc.
+                objects = game.getObjects()
+                kill_list_keys = [s.ID for s in game.kill_list]
+                spritestoupdate = 0
+                for sprite in objects:
+                    if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
+                        spritestoupdate+=1
+                        game.all_objects[sprite] = objects[sprite]
+                        distributionInitSetup(game, sprite, dynamic_type_lesion)
+            elif step == 2:
+                ## See the update options for each sprite type the sprite could be
+                objects = game.getObjects()
+
+                game = game
+                sprite_count, param_count=0, 0
+
+                for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
+                    sprite_count +=1
+                    sprite_obj = objects[sprite]["sprite"]
+
+                    if sprite_obj.name !='avatar':
+                        for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
+                            if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
+                                param_count +=1
+
+                                sprite_type = param_combination[0]
+                                attributeDict = {k:v for k,v in param_combination[1:]}
+
+                                # Get potential next positions for sprite if it were that sprite type
+                                # we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
+                                # given a set of potential attribute values, update the movement options
+                                # for this attribute tuple (i.e. candidate set of parameters)
+
+                                ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
+                                ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving objects
+
+                                _, game.movement_options[sprite][param_combination] = \
+                                    updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+
+                game.targetColorDict = dict()
+                game.chaserMovesTowardDict = dict()
+
+            elif step==3:
+                ## Update sprite distribution based on observations
+                objects = game.getObjects()
+
+                for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys() and s not in [k.ID for k in game.kill_list]]:
+                    # Keys are the IDs of the game objects
+                    sprite_obj = objects[sprite]["sprite"]
+
+
+                    if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in memory.ignoreList and sprite_obj.name != 'avatar':
+                        # only update the distribution in this fashion if there are no events for this
+                        # time step involving this sprite.
+
+                        outcome = objects[sprite]["position"]
+
+                        game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
+                                                  game.movement_options, outcome, missileOrientationClustering=True)
+
+                        memory.spriteUpdateDict[sprite] += 1
+                
+                ## Update the global memory
+                for k in game.spriteDistribution.keys():
+                    try:
+                        color = game.all_objects[k]['type']['color']
+                    except KeyError:
+                        print("got key error when trying to access sprite color")
+                        embed()
+                    bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
+
+                # t1 = time.time()
+                sample, distributionsHaveChanged, _ = self.sampleFromDistribution(game, memory, game.spriteDistribution, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+
+            ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
+            # self.distribution = game.spriteDistribution
+            memory.ignoreList = []
+            return distributionsHaveChanged
+
     def sampleFromDistribution(self, game, memory, curr_distribution, all_objects, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False, display=False):
 
         import random
@@ -2053,6 +2158,7 @@ class SpriteDistribution():
                 print "failed to find matching object in sampleFromDistribution"
                 embed()
         memory.exceptions = exceptions
+
         return sample, distributionsHaveChanged, best_params
 
 # def checkIfDistributionsHaveChanged(game, spriteUpdateDict, bestSpriteTypeDict):
@@ -2094,109 +2200,7 @@ def getKL(spriteDistribution1, spriteDistribution2):
     return scipy.stats.entropy(d1,d2)
 
 
-def spriteInduction(game, memory, distribution, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):
-    """
-    game = a BasicGame object
-    game.spriteDistribution is a dictionary of the following form:
-    {sprite: {sprite_type: {'prob': PROBABILITY OF SPRITE TYPE, 'args': {'speed': {A VALUE OF SPEED: PROBABILITY OF THAT VALUE}}},
-    ...}, ...}
-    game.spriteDistribution tells you the probability of a sprite being being a particular type. It also
-    tells you the probability distribution over values for each parameter (e.g. speed, orientation).
-    game.movement_options is a dictionary of the following form:
-    {sprite: {sprite_type: {attributeTuple: {sprite position: probability of that sprite position},...},
-    ...}, ...}
-    game.movement_options tells you the probability of a sprite being in a particular position, given a certain
-    setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
-    """
-    distributionsHaveChanged = False
 
-    if step==0:
-    ## Prep for sprite induction
-        objects = game.getObjects()
-        for sprite in objects:
-            ## color keys hard-coded for objects that occur in v. large number in our games: walls, water, etc. For these objects we just grab their type (They don't move) rather than updating all the hypotheses for each object token at each time step. Saving on compute.
-            if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
-                distributionInitSetup(game, sprite, dynamic_type_lesion)
-    elif step==1:
-        ## Sprite Induction Part 1:
-        ## every time you act, make sure there aren't new objects
-        ## if there are, update spriteDistribution etc.
-        objects = game.getObjects()
-        kill_list_keys = [s.ID for s in game.kill_list]
-        spritestoupdate = 0
-        for sprite in objects:
-            if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
-                spritestoupdate+=1
-                game.all_objects[sprite] = objects[sprite]
-                distributionInitSetup(game, sprite, dynamic_type_lesion)
-    elif step == 2:
-        ## See the update options for each sprite type the sprite could be
-        objects = game.getObjects()
-
-        game = game
-        sprite_count, param_count=0, 0
-
-        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
-            sprite_count +=1
-            sprite_obj = objects[sprite]["sprite"]
-
-            if sprite_obj.name !='avatar':
-                for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
-                    if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
-                        param_count +=1
-
-                        sprite_type = param_combination[0]
-                        attributeDict = {k:v for k,v in param_combination[1:]}
-
-                        # Get potential next positions for sprite if it were that sprite type
-                        # we are sprite_obj, and we are updating the options for where it could be next contingent on its being 'sprite_type'
-                        # given a set of potential attribute values, update the movement options
-                        # for this attribute tuple (i.e. candidate set of parameters)
-
-                        ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
-                        ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving objects
-
-                        _, game.movement_options[sprite][param_combination] = \
-                            updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
-
-        game.targetColorDict = dict()
-        game.chaserMovesTowardDict = dict()
-
-    elif step==3:
-        ## Update sprite distribution based on observations
-        objects = game.getObjects()
-
-        for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys() and s not in [k.ID for k in game.kill_list]]:
-            # Keys are the IDs of the game objects
-            sprite_obj = objects[sprite]["sprite"]
-
-
-            if all([sprite not in e for e in game.effectList if e[0]!='nothing']) and sprite not in memory.ignoreList and sprite_obj.name != 'avatar':
-                # only update the distribution in this fashion if there are no events for this
-                # time step involving this sprite.
-
-                outcome = objects[sprite]["position"]
-
-                game.spriteDistribution = updateDistribution(game, sprite, game.spriteDistribution, \
-                                          game.movement_options, outcome, missileOrientationClustering=True)
-
-                memory.spriteUpdateDict[sprite] += 1
-        
-        ## Update the global memory
-        for k in game.spriteDistribution.keys():
-            try:
-                color = game.all_objects[k]['type']['color']
-            except KeyError:
-                print("got key error when trying to access sprite color")
-                embed()
-            bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
-
-        # t1 = time.time()
-        sample, distributionsHaveChanged, _ = distribution.sampleFromDistribution(game, memory, game.spriteDistribution, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
-
-    ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
-    memory.ignoreList = []
-    return distributionsHaveChanged
 
 
 def softmax(w, t = 1.0):

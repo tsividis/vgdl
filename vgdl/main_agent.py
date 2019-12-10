@@ -311,6 +311,8 @@ class Agent:
 
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
 
+        # print "just sampledfromdistribution"
+        # embed()
         ### Edit hypotheses for cultural-transmission experiment here.
         ## initialTheory.interactionSet is the list to modify.
         
@@ -1138,8 +1140,8 @@ class Agent:
             print "observing for {} steps".format(obsSteps)
         if obsSteps>0:
             for i in range(obsSteps):
-                spriteInduction(rle._game, self.memory, self.distribution, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                spriteInduction(rle._game, self.memory, self.distribution, step=2,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                self.distribution.spriteInduction(rle._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
                     statesEncountered.append(self.rle.getFullState(observe_state=True))
@@ -1158,13 +1160,13 @@ class Agent:
                     except KeyError:
                         pass
                 self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
-                spriteInduction(rle._game, self.memory, self.distribution, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
+                self.distribution.spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
                 if hypothesis:
                     rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
                     compactStates[-1]['entropy'] = rle._game.H
         else:
-            spriteInduction(rle._game, self.memory, self.distribution, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-            spriteInduction(rle._game, self.memory, self.distribution, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+            self.distribution.spriteInduction(rle._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+            self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             if hypothesis:
                 rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
         return
@@ -1176,10 +1178,10 @@ class Agent:
         theory_change_flag = False
 
         if not self.skipInduction:
-            spriteInduction(self.rle._game, self.memory, self.distribution, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+            self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 1 took {} seconds.".format(time.time()-t1)
             t1 = time.time()
-            spriteInduction(self.rle._game, self.memory, self.distribution, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+            self.distribution.spriteInduction(self.rle._game, self.memory, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
             # print "induction step 2 took {} seconds".format(time.time()-t1)
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
@@ -1189,10 +1191,10 @@ class Agent:
         lastScore = self.rle.getScore()
         res = self.rle.step(action)
 
-        # if self.total_game_steps+self.rle.getTime()>10:
+        if self.total_game_steps+self.rle.getTime()>10:
             # self.hypotheses[0].spriteObjects['PINK'].display()
             # embed()
-            # assert self.hypotheses[0].spriteObjects['PINK'].stype=='PURPLE'
+            assert self.hypotheses[0].spriteObjects['PINK'].stype=='PURPLE'
 
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
@@ -1233,7 +1235,7 @@ class Agent:
 
         t1 = time.time()
         if not self.skipInduction:
-            distributionsHaveChanged = spriteInduction(self.rle._game, self.memory, self.distribution, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+            distributionsHaveChanged = self.distribution.spriteInduction(self.rle._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
         else:
             distributionsHaveChanged = False
  
