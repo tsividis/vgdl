@@ -515,7 +515,7 @@ class Agent:
                  'win': win,
                  'entropy': rle._game.H,
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) for s in rle.getAliveSprites()],
-                 'events': list(rle._game.effectListByClass)
+                 'events': list(rle.getEffectListByClass())
                  }
         self.last_recorded_time = current_time
         return state
@@ -528,8 +528,8 @@ class Agent:
 
         states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
                   if (not s['observe_state']) and s['objects']['avatar'].keys()]
-        width, height = self.rle._game.width, self.rle._game.height
-        correction_factor = self.rle._game.screensize[0]/width
+        width, height = self.rle.width, self.rle.height
+        correction_factor = self.rle.screensize[0]/width
         corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
 
         m = np.zeros((width, height))

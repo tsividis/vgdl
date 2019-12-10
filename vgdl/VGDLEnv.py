@@ -155,7 +155,7 @@ class VGDLEnvAndres(object):
 
     def reset(self):
         self.Env.reset()
-        self.avatar_position_data = {'game_info': (self.Env.current_env._game.width, self.Env.current_env._game.height),
+        self.avatar_position_data = {'game_info': (self.Env.current_env.width, self.Env.current_env.height),
                                 'episodes': [[(self.Env.current_env._game.sprite_groups['avatar'][0].rect.left,
                                                self.Env.current_env._game.sprite_groups['avatar'][0].rect.top,
                                                self.Env.current_env._game.time,

@@ -80,6 +80,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.keystate = defaultdict(bool)
         self._game.metabolic_score = 0
         self.game_name = None
+        self.width = self._game.width
+        self.height = self._game.height
+        self.screensize = self._game.screensize
 
     # Get definition of the observation data expected
     def observationSpec(self):
