@@ -11,6 +11,7 @@ BasicGame
     box1 > Immovable color=PURPLE
     box2 > Immovable color=ORANGE
     box3 > Immovable color=LIGHTBLUE
+    chaser > Chaser color=PINK stype=box1
     missile > Missile color=RED speed=1 orientation=RIGHT
     wall > Immovable autotiling=true color=DARKGRAY
 
@@ -25,12 +26,23 @@ BasicGame
     5 > box2
     6 > box3
     m > missile
+    c > chaser
     w > wall
 
 
   InteractionSet
     avatar box1 > killSprite
     box1 avatar > killSprite
+    chaser wall > stepBack
+    wall chaser > stepBack
+    avatar chaser > nothing
+    chaser avatar > nothing
+    chaser box1 > nothing
+    box1 chaser > nothing
+    chaser key > nothing
+    key chaser > nothing
+    chaser goal > nothing
+    goal chaser > nothing
     avatar box2 > nothing
     box2 avatar > killSprite
     avatar box3 > stepBack

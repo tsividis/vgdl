@@ -175,7 +175,6 @@ class Agent:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
         self.rle = self.rleCreateFunc()
-        self.rle._game.spriteUpdateDict = self.memory.spriteUpdateDict
         return
 
     def initializeRLEFromGame(self):
@@ -205,9 +204,10 @@ class Agent:
 
     def getSpritesByColor(self, rle, color):
         outList = []
-        for k in rle._game.sprite_groups.keys():
-            if rle._game.sprite_groups[k] and rle._game.sprite_groups[k][0].colorName==color:
-                outList.extend(rle._game.sprite_groups[k])
+        spriteGroups = rle.getSpriteGroups()
+        for k in spriteGroups.keys():
+            if spriteGroups[k] and spriteGroups[k][0].colorName==color:
+                outList.extend(spriteGroups[k])
         if outList:
             return outList
         else:
@@ -680,8 +680,8 @@ class Agent:
         for resource, val in resources.items():
             if resource not in self.seen_resources and val>0:
                 self.seen_resources.append(resource)
-                self.hypotheses[0].resource_limits[resource] = self.rle._game.resources_limits[resource]
-            if resource not in self.seen_limits and val==self.rle._game.resources_limits[resource]:
+                self.hypotheses[0].resource_limits[resource] = self.rle.getResourceLimits()[resource]
+            if resource not in self.seen_limits and val==self.rle.etResourceLimits()[resource]:
                 self.seen_limits.append(resource)
 
         ended, win = self.rle._isDone()
@@ -690,7 +690,7 @@ class Agent:
         if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
             legalActions.append(K_SPACE)
 
-        steps = self.rle._game.time
+        steps = self.rle.getTime()
         emptyPlans = 0
         
         ## Main episode loop
@@ -701,7 +701,7 @@ class Agent:
                 self.episodeSaveTime = time.time()
 
             if self.total_game_steps+steps > MAX_STEPS:
-                score = self.rle._game.score
+                score = self.rle.getScore()
                 quit_level = False
                 if self.saveMidEpisode:
                     self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
@@ -761,8 +761,8 @@ class Agent:
 
                 elif self.hyperparameter_index == 3:
                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
-                    if self.rle._game.time>compactStates[-1]['timestep']:
-                        scoreChange = self.rle._game.score!=compactStates[-1]['score']
+                    if self.rle.getTime()>compactStates[-1]['timestep']:
+                        scoreChange = self.rle.getScore()!=compactStates[-1]['score']
                     else:
                         scoreChange = True
                     # if self.display_text:
@@ -838,7 +838,7 @@ class Agent:
                         run_induction = not flexible_goals)
                     quitting = True
                     if self.total_game_steps+steps > MAX_STEPS:
-                        score = self.rle._game.score
+                        score = self.rle.getScore()
                         quit_level = False
                         if self.saveMidEpisode:
                             self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
@@ -874,7 +874,7 @@ class Agent:
                     
                     ## For an incomplete ablation
                     if self.total_game_steps+steps > MAX_STEPS:
-                        score = self.rle._game.score
+                        score = self.rle.getScore()
                         quit_level = False
                         if self.saveMidEpisode:
                             self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
@@ -903,7 +903,7 @@ class Agent:
                         break
                     ended, win = self.rle._isDone()
 
-                    self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
+                    self.max_game_time_observed = max(self.max_game_time_observed, self.rle.getTime())
                     if ended:
                         break
 
@@ -940,7 +940,7 @@ class Agent:
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored(output, 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+                return gameObject, False, self.rle.getScore(), steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
 
             annealing *= self.annealingFactor
@@ -949,13 +949,13 @@ class Agent:
             if ended:
                 self.episodeRecord.insert(0, (win, effects))
             
-            if ended and not win and self.rle._game.time==2000:
+            if ended and not win and self.rle.getTime()==2000:
                 if self.produce_printout:
                     print "lost on timeout. switching hyperparameters"
                 self.hyperparameterSwitch(new_index=1)
 
 
-        score = self.rle._game.score
+        score = self.rle.getScore()
 
         if win:
             output =          "ended episode. Win={}                                         ".format(win)
@@ -997,9 +997,9 @@ class Agent:
         min_age = min([sprite.lastmove for sprite in rle.getAliveSprites() if sprite.name not in [thingWeShoot, 'avatar']])
 
         try:
-            time_since_last_kill = self.rle._game.time - max([item.deathage for item in self.rle.getDeadSprites() if item.name!=thingWeShoot])
+            time_since_last_kill = self.rle.getTime() - max([item.deathage for item in self.rle.getDeadSprites() if item.name!=thingWeShoot])
         except:
-            time_since_last_kill = self.rle._game.time
+            time_since_last_kill = self.rle.getTime()
 
         if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
             return True
@@ -1150,9 +1150,9 @@ class Agent:
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
                 if self.produce_printout:
-                    print "score: {}, timestep: {}".format(rle._game.score, rle._game.time)
+                    print "score: {}, timestep: {}".format(rle.getScore(), rle.getTime())
                     print rle.show(color='blue')
-                print "action", self.total_game_steps+rle._game.time
+                print "action", self.total_game_steps+rle.getTime()
                 self.memory.nextPositions = {}
                 for k, v in rle._game.all_objects.iteritems():
                     self.memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
@@ -1190,9 +1190,13 @@ class Agent:
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
-        lastScore = self.rle._game.score
+        lastScore = self.rle.getScore()
         res = self.rle.step(action)
+
+        # if self.total_game_steps>10 and 'tiny_zelda' in self.gameFilename:
+            # assert self.hypotheses[0].spriteObjects['PINK'].stype=='PURPLE'
         
+
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
 
@@ -1237,7 +1241,7 @@ class Agent:
             distributionsHaveChanged = False
  
         ## First interaction-rule ablation (not used)
-        effects = self.rle._game.effectListByColor
+        effects = self.rle.getEffectListByColor()
         if self.interaction_lesion_replacement == 'nothing':
             for i,e in enumerate(effects):
                 if e[0] in self.disallowed_events:
@@ -1247,10 +1251,10 @@ class Agent:
                     print ""
 
         if self.display_states:
-            print "score: {}, game step: {}".format(self.rle._game.score, self.rle._game.time)
+            print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
 
         # t1 = time.time()
-        print "action", self.total_game_steps+self.rle._game.time
+        print "action", self.total_game_steps+self.rle.getTime()
         if self.produce_printout:
             print ""
             print keyPresses[action]
@@ -1320,7 +1324,7 @@ class Agent:
 
             game_object = Game(spriteInductionResult=sample)
             
-            terminationCondition = {'ended': False, 'win':False, 'time':self.rle._game.time}
+            terminationCondition = {'ended': False, 'win':False, 'time':self.rle.getTime()}
             trace = (self.finalTimeStepList, terminationCondition)
 
             t1 = time.time()

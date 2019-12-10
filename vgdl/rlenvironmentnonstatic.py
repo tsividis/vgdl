@@ -252,6 +252,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def getSpriteGroups(self):
         return self._game.sprite_groups
 
+    def getResourceLimits(self):
+        return self._game.resources_limits
+
+    def getEffectListByColor(self):
+        return self._game.effectListByColor
+
     def getAliveSprites(self):
         aliveSprites = []
         for spriteList in self.getSpriteGroups().values():
