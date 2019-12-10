@@ -310,7 +310,6 @@ class BasicGame(object):
         self.targetColorDict = dict() ## for memoizing objects of each color once per timestep
         self.chaserMovesTowardDict = dict() ## for memoizing directions that make chaser closer to some target.
         self.EOS = EOS((-1, -1))
-        self.positionDict = dict()
         self.sprite_bonus_granted_on_timestep=-1 ## to ensure you only grant bonus once per timestep (since you check _isDone() multiple times)
         self.timeout_bonus_granted_on_timestep=-1 ## to ensure you only grant bonus once per timestep (since you check _isDone() multiple times)
         self.reset()

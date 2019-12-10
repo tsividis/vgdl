@@ -220,10 +220,10 @@ class Agent:
     def setSpritePositions(self, rle, Vrle, hypothesis):
         ## Sets positions of objects in Vrle to what they were in the rle. E.g., if we want to start a simulation according to the model specified by 'hypothesis' at the state contained in 'rle', this will return Vrle: a playable game whose rules run according to the model.
 
-        old_sprite_groups = Vrle._game.sprite_groups
+        old_sprite_groups = Vrle.getSpriteGroups()
         for k in old_sprite_groups.keys():
             if old_sprite_groups[k]:
-                color = Vrle._game.sprite_groups[k][0].colorName
+                color = Vrle.getSpriteGroups()[k][0].colorName
                 matchingSpritesInRLE = self.getSpritesByColor(rle, color)
                 for sprite in old_sprite_groups[k]:
                     matchingSprite = self.find_nearest_sprite(sprite, matchingSpritesInRLE)
@@ -245,13 +245,6 @@ class Agent:
 
                         except KeyError:
                             sprite.orientation = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
-
-        for sprite in Vrle.getAliveSprites():
-            loc = (sprite.rect.left, sprite.rect.top)
-            if loc in Vrle._game.positionDict.keys():
-                Vrle._game.positionDict[loc].append(sprite)
-            else:
-                Vrle._game.positionDict[loc] = [sprite]
 
         return
 
