@@ -1740,83 +1740,83 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         # Catches objects that can't be Oriented Sprite and Missile types b/c fails the if-statement
         return {}, {}
 
-def initializeDistribution(sprite_types, objectColors, dynamic_type_lesion=[]):
-    """
-    Creates a uniform distribution over all parameter combinations
-    """
-    catch_all_prior = .000001
-    outList = []
-    if 'Chaser' in dynamic_type_lesion:
-        try:
-            sprite_types.remove(Chaser)
-        except:
-            pass
-    if 'Missile' in dynamic_type_lesion:
-        try:
-            sprite_types.remove(Missile)
-        except:
-            pass
-    for sprite_type in sprite_types:
-            paramList = initializeDistributionArgs(sprite_type, objectColors, dynamic_type_lesion)
-            for element in itertools.product(*paramList):
-                outList.append(tuple([('vgdlType', sprite_type)]+sorted(element)))
-    initial_distribution = {k:1.0 for k in outList}
-    initial_distribution[(('vgdlType', 'OTHER'), )] = catch_all_prior
-    return initial_distribution
-
-
-def initializeDistributionArgs(sprite_type, objectColors, dynamic_type_lesion=[]):
-    """
-    Given a sprite type, this returns a distribution over the kinds of args (parameters) belonging
-    to that sprite type.
-    This is where the hypothesis space for each individual sprite type is outlined. Could expand this at the cost of more compute
-    """
-
-    def initializeSpeed():
-        if 'speed' in dynamic_type_lesion:
-            speedValues = [0.2, 0.4, 0.6, 0.8, 1.]
-        else:
-            speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-        return [('speed', v) for v in speedValues]
-
-    def initializeOrientation():
-        orientationValues = [LEFT, RIGHT, UP, DOWN]
-        return [('orientation', v) for v in orientationValues]
-
-    def initializeFleeing():
-        fleeingValues = [True, False]
-        return [('fleeing', v) for v in fleeingValues]
-
-    def initializeStype():
-        stypeValues = [o for o in objectColors if o not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']]
-        return [('stype', v) for v in stypeValues]
-
-    def initializeCooldown():
-        stypeValues = [1, 2, 3, 4, 5, 6, 10]
-        return [('cooldown', v) for v in stypeValues]
-
-    paramList = []
-    spriteParams = spriteToParams[sprite_type.__name__]
-
-    for s in spriteParams:
-        if s == "speed":
-            paramList.append(initializeSpeed())
-        elif s == "fleeing":
-            paramList.append(initializeFleeing())
-        elif s == "orientation":
-            paramList.append(initializeOrientation())
-        elif s=='stype':
-            paramList.append(initializeStype())
-        elif s=='cooldown':
-            paramList.append(initializeCooldown())
-
-    return paramList
-
-
 
 class SpriteDistribution():
     def __init__(self):
         self.distribution = {}
+        self.movement_options = {} ## rename
+
+    def initializeDistribution(self, sprite_types, objectColors, dynamic_type_lesion=[]):
+        """
+        Creates a uniform distribution over all parameter combinations
+        """
+        catch_all_prior = .000001
+        outList = []
+        if 'Chaser' in dynamic_type_lesion:
+            try:
+                sprite_types.remove(Chaser)
+            except:
+                pass
+        if 'Missile' in dynamic_type_lesion:
+            try:
+                sprite_types.remove(Missile)
+            except:
+                pass
+        for sprite_type in sprite_types:
+                paramList = self.initializeDistributionArgs(sprite_type, objectColors, dynamic_type_lesion)
+                for element in itertools.product(*paramList):
+                    outList.append(tuple([('vgdlType', sprite_type)]+sorted(element)))
+        initial_distribution = {k:1.0 for k in outList}
+        initial_distribution[(('vgdlType', 'OTHER'), )] = catch_all_prior
+        return initial_distribution
+
+
+    def initializeDistributionArgs(self, sprite_type, objectColors, dynamic_type_lesion=[]):
+        """
+        Given a sprite type, this returns a distribution over the kinds of args (parameters) belonging
+        to that sprite type.
+        This is where the hypothesis space for each individual sprite type is outlined. Could expand this at the cost of more compute
+        """
+
+        def initializeSpeed():
+            if 'speed' in dynamic_type_lesion:
+                speedValues = [0.2, 0.4, 0.6, 0.8, 1.]
+            else:
+                speedValues = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+            return [('speed', v) for v in speedValues]
+
+        def initializeOrientation():
+            orientationValues = [LEFT, RIGHT, UP, DOWN]
+            return [('orientation', v) for v in orientationValues]
+
+        def initializeFleeing():
+            fleeingValues = [True, False]
+            return [('fleeing', v) for v in fleeingValues]
+
+        def initializeStype():
+            stypeValues = [o for o in objectColors if o not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']]
+            return [('stype', v) for v in stypeValues]
+
+        def initializeCooldown():
+            stypeValues = [1, 2, 3, 4, 5, 6, 10]
+            return [('cooldown', v) for v in stypeValues]
+
+        paramList = []
+        spriteParams = spriteToParams[sprite_type.__name__]
+
+        for s in spriteParams:
+            if s == "speed":
+                paramList.append(initializeSpeed())
+            elif s == "fleeing":
+                paramList.append(initializeFleeing())
+            elif s == "orientation":
+                paramList.append(initializeOrientation())
+            elif s=='stype':
+                paramList.append(initializeStype())
+            elif s=='cooldown':
+                paramList.append(initializeCooldown())
+
+        return paramList
 
     def distributionInitSetup(self, game, sprite, dynamic_type_lesion=[]):
         """
@@ -1834,16 +1834,14 @@ class SpriteDistribution():
         if 'DTIZDF' in objectColors:
             print "found DTIZDF"
             embed()
-        game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
+        game.spriteDistribution[sprite] = self.initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
 
         if sprite not in game.all_objects.keys():
             game.all_objects[sprite] = game.getObjects()[sprite]
 
-        game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
+        self.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
 
-    def updateDistribution(self, game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
-
-        epsilon_prob = 0.000005
+    def updateDistribution(self, game, sprite, curr_distribution, outcome, specialID=None, missileOrientationClustering=False):
 
         # For computing the new normalized likelihoods, we proceed as follows:
 
@@ -1862,9 +1860,11 @@ class SpriteDistribution():
         #   p(o_t|p_j)
         #   sum_i(p(o_1, .., o_t-1|p_i) * p(o_t|p_i)) / sum_k(p(o_1, .., o_t-1|p_k))
 
-
+        epsilon_prob = 0.000005
         normalization_ratio = 0
         alpha = 1.
+
+        movement_options = self.movement_options
 
         if sprite in curr_distribution.keys():
             for param_combination in curr_distribution[sprite].keys():
@@ -1896,10 +1896,10 @@ class SpriteDistribution():
             ...}, ...}
             game.spriteDistribution tells you the probability of a sprite being being a particular type. It also
             tells you the probability distribution over values for each parameter (e.g. speed, orientation).
-            game.movement_options is a dictionary of the following form:
+            self.movement_options is a dictionary of the following form:
             {sprite: {sprite_type: {attributeTuple: {sprite position: probability of that sprite position},...},
             ...}, ...}
-            game.movement_options tells you the probability of a sprite being in a particular position, given a certain
+            self.movement_options tells you the probability of a sprite being in a particular position, given a certain
             setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
             """
             distributionsHaveChanged = False
@@ -1950,7 +1950,7 @@ class SpriteDistribution():
                                 ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
                                 ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving objects
 
-                                _, game.movement_options[sprite][param_combination] = \
+                                _, self.movement_options[sprite][param_combination] = \
                                     updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
 
                 game.targetColorDict = dict()
@@ -1972,7 +1972,7 @@ class SpriteDistribution():
                         outcome = objects[sprite]["position"]
 
                         game.spriteDistribution = self.updateDistribution(game, sprite, game.spriteDistribution, \
-                                                  game.movement_options, outcome, missileOrientationClustering=True)
+                                                  outcome, missileOrientationClustering=True)
 
                         memory.spriteUpdateDict[sprite] += 1
                 
