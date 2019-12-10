@@ -261,6 +261,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def getEffectListByColor(self):
         return self._game.effectListByColor
 
+    def getEffectListByClass(self):
+        return self._game.effectListByClass
+
     def getAliveSprites(self):
         aliveSprites = []
         for spriteList in self.getSpriteGroups().values():
