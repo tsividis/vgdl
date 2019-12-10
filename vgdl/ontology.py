@@ -1813,30 +1813,6 @@ def initializeDistributionArgs(sprite_type, objectColors, dynamic_type_lesion=[]
     return paramList
 
 
-def distributionInitSetup(game, sprite, dynamic_type_lesion=[]):
-    """
-    Does setup for initializing distribution
-    'sprite' is an object ID
-    """
-    objectColors = set()
-    for k in game.sprite_constr.keys():
-        try:
-            if game.sprite_constr[k][1]['color'] not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
-                objectColors.add(colorDict[str(game.sprite_constr[k][1]['color'])])
-        except KeyError:
-            continue
-    objectColors = list(objectColors)
-    if 'DTIZDF' in objectColors:
-        print "found DTIZDF"
-        embed()
-    game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
-
-    if sprite not in game.all_objects.keys():
-        game.all_objects[sprite] = game.getObjects()[sprite]
-
-    game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
-
-
 def updateDistribution(game, sprite, curr_distribution, movement_options, outcome, specialID=None, missileOrientationClustering=False):
 
     epsilon_prob = 0.000005
@@ -1889,6 +1865,29 @@ class SpriteDistribution():
     def __init__(self):
         self.distribution = {}
 
+    def distributionInitSetup(self, game, sprite, dynamic_type_lesion=[]):
+        """
+        Does setup for initializing distribution
+        'sprite' is an object ID
+        """
+        objectColors = set()
+        for k in game.sprite_constr.keys():
+            try:
+                if game.sprite_constr[k][1]['color'] not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
+                    objectColors.add(colorDict[str(game.sprite_constr[k][1]['color'])])
+            except KeyError:
+                continue
+        objectColors = list(objectColors)
+        if 'DTIZDF' in objectColors:
+            print "found DTIZDF"
+            embed()
+        game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
+
+        if sprite not in game.all_objects.keys():
+            game.all_objects[sprite] = game.getObjects()[sprite]
+
+        game.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
+
     def spriteInduction(self, game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):
             """
             game = a BasicGame object
@@ -1911,7 +1910,7 @@ class SpriteDistribution():
                 for sprite in objects:
                     ## color keys hard-coded for objects that occur in v. large number in our games: walls, water, etc. For these objects we just grab their type (They don't move) rather than updating all the hypotheses for each object token at each time step. Saving on compute.
                     if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
-                        distributionInitSetup(game, sprite, dynamic_type_lesion)
+                        self.distributionInitSetup(game, sprite, dynamic_type_lesion)
             elif step==1:
                 ## Sprite Induction Part 1:
                 ## every time you act, make sure there aren't new objects
@@ -1923,7 +1922,7 @@ class SpriteDistribution():
                     if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
                         spritestoupdate+=1
                         game.all_objects[sprite] = objects[sprite]
-                        distributionInitSetup(game, sprite, dynamic_type_lesion)
+                        self.distributionInitSetup(game, sprite, dynamic_type_lesion)
             elif step == 2:
                 ## See the update options for each sprite type the sprite could be
                 objects = game.getObjects()

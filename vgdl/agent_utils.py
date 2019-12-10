@@ -1,4 +1,3 @@
-from ontology import distributionInitSetup
 from WBP import *
 import time
 from termcolor import colored

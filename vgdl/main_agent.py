@@ -1126,7 +1126,7 @@ class Agent:
                 if self.display_text:
                     print "new object", spriteName
                 self.all_objects[k] = current_objects[k]
-                distributionInitSetup(self.rle._game, k)
+                self.distribution.distributionInitSetup(self.rle._game, k)
                 ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep, as likelihood function hasn't been seeded for these objects.
                 self.memory.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
