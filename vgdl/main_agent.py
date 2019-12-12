@@ -18,6 +18,7 @@ from datetime import datetime
 import copy
 from agent_utils import translate_events
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
+from dynamic_type_distribution import dynamicTypeDistribution
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
