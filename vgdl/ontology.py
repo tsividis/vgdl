@@ -26,6 +26,7 @@ import copy
 import time
 from pygame import Rect
 from collections import defaultdict
+from class_theory_template import Sprite
 
 UP = (0, -1)
 DOWN = (0, 1)
@@ -1990,11 +1991,6 @@ class SpriteDistribution():
             return distributionsHaveChanged
 
     def sampleFromDistribution(self, game, memory, all_objects, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False, display=False):
-
-        import random
-        import numpy as np
-        from class_theory_template import Sprite
-        from ontology import ResourcePack
 
         distributionsHaveChanged = False
 
