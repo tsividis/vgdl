@@ -1742,7 +1742,7 @@ def updateOptions(game, sprite_type_tuple, current_sprite, params={}, missileOri
         return {}, {}
 
 
-class SpriteDistribution():
+class dynamicTypeDistribution():
     def __init__(self):
         self.distribution = {}
         self.movement_options = {} ## rename
@@ -1908,7 +1908,7 @@ class SpriteDistribution():
             if step==1:
                 ## Sprite Induction Part 1:
                 ## every time you act, make sure there aren't new objects
-                ## if there are, update spriteDistribution etc.
+                ## if there are, update dynamicTypeDistribution etc.
                 objects = game.getObjects()
                 kill_list_keys = [s.ID for s in game.kill_list]
                 spritestoupdate = 0
@@ -1983,14 +1983,14 @@ class SpriteDistribution():
                         bestSpriteTypeDict[color][k] = self.distribution[k]
 
                 # t1 = time.time()
-                sample, distributionsHaveChanged, _ = self.sampleFromDistribution(game, memory, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+                sample, distributionsHaveChanged, _ = self.sampleFromDynamicTypeDistribution(game, memory, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
 
             ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
             # self.distribution = self.distribution
             memory.ignoreList = []
             return distributionsHaveChanged
 
-    def sampleFromDistribution(self, game, memory, all_objects, bestSpriteTypeDict, oldSpriteSet = None, display=False):
+    def sampleFromDynamicTypeDistribution(self, game, memory, all_objects, bestSpriteTypeDict, oldSpriteSet = None, display=False):
 
         distributionsHaveChanged = False
 
@@ -2139,14 +2139,14 @@ class SpriteDistribution():
                     else:
                         distributionsHaveChanged = True
             except:
-                print "failed to find matching object in sampleFromDistribution"
+                print "failed to find matching object in sampleFromDynamicTypeDistribution"
                 embed()
         memory.exceptions = exceptions
 
         return sample, distributionsHaveChanged, best_params
 
-def getKL(spriteDistribution1, spriteDistribution2):
-    d1, d2 = [v['prob'] for v in spriteDistribution1.values()], [v['prob'] for v in spriteDistribution2.values()]
+def getKL(dynamicTypeDistribution1, dynamicTypeDistribution2):
+    d1, d2 = [v['prob'] for v in dynamicTypeDistribution1.values()], [v['prob'] for v in dynamicTypeDistribution2.values()]
     return scipy.stats.entropy(d1,d2)
 
 def softmax(w, t = 1.0):

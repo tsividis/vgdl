@@ -282,7 +282,7 @@ class Agent:
         ## doing initial inference over sprite types, and returning partial
         ## candidate models.
 
-        self.distribution = SpriteDistribution()
+        self.distribution = dynamicTypeDistribution()
         if learnSprites:
 
             ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
@@ -290,7 +290,7 @@ class Agent:
             ## need to run this for one step to get a complete theory object so we can calculate initial entropy (entropy is no longer used but code remains).
             ## Then we run it another 14 times.
             self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
-            spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDistribution(self.rle._game, self.memory,
+            spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
                 allObjects, self.bestSpriteTypeDict)
             # self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -299,7 +299,7 @@ class Agent:
             self.observe(self.rle,  self.memory, 3, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
 
             
-            spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDistribution(self.rle._game, self.memory,
+            spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
                 allObjects, self.bestSpriteTypeDict)
             # self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -333,7 +333,7 @@ class Agent:
             if k not in allObjects:
                 allObjects[k] = v
 
-        spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+        spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         newHypotheses = []
         try:
@@ -1304,7 +1304,7 @@ class Agent:
                 theory_change_flag = True
 
             t1 = time.time()
-            sample, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
+            sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
 
             game_object = Game(spriteInductionResult=sample)
             
