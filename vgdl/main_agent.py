@@ -346,11 +346,6 @@ class Agent:
             # embed()
         self.hypotheses = newHypotheses
 
-
-    def calculateEntropy(self, theory, spriteDistribution):
-        ## Was going to use this for additional ablations
-        return None
-
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
@@ -518,7 +513,6 @@ class Agent:
                  'planner_nodes': planner_nodes, ## how many nodes were searched to determine this particular action? 0 if this is resulting from a cached plan.
                  'ended': ended,
                  'win': win,
-                 'entropy': rle._game.H,
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) for s in rle.getAliveSprites()],
                  'events': list(rle.getEffectListByClass())
                  }
@@ -1161,14 +1155,9 @@ class Agent:
                         pass
                 self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
                 self.distribution.spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
-                if hypothesis:
-                    rle._game.H = self.calculateEntropy(hypothesis, self.distribution.distribution)
-                    compactStates[-1]['entropy'] = rle._game.H
         else:
             self.distribution.spriteInduction(rle._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-            if hypothesis:
-                rle._game.H = self.calculateEntropy(hypothesis, self.distribution.distribution)
         return
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
@@ -1338,9 +1327,6 @@ class Agent:
         oldTerminationSet = set(hypotheses[0].terminationSet)
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
-
-        self.rle._game.H = self.calculateEntropy(hypotheses[0], self.distribution.distribution)
-        statesEncountered[-1]['entropy'] = self.rle._game.H
 
         if set(hypotheses[0].terminationSet) != oldTerminationSet:
             if self.display_text:
