@@ -1834,12 +1834,12 @@ class SpriteDistribution():
         if 'DTIZDF' in objectColors:
             print "found DTIZDF"
             embed()
-        game.spriteDistribution[sprite] = self.initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
+        self.distribution[sprite] = self.initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
 
         if sprite not in game.all_objects.keys():
             game.all_objects[sprite] = game.getObjects()[sprite]
 
-        self.movement_options[sprite] = {k:{} for k in game.spriteDistribution[sprite].keys()}
+        self.movement_options[sprite] = {k:{} for k in self.distribution[sprite].keys()}
 
     def updateDistribution(self, game, sprite, curr_distribution, outcome, specialID=None, missileOrientationClustering=False):
 
@@ -1891,10 +1891,10 @@ class SpriteDistribution():
     def spriteInduction(self, game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):
             """
             game = a BasicGame object
-            game.spriteDistribution is a dictionary of the following form:
+            self.distribution is a dictionary of the following form:
             {sprite: {sprite_type: {'prob': PROBABILITY OF SPRITE TYPE, 'args': {'speed': {A VALUE OF SPEED: PROBABILITY OF THAT VALUE}}},
             ...}, ...}
-            game.spriteDistribution tells you the probability of a sprite being being a particular type. It also
+            self.distribution tells you the probability of a sprite being being a particular type. It also
             tells you the probability distribution over values for each parameter (e.g. speed, orientation).
             self.movement_options is a dictionary of the following form:
             {sprite: {sprite_type: {attributeTuple: {sprite position: probability of that sprite position},...},
@@ -1919,7 +1919,7 @@ class SpriteDistribution():
                 kill_list_keys = [s.ID for s in game.kill_list]
                 spritestoupdate = 0
                 for sprite in objects:
-                    if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
+                    if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in self.distribution:
                         spritestoupdate+=1
                         game.all_objects[sprite] = objects[sprite]
                         self.distributionInitSetup(game, sprite, dynamic_type_lesion)
@@ -1930,13 +1930,13 @@ class SpriteDistribution():
                 game = game
                 sprite_count, param_count=0, 0
 
-                for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
+                for sprite in [s for s in self.distribution.keys() if s in objects.keys()]:                  # Keys are the IDs of the game objects
                     sprite_count +=1
                     sprite_obj = objects[sprite]["sprite"]
 
                     if sprite_obj.name !='avatar':
-                        for param_combination in game.spriteDistribution[sprite].keys(): # Check each potential sprite type
-                            if game.spriteDistribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
+                        for param_combination in self.distribution[sprite].keys(): # Check each potential sprite type
+                            if self.distribution[sprite][param_combination]> 0:    # Make sure sprite_type is an option for sprite, and sprite is not killed
                                 param_count +=1
 
                                 sprite_type = param_combination[0]
@@ -1960,7 +1960,7 @@ class SpriteDistribution():
                 ## Update sprite distribution based on observations
                 objects = game.getObjects()
 
-                for sprite in [s for s in game.spriteDistribution.keys() if s in objects.keys() and s not in [k.ID for k in game.kill_list]]:
+                for sprite in [s for s in self.distribution.keys() if s in objects.keys() and s not in [k.ID for k in game.kill_list]]:
                     # Keys are the IDs of the game objects
                     sprite_obj = objects[sprite]["sprite"]
 
@@ -1971,25 +1971,28 @@ class SpriteDistribution():
 
                         outcome = objects[sprite]["position"]
 
-                        game.spriteDistribution = self.updateDistribution(game, sprite, game.spriteDistribution, \
+                        self.distribution = self.updateDistribution(game, sprite, self.distribution, \
                                                   outcome, missileOrientationClustering=True)
 
                         memory.spriteUpdateDict[sprite] += 1
                 
+                # if game.time == 1:
+                    # embed()
                 ## Update the global memory
-                for k in game.spriteDistribution.keys():
-                    try:
-                        color = game.all_objects[k]['type']['color']
-                    except KeyError:
-                        print("got key error when trying to access sprite color")
-                        embed()
-                    bestSpriteTypeDict[color][k] = game.spriteDistribution[k]
+                for k in self.distribution.keys():
+                    if k in game.all_objects:
+                        try:
+                            color = game.all_objects[k]['type']['color']
+                        except KeyError:
+                            print("got key error when trying to access sprite color")
+                            embed()
+                        bestSpriteTypeDict[color][k] = self.distribution[k]
 
                 # t1 = time.time()
-                sample, distributionsHaveChanged, _ = self.sampleFromDistribution(game, memory, game.spriteDistribution, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+                sample, distributionsHaveChanged, _ = self.sampleFromDistribution(game, memory, self.distribution, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
 
             ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
-            # self.distribution = game.spriteDistribution
+            # self.distribution = self.distribution
             memory.ignoreList = []
             return distributionsHaveChanged
 
@@ -2067,7 +2070,7 @@ class SpriteDistribution():
                 # bestSpriteTypeDict has yet to be populated for this object type
                 for k, v in game.getObjects().items():
                     if v['features']['color'] == obj_type:
-                        bestSpriteTypeDict[obj_type][k] = game.spriteDistribution[k]
+                        bestSpriteTypeDict[obj_type][k] = self.distribution[k]
                 param_sum = {k:1. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
 
             param_z = 0

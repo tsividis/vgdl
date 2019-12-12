@@ -292,7 +292,7 @@ class Agent:
                 ## Then we run it another 14 times.
                 self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
                 spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDistribution(self.rle._game, self.memory,
-                    self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
+                    self.distribution.distribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
                 # self.rle._game.exceptedObjects = exceptedObjects
                 gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
                 initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -301,7 +301,7 @@ class Agent:
             else:
                 self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)                
             spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDistribution(self.rle._game, self.memory,
-                self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
+                self.distribution.distribution, allObjects, self.bestSpriteTypeDict, skipInduction=self.skipInduction)
             # self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
             initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
@@ -334,7 +334,7 @@ class Agent:
             if k not in allObjects:
                 allObjects[k] = v
 
-        spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
+        spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, self.distribution.distribution, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         newHypotheses = []
         try:
@@ -1162,13 +1162,13 @@ class Agent:
                 self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
                 self.distribution.spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
                 if hypothesis:
-                    rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
+                    rle._game.H = self.calculateEntropy(hypothesis, self.distribution.distribution)
                     compactStates[-1]['entropy'] = rle._game.H
         else:
             self.distribution.spriteInduction(rle._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             if hypothesis:
-                rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
+                rle._game.H = self.calculateEntropy(hypothesis, self.distribution.distribution)
         return
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
@@ -1319,7 +1319,7 @@ class Agent:
                 theory_change_flag = True
 
             t1 = time.time()
-            sample, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, self.rle._game.spriteDistribution, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
+            sample, _, self.best_params= self.distribution.sampleFromDistribution(self.rle._game, self.memory, self.distribution.distribution, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, skipInduction=self.skipInduction, display=self.display_text)
 
             game_object = Game(spriteInductionResult=sample)
             
@@ -1339,7 +1339,7 @@ class Agent:
         if event['effectList'] and run_induction:
             [t.updateTerminations(event=event) for t in hypotheses]
 
-        self.rle._game.H = self.calculateEntropy(hypotheses[0], self.rle._game.spriteDistribution)
+        self.rle._game.H = self.calculateEntropy(hypotheses[0], self.distribution.distribution)
         statesEncountered[-1]['entropy'] = self.rle._game.H
 
         if set(hypotheses[0].terminationSet) != oldTerminationSet:
