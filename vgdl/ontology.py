@@ -1990,7 +1990,7 @@ class SpriteDistribution():
             memory.ignoreList = []
             return distributionsHaveChanged
 
-    def sampleFromDistribution(self, game, memory, all_objects, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False, display=False):
+    def sampleFromDistribution(self, game, memory, all_objects, bestSpriteTypeDict, oldSpriteSet = None, display=False):
 
         distributionsHaveChanged = False
 
@@ -2032,13 +2032,6 @@ class SpriteDistribution():
 
         types = list(set([all_objects[k]['type']['color'] for k in non_avatar_keys]) - set(exceptions))  ## We are treating (for now) the object shot by a ShootAvatar, FlakAvatar, etc. separately and not doing inference about it.    
         best_params = {}
-
-        if skipInduction:
-            for obj_type in types:
-                s = Sprite(vgdlType=ResourcePack, color=obj_type)
-                sample.append(s)
-            memory.exceptions = exceptions
-            return sample, distributionsHaveChanged, best_params
 
         for obj_type in types:
             
