@@ -601,7 +601,6 @@ class BasicGame(object):
         fs = {'score': self.score,
               'ended': self.ended,
               'win': self.win,
-              'entropy': self.H,
               'objects': obs,
               'observe_state':observe_state}
         return fs
