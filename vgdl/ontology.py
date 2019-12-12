@@ -1904,14 +1904,7 @@ class SpriteDistribution():
             """
             distributionsHaveChanged = False
 
-            if step==0:
-            ## Prep for sprite induction
-                objects = game.getObjects()
-                for sprite in objects:
-                    ## color keys hard-coded for objects that occur in v. large number in our games: walls, water, etc. For these objects we just grab their type (They don't move) rather than updating all the hypotheses for each object token at each time step. Saving on compute.
-                    if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
-                        self.distributionInitSetup(game, sprite, dynamic_type_lesion)
-            elif step==1:
+            if step==1:
                 ## Sprite Induction Part 1:
                 ## every time you act, make sure there aren't new objects
                 ## if there are, update spriteDistribution etc.
