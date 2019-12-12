@@ -1889,7 +1889,7 @@ class SpriteDistribution():
 
         return curr_distribution
 
-    def spriteInduction(self, game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, old_outcome=None, dynamic_type_lesion=[]):
+    def spriteInduction(self, game, memory, step, bestSpriteTypeDict, oldSpriteSet=None, dynamic_type_lesion=[]):
             """
             game = a BasicGame object
             self.distribution is a dictionary of the following form:
