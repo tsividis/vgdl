@@ -290,19 +290,13 @@ class BasicGame(object):
         self.effectList = [] # list of effects that happened this current timestep
         self.effectListByClass = set()
         self.effectListByColor = []
-        self.spriteDistribution = {}
         self.object_token_spriteDistribution = {}
         self.lastUpdateOptionsTime = None
         self.spriteUpdateDict = defaultdict() ## track how many times we have run spriteType updates to each particular object
-        self.movement_options = {}
         self.orientation_options = {}
-        self.sprite_appearance_predictions = {}
-        self.object_token_movement_options = {}
-        self.sprite_appearances = [] ## New sprites that appear at any given step. This gets cleared at the end of each time-step.
         self.lastAvatarResources = defaultdict(int)
         self.all_objects = {}
         self.new_sprites = []
-        self.H = None # entropy
         self.observation = None
         self.has_clonesprite = False
         self.isInternalEnv = False
@@ -991,9 +985,6 @@ class BasicGame(object):
         ##figure out keypress type:
         disableContinuousKeyPress = False
 
-        self.spriteDistribution = {}
-        self.movement_options = {}
-        self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
         while self.playback_index < len(self.playback_states):
@@ -1142,9 +1133,6 @@ class BasicGame(object):
         ##figure out keypress type:
         disableContinuousKeyPress = all([item.physicstype.__name__=='GridPhysics' for sublist in self.sprite_groups.values() for item in sublist])
 
-        self.spriteDistribution = {}
-        self.movement_options = {}
-        self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()]
 
         # for k,v in self.alt_sprite_constr.items():
