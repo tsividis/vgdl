@@ -1982,14 +1982,14 @@ class SpriteDistribution():
                         bestSpriteTypeDict[color][k] = self.distribution[k]
 
                 # t1 = time.time()
-                sample, distributionsHaveChanged, _ = self.sampleFromDistribution(game, memory, self.distribution, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
+                sample, distributionsHaveChanged, _ = self.sampleFromDistribution(game, memory, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
 
             ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
             # self.distribution = self.distribution
             memory.ignoreList = []
             return distributionsHaveChanged
 
-    def sampleFromDistribution(self, game, memory, curr_distribution, all_objects, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False, display=False):
+    def sampleFromDistribution(self, game, memory, all_objects, bestSpriteTypeDict, oldSpriteSet = None, skipInduction=False, display=False):
 
         import random
         import numpy as np
@@ -2002,8 +2002,8 @@ class SpriteDistribution():
         exceptions = []
 
         spriteUpdateDict = memory.spriteUpdateDict
+        curr_distribution = self.distribution
         ## For now let's just assume we know the avatar's type and what it shoots, if anything (but not the properties of that thing)
-
         non_avatar_keys = []
         for k in all_objects.keys():
             if all_objects[k]['sprite'].name != 'avatar':
