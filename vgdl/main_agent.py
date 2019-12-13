@@ -278,27 +278,21 @@ class Agent:
 
         return VRLEs
 
-    def initializeHypotheses(self, allObjects, statesEncountered, compactStates, learnSprites=True):
+    def initializeHypotheses(self, allObjects, statesEncountered, compactStates):
         ## Creates initial hypothesis objects by observing the game,
         ## doing initial inference over sprite types, and returning partial
         ## candidate models.
 
         self.distribution = dynamicTypeDistribution_VGDL1()
-        if learnSprites:
 
-            ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
+        ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
+        self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
+        
+        spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
+            allObjects, self.bestSpriteTypeDict)
 
-            ## need to run this for one step to get a complete theory object so we can calculate initial entropy (entropy is no longer used but code remains).
-            ## Then we run it another 14 times.
-            self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
-            spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
-                allObjects, self.bestSpriteTypeDict)
-
-            gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-            initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
-        else:
-            gameObject = Game(self.gameString)
-            initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
+        gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+        initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
         
@@ -623,7 +617,7 @@ class Agent:
 
         ## initialize theory if necessary.
         if len(self.hypotheses) == 0:
-            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, compactStates, learnSprites=True)
+            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, compactStates)
             if self.display_text:
                 print "initializing hypotheses"
         else:
