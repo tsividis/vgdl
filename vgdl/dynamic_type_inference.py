@@ -113,9 +113,7 @@ class dynamicTypeDistribution():
             except KeyError:
                 continue
         objectColors = list(objectColors)
-        if 'DTIZDF' in objectColors:
-            print "found DTIZDF"
-            embed()
+
         self.distribution[sprite] = self.initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
 
         if sprite not in game.all_objects.keys():
@@ -648,7 +646,6 @@ def getTargets(game, targetColor):
         try:
             targetName = [k for k in game.sprite_groups.keys() if game.sprite_groups[k] and game.sprite_groups[k][0].colorName==targetColor][0]
             targets = [s for s in game.sprite_groups[targetName] if s not in game.kill_list]
-            # print "target name: {}. target length: {}".format(targetName, len(targets))
         except:
             targets = []
         game.targetColorDict[targetColor] = targets
