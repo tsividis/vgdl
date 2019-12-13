@@ -17,6 +17,12 @@ spriteToParams = {'Resource': [], \
                 'OrientedSprite': ['orientation'], \
                 'Missile': ['speed', 'orientation', 'cooldown']}
 
+# Colors that we assume correspond to inert dynamic types
+# Speeds up inference, as EMPA doesn't need to do updates over all
+# parameterizations for all instances of these (usually numerous)
+# objects at every timestep
+COLOR_EXCEPTIONS = ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']
+
 class dynamicTypeDistribution():
     def __init__(self):
         self.distribution = {}
@@ -70,7 +76,7 @@ class dynamicTypeDistribution():
             return [('fleeing', v) for v in fleeingValues]
 
         def initializeStype():
-            stypeValues = [o for o in objectColors if o not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']]
+            stypeValues = [o for o in objectColors if o not in COLOR_EXCEPTIONS]
             return [('stype', v) for v in stypeValues]
 
         def initializeCooldown():
@@ -102,7 +108,7 @@ class dynamicTypeDistribution():
         objectColors = set()
         for k in game.sprite_constr.keys():
             try:
-                if game.sprite_constr[k][1]['color'] not in ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
+                if game.sprite_constr[k][1]['color'] not in COLOR_EXCEPTIONS:
                     objectColors.add(colorDict[str(game.sprite_constr[k][1]['color'])])
             except KeyError:
                 continue
@@ -180,7 +186,8 @@ class dynamicTypeDistribution():
         sprite_type = sprite_type_tuple[1]
 
         if sprite_type in [Immovable, Passive, ResourcePack, Resource, 'OTHER']:
-            return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.} ##object stays in position
+            #object stays in position
+            return {(current_sprite.rect.left, current_sprite.rect.top): 1.}, {(current_sprite.rect.left, current_sprite.rect.top): 1.}
 
         # Chaser
         elif sprite_type == Chaser:
@@ -298,7 +305,7 @@ class dynamicTypeDistribution():
                 kill_list_keys = [s.ID for s in game.kill_list]
                 spritestoupdate = 0
                 for sprite in objects:
-                    if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in self.distribution:
+                    if objects[sprite]['sprite'].colorName not in COLOR_EXCEPTIONS and sprite not in self.distribution:
                         spritestoupdate+=1
                         game.all_objects[sprite] = objects[sprite]
                         self.distributionInitSetup(game, sprite, dynamic_type_lesion)
@@ -354,8 +361,6 @@ class dynamicTypeDistribution():
 
                         memory.spriteUpdateDict[sprite] += 1
                 
-                # if game.time == 1:
-                    # embed()
                 ## Update the global memory
                 for k in self.distribution.keys():
                     if k in game.all_objects:
@@ -366,7 +371,6 @@ class dynamicTypeDistribution():
                             embed()
                         bestSpriteTypeDict[color][k] = self.distribution[k]
 
-                # t1 = time.time()
                 sample, distributionsHaveChanged, _ = self.sampleFromDynamicTypeDistribution(game, memory, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
 
             ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
@@ -408,7 +412,6 @@ class dynamicTypeDistribution():
 
                     except AttributeError:
                         print "tried and failed to add a shooting avatar type"
-                        # embed()
                         # No args in avatar
                         sample.append(Sprite(vgdlType=MovingAvatar, color=all_objects[k]['type']['color']))
                 else:
@@ -419,7 +422,7 @@ class dynamicTypeDistribution():
 
         for obj_type in types:
             
-            if obj_type in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
+            if obj_type in COLOR_EXCEPTIONS:
                 s = Sprite(vgdlType=ResourcePack, color=obj_type)
                 sample.append(s)
                 continue
