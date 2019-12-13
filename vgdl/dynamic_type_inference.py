@@ -26,7 +26,7 @@ COLOR_EXCEPTIONS = ['BLACK', 'DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']
 class dynamicTypeDistribution():
     def __init__(self):
         self.distribution = {}
-        self.movement_options = {} ## rename
+        self.object_token_movement_options = {}
 
     def initializeDistribution(self, sprite_types, objectColors, dynamic_type_lesion=[]):
         """
@@ -119,7 +119,7 @@ class dynamicTypeDistribution():
         if sprite not in game.all_objects.keys():
             game.all_objects[sprite] = game.getObjects()[sprite]
 
-        self.movement_options[sprite] = {k:{} for k in self.distribution[sprite].keys()}
+        self.object_token_movement_options[sprite] = {k:{} for k in self.distribution[sprite].keys()}
 
     def updateDistribution(self, game, sprite, curr_distribution, outcome, specialID=None, missileOrientationClustering=False):
 
@@ -144,25 +144,25 @@ class dynamicTypeDistribution():
         normalization_ratio = 0
         alpha = 1.
 
-        movement_options = self.movement_options
+        object_token_movement_options = self.object_token_movement_options
 
         if sprite in curr_distribution.keys():
             for param_combination in curr_distribution[sprite].keys():
-                if outcome in movement_options[sprite][param_combination].keys():
+                if outcome in object_token_movement_options[sprite][param_combination].keys():
                     if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
-                        normalization_ratio += curr_distribution[sprite][param_combination] * (movement_options[sprite][param_combination][outcome]**alpha)
+                        normalization_ratio += curr_distribution[sprite][param_combination] * (object_token_movement_options[sprite][param_combination][outcome]**alpha)
                     else:
-                        normalization_ratio += curr_distribution[sprite][param_combination] * movement_options[sprite][param_combination][outcome]
+                        normalization_ratio += curr_distribution[sprite][param_combination] * object_token_movement_options[sprite][param_combination][outcome]
                 else:
                     normalization_ratio += curr_distribution[sprite][param_combination] * epsilon_prob
 
         if sprite in curr_distribution.keys():
             for param_combination in curr_distribution[sprite].keys():
-                if outcome in movement_options[sprite][param_combination].keys():
+                if outcome in object_token_movement_options[sprite][param_combination].keys():
                     if missileOrientationClustering and 'Missile' in str(param_combination[0][1]):
-                        curr_distribution[sprite][param_combination] *= ((movement_options[sprite][param_combination][outcome]**alpha) / normalization_ratio)
+                        curr_distribution[sprite][param_combination] *= ((object_token_movement_options[sprite][param_combination][outcome]**alpha) / normalization_ratio)
                     else:
-                        curr_distribution[sprite][param_combination] *= (movement_options[sprite][param_combination][outcome] / normalization_ratio)
+                        curr_distribution[sprite][param_combination] *= (object_token_movement_options[sprite][param_combination][outcome] / normalization_ratio)
                 else:
                     curr_distribution[sprite][param_combination] *= (epsilon_prob / normalization_ratio)
 
@@ -287,10 +287,10 @@ class dynamicTypeDistribution():
             ...}, ...}
             self.distribution tells you the probability of a sprite being being a particular type. It also
             tells you the probability distribution over values for each parameter (e.g. speed, orientation).
-            self.movement_options is a dictionary of the following form:
+            self.object_token_movement_options is a dictionary of the following form:
             {sprite: {sprite_type: {attributeTuple: {sprite position: probability of that sprite position},...},
             ...}, ...}
-            self.movement_options tells you the probability of a sprite being in a particular position, given a certain
+            self.object_token_movement_options tells you the probability of a sprite being in a particular position, given a certain
             setting of its attributes (e.g. specific values for speed, orientation, etc.) and also given sprite type.
             """
             distributionsHaveChanged = False
@@ -334,7 +334,7 @@ class dynamicTypeDistribution():
                                 ## missileOrientationClustering: considers left/right and up/down to be equivalent options in the likelihood
                                 ## so that when objects bounce off walls it doesn't dramatically reduce the probability that they are straight-moving objects
 
-                                _, self.movement_options[sprite][param_combination] = self.updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
+                                _, self.object_token_movement_options[sprite][param_combination] = self.updateOptions(game, sprite_type, sprite_obj, params=attributeDict, missileOrientationClustering=True)
 
                 game.targetColorDict = dict()
                 game.chaserMovesTowardDict = dict()
