@@ -138,18 +138,33 @@ class Agent:
         self.seen_resources = []
         self.seen_limits = []
         self.new_objects = {}
-        self.actionSeqLength = 0.
 
         self.memory = Memory()
 
-        # Hyperopt output
         self.total_game_steps = 0
         self.total_planner_steps = 0
         self.levels_won = 0
 
-        self.todo_delete = True
+    # ---------------------------------------------------------------------
+    #     Simulator initialization functions
+    # ---------------------------------------------------------------------
+    def initializeEnvironment(self):
+        ## Initialize game environment
+        if self.gameString==None or self.levelString==None:
+            self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
+        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
+        self.rle = self.rleCreateFunc()
+        return
 
-    ## start copy-paste here
+    def initializeRLEFromGame(self):
+        ## Part of a method for faster state copying, used in planner, etc.
+        gameString, levelString = self.gameString, self.levelString
+        if gameString == None or levelString == None:
+            gameString, levelString = defInputGame(self.gameFilename, randomize=False)
+        rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+        rle = rleCreateFunc()
+        return rle
+
     def hyperparameterSwitch(self, new_index):
         if new_index!=self.hyperparameter_index:
             self.hyperparameter_index = new_index
@@ -170,38 +185,7 @@ class Agent:
         planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
         return planner_hyperparameters
 
-    def initializeEnvironment(self):
-        ## Initialize game environment
-        if self.gameString==None or self.levelString==None:
-            self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
-        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
-        self.rle = self.rleCreateFunc()
-        return
 
-    def initializeRLEFromGame(self):
-        ## Part of a method for faster state copying, used in planner, etc.
-        gameString, levelString = self.gameString, self.levelString
-        if gameString == None or levelString == None:
-            gameString, levelString = defInputGame(self.gameFilename, randomize=False)
-        rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-        rle = rleCreateFunc()
-        return rle
-
-    def fastcopy(self, rle):
-        ## State copying, used for saving state in search, etc.
-        newRle = self.initializeRLEFromGame()
-        newRle._obstypes = quickcopy(rle._obstypes)
-        if hasattr(rle, '_gravepoints'):
-            newRle._gravepoints = quickcopy(rle._gravepoints)
-        newRle._game.sprite_groups = quickcopy(rle._game.sprite_groups)
-        newRle._game.kill_list = quickcopy(rle._game.kill_list)
-        newRle._game.time = quickcopy(rle._game.time)
-        newRle._game.score = quickcopy(rle._game.score)
-        newRle._game.keystate = quickcopy(rle._game.keystate)
-        newRle.symbolDict = quickcopy(rle.symbolDict)
-        newRle._game.sprite_groups['avatar'][0].resources = quickcopy(rle._game.sprite_groups['avatar'][0].resources)
-
-        return newRle
 
     def getSpritesByColor(self, rle, color):
         outList = []
@@ -249,7 +233,6 @@ class Agent:
 
         return
 
-
     def initializeVrle(self, hypothesis):
         ## Returns simulatable world in agent's head given 'hypothesis', including object goal
         gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
@@ -287,7 +270,7 @@ class Agent:
 
         ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
         self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
-        
+
         spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
             allObjects, self.bestSpriteTypeDict)
 
@@ -298,6 +281,7 @@ class Agent:
         
         self.hypotheses = [initialTheory]
         self.symbolDict = generateSymbolDict(self.rle)
+
         return gameObject
 
     def completeHypotheses(self, allObjects, statesEncountered, compactStates, first_time_playing_level):
@@ -816,8 +800,6 @@ class Agent:
                             self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
                             self.episodeSaveTime = time.time()
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
-            
-            self.actionSeqLength += len(solution)
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if solution and not p.quitting and not takingRandomSteps and self.display_states and self.produce_printout:
