@@ -28,6 +28,8 @@ class dynamicTypeDistribution():
         self.distribution = {}
         self.object_token_movement_options = {}
 
+class dynamicTypeDistribution_VGDL1(dynamicTypeDistribution):
+
     def initializeDistribution(self, sprite_types, objectColors, dynamic_type_lesion=[]):
         """
         Creates a uniform distribution over all parameter combinations
@@ -51,7 +53,6 @@ class dynamicTypeDistribution():
         initial_distribution = {k:1.0 for k in outList}
         initial_distribution[(('vgdlType', 'OTHER'), )] = catch_all_prior
         return initial_distribution
-
 
     def initializeDistributionArgs(self, sprite_type, objectColors, dynamic_type_lesion=[]):
         """

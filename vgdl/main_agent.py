@@ -18,7 +18,7 @@ from datetime import datetime
 import copy
 from agent_utils import translate_events
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-from dynamic_type_inference import dynamicTypeDistribution
+from dynamic_type_inference import dynamicTypeDistribution_VGDL1
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
@@ -283,7 +283,7 @@ class Agent:
         ## doing initial inference over sprite types, and returning partial
         ## candidate models.
 
-        self.distribution = dynamicTypeDistribution()
+        self.distribution = dynamicTypeDistribution_VGDL1()
         if learnSprites:
 
             ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
