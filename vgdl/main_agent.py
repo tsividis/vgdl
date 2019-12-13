@@ -290,19 +290,10 @@ class Agent:
 
             ## need to run this for one step to get a complete theory object so we can calculate initial entropy (entropy is no longer used but code remains).
             ## Then we run it another 14 times.
-            self.observe(self.rle,  self.memory, 1, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
+            self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
             spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
                 allObjects, self.bestSpriteTypeDict)
-            # self.rle._game.exceptedObjects = exceptedObjects
-            gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-            initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
-            self.observe(self.rle,  self.memory, 3, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=initialTheory)
-
-            
-            spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
-                allObjects, self.bestSpriteTypeDict)
-            # self.rle._game.exceptedObjects = exceptedObjects
             gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
             initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
         else:
@@ -310,11 +301,6 @@ class Agent:
             initialTheory = gameObject.buildGenericTheory(spriteSample=False, vgdlSpriteParse = gameObject.vgdlSpriteParse)
 
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
-
-        # print "just sampledfromdistribution"
-        # embed()
-        ### Edit hypotheses for cultural-transmission experiment here.
-        ## initialTheory.interactionSet is the list to modify.
         
         self.hypotheses = [initialTheory]
         self.symbolDict = generateSymbolDict(self.rle)
