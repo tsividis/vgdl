@@ -244,7 +244,7 @@ class Agent:
             pass
         return Vrle
 
-    def VrleInitPhase(self, flexible_goals=False):
+    def VrleInitPhase(self):
         ## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses. In practice we only use one.
         VRLEs = []
 
@@ -252,8 +252,7 @@ class Agent:
             tempHypothesis = copy.deepcopy(hypothesis)
             tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
-            if not flexible_goals:
-                tempHypothesis.updateTerminations()
+            tempHypothesis.updateTerminations()
             VRLEs.append(self.initializeVrle(tempHypothesis))
 
         return VRLEs
@@ -281,7 +280,7 @@ class Agent:
 
         return gameObject
 
-    def completeHypotheses(self, allObjects, statesEncountered, compactStates, first_time_playing_level):
+    def completeHypotheses(self, allObjects, statesEncountered, compactStates):
         previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         current_colors = [o['type']['color'] for o in allObjects.values()]
         if all([c in previous_colors for c in current_colors]):
@@ -365,7 +364,6 @@ class Agent:
                 print "failed to load curriculum state. deleting corrupted file and starting from scratch"
 
         j=0
-        flexible_goals = False
         fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
 
@@ -389,15 +387,12 @@ class Agent:
             allStatesEncountered = []
             allCompactStates = []
             t1 = time.time()
-            if i==0:
-                first_time_playing_level = True
-            else:
-                first_time_playing_level = False
+
             quit_level = False
             while not win and not quit_level:# and i<15:
                 self.n_level = n_level
                 self.within_level_iteration = i
-                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, win)
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
@@ -450,12 +445,6 @@ class Agent:
 
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
-
-            if flexible_goals:
-                ## Could include in some later project.
-                ## When you embed(), you can manually input changes in theory. See flexible_goals.py for an example.
-                print "in main_agent; playing with flexible_goals"
-                embed()
 
         if make_movie:
             self.makeMovie(play_movie=play_movie)
@@ -556,10 +545,11 @@ class Agent:
 
         return
 
-    def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
+    def playEpisode(self, gameObject, win=False):
 
         episodeSaveTime = time.time() ## in seconds
         quit_level = False
+
         ## Initialize external environment
         self.initializeEnvironment()
         if self.display_text:
@@ -601,13 +591,12 @@ class Agent:
             if self.display_text:
                 print "initializing hypotheses"
         else:
-            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, compactStates, first_time_playing_level)
+            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, compactStates)
             if self.display_text:
                 print "had hypotheses -- completing them."
             # If theory is being carried over, falsify termination hypotheses
             # given new level state.
-            if not flexible_goals:
-                [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
+            [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
         if self.saveMidEpisode:
             ## if we get a loadedState because of interrupted runs on the clsuter, load it here.
@@ -672,7 +661,7 @@ class Agent:
                 print "planning with max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
-            theoryRLEs = self.VrleInitPhase(flexible_goals)
+            theoryRLEs = self.VrleInitPhase()
 
             quitting = False
 
@@ -787,7 +776,7 @@ class Agent:
                     plannerNodes = p.total_nodes_opened
                     action = 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
-                        run_induction = not flexible_goals)
+                        run_induction = True)
                     quitting = True
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle.getScore()
@@ -820,7 +809,7 @@ class Agent:
                     ## Storing info on search budget
                     plannerNodes = p.total_nodes_opened if i==0 else 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
-                        run_induction = not flexible_goals)
+                        run_induction = True)
                     
                     ## For an incomplete ablation
                     if self.total_game_steps+steps > MAX_STEPS:
