@@ -185,8 +185,6 @@ class Agent:
         planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
         return planner_hyperparameters
 
-
-
     def getSpritesByColor(self, rle, color):
         outList = []
         spriteGroups = rle.getSpriteGroups()
@@ -223,8 +221,6 @@ class Agent:
                             if orientation == (0,0):
                                 # print "found 0,0 orientation. Using generic missile orientation:", sprite.orientation, sprite.speed, sprite.cooldown
                                 pass
-                            #     embed()
-
                             else:
                                 sprite.orientation = orientation
 
@@ -951,9 +947,9 @@ class Agent:
         min_age = min([sprite.lastmove for sprite in rle.getAliveSprites() if sprite.name not in [thingWeShoot, 'avatar']])
 
         try:
-            time_since_last_kill = self.rle.getTime() - max([item.deathage for item in self.rle.getDeadSprites() if item.name!=thingWeShoot])
+            time_since_last_kill = rle.getTime() - max([item.deathage for item in rle.getDeadSprites() if item.name!=thingWeShoot])
         except:
-            time_since_last_kill = self.rle.getTime()
+            time_since_last_kill = rle.getTime()
 
         if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
             return True
@@ -970,7 +966,7 @@ class Agent:
         moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
         movingTypes = False
         if moving_colors:
-            for s in self.rle.getAliveSprites():
+            for s in rle.getAliveSprites():
                 if s.colorName in moving_colors:
                     movingTypes = True
                     break
@@ -989,19 +985,19 @@ class Agent:
         killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
         killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
 
-        for s in self.rle.getAliveSprites():
+        for s in rle.getAliveSprites():
             ## If the object isn't in our predicted environment or the positions vary
             if s.name=='avatar' or s.colorName in killer_colors:
-                if s.ID not in hypDict and manhattan_distance(s.rect, self.rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID not in hypDict and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                     regroundingFlag=True
                     if self.produce_printout:
                         print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
                     break
-                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, self.rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                     if self.produce_printout:
                         print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                            s, self.rle.getAvatars()[0], manhattan_distance(s.rect, self.rle.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+                            s, rle.getAvatars()[0], manhattan_distance(s.rect, rle.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                             'white', 'on_yellow')
                     regroundingFlag=True
                     break
