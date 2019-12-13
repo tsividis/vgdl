@@ -37,6 +37,83 @@ class Memory:
         self.nextPositions = {}
         self.spriteUpdateDict = defaultdict(lambda : 0)
 
+class Bookkeeping:
+    def __init__(self, saveMidEpisode, task_ID, param_ID, gameFilename):
+        self.saveMidEpisode = saveMidEpisode
+        self.task_ID = task_ID
+        self.param_ID = param_ID
+        self.gameFilename = gameFilename
+        self.episodeSaveFile = None
+        self.curriculumDir = 'savedCurricula'
+        self.curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+
+        if self.curriculumDir not in os.listdir('.'):
+            os.makedirs(self.curriculumDir)
+
+    def saveCurriculumState(self, agent, episodeCompactStates):
+        if 'pedro' in os.getcwd():
+            return
+        filename = self.curriculumDir+'/'+curriculumSaveFile
+        savedState = {'agent':agent,
+                      'episodeCompactStates': episodeCompactStates}
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+
+    def saveEpisodeState(self, agent, effectsEncountered, statesEncountered, compactStates, annealing):
+        
+        if not self.saveMidEpisode:
+            return
+
+        # if 'pedro' in os.getcwd():
+            # return
+
+        filename = self.episodeSaveFile
+
+        print "starting to save episode state"
+        savedState = {'agent':agent,
+                      'effectsEncountered': effectsEncountered,
+                      'statesEncountered': statesEncountered,
+                      'compactStates': compactStates,
+                      'annealing': annealing
+                      }
+        filepath = 'savedCurricula/'+filename
+        with open(filepath, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+        print "done saving state"
+
+    def loadState(self, filename):
+        with open(filename, 'r') as f:
+            loadedState = cloudpickle.load(f)
+        # f.close()
+        return loadedState
+
+    def saveState(self):
+        filename = 'saved_state'
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(self, f)
+        return
+
+    def loadCurriculumState(self, filename):
+        ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
+        if filename in os.listdir(self.curriculumDir):
+            try:
+                print "found saved curriculum state"
+                loadedState = self.loadState(self.curriculumDir+'/'+filename)
+                print "loaded curriculum state"
+                return loadedState
+            except:
+                os.remove(self.curriculumDir+'/'+filename)
+                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+                return None
+
+    def deleteEpisodeFile(self):
+        if self.saveMidEpisode:
+            ## if the episode ends, delete the mid-episode file we were saving.
+            self.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+            os.remove(self.curriculumDir+'/'+self.episodeSaveFile)
+            print "finished an episode; removing episodeSaveFile"
+
+
 class Agent:
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):
         self.modelType = modelType
@@ -52,6 +129,7 @@ class Agent:
         self.filename = None
         self.timestamp = False
         self.task_ID = task_ID
+        self.loaded_n_level = 0
         self.produce_printout = produce_printout
         self.movieName = movieName
         ## Main params are loaded from hyperparameters.py
@@ -141,6 +219,7 @@ class Agent:
         self.new_objects = {}
 
         self.memory = Memory()
+        self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename)
 
         self.total_game_steps = 0
         self.total_planner_steps = 0
@@ -341,27 +420,12 @@ class Agent:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
-        # print "timestamp", self.timestamp
-        # print "param_ID", self.param_ID
-        curriculumDir = 'savedCurricula'
-        if curriculumDir not in os.listdir('.'):
-            os.makedirs(curriculumDir)
-        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
-        loadedState = False
         loaded_n_level=0
-
-        ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
-        if curriculumSaveFile in os.listdir(curriculumDir):
-            try:
-                print "found saved curriculum state"
-                loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
-                loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
-                self = loadedState['agent'] ## load saved agent
-                ##self.filename will get overloaded here.
-                print "loaded curriculum state"
-            except:
-                os.remove(curriculumDir+'/'+episodeSaveFile)
-                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        loadedState = self.bookkeeping.loadCurriculumState(curriculumSaveFile)
+        if loadedState is not None:
+            self = loadedState['agent']
+            loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
 
         j=0
         fullStateEpisodes, episodeCompactStates = {}, {}
@@ -410,8 +474,7 @@ class Agent:
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
 
-
-                self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
+                self.bookkeeping.saveCurriculumState(self, episodeCompactStates)
 
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
@@ -437,11 +500,7 @@ class Agent:
                     if self.produce_printout:
                         print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
 
-                if self.saveMidEpisode:
-                    # ## if the episode ends, delete the mid-episode file we were saving.
-                    episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-                    os.remove(curriculumDir+'/'+episodeSaveFile)
-                    print "finished an episode; removing episodeSaveFile"
+                self.bookkeeping.deleteEpisodeFile()
 
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
@@ -598,23 +657,11 @@ class Agent:
             # given new level state.
             [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
-        if self.saveMidEpisode:
-            ## if we get a loadedState because of interrupted runs on the clsuter, load it here.
-            episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
-            curriculumDir = 'savedCurricula'
-            if episodeSaveFile in os.listdir(curriculumDir):
-                try:
-                    loadedState = self.loadState(curriculumDir + '/' + episodeSaveFile)
-                    self = loadedState['agent']
-                    effectsEncountered = loadedState['effectsEncountered']
-                    statesEncountered = loadedState['statesEncountered']
-                    compactStates = loadedState['compactStates']
-                    annealing = loadedState['annealing']
-                    print "just loaded episode state"
-                except:
-                    os.remove(curriculumDir+'/'+episodeSaveFile)
-                    print "failed to load episode state. Deleting the corrupted file and continuing with this episode as though we hadn't saved anything."
 
+        self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+        loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
+        if loadedState is not None:
+            self, effectsEncountered, statesEncountered, compactStates, annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.
         resources = self.rle.getAvatars()[0].resources
@@ -632,14 +679,13 @@ class Agent:
         ## Main episode loop
         while not ended:
 
-            if self.saveMidEpisode:
-                self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+            self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
-                if self.saveMidEpisode:
-                    self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
 
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
@@ -776,8 +822,7 @@ class Agent:
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle.getScore()
                         quit_level = False
-                        if self.saveMidEpisode:
-                            self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
 
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
@@ -810,8 +855,8 @@ class Agent:
                     if self.total_game_steps+steps > MAX_STEPS:
                         score = self.rle.getScore()
                         quit_level = False
-                        if self.saveMidEpisode:
-                            self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+
+                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
 
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
@@ -865,8 +910,8 @@ class Agent:
                     quit_level = True
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
-                if self.saveMidEpisode:
-                    self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
+
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
 
 
                 output =          "Quitting.                                                       "
@@ -989,40 +1034,6 @@ class Agent:
         return regroundingFlag
 
 
-    def saveCurriculumState(self, filename, episodeCompactStates):
-        if 'pedro' in os.getcwd():
-            return
-        savedState = {'agent':self,
-                      'episodeCompactStates': episodeCompactStates}
-        with open(filename, 'wb') as f:
-            cloudpickle.dump(savedState, f)
-
-    def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
-        if 'pedro' in os.getcwd():
-            return
-        print "starting to save episode state"
-        savedState = {'agent':self,
-                      'effectsEncountered': effectsEncountered,
-                      'statesEncountered': statesEncountered,
-                      'compactStates': compactStates,
-                      'annealing': annealing
-                      }
-        filepath = 'savedCurricula/'+filename
-        with open(filepath, 'wb') as f:
-            cloudpickle.dump(savedState, f)
-        print "done saving state"
-
-    def loadState(self, filename):
-        with open(filename, 'r') as f:
-            loadedState = cloudpickle.load(f)
-        # f.close()
-        return loadedState
-
-    def saveState(self):
-        filename = 'saved_state'
-        with open(filename, 'wb') as f:
-            cloudpickle.dump(self, f)
-        return
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
