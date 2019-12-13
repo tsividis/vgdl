@@ -10,6 +10,8 @@ import operator
 import time, math
 from util import factorize, assign_symbols_to_objects
 from rlenvironmentnonstatic import createMindEnv
+from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
@@ -307,7 +309,12 @@ class Theory(object):
 		k = phi(numClasses, numRules, .5)
 
 		return negBin(k,5,.5)
-	
+
+	def getLegalActions(self):
+		legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+		if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args:
+			legalActions.append(K_SPACE)
+		return legalActions
 
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
 		"""

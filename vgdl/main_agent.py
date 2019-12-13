@@ -626,11 +626,6 @@ class Agent:
                 self.seen_limits.append(resource)
 
         ended, win = self.rle._isDone()
-
-        legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
-            legalActions.append(K_SPACE)
-
         steps = self.rle.getTime()
         emptyPlans = 0
         
@@ -639,7 +634,6 @@ class Agent:
 
             if self.saveMidEpisode:
                 self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
-
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
@@ -769,7 +763,8 @@ class Agent:
                     plannerNodes = p.total_nodes_opened
                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                     for i in range(self.random_steps_on_plan_failure):
-                        solution.append(random.choice(legalActions))
+                        solution.append(random.choice(self.hypotheses[0].getLegalActions()
+))
                     self.longHorizonObservations += 1
                     takingRandomSteps = True
                 else:
