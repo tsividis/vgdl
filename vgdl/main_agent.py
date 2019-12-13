@@ -547,7 +547,7 @@ class Agent:
 
     def playEpisode(self, gameObject, win=False):
 
-        episodeSaveTime = time.time() ## in seconds
+
         quit_level = False
 
         ## Initialize external environment
@@ -639,14 +639,14 @@ class Agent:
 
             if self.saveMidEpisode:
                 self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
-                self.episodeSaveTime = time.time()
+
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
                 if self.saveMidEpisode:
                     self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
-                    self.episodeSaveTime = time.time()
+
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             self.max_nodes = self.stored_max_nodes
@@ -783,7 +783,7 @@ class Agent:
                         quit_level = False
                         if self.saveMidEpisode:
                             self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
-                            self.episodeSaveTime = time.time()
+
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
@@ -817,7 +817,7 @@ class Agent:
                         quit_level = False
                         if self.saveMidEpisode:
                             self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
-                            self.episodeSaveTime = time.time()
+
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
                     if self.display_text:
@@ -872,7 +872,7 @@ class Agent:
                 self.episodeRecord.insert(0, (win, effects))
                 if self.saveMidEpisode:
                     self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
-                    self.episodeSaveTime = time.time()
+
 
                 output =          "Quitting.                                                       "
                 # if self.produce_printout:
