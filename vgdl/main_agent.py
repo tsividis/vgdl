@@ -225,6 +225,31 @@ class Agent:
         self.total_planner_steps = 0
         self.levels_won = 0
 
+
+        ## used for time-stamping data related to this particular run of the model.
+        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
+        
+        self.timestamp = timestamp
+
+        if self.record_states:
+            # dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename) # old data location
+            # print "in main_agent"
+            # print os.getcwd()
+            dirname_for_results = "../data/demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
+            filename = "{}{}_{}".format(dirname_for_results, self.gameFilename, self.timestamp)
+            self.filename = filename
+            if not os.path.exists(dirname_for_results):
+                try:
+                    # print "path didn't exist; making", dirname
+                    os.makedirs(dirname_for_results)
+                except:
+                    print "failed  to make dir {} in main_agent.py".format(dirname_for_results)
+        if self.write_video_info:
+            self.dirname_for_video = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
+            if not os.path.exists(self.dirname_for_video):
+                os.makedirs(self.dirname_for_video)
+
+
     # ---------------------------------------------------------------------
     #     Simulator initialization functions
     # ---------------------------------------------------------------------
@@ -393,32 +418,13 @@ class Agent:
             level_game_pairs = importlib.import_module(self.gameFilename).level_game_pairs
         episodes = []
         allEffectsEncountered = []
-        self.make_movie = make_movie
 
-        ## used for time-stamping data related to this particular run of the model.
-        timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
-        self.timestamp = timestamp
-        if self.record_states:
-            # dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename) # old data location
-            # print "in main_agent"
-            # print os.getcwd()
-            dirname = "../data/demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
-            filename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
-            self.filename = filename
-            if not os.path.exists(dirname):
-                try:
-                    # print "path didn't exist; making", dirname
-                    os.makedirs(dirname)
-                except:
-                    print "failed  to make dir {} in main_agent.py".format(dirname)
-        if self.write_video_info:
-            dirname = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
+        self.make_movie = make_movie
         if self.make_movie:
             if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
+
 
         loaded_n_level=0
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
@@ -492,7 +498,7 @@ class Agent:
                 if self.record_video_info:
                     fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
                 if self.write_video_info:
-                    videofilename = "{}{}_{}".format(dirname, self.gameFilename, timestamp)
+                    videofilename = "{}{}_{}".format(self.dirname_for_video, self.gameFilename, self.timestamp)
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     with open(videofilename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
