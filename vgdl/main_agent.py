@@ -22,6 +22,7 @@ from dynamic_type_inference import dynamicTypeDistribution_VGDL1
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
+
 MAX_STEPS = 10000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
@@ -556,7 +557,6 @@ class Agent:
         return
 
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
-        from vgdl.util import manhattan_distance
 
         episodeSaveTime = time.time() ## in seconds
         quit_level = False
