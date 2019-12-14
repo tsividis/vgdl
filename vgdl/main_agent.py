@@ -29,6 +29,128 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
+
+class Metacontroller:
+    def __init__(self, agent):
+        self.agent = agent
+        self.display_text = self.agent.display_text
+        self.quitting = False
+
+    def checkForRepeatedDeaths(self):
+        return self.agent.checkForRepeatedDeaths(self.agent.episodeRecord, 2)
+
+    def checkForMovingTypes(self, env):
+        return self.agent.checkForMovingTypes(env, self.agent.hypotheses[0])
+
+    def noNewObjectsInAWhile(self, env):
+        return self.agent.noNewObjectsInAWhile(env, self.agent.noNewObjectNum)
+
+    def testSwitchHyperparams(self, new_hyperparameter):
+        self.agent.hyperparameter_index = new_hyperparameter
+
+    ##overload the agent functions so that you can call them directly from here
+    ##TODO: change self.rle in here to env
+
+    def determinePlanningMode(self, solution, env, planner_recommended_quitting):
+        if not solution:
+            ## If planner didn't give a solution, switch modes according to metacontroller policy
+            if self.checkForRepeatedDeaths():
+                if self.agent.hyperparameter_index == 'long-term':
+                    new_index = 'long-term' ## don't switch away from idx_1
+                    conservative = False
+                if self.agent.hyperparameter_index == 'short-term':
+                    if self.display_text:
+                        print "Repeated deaths. Switching to long-range planning"
+                    new_index = 'long-term'
+                    conservative = False
+                planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
+
+            elif self.agent.hyperparameter_index == 'short-term':
+                movingTypes = self.checkForMovingTypes(env)
+                if env.getTime()>self.agent.compactStates[-1]['timestep']:
+                    scoreChange = env.getScore()!=self.agent.compactStates[-1]['score']
+                else:
+                    scoreChange = True
+                # if self.display_text:
+                # print "moving types: {}".format(movingTypes)
+                # print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
+                # print "scoreChange: {}".format(scoreChange)
+                if self.noNewObjectsInAWhile(env) and \
+                        (not movingTypes or (movingTypes and not scoreChange)):
+                    if self.produce_printout:
+                        print "switching to long-range planning"
+                    ## switch to long-range planning
+                    new_index = 'long-term'
+                    planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
+                    conservative = False
+                else:
+                    if self.produce_printout:
+                        print "planning in 'stall' mode"
+                    new_index = 'short-term'
+                    planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
+                    conservative = True
+                    self.agent.stored_max_nodes = self.agent.max_nodes ##taking annealing into account
+                    self.agent.max_nodes = self.agent.conservative_max_nodes
+            else:
+                conservative = False
+            if self.display_text:
+                print "planning in {} mode".format(self.agent.hyperparameter_index)
+                print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.agent.max_nodes, self.agent.shortHorizon, conservative)
+
+            # TODO: Implement conservative mode.
+            if conservative: #aka 'stall' mode
+                ## Replan in new mode
+                p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
+                    seen_limits = self.agent.seen_limits, annealing=annealing, max_nodes=self.agent.max_nodes, shortHorizon=self.agent.shortHorizon,
+                    firstOrderHorizon=self.agent.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
+                    extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, objectNumberTrackingLimit=self.agent.objectNumberTrackingLimit,
+                    objectLocationTrackingLimit=self.agent.objectLocationTrackingLimit, lesion=self.agent.planner_lesion)
+                planner_recommended_quitting = p.quitting
+                bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                self.agent.total_planner_steps += p.total_nodes_opened
+                # print "total planner steps in main_agent:", self.total_planner_steps
+                if bestNode is not None:
+                    solution = p.solution
+                    gameString_array = p.gameString_array
+                    objectPositionsArray = objectPositionsArray[::-1]
+                    if solution and self.display_text:
+                        print "got solution"
+                else:
+                    solution = []
+        self.agent.takingRandomSteps = False
+
+        if (not solution) or planner_recommended_quitting:
+            # Here we make a distinction between quitting because you've
+            # exhausted the number of nodes you can visit or because you
+            # ran out of novelty. In the first case, you only wait longer,
+            # in the second case, you also add a new atom to IW
+            if self.agent.extra_atom_allowed:
+                if self.display_text:
+                    print "turning on extra atom"
+                self.agent.extra_atom = True
+            if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit: ## if you don't get a plan with short-horizon mode you'll plan in stall mode. 
+            ## you only get here if you're in idx_1 (long-term planning) and don't find a plan.
+                if self.agent.produce_printout:
+                    print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
+                plannerNodes = p.total_nodes_opened
+                solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+                for i in range(self.agent.random_steps_on_plan_failure):
+                    solution.append(random.choice(self.agent.hypotheses[0].getLegalActions()
+))
+                self.agent.longHorizonObservations += 1
+                self.agent.takingRandomSteps = True
+            else:
+                plannerNodes = p.total_nodes_opened
+                action = 0
+                ## TODO: remove. agent should not be taking steps here.
+                ## Figure out why you had to do it and remove it.
+                hypotheses, theory_change_flag, effects = self.agent.executeStep(action, self.agent.hypotheses, statesEncountered, self.agent.compactStates, plannerNodes,
+                    run_induction = True)
+                self.quitting = True
+
+        else:
+            print "No need to switch hyperparameters. Staying in {} mode".format(self.agent.hyperparameter_index)
+
 class Memory:
     def __init__(self):
         self.ignoreList = []
@@ -134,7 +256,7 @@ class Agent:
         self.movieName = movieName
         ## Main params are loaded from hyperparameters.py
         self.hyperparameter_sets = hyperparameter_sets
-        self.hyperparameter_index = hyperparameter_index
+        self.hyperparameter_index = 'short-term'
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
         self.annealingFactor = 1. # meaningless
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
@@ -220,6 +342,7 @@ class Agent:
 
         self.memory = Memory()
         self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename)
+        self.metacontroller = Metacontroller(self)
 
         self.total_game_steps = 0
         self.total_planner_steps = 0
@@ -612,7 +735,6 @@ class Agent:
 
     def playEpisode(self, gameObject, win=False):
 
-
         quit_level = False
 
         ## Initialize external environment
@@ -635,14 +757,14 @@ class Agent:
         ## Start storing encountered states.
         effectsEncountered = []
         statesEncountered = []
-        compactStates = [] ## for easy analysis of score over time.
+        self.compactStates = [] ## for easy analysis of score over time.
 
         if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle.getFullState())
         
         self.last_recorded_time = time.time()
         if self.record_states:
-            compactStates.append(self.compactify(self.rle))
+            self.compactStates.append(self.compactify(self.rle))
         
         ## Initialize memory of object positions
         self.memory.objectMemoryDict, self.memory.previousPositions = {}, {}
@@ -652,11 +774,11 @@ class Agent:
 
         ## initialize theory if necessary.
         if len(self.hypotheses) == 0:
-            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, compactStates)
+            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, self.compactStates)
             if self.display_text:
                 print "initializing hypotheses"
         else:
-            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, compactStates)
+            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, self.compactStates)
             if self.display_text:
                 print "had hypotheses -- completing them."
             # If theory is being carried over, falsify termination hypotheses
@@ -667,7 +789,7 @@ class Agent:
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
-            self, effectsEncountered, statesEncountered, compactStates, annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
+            self, effectsEncountered, statesEncountered, self.compactStates, annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.
         resources = self.rle.getAvatars()[0].resources
@@ -685,15 +807,15 @@ class Agent:
         ## Main episode loop
         while not ended:
 
-            self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
+            self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
 
-                return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+                return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
 
             self.max_nodes = self.stored_max_nodes
 
@@ -719,7 +841,7 @@ class Agent:
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
-            p_quitting = p.quitting
+            planner_recommended_quitting = p.quitting
             print "planning..."
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
@@ -733,107 +855,122 @@ class Agent:
             else:
                 solution = []
 
-            if not solution:
-                ## If planner didn't give a solution, switch modes according to metacontroller policy
-                if self.checkForRepeatedDeaths(self.episodeRecord, 2):
-                    if self.hyperparameter_index == 1:
-                        new_index = 1 ## don't switch away from idx_1
-                        conservative = False
-                    if self.hyperparameter_index == 3:
-                        if self.display_text:
-                            print "Repeated deaths. Switching to long-range planning"
-                        new_index = 1
-                        conservative = False
-                    planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+            self.metacontroller.determinePlanningMode(solution, self.rle, planner_recommended_quitting)
 
-                elif self.hyperparameter_index == 3:
-                    movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
-                    if self.rle.getTime()>compactStates[-1]['timestep']:
-                        scoreChange = self.rle.getScore()!=compactStates[-1]['score']
-                    else:
-                        scoreChange = True
-                    # if self.display_text:
-                    # print "moving types: {}".format(movingTypes)
-                    # print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
-                    # print "scoreChange: {}".format(scoreChange)
-                    if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
-                            (not movingTypes or (movingTypes and not scoreChange)):
-                        if self.produce_printout:
-                            print "switching to long-range planning"
-                        ## switch to long-range planning
-                        new_index = 1
-                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
-                        conservative = False
-                    else:
-                        if self.produce_printout:
-                            print "planning in 'stall' mode"
-                        new_index = 3
-                        planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
-                        conservative = True
-                        self.stored_max_nodes = self.max_nodes ##taking annealing into account
-                        self.max_nodes = self.conservative_max_nodes
-                else:
-                    conservative = False
-                if self.display_text:
-                    print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-                    print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
+#             if not solution:
+#                 ## If planner didn't give a solution, switch modes according to metacontroller policy
+#                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
+#                     if self.hyperparameter_index == 1:
+#                         new_index = 1 ## don't switch away from idx_1
+#                         conservative = False
+#                     if self.hyperparameter_index == 3:
+#                         if self.display_text:
+#                             print "Repeated deaths. Switching to long-range planning"
+#                         new_index = 1
+#                         conservative = False
+#                     planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
 
-                if conservative: #aka 'stall' mode
-                    ## Replan in new mode
-                    p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                        seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                        firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
-                        extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
-                        objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
-                    p_quitting = p.quitting
-                    bestNode, gameStringArray, objectPositionsArray = p.BFS()
-                    self.total_planner_steps += p.total_nodes_opened
-                    # print "total planner steps in main_agent:", self.total_planner_steps
-                    if bestNode is not None:
-                        solution = p.solution
-                        gameString_array = p.gameString_array
-                        objectPositionsArray = objectPositionsArray[::-1]
-                        if solution and self.display_text:
-                            print "got solution"
-                    else:
-                        solution = []
-            takingRandomSteps = False
+#                 elif self.hyperparameter_index == 3:
+#                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
+#                     if self.rle.getTime()>self.compactStates[-1]['timestep']:
+#                         scoreChange = self.rle.getScore()!=self.compactStates[-1]['score']
+#                     else:
+#                         scoreChange = True
+#                     # if self.display_text:
+#                     # print "moving types: {}".format(movingTypes)
+#                     # print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
+#                     # print "scoreChange: {}".format(scoreChange)
+#                     if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
+#                             (not movingTypes or (movingTypes and not scoreChange)):
+#                         if self.produce_printout:
+#                             print "switching to long-range planning"
+#                         ## switch to long-range planning
+#                         new_index = 1
+#                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+#                         conservative = False
+#                     else:
+#                         if self.produce_printout:
+#                             print "planning in 'stall' mode"
+#                         new_index = 3
+#                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
+#                         conservative = True
+#                         self.stored_max_nodes = self.max_nodes ##taking annealing into account
+#                         self.max_nodes = self.conservative_max_nodes
+#                 else:
+#                     conservative = False
+#                 if self.display_text:
+#                     print "planning with hyperparameter index {}".format(self.hyperparameter_index)
+#                     print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
 
-            if (not solution) or p_quitting:
-                # Here we make a distinction between quitting because you've
-                # exhausted the number of nodes you can visit or because you
-                # ran out of novelty. In the first case, you only wait longer,
-                # in the second case, you also add a new atom to IW
-                if self.extra_atom_allowed:
-                    if self.display_text:
-                        print "turning on extra atom"
-                    self.extra_atom = True
-                if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with short-horizon mode you'll plan in stall mode. 
-                ## you only get here if you're in idx_1 (long-term planning) and don't find a plan.
-                    if self.produce_printout:
-                        print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
-                    plannerNodes = p.total_nodes_opened
-                    solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-                    for i in range(self.random_steps_on_plan_failure):
-                        solution.append(random.choice(self.hypotheses[0].getLegalActions()
-))
-                    self.longHorizonObservations += 1
-                    takingRandomSteps = True
-                else:
-                    plannerNodes = p.total_nodes_opened
-                    action = 0
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
-                        run_induction = True)
-                    quitting = True
-                    if self.total_game_steps+steps > MAX_STEPS:
-                        score = self.rle.getScore()
-                        quit_level = False
-                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
+#                 if conservative: #aka 'stall' mode
+#                     ## Replan in new mode
+#                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+#                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+#                         firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
+#                         extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+#                         objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
+#                     planner_recommended_quitting = p.quitting
+#                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
+#                     self.total_planner_steps += p.total_nodes_opened
+#                     # print "total planner steps in main_agent:", self.total_planner_steps
+#                     if bestNode is not None:
+#                         solution = p.solution
+#                         gameString_array = p.gameString_array
+#                         objectPositionsArray = objectPositionsArray[::-1]
+#                         if solution and self.display_text:
+#                             print "got solution"
+#                     else:
+#                         solution = []
 
-                        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+#             takingRandomSteps = False
 
+#             if (not solution) or planner_recommended_quitting:
+#                 # Here we make a distinction between quitting because you've
+#                 # exhausted the number of nodes you can visit or because you
+#                 # ran out of novelty. In the first case, you only wait longer,
+#                 # in the second case, you also add a new atom to IW
+#                 if self.extra_atom_allowed:
+#                     if self.display_text:
+#                         print "turning on extra atom"
+#                     self.extra_atom = True
+#                 if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with short-horizon mode you'll plan in stall mode. 
+#                 ## you only get here if you're in idx_1 (long-term planning) and don't find a plan.
+#                     if self.produce_printout:
+#                         print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
+#                     plannerNodes = p.total_nodes_opened
+#                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
+#                     for i in range(self.random_steps_on_plan_failure):
+#                         solution.append(random.choice(self.hypotheses[0].getLegalActions()
+# ))
+#                     self.longHorizonObservations += 1
+#                     takingRandomSteps = True
+#                 else:
+#                     plannerNodes = p.total_nodes_opened
+#                     action = 0
+#                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, self.compactStates, plannerNodes,
+#                         run_induction = True)
+#                     quitting = True
+#                     if self.total_game_steps+steps > MAX_STEPS:
+#                         score = self.rle.getScore()
+#                         quit_level = False
+#                         self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
+
+#                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
+
+            if self.metacontroller.quitting:
+                self.metacontroller.quitting = False
+                return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
             ## Most common scenario: planner worked. Show projected plan and states, then act.
-            if solution and not p.quitting and not takingRandomSteps and self.display_states and self.produce_printout:
+            # if solution and not p.quitting and not self.takingRandomSteps and self.display_states and self.produce_printout:
+            #     # print "==============================================================="
+            #     print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
+            #     # print colored(p.gameString_array[0], 'green')
+            #     for i,g in enumerate(p.gameString_array[1:]):
+            #         print actionDict[solution[i]]
+            #         print colored(g, 'green')
+            #     print "==============================================================="
+
+            if solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
                 # print "==============================================================="
                 print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
                 # print colored(p.gameString_array[0], 'green')
@@ -854,7 +991,7 @@ class Agent:
 
                     ## Storing info on search budget
                     plannerNodes = p.total_nodes_opened if i==0 else 0
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, self.compactStates, plannerNodes,
                         run_induction = True)
                     
                     ## For an incomplete ablation
@@ -862,9 +999,9 @@ class Agent:
                         score = self.rle.getScore()
                         quit_level = False
 
-                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
+                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
 
-                        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+                        return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
 
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
@@ -897,7 +1034,7 @@ class Agent:
                     # (e.g. stochastic effects)
                     if (i+1)%self.regrounding==0:
 
-                        if (not takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
+                        if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
                             break
 
             else:
@@ -917,7 +1054,7 @@ class Agent:
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, compactStates, annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
 
 
                 output =          "Quitting.                                                       "
@@ -925,7 +1062,7 @@ class Agent:
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored(output, 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, False, self.rle.getScore(), steps, statesEncountered, effectsEncountered, compactStates, quit_level
+                return gameObject, False, self.rle.getScore(), steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
 
 
             annealing *= self.annealingFactor
@@ -957,7 +1094,7 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
 
 
-        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+        return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
@@ -1178,7 +1315,7 @@ class Agent:
         if self.make_movie or self.record_video_info:
             statesEncountered.append(self.rle.getFullState())
         if self.record_states:
-            compactStates.append(self.compactify(self.rle, plannerNodes))
+            self.compactStates.append(self.compactify(self.rle, plannerNodes))
 
         t1 = time.time()
 
