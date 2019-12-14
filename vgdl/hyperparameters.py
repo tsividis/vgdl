@@ -1,7 +1,7 @@
 
 ## Planner hyperparameters
-hyperparameter_sets = [
-    {'idx'           : 0,
+hyperparameter_sets = {
+    0:{'idx'           : 0,
      'short_horizon' : False,
      'first_order_horizon': True,
      'sprite_first_alpha': 10000,
@@ -12,7 +12,7 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      },
-    {'idx'           : 1,
+    1:{'idx'           : 1,
      'short_horizon' : False,
      'first_order_horizon': False,
      'sprite_first_alpha': 10000,
@@ -23,7 +23,7 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      },
-     {'idx'           : 'long-term',
+     'long-term':{'idx'           : 'long-term',
      'short_horizon' : False,
      'first_order_horizon': False,
      'sprite_first_alpha': 10000,
@@ -34,8 +34,7 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      },
-
-    {'idx'           : 2,
+    2:{'idx'           : 2,
      'short_horizon' : False,
      'first_order_horizon': False,
      'sprite_first_alpha': 10000,
@@ -46,7 +45,7 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      },
-    {'idx'           : 3,
+    3:{'idx'           : 3,
      'short_horizon' : True,
      'first_order_horizon': True,
      'sprite_first_alpha': 10000,
@@ -57,7 +56,7 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      },
-    {'idx'           : 'short-term',
+    'short-term':{'idx'           : 'short-term',
      'short_horizon' : True,
      'first_order_horizon': True,
      'sprite_first_alpha': 10000,
@@ -68,7 +67,7 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 50,
      },
-    {'idx'           : 4,
+    4:{'idx'           : 4,
      'short_horizon' : True,
      'first_order_horizon': True,
      'sprite_first_alpha': 10000,
@@ -79,7 +78,7 @@ hyperparameter_sets = [
      'novelty_first_alpha': 5000,
      'novelty_second_alpha': 10,
      }
-]
+}
 
 
 

@@ -7,6 +7,7 @@ from IPython import embed
 import argparse
 from util import str2bool
 from collections import defaultdict
+from hyperparameters import *
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
@@ -36,64 +37,6 @@ if game_name==str(0):
 # gameFileString = 'training_set_1'
 # gameFileString = 'gvgai/games'
 gameFileString = 'all_games'
-
-hyperparameter_sets = [
-    {'idx'           : 0,
-     'short_horizon' : False,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 1,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 2,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 3,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 4,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 10,
-     }
-]
 
 def gen_color():
     from vgdl.colors import colorDict

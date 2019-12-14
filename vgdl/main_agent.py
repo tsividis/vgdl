@@ -73,10 +73,10 @@ class Metacontroller:
                     scoreChange = env.getScore()!=self.agent.compactStates[-1]['score']
                 else:
                     scoreChange = True
-                # if self.display_text:
-                # print "moving types: {}".format(movingTypes)
-                # print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
-                # print "scoreChange: {}".format(scoreChange)
+                if self.display_text:
+                    print "moving types: {}".format(movingTypes)
+                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(env))
+                    print "scoreChange: {}".format(scoreChange)
                 if self.noNewObjectsInAWhile(env) and \
                         (not movingTypes or (movingTypes and not scoreChange)):
                     if self.agent.produce_printout:
@@ -110,11 +110,12 @@ class Metacontroller:
                 planner_recommended_quitting = p.quitting
                 bestNode, gameStringArray, objectPositionsArray = p.BFS()
                 self.agent.total_planner_steps += p.total_nodes_opened
+                self.agent.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
                 # print "total planner steps in main_agent:", self.total_planner_steps
                 if bestNode is not None:
                     solution = p.solution
                     gameString_array = p.gameString_array
-                    objectPositionsArray = objectPositionsArray[::-1]
+                    self.agent.objectPositionsArray = objectPositionsArray[::-1]
                     if solution and self.display_text:
                         print "got solution"
                 else:
@@ -133,8 +134,8 @@ class Metacontroller:
             if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit: ## if you don't get a plan with short-horizon mode you'll plan in stall mode. 
             ## you only get here if you're in idx_1 (long-term planning) and don't find a plan.
                 if self.agent.produce_printout:
-                    print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
-                plannerNodes = p.total_nodes_opened
+                    print "Didn't get solution. Taking {} random steps and then replanning".format(self.agent.random_steps_on_plan_failure)
+                # plannerNodes = p.total_nodes_opened
                 solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                 for i in range(self.agent.random_steps_on_plan_failure):
                     solution.append(random.choice(self.agent.hypotheses[0].getLegalActions()
@@ -142,13 +143,15 @@ class Metacontroller:
                 self.agent.longHorizonObservations += 1
                 self.agent.takingRandomSteps = True
             else:
-                plannerNodes = p.total_nodes_opened
-                action = 0
-                ## TODO: remove. agent should not be taking steps here.
-                ## Figure out why you had to do it and remove it.
-                hypotheses, theory_change_flag, effects = self.agent.executeStep(action, self.agent.hypotheses, statesEncountered, self.agent.compactStates, plannerNodes,
-                    run_induction = True)
+                # plannerNodes = p.total_nodes_opened
+                # action = 0
+                # ## TODO: remove. agent should not be taking steps here.
+                # ## Figure out why you had to do it and remove it.
+                # hypotheses, theory_change_flag, effects = self.agent.executeStep(action, self.agent.hypotheses, self.agent.bookkeeping.statesEncountered, self.agent.compactStates,
+                #     run_induction = True)
+                solution = [0]
                 self.quitting = True
+                print "DECIDING TO QUIT"
 
         else:
             print "No need to switch hyperparameters. Staying in {} mode".format(self.agent.hyperparameter_index)
@@ -171,6 +174,8 @@ class Bookkeeping:
         self.episodeSaveFile = None
         self.curriculumDir = 'savedCurricula'
         self.curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        self.statesEncountered = []
+
 
         if self.curriculumDir not in os.listdir('.'):
             os.makedirs(self.curriculumDir)
@@ -332,7 +337,6 @@ class Agent:
         self.finalEventList = []
         self.finalEffectList = set()
         self.finalTimeStepList = []
-        self.statesEncountered = []
         self.rleHistory = []
         self.episodeRecord = []
         self.fakeInteractionRules = []
@@ -344,6 +348,9 @@ class Agent:
         self.seen_limits = []
         self.new_objects = {}
 
+
+        self.objectPositionsArray = [] ##TODO: Pass to memory
+        self.planner_nodes_opened_on_most_recent_step = 0
         self.memory = Memory()
         self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename)
         self.metacontroller = Metacontroller(self)
@@ -496,7 +503,7 @@ class Agent:
         self.distribution = dynamicTypeDistribution_VGDL1()
 
         ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
-        self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=None)
+        self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict, self.bookkeeping.statesEncountered, compactStates, display=self.display_states, hypothesis=None)
 
         spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
             allObjects, self.bestSpriteTypeDict)
@@ -515,9 +522,9 @@ class Agent:
         previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         current_colors = [o['type']['color'] for o in allObjects.values()]
         if all([c in previous_colors for c in current_colors]):
-            self.observe(self.rle,  self.memory, 0, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
+            self.observe(self.rle,  self.memory, 0, self.bestSpriteTypeDict, self.bookkeeping.statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
         else:
-            self.observe(self.rle, self.memory, 5, self.bestSpriteTypeDict, statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
+            self.observe(self.rle, self.memory, 5, self.bestSpriteTypeDict, self.bookkeeping.statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
             ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
@@ -596,7 +603,7 @@ class Agent:
                 episodes.append(episode_results)
 
                 if self.make_movie:
-                    self.statesEncountered = statesEncountered
+                    # self.statesEncountered = statesEncountered
                     self.makeImages()
                 
                 if self.record_video_info:
@@ -700,12 +707,12 @@ class Agent:
         # params_to_print_to_video = self.param_ID
         params_to_print_to_video = ''
         game_name_to_print_to_video = self.gameFilename
-        VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
 
     def makeMovie(self, play_movie=False):
 
-        VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
+        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
 
         print "Creating Movie"
@@ -760,11 +767,11 @@ class Agent:
 
         ## Start storing encountered states.
         effectsEncountered = []
-        statesEncountered = []
+
         self.compactStates = [] ## for easy analysis of score over time.
 
         if self.make_movie or self.record_video_info:
-            statesEncountered.append(self.rle.getFullState())
+            self.bookkeeping.statesEncountered.append(self.rle.getFullState())
         
         self.last_recorded_time = time.time()
         if self.record_states:
@@ -778,11 +785,11 @@ class Agent:
 
         ## initialize theory if necessary.
         if len(self.hypotheses) == 0:
-            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, self.compactStates)
+            gameObject = self.initializeHypotheses(self.all_objects, self.bookkeeping.statesEncountered, self.compactStates)
             if self.display_text:
                 print "initializing hypotheses"
         else:
-            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, self.compactStates)
+            gameObject = self.completeHypotheses(self.all_objects, self.bookkeeping.statesEncountered, self.compactStates)
             if self.display_text:
                 print "had hypotheses -- completing them."
             # If theory is being carried over, falsify termination hypotheses
@@ -793,7 +800,7 @@ class Agent:
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
-            self, effectsEncountered, statesEncountered, self.compactStates, self.annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
+            self, effectsEncountered, self.bookkeeping.statesEncountered, self.compactStates, self.annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.
         resources = self.rle.getAvatars()[0].resources
@@ -811,15 +818,15 @@ class Agent:
         ## Main episode loop
         while not ended:
 
-            self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
+            self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.compactStates, self.annealing)
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.compactStates, self.annealing)
 
-                return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
+                return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.compactStates, quit_level
 
             self.max_nodes = self.stored_max_nodes
 
@@ -849,11 +856,12 @@ class Agent:
             print "planning..."
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
             self.total_planner_steps += p.total_nodes_opened
+            self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
 
             if bestNode is not None:
                 solution = p.solution
                 gameString_array = p.gameString_array
-                objectPositionsArray = objectPositionsArray[::-1]
+                self.objectPositionsArray = objectPositionsArray[::-1]
                 if solution and self.display_text:
                     print "got solution"
             else:
@@ -963,7 +971,17 @@ class Agent:
 
             if self.metacontroller.quitting:
                 self.metacontroller.quitting = False
-                return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
+                ## TODO: remove. agent should not be taking steps here.
+                ## Figure out why you had to do it and remove it.
+                quitting=True
+                action = 0
+                hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, self.compactStates,run_induction = True)
+                output =          "Quitting.                                                       "
+                # if self.produce_printout:
+                print colored('________________________________________________________________', 'white', 'on_red')
+                print colored(output, 'white', 'on_red')
+                print colored('________________________________________________________________', 'white', 'on_red')
+                return gameObject, win, self.rle.getScore(), steps, self.bookkeeping.statesEncountered, effectsEncountered, self.compactStates, quit_level
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             # if solution and not p.quitting and not self.takingRandomSteps and self.display_states and self.produce_printout:
             #     # print "==============================================================="
@@ -995,7 +1013,7 @@ class Agent:
 
                     ## Storing info on search budget
                     plannerNodes = p.total_nodes_opened if i==0 else 0
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, self.compactStates, plannerNodes,
+                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, self.compactStates,
                         run_induction = True)
                     
                     ## For an incomplete ablation
@@ -1003,9 +1021,9 @@ class Agent:
                         score = self.rle.getScore()
                         quit_level = False
 
-                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
+                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.compactStates, self.annealing)
 
-                        return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
+                        return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.compactStates, quit_level
 
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
@@ -1038,11 +1056,11 @@ class Agent:
                     # (e.g. stochastic effects)
                     if (i+1)%self.regrounding==0:
 
-                        if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], objectPositionsArray, i):
+                        if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], self.objectPositionsArray, i):
                             break
 
             else:
-                ## Agent failed the game either because it made a mistake itcouldn't recover from or because search timed out.
+                ## Agent failed the game either because it made a mistake it couldn't recover from or because search timed out.
                 ## Search more deeply next time.
                 curr_max_nodes = self.max_nodes
                 self.max_nodes *= self.max_nodes_annealing
@@ -1058,7 +1076,7 @@ class Agent:
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.compactStates, self.annealing)
 
 
                 output =          "Quitting.                                                       "
@@ -1066,7 +1084,7 @@ class Agent:
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored(output, 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, False, self.rle.getScore(), steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
+                return gameObject, False, self.rle.getScore(), steps, self.bookkeeping.statesEncountered, effectsEncountered, self.compactStates, quit_level
 
 
             self.annealing *= self.annealingFactor
@@ -1098,7 +1116,7 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
 
 
-        return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
+        return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.compactStates, quit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
@@ -1238,7 +1256,7 @@ class Agent:
                 self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
-                    statesEncountered.append(self.rle.getFullState(observe_state=True))
+                    self.bookkeeping.statesEncountered.append(self.rle.getFullState(observe_state=True))
                 if self.record_states:
                     compactStates.append(self.compactify(self.rle))
                 if self.produce_printout:
@@ -1260,7 +1278,7 @@ class Agent:
             self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
         return
 
-    def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
+    def executeStep(self, action, hypotheses, compactStates, run_induction=True):
 
         ## Takes the specified action and does bookkeeping
 
@@ -1317,10 +1335,10 @@ class Agent:
         hypotheses = self.manageNewObjects(hypotheses)
 
         if self.make_movie or self.record_video_info:
-            statesEncountered.append(self.rle.getFullState())
+            self.bookkeeping.statesEncountered.append(self.rle.getFullState())
         if self.record_states:
-            self.compactStates.append(self.compactify(self.rle, plannerNodes))
-
+            self.compactStates.append(self.compactify(self.rle, self.planner_nodes_opened_on_most_recent_step))
+        self.planner_nodes_opened_on_most_recent_step = 0
         t1 = time.time()
 
         distributionsHaveChanged = self.distribution.spriteInduction(self.rle._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
