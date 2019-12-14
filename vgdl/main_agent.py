@@ -135,7 +135,6 @@ class Metacontroller:
             ## you only get here if you're in idx_1 (long-term planning) and don't find a plan.
                 if self.agent.produce_printout:
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.agent.random_steps_on_plan_failure)
-                # plannerNodes = p.total_nodes_opened
                 solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                 for i in range(self.agent.random_steps_on_plan_failure):
                     solution.append(random.choice(self.agent.hypotheses[0].getLegalActions()
@@ -143,13 +142,6 @@ class Metacontroller:
                 self.agent.longHorizonObservations += 1
                 self.agent.takingRandomSteps = True
             else:
-                # plannerNodes = p.total_nodes_opened
-                # action = 0
-                # ## TODO: remove. agent should not be taking steps here.
-                # ## Figure out why you had to do it and remove it.
-                # hypotheses, theory_change_flag, effects = self.agent.executeStep(action, self.agent.hypotheses, self.agent.bookkeeping.statesEncountered, self.agent.compactStates,
-                #     run_induction = True)
-                solution = [0]
                 self.quitting = True
                 print "DECIDING TO QUIT"
 
@@ -876,106 +868,6 @@ class Agent:
 
             solution = self.metacontroller.determinePlanningMode(solution, self.rle, planner_recommended_quitting)
 
-#             if not solution:
-#                 ## If planner didn't give a solution, switch modes according to metacontroller policy
-#                 if self.checkForRepeatedDeaths(self.episodeRecord, 2):
-#                     if self.hyperparameter_index == 1:
-#                         new_index = 1 ## don't switch away from idx_1
-#                         conservative = False
-#                     if self.hyperparameter_index == 3:
-#                         if self.display_text:
-#                             print "Repeated deaths. Switching to long-range planning"
-#                         new_index = 1
-#                         conservative = False
-#                     planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
-
-#                 elif self.hyperparameter_index == 3:
-#                     movingTypes = self.checkForMovingTypes(self.rle, self.hypotheses[0])
-#                     if self.rle.getTime()>self.compactStates[-1]['timestep']:
-#                         scoreChange = self.rle.getScore()!=self.compactStates[-1]['score']
-#                     else:
-#                         scoreChange = True
-#                     # if self.display_text:
-#                     # print "moving types: {}".format(movingTypes)
-#                     # print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum))
-#                     # print "scoreChange: {}".format(scoreChange)
-#                     if self.noNewObjectsInAWhile(self.rle, self.noNewObjectNum) and \
-#                             (not movingTypes or (movingTypes and not scoreChange)):
-#                         if self.produce_printout:
-#                             print "switching to long-range planning"
-#                         ## switch to long-range planning
-#                         new_index = 1
-#                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
-#                         conservative = False
-#                     else:
-#                         if self.produce_printout:
-#                             print "planning in 'stall' mode"
-#                         new_index = 3
-#                         planner_hyperparameters = self.hyperparameterSwitch(new_index=new_index)
-#                         conservative = True
-#                         self.stored_max_nodes = self.max_nodes ##taking annealing into account
-#                         self.max_nodes = self.conservative_max_nodes
-#                 else:
-#                     conservative = False
-#                 if self.display_text:
-#                     print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-#                     print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.max_nodes, self.shortHorizon, conservative)
-
-#                 if conservative: #aka 'stall' mode
-#                     ## Replan in new mode
-#                     p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-#                         seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-#                         firstOrderHorizon=self.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
-#                         extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
-#                         objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
-#                     planner_recommended_quitting = p.quitting
-#                     bestNode, gameStringArray, objectPositionsArray = p.BFS()
-#                     self.total_planner_steps += p.total_nodes_opened
-#                     # print "total planner steps in main_agent:", self.total_planner_steps
-#                     if bestNode is not None:
-#                         solution = p.solution
-#                         gameString_array = p.gameString_array
-#                         objectPositionsArray = objectPositionsArray[::-1]
-#                         if solution and self.display_text:
-#                             print "got solution"
-#                     else:
-#                         solution = []
-
-#             takingRandomSteps = False
-
-#             if (not solution) or planner_recommended_quitting:
-#                 # Here we make a distinction between quitting because you've
-#                 # exhausted the number of nodes you can visit or because you
-#                 # ran out of novelty. In the first case, you only wait longer,
-#                 # in the second case, you also add a new atom to IW
-#                 if self.extra_atom_allowed:
-#                     if self.display_text:
-#                         print "turning on extra atom"
-#                     self.extra_atom = True
-#                 if self.longHorizonObservations<self.longHorizonObservationLimit: ## if you don't get a plan with short-horizon mode you'll plan in stall mode. 
-#                 ## you only get here if you're in idx_1 (long-term planning) and don't find a plan.
-#                     if self.produce_printout:
-#                         print "Didn't get solution. Taking {} random steps and then replanning".format(self.random_steps_on_plan_failure)
-#                     plannerNodes = p.total_nodes_opened
-#                     solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
-#                     for i in range(self.random_steps_on_plan_failure):
-#                         solution.append(random.choice(self.hypotheses[0].getLegalActions()
-# ))
-#                     self.longHorizonObservations += 1
-#                     takingRandomSteps = True
-#                 else:
-#                     plannerNodes = p.total_nodes_opened
-#                     action = 0
-#                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, self.compactStates, plannerNodes,
-#                         run_induction = True)
-#                     quitting = True
-#                     if self.total_game_steps+steps > MAX_STEPS:
-#                         score = self.rle.getScore()
-#                         quit_level = False
-#                         self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
-
-#                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
-
             if self.metacontroller.quitting:
                 self.metacontroller.quitting = False
                 ## TODO: remove. agent should not be taking steps here.
@@ -983,23 +875,14 @@ class Agent:
                 quitting=True
                 action = 0
                 hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, run_induction = True)
-                output =          "Quitting.                                                       "
-                # if self.produce_printout:
-                print colored('________________________________________________________________', 'white', 'on_red')
-                print colored(output, 'white', 'on_red')
-                print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, win, self.rle.getScore(), steps, quit_level
-            ## Most common scenario: planner worked. Show projected plan and states, then act.
-            # if solution and not p.quitting and not self.takingRandomSteps and self.display_states and self.produce_printout:
-            #     # print "==============================================================="
-            #     print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
-            #     # print colored(p.gameString_array[0], 'green')
-            #     for i,g in enumerate(p.gameString_array[1:]):
-            #         print actionDict[solution[i]]
-            #         print colored(g, 'green')
-            #     print "==============================================================="
+                
+                display('Quitting')
 
+                return gameObject, win, self.rle.getScore(), steps, quit_level
+
+            ## Most common scenario: planner worked. Show projected plan and states, then act.
             if solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
+
                 # print "==============================================================="
                 print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
                 # print colored(p.gameString_array[0], 'green')
@@ -1461,6 +1344,11 @@ class Agent:
 
         return hypotheses, theory_change_flag, effects
 
+def display(message):
+    if message=='Quitting':
+        print colored('________________________________________________________________', 'white', 'on_red')
+        print colored(message, 'white', 'on_red')
+        print colored('________________________________________________________________', 'white', 'on_red')
 
 ## For local usage/testing/debugging. Not used.
 if __name__ == "__main__":
