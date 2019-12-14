@@ -982,7 +982,7 @@ class Agent:
                 ## Figure out why you had to do it and remove it.
                 quitting=True
                 action = 0
-                hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, self.bookkeeping.compactStates,run_induction = True)
+                hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, run_induction = True)
                 output =          "Quitting.                                                       "
                 # if self.produce_printout:
                 print colored('________________________________________________________________', 'white', 'on_red')
@@ -1020,7 +1020,7 @@ class Agent:
 
                     ## Storing info on search budget
                     plannerNodes = p.total_nodes_opened if i==0 else 0
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, self.bookkeeping.compactStates,
+                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses,
                         run_induction = True)
                     
                     ## For an incomplete ablation
@@ -1285,7 +1285,7 @@ class Agent:
             self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
         return
 
-    def executeStep(self, action, hypotheses, compactStates, run_induction=True):
+    def executeStep(self, action, hypotheses, run_induction=True):
 
         ## Takes the specified action and does bookkeeping
 
