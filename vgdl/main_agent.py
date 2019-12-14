@@ -189,7 +189,7 @@ class Bookkeeping:
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
 
-    def saveEpisodeState(self, agent, effectsEncountered, statesEncountered, compactStates, annealing):
+    def saveEpisodeState(self, agent, effectsEncountered, annealing):
         
         if not self.saveMidEpisode:
             return
@@ -202,8 +202,8 @@ class Bookkeeping:
         print "starting to save episode state"
         savedState = {'agent':agent,
                       'effectsEncountered': effectsEncountered,
-                      'statesEncountered': statesEncountered,
-                      'compactStates': compactStates,
+                      'statesEncountered': self.statesEncountered,
+                      'compactStates': self.compactStates,
                       'annealing': annealing
                       }
         filepath = 'savedCurricula/'+filename
@@ -819,13 +819,13 @@ class Agent:
         ## Main episode loop
         while not ended:
 
-            self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, self.annealing)
+            self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.annealing)
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, self.annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered,  self.annealing)
 
                 return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.bookkeeping.compactStates, quit_level
 
@@ -1022,7 +1022,7 @@ class Agent:
                         score = self.rle.getScore()
                         quit_level = False
 
-                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, self.annealing)
+                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.annealing)
 
                         return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.bookkeeping.compactStates, quit_level
 
@@ -1077,7 +1077,7 @@ class Agent:
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, self.annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.annealing)
 
 
                 output =          "Quitting.                                                       "
