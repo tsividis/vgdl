@@ -99,7 +99,7 @@ class Metacontroller:
                 print "planning in {} mode".format(self.agent.hyperparameter_index)
                 print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.agent.max_nodes, self.agent.shortHorizon, conservative)
 
-            # TODO: Implement conservative mode.
+            # TODO: Implement conservative mode as a separate mode.
             if conservative: #aka 'stall' mode
                 ## Replan in new mode
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
@@ -880,9 +880,7 @@ class Agent:
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
 
-                # print "==============================================================="
                 print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
-                # print colored(p.gameString_array[0], 'green')
                 for i,g in enumerate(p.gameString_array[1:]):
                     print actionDict[solution[i]]
                     print colored(g, 'green')
@@ -916,7 +914,6 @@ class Agent:
                         print "executeStep took {} seconds".format(time.time()-t1)
                     sys.stdout.flush()
                     
-                    ## We're using rle._game for a bookkeeping between learning and planning modules
                     self.memory.nextPositions = {}
                     for k, v in self.rle._game.all_objects.iteritems():
                         self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
@@ -968,7 +965,6 @@ class Agent:
                 display('Quitting')
 
                 return gameObject, False, self.rle.getScore(), steps, quit_level
-
 
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
