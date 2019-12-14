@@ -503,7 +503,7 @@ class Agent:
         self.distribution = dynamicTypeDistribution_VGDL1()
 
         ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
-        self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict, self.bookkeeping.statesEncountered, compactStates, display=self.display_states, hypothesis=None)
+        self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict,  compactStates, display=self.display_states, hypothesis=None)
 
         spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
             allObjects, self.bestSpriteTypeDict)
@@ -522,9 +522,9 @@ class Agent:
         previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         current_colors = [o['type']['color'] for o in allObjects.values()]
         if all([c in previous_colors for c in current_colors]):
-            self.observe(self.rle,  self.memory, 0, self.bestSpriteTypeDict, self.bookkeeping.statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
+            self.observe(self.rle,  self.memory, 0, self.bestSpriteTypeDict,  compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
         else:
-            self.observe(self.rle, self.memory, 5, self.bestSpriteTypeDict, self.bookkeeping.statesEncountered, compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
+            self.observe(self.rle, self.memory, 5, self.bestSpriteTypeDict,  compactStates, display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
             ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
 
         ## Make sure any objects that appeared while we were observing are reflected in allObjects
@@ -1245,7 +1245,7 @@ class Agent:
 
         return hypotheses
 
-    def observe(self, rle, memory, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False, hypothesis=None):
+    def observe(self, rle, memory, obsSteps, bestSpriteTypeDict, compactStates, display=False, hypothesis=None):
         ## Agent just observes the state for 'obsSteps' steps and updates object-type distribution.
         ## if called with obsSteps==0, it'll just initialize the object-type distribution
         if display and self.produce_printout:
