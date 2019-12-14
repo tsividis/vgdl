@@ -93,7 +93,7 @@ metacontroller_sets = [
     'shortHorizonRandomChoice': [200,500,1000],
     'conservative_max_nodes': 50,
     'extra_atom': True,
-    'noNewObjectNum': 55,
+    'noNewObjectNum': 1,
     'objectNumberTrackingLimit': 1000,
     'objectLocationTrackingLimit': 1000,
     'safeDistance': 3,

@@ -52,6 +52,8 @@ class Metacontroller:
     ##TODO: change self.rle in here to env
 
     def determinePlanningMode(self, solution, env, planner_recommended_quitting):
+        self.display_text = True
+        self.agent.produce_printout = True
         if not solution:
             ## If planner didn't give a solution, switch modes according to metacontroller policy
             if self.checkForRepeatedDeaths():
@@ -77,14 +79,14 @@ class Metacontroller:
                 # print "scoreChange: {}".format(scoreChange)
                 if self.noNewObjectsInAWhile(env) and \
                         (not movingTypes or (movingTypes and not scoreChange)):
-                    if self.produce_printout:
+                    if self.agent.produce_printout:
                         print "switching to long-range planning"
                     ## switch to long-range planning
                     new_index = 'long-term'
                     planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
                     conservative = False
                 else:
-                    if self.produce_printout:
+                    if self.agent.produce_printout:
                         print "planning in 'stall' mode"
                     new_index = 'short-term'
                     planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
@@ -101,7 +103,7 @@ class Metacontroller:
             if conservative: #aka 'stall' mode
                 ## Replan in new mode
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
-                    seen_limits = self.agent.seen_limits, annealing=annealing, max_nodes=self.agent.max_nodes, shortHorizon=self.agent.shortHorizon,
+                    seen_limits = self.agent.seen_limits, annealing=self.agent.annealing, max_nodes=self.agent.max_nodes, shortHorizon=self.agent.shortHorizon,
                     firstOrderHorizon=self.agent.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
                     extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, objectNumberTrackingLimit=self.agent.objectNumberTrackingLimit,
                     objectLocationTrackingLimit=self.agent.objectLocationTrackingLimit, lesion=self.agent.planner_lesion)
@@ -151,6 +153,7 @@ class Metacontroller:
         else:
             print "No need to switch hyperparameters. Staying in {} mode".format(self.agent.hyperparameter_index)
 
+        return solution
 class Memory:
     def __init__(self):
         self.ignoreList = []
@@ -259,6 +262,7 @@ class Agent:
         self.hyperparameter_index = 'short-term'
         self.hyperparameters = hyperparameter_sets[hyperparameter_index]
         self.annealingFactor = 1. # meaningless
+        self.annealing = 1.
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
         self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k # Only using IW 1
@@ -752,7 +756,7 @@ class Agent:
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle.getObjects()
-        annealing = 1
+        self.annealing = 1
 
         ## Start storing encountered states.
         effectsEncountered = []
@@ -789,7 +793,7 @@ class Agent:
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
-            self, effectsEncountered, statesEncountered, self.compactStates, annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
+            self, effectsEncountered, statesEncountered, self.compactStates, self.annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.
         resources = self.rle.getAvatars()[0].resources
@@ -807,13 +811,13 @@ class Agent:
         ## Main episode loop
         while not ended:
 
-            self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
+            self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
 
                 return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
 
@@ -829,15 +833,15 @@ class Agent:
                 print "planning with max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
-            theoryRLEs = self.VrleInitPhase()
+            self.theoryRLEs = self.VrleInitPhase()
 
             quitting = False
 
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
             ## Initialize planner
-            p = WBP.WBP(theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                seen_limits = self.seen_limits, annealing=annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
+                seen_limits = self.seen_limits, annealing=self.annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
@@ -855,7 +859,7 @@ class Agent:
             else:
                 solution = []
 
-            self.metacontroller.determinePlanningMode(solution, self.rle, planner_recommended_quitting)
+            solution = self.metacontroller.determinePlanningMode(solution, self.rle, planner_recommended_quitting)
 
 #             if not solution:
 #                 ## If planner didn't give a solution, switch modes according to metacontroller policy
@@ -999,7 +1003,7 @@ class Agent:
                         score = self.rle.getScore()
                         quit_level = False
 
-                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
+                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
 
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
 
@@ -1054,7 +1058,7 @@ class Agent:
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, annealing)
+                self.bookkeeping.saveEpisodeState(self, effectsEncountered, statesEncountered, self.compactStates, self.annealing)
 
 
                 output =          "Quitting.                                                       "
@@ -1065,7 +1069,7 @@ class Agent:
                 return gameObject, False, self.rle.getScore(), steps, statesEncountered, effectsEncountered, self.compactStates, quit_level
 
 
-            annealing *= self.annealingFactor
+            self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
             
             if ended:
@@ -1163,11 +1167,11 @@ class Agent:
                 if s.ID not in hypDict and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                     regroundingFlag=True
-                    if self.produce_printout:
+                    if self.agent.produce_printout:
                         print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
                     break
                 if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
-                    if self.produce_printout:
+                    if self.agent.produce_printout:
                         print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
                             s, rle.getAvatars()[0], manhattan_distance(s.rect, rle.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                             'white', 'on_yellow')
