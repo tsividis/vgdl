@@ -566,9 +566,6 @@ class Agent:
 
             if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
                 continue
-            if self.produce_printout:
-                print ""
-                print("Playing level {}".format(n_level + 1))
 
             (self.gameString, self.levelString) = level_game
             self.max_nodes = self.starting_max_nodes
@@ -968,12 +965,8 @@ class Agent:
 
                 self.bookkeeping.saveEpisodeState(self, self.annealing)
 
+                display('Quitting')
 
-                output =          "Quitting.                                                       "
-                # if self.produce_printout:
-                print colored('________________________________________________________________', 'white', 'on_red')
-                print colored(output, 'white', 'on_red')
-                print colored('________________________________________________________________', 'white', 'on_red')
                 return gameObject, False, self.rle.getScore(), steps, quit_level
 
 
@@ -990,21 +983,11 @@ class Agent:
 
 
         score = self.rle.getScore()
-
+            
         if win:
-            output =          "ended episode. Win={}                                         ".format(win)
+            display('win')
         else:
-            output =          "ended episode. Win={}                                        ".format(win)            
-        if win:
-            print colored('________________________________________________________________', 'white', 'on_green')
-
-            print colored(output, 'white', 'on_green')
-            print colored('________________________________________________________________', 'white', 'on_green')
-        else:
-            print colored('________________________________________________________________', 'white', 'on_red')
-            print colored(output, 'white', 'on_red')
-            print colored('________________________________________________________________', 'white', 'on_red')
-
+            display('loss')
 
         return gameObject, win, score, steps, quit_level
 
@@ -1346,9 +1329,23 @@ class Agent:
 
 def display(message):
     if message=='Quitting':
+        output =          "Quitting.                                                       "
         print colored('________________________________________________________________', 'white', 'on_red')
-        print colored(message, 'white', 'on_red')
+        print colored(output, 'white', 'on_red')
         print colored('________________________________________________________________', 'white', 'on_red')
+    if message=='win':
+        output =          "ended episode. Win=True                                         "
+        print colored('________________________________________________________________', 'white', 'on_green')
+
+        print colored(output, 'white', 'on_green')
+        print colored('________________________________________________________________', 'white', 'on_green')
+
+    if message=='loss':
+        output =          "ended episode. Win=False                                        "
+        print colored('________________________________________________________________', 'white', 'on_red')
+        print colored(output, 'white', 'on_red')
+        print colored('________________________________________________________________', 'white', 'on_red')
+
 
 ## For local usage/testing/debugging. Not used.
 if __name__ == "__main__":
