@@ -174,6 +174,7 @@ class Bookkeeping:
         self.episodeSaveFile = None
         self.curriculumDir = 'savedCurricula'
         self.curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        self.effectsEncountered = []
         self.statesEncountered = []
         self.compactStates = []
 
@@ -189,7 +190,7 @@ class Bookkeeping:
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
 
-    def saveEpisodeState(self, agent, effectsEncountered, annealing):
+    def saveEpisodeState(self, agent, annealing):
         
         if not self.saveMidEpisode:
             return
@@ -201,7 +202,7 @@ class Bookkeeping:
 
         print "starting to save episode state"
         savedState = {'agent':agent,
-                      'effectsEncountered': effectsEncountered,
+                      'effectsEncountered': self.effectsEncountered,
                       'statesEncountered': self.statesEncountered,
                       'compactStates': self.compactStates,
                       'annealing': annealing
@@ -596,7 +597,13 @@ class Agent:
             while not win and not quit_level:# and i<15:
                 self.n_level = n_level
                 self.within_level_iteration = i
-                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, win)
+                gameObject, win, score, steps, quit_level = self.playEpisode(gameObject, win)
+                
+                ## TODO: clean up below stuff, too.
+                statesEncountered = self.bookkeeping.statesEncountered
+                compactStates = self.bookkeeping.compactStates
+                effectsEncountered = self.bookkeeping.effectsEncountered
+
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
@@ -765,11 +772,10 @@ class Agent:
         self.all_objects= self.rle.getObjects()
         self.annealing = 1
 
-        ## Start storing encountered states.
-        effectsEncountered = []
-
-        self.bookkeeping.statesEncountered = [] ## Reset this for each episode
-        self.bookkeeping.compactStates = [] ## for easy analysis of score over time.
+        ## Reset these for each episode. Used for data analysis
+        self.bookkeeping.effectsEncountered = []
+        self.bookkeeping.statesEncountered = []
+        self.bookkeeping.compactStates = []
 
         if self.make_movie or self.record_video_info:
             self.bookkeeping.statesEncountered.append(self.rle.getFullState())
@@ -801,7 +807,7 @@ class Agent:
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
-            self, effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, self.annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
+            self, self.bookkeeping.effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, self.annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.
         resources = self.rle.getAvatars()[0].resources
@@ -819,15 +825,15 @@ class Agent:
         ## Main episode loop
         while not ended:
 
-            self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.annealing)
+            self.bookkeeping.saveEpisodeState(self, self.annealing)
 
             if self.total_game_steps+steps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered,  self.annealing)
+                self.bookkeeping.saveEpisodeState(self, self.annealing)
 
-                return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.bookkeeping.compactStates, quit_level
+                return gameObject, win, score, steps, quit_level
 
             self.max_nodes = self.stored_max_nodes
 
@@ -982,7 +988,7 @@ class Agent:
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored(output, 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, win, self.rle.getScore(), steps, self.bookkeeping.statesEncountered, effectsEncountered, self.bookkeeping.compactStates, quit_level
+                return gameObject, win, self.rle.getScore(), steps, quit_level
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             # if solution and not p.quitting and not self.takingRandomSteps and self.display_states and self.produce_printout:
             #     # print "==============================================================="
@@ -1022,9 +1028,9 @@ class Agent:
                         score = self.rle.getScore()
                         quit_level = False
 
-                        self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.annealing)
+                        self.bookkeeping.saveEpisodeState(self, self.annealing)
 
-                        return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.bookkeeping.compactStates, quit_level
+                        return gameObject, win, score, steps, quit_level
 
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
@@ -1041,7 +1047,7 @@ class Agent:
                             pass
                     self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
 
-                    effectsEncountered.extend(effects)
+                    self.bookkeeping.effectsEncountered.extend(effects)
                     steps +=1
                     if theory_change_flag:
                         self.hypotheses = hypotheses
@@ -1077,7 +1083,7 @@ class Agent:
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
 
-                self.bookkeeping.saveEpisodeState(self, effectsEncountered, self.annealing)
+                self.bookkeeping.saveEpisodeState(self, self.annealing)
 
 
                 output =          "Quitting.                                                       "
@@ -1085,7 +1091,7 @@ class Agent:
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored(output, 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
-                return gameObject, False, self.rle.getScore(), steps, self.bookkeeping.statesEncountered, effectsEncountered, self.bookkeeping.compactStates, quit_level
+                return gameObject, False, self.rle.getScore(), steps, quit_level
 
 
             self.annealing *= self.annealingFactor
@@ -1117,7 +1123,7 @@ class Agent:
             print colored('________________________________________________________________', 'white', 'on_red')
 
 
-        return gameObject, win, score, steps, self.bookkeeping.statesEncountered, effectsEncountered, self.bookkeeping.compactStates, quit_level
+        return gameObject, win, score, steps, quit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
