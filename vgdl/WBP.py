@@ -350,6 +350,8 @@ class WBP():
 		QReward.append(start)
 		i=0
 
+		print "planning..."
+		
 		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
 
 			if i>0 and i%100==0 and self.display:

@@ -48,10 +48,22 @@ class Metacontroller:
     def testSwitchHyperparams(self, new_hyperparameter):
         self.agent.hyperparameter_index = new_hyperparameter
 
+    def setMaxNodes(self):
+        ## You don't anneal max_nodes up for shortHorizon planning. Randomly pick a horizon from [200,500,1000] each time. (Did this to save on compute -- doing 1k each time would be strictly better).
+        if self.agent.shortHorizon and self.agent.shortHorizonRandomChoice:
+            self.agent.max_nodes = random.choice(self.agent.shortHorizonRandomChoice)
+        else:
+            self.agent.max_nodes = self.agent.stored_max_nodes
+
+        if self.agent.produce_printout:
+            print "==============================================================="
+            print "planning with max_nodes: {}, short_horizon: {}".format(self.agent.max_nodes, self.agent.shortHorizon)
+
+
     ##overload the agent functions so that you can call them directly from here
     ##TODO: change self.rle in here to env
 
-    def determinePlanningMode(self, solution, env, planner_recommended_quitting):
+    def determinePlanningModeAndReplanIfNecessary(self, solution, env, planner_recommended_quitting):
         self.display_text = True
         self.agent.produce_printout = True
         if not solution:
@@ -258,7 +270,7 @@ class Agent:
         ## Main params are loaded from hyperparameters.py
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = 'short-term'
-        self.hyperparameters = hyperparameter_sets[hyperparameter_index]
+        self.hyperparameters = hyperparameter_sets[self.hyperparameter_index]
         self.annealingFactor = 1. # meaningless
         self.annealing = 1.
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
@@ -824,33 +836,26 @@ class Agent:
 
                 return gameObject, win, score, steps, quit_level
 
-            self.max_nodes = self.stored_max_nodes
-
-            ## You don't anneal max_nodes up for shortHorizon planning. Randomly pick a horizon from [200,500,1000] each time. (Did this to save on compute -- doing 1k each time would be strictly better).
-            if self.shortHorizon and self.shortHorizonRandomChoice:
-                self.max_nodes = random.choice(self.shortHorizonRandomChoice)
-
-            # print "planning with hyperparameter index {}".format(self.hyperparameter_index)
-            if self.produce_printout:
-                print "==============================================================="
-                print "planning with max_nodes: {}, short_horizon: {}".format(self.max_nodes, self.shortHorizon)
 
             ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
             self.theoryRLEs = self.VrleInitPhase()
 
             quitting = False
 
+            self.metacontroller.setMaxNodes()
+
+            ## short_horizon and first_order_horizon are managed separately, so we don't pass these in their standard form to the planner.
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
             ## Initialize planner
-            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,
-                seen_limits = self.seen_limits, annealing=self.annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, annealing=self.annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
             planner_recommended_quitting = p.quitting
-            print "planning..."
+
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
+            
             self.total_planner_steps += p.total_nodes_opened
             self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
 
@@ -863,16 +868,16 @@ class Agent:
             else:
                 solution = []
 
-            solution = self.metacontroller.determinePlanningMode(solution, self.rle, planner_recommended_quitting)
+            solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(solution, self.rle, planner_recommended_quitting)
 
             if self.metacontroller.quitting:
                 self.metacontroller.quitting = False
                 ## TODO: remove. agent should not be taking steps here.
                 ## Figure out why you had to do it and remove it.
-                quitting=True
+                quitting = True
                 action = 0
                 hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, run_induction = True)
-                
+                print "metacontroller quitting = true. no annealing"
                 display('Quitting')
 
                 return gameObject, win, self.rle.getScore(), steps, quit_level
