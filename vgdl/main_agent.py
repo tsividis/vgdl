@@ -62,7 +62,7 @@ class Metacontroller:
     def annealUp(self):
         ## Agent failed the game either because it made a mistake it couldn't recover from or because search timed out.
         ## Search more deeply next time.
-        quit_level = False
+        forfeit_level = False
         curr_max_nodes = self.agent.max_nodes
         self.agent.max_nodes *= self.agent.max_nodes_annealing
         self.agent.stored_max_nodes = self.agent.max_nodes
@@ -73,8 +73,8 @@ class Metacontroller:
                 print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.agent.max_nodes/self.agent.max_nodes_annealing)
             self.agent.max_nodes /= self.agent.max_nodes_annealing
             self.agent.stored_max_nodes = self.agent.max_nodes
-            quit_level = True
-        return quit_level
+            forfeit_level = True
+        return forfeit_level
 
     ##overload the agent functions so that you can call them directly from here
     ##TODO: change self.rle in here to env
@@ -302,7 +302,7 @@ class Agent:
         self.absolute_max_nodes = 50000 # Just a convenience parameter
         self.shortHorizonNodes = 500 ## This isn't used, but code needs further cleanup to actually delete it.
         self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
-        self.quit_level = False
+        self.forfeit_level = False
         self.metacontroller_params = metacontroller_sets[metacontroller_index]
         self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
         self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
@@ -618,11 +618,11 @@ class Agent:
             allCompactStates = []
             t1 = time.time()
 
-            quit_level = False
-            while not win and not quit_level:# and i<15:
+            forfeit_level = False
+            while not win and not forfeit_level:# and i<15:
                 self.n_level = n_level
                 self.within_level_iteration = i
-                gameObject, win, score, steps, quit_level = self.playEpisode(gameObject, win)
+                gameObject, win, score, steps, forfeit_level = self.playEpisode(gameObject, win)
                 
                 ## TODO: clean up below stuff, too.
                 statesEncountered = self.bookkeeping.statesEncountered
@@ -778,7 +778,7 @@ class Agent:
 
     def beginningOfEpisodeManagement(self):
         ### AGENT EPISODE INIT STUFF ###
-        self.quit_level = False
+        self.forfeit_level = False
 
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
@@ -861,7 +861,7 @@ class Agent:
 
                 self.bookkeeping.saveEpisodeState(self, self.annealing)
 
-                return gameObject, win, score, self.memory.episodeSteps, self.quit_level
+                return gameObject, win, score, self.memory.episodeSteps, self.forfeit_level
 
 
             ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
@@ -932,11 +932,11 @@ class Agent:
                     ## For an incomplete ablation
                     if self.memory.totalGameSteps+self.memory.episodeSteps > MAX_STEPS:
                         score = self.rle.getScore()
-                        self.quit_level = False
+                        self.forfeit_level = False
 
                         self.bookkeeping.saveEpisodeState(self, self.annealing)
 
-                        return gameObject, win, score, self.memory.episodeSteps, self.quit_level
+                        return gameObject, win, score, self.memory.episodeSteps, self.forfeit_level
 
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
@@ -972,7 +972,7 @@ class Agent:
                             break
 
             else:
-                self.quit_level = self.metacontroller.annealUp()
+                self.forfeit_level = self.metacontroller.annealUp()
 
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
@@ -981,7 +981,7 @@ class Agent:
 
                 display('Quitting')
 
-                return gameObject, False, self.rle.getScore(), self.memory.episodeSteps, self.quit_level
+                return gameObject, False, self.rle.getScore(), self.memory.episodeSteps, self.forfeit_level
 
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
@@ -1002,7 +1002,7 @@ class Agent:
         else:
             display('loss')
 
-        return gameObject, win, score, self.memory.episodeSteps, self.quit_level
+        return gameObject, win, score, self.memory.episodeSteps, self.forfeit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
