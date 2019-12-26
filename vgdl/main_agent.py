@@ -183,8 +183,6 @@ class Memory:
     def __init__(self):
         self.ignoreList = []
         self.objectMemoryDict = {}
-        self.previousPositions = {}
-        self.nextPositions = {}
         self.spriteUpdateDict = defaultdict(lambda : 0)
         self.totalGameSteps = 0
         self.episodeSteps = 0
@@ -845,7 +843,6 @@ class Agent:
 
         ended, win = self.rle._isDone()
         
-        embed()
         ## Main episode loop
         while not ended:
 
@@ -933,16 +930,6 @@ class Agent:
                         print "executeStep took {} seconds".format(time.time()-t1)
                     sys.stdout.flush()
                     
-                    self.memory.nextPositions = {}
-                    for k, v in self.rle._game.all_objects.iteritems():
-                        self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-                        try:
-                            if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                                self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
-                        except KeyError:
-                            pass
-                    self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
-
                     self.bookkeeping.effectsEncountered.extend(effects)
                     self.memory.episodeSteps +=1
                     if theory_change_flag:
@@ -951,6 +938,7 @@ class Agent:
                     ended, win = self.rle._isDone()
 
                     self.max_game_time_observed = max(self.max_game_time_observed, self.rle.getTime())
+                    
                     if ended:
                         break
 
@@ -1129,7 +1117,9 @@ class Agent:
             for i in range(obsSteps):
                 self.distribution.spriteInduction(rle._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                
                 rle.step((0,0))
+                
                 if self.make_movie or self.record_video_info:
                     self.bookkeeping.statesEncountered.append(self.rle.getFullState(observe_state=True))
                 if self.record_states:
@@ -1138,15 +1128,7 @@ class Agent:
                     print "score: {}, timestep: {}".format(rle.getScore(), rle.getTime())
                     print rle.show(color='blue')
                 print "action", self.memory.totalGameSteps+rle.getTime()
-                self.memory.nextPositions = {}
-                for k, v in rle._game.all_objects.iteritems():
-                    self.memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
-                    try:
-                        if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                            self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
-                    except KeyError:
-                        pass
-                self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+                
                 self.distribution.spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
         else:
             self.distribution.spriteInduction(rle._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
@@ -1160,10 +1142,10 @@ class Agent:
         theory_change_flag = False
 
         self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
-        # print "induction step 1 took {} seconds.".format(time.time()-t1)
+
         t1 = time.time()
         self.distribution.spriteInduction(self.rle._game, self.memory, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
-        # print "induction step 2 took {} seconds".format(time.time()-t1)
+
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
         except IndexError:
