@@ -783,7 +783,6 @@ class Agent:
             print ""
             print self.rle.show(color='blue')
 
-        self.quits = 0
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
         self.all_objects= self.rle.getObjects()
