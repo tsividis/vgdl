@@ -91,12 +91,12 @@ class WBP():
 		else:
 			movingTypesInGame = False
 		
-		if self.hyperparameter_index == 1:
+		if self.hyperparameter_index in [1, 'long-term']:
 			if movingTypesInGame:
 				self.position_score_multiplier = -10
 			else:
 				self.position_score_multiplier = -1
-		elif self.hyperparameter_index == 3:
+		elif self.hyperparameter_index in [3, 'short-term']:
 			self.position_score_multiplier = -10
 		else:
 			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)

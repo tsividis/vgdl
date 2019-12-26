@@ -59,6 +59,22 @@ class Metacontroller:
             print "==============================================================="
             print "planning with max_nodes: {}, short_horizon: {}".format(self.agent.max_nodes, self.agent.shortHorizon)
 
+    def annealUp(self):
+        ## Agent failed the game either because it made a mistake it couldn't recover from or because search timed out.
+        ## Search more deeply next time.
+        quit_level = False
+        curr_max_nodes = self.agent.max_nodes
+        self.agent.max_nodes *= self.agent.max_nodes_annealing
+        self.agent.stored_max_nodes = self.agent.max_nodes
+        if self.agent.produce_printout:
+            print "annealing up from {} to {} nodes".format(curr_max_nodes, self.agent.max_nodes)
+        if self.agent.max_nodes > self.agent.absolute_max_nodes:
+            if self.agent.produce_printout:
+                print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.agent.max_nodes/self.agent.max_nodes_annealing)
+            self.agent.max_nodes /= self.agent.max_nodes_annealing
+            self.agent.stored_max_nodes = self.agent.max_nodes
+            quit_level = True
+        return quit_level
 
     ##overload the agent functions so that you can call them directly from here
     ##TODO: change self.rle in here to env
@@ -877,8 +893,6 @@ class Agent:
                 quitting = True
                 action = 0
                 hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, run_induction = True)
-                # print "metacontroller quitting = true. no annealing"
-                # display('Quitting')
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
@@ -947,19 +961,8 @@ class Agent:
                             break
 
             else:
-                ## Agent failed the game either because it made a mistake it couldn't recover from or because search timed out.
-                ## Search more deeply next time.
-                curr_max_nodes = self.max_nodes
-                self.max_nodes *= self.max_nodes_annealing
-                self.stored_max_nodes = self.max_nodes
-                if self.produce_printout:
-                    print "annealing up from {} to {} nodes".format(curr_max_nodes, self.max_nodes)
-                if self.max_nodes > self.absolute_max_nodes:
-                    if self.produce_printout:
-                        print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.max_nodes/self.max_nodes_annealing)
-                    self.max_nodes /= self.max_nodes_annealing
-                    self.stored_max_nodes = self.max_nodes
-                    quit_level = True
+                quit_level = self.metacontroller.annealUp()
+
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
 
