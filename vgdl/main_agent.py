@@ -877,10 +877,8 @@ class Agent:
                 quitting = True
                 action = 0
                 hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, run_induction = True)
-                print "metacontroller quitting = true. no annealing"
-                display('Quitting')
-
-                return gameObject, win, self.rle.getScore(), steps, quit_level
+                # print "metacontroller quitting = true. no annealing"
+                # display('Quitting')
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
