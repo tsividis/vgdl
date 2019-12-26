@@ -159,8 +159,10 @@ class Metacontroller:
                 if self.display_text:
                     print "turning on extra atom"
                 self.agent.extra_atom = True
-            if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit: ## if you don't get a plan with short-horizon mode you'll plan in stall mode. 
-            ## you only get here if you're in idx_1 (long-term planning) and don't find a plan.
+            
+            ## if you don't get a plan with short-horizon mode you'll plan in stall mode. You only get here if you're in long-term planning and don't find a plan.
+
+            if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit: 
                 if self.agent.produce_printout:
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.agent.random_steps_on_plan_failure)
                 solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
@@ -184,6 +186,8 @@ class Memory:
         self.previousPositions = {}
         self.nextPositions = {}
         self.spriteUpdateDict = defaultdict(lambda : 0)
+        self.totalGameSteps = 0
+        self.episodeSteps = 0
 
 class Bookkeeping:
     def __init__(self, saveMidEpisode, task_ID, param_ID, gameFilename):
@@ -376,7 +380,6 @@ class Agent:
         self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename)
         self.metacontroller = Metacontroller(self)
 
-        self.total_game_steps = 0
         self.total_planner_steps = 0
         self.levels_won = 0
 
@@ -410,6 +413,10 @@ class Agent:
     # ---------------------------------------------------------------------
     def initializeEnvironment(self):
         ## Initialize game environment
+
+        if self.display_text:
+            print "initializing RLE"
+
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
@@ -621,7 +628,7 @@ class Agent:
                 compactStates = self.bookkeeping.compactStates
                 effectsEncountered = self.bookkeeping.effectsEncountered
 
-                self.total_game_steps += steps
+                self.memory.totalGameSteps += steps
                 allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
                 episodes.append(episode_results)
@@ -660,9 +667,9 @@ class Agent:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     with open(videofilename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
-                if self.total_game_steps > MAX_STEPS:
+                if self.memory.totalGameSteps > MAX_STEPS:
                     if self.produce_printout:
-                        print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
+                        print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.memory.totalGameSteps, MAX_STEPS)
 
                 self.bookkeeping.deleteEpisodeFile()
 
@@ -768,20 +775,21 @@ class Agent:
 
         return
 
+
     def playEpisode(self, gameObject, win=False):
 
-        quit_level = False
-
+        ### ENVIRONMENT ###
         ## Initialize external environment
         self.initializeEnvironment()
-        if self.display_text:
-            print "initializing RLE"
-        # print "Game name:", self.gameFilename
-        # print "Starting episode"
         print "Playing level {}".format(self.n_level + 1)
+
         if self.produce_printout:
             print ""
             print self.rle.show(color='blue')
+
+
+        ### AGENT EPISODE INIT STUFF ###
+        quit_level = False
 
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
@@ -819,7 +827,6 @@ class Agent:
             # given new level state.
             [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
 
-
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
@@ -834,22 +841,22 @@ class Agent:
             if resource not in self.seen_limits and val==self.rle.etResourceLimits()[resource]:
                 self.seen_limits.append(resource)
 
+
         ended, win = self.rle._isDone()
-        steps = self.rle.getTime()
-        emptyPlans = 0
+        self.memory.episodeSteps = self.rle.getTime()
         
         ## Main episode loop
         while not ended:
 
             self.bookkeeping.saveEpisodeState(self, self.annealing)
 
-            if self.total_game_steps+steps > MAX_STEPS:
+            if self.memory.totalGameSteps+self.memory.episodeSteps > MAX_STEPS:
                 score = self.rle.getScore()
                 quit_level = False
 
                 self.bookkeeping.saveEpisodeState(self, self.annealing)
 
-                return gameObject, win, score, steps, quit_level
+                return gameObject, win, score, self.memory.episodeSteps, quit_level
 
 
             ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
@@ -918,13 +925,13 @@ class Agent:
                         run_induction = True)
                     
                     ## For an incomplete ablation
-                    if self.total_game_steps+steps > MAX_STEPS:
+                    if self.memory.totalGameSteps+self.memory.episodeSteps > MAX_STEPS:
                         score = self.rle.getScore()
                         quit_level = False
 
                         self.bookkeeping.saveEpisodeState(self, self.annealing)
 
-                        return gameObject, win, score, steps, quit_level
+                        return gameObject, win, score, self.memory.episodeSteps, quit_level
 
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
@@ -941,7 +948,7 @@ class Agent:
                     self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
 
                     self.bookkeeping.effectsEncountered.extend(effects)
-                    steps +=1
+                    self.memory.episodeSteps +=1
                     if theory_change_flag:
                         self.hypotheses = hypotheses
                         break
@@ -969,7 +976,7 @@ class Agent:
 
                 display('Quitting')
 
-                return gameObject, False, self.rle.getScore(), steps, quit_level
+                return gameObject, False, self.rle.getScore(), self.memory.episodeSteps, quit_level
 
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
@@ -990,7 +997,7 @@ class Agent:
         else:
             display('loss')
 
-        return gameObject, win, score, steps, quit_level
+        return gameObject, win, score, self.memory.episodeSteps, quit_level
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
@@ -1072,8 +1079,6 @@ class Agent:
                 rleDict[s.ID] = s
         return regroundingFlag
 
-
-
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
         # Check if the two objects involved in the
         # event are the same as those in the novelty
@@ -1136,7 +1141,7 @@ class Agent:
                 if self.produce_printout:
                     print "score: {}, timestep: {}".format(rle.getScore(), rle.getTime())
                     print rle.show(color='blue')
-                print "action", self.total_game_steps+rle.getTime()
+                print "action", self.memory.totalGameSteps+rle.getTime()
                 self.memory.nextPositions = {}
                 for k, v in rle._game.all_objects.iteritems():
                     self.memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
@@ -1170,11 +1175,6 @@ class Agent:
 
         lastScore = self.rle.getScore()
         res = self.rle.step(action)
-
-        # if self.total_game_steps+self.rle.getTime()>10:
-            # self.hypotheses[0].spriteObjects['PINK'].display()
-            # embed()
-            # assert self.hypotheses[0].spriteObjects['PINK'].stype=='PURPLE'
 
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
@@ -1231,7 +1231,7 @@ class Agent:
             print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
 
         # t1 = time.time()
-        print "action", self.total_game_steps+self.rle.getTime()
+        print "action", self.memory.totalGameSteps+self.rle.getTime()
         if self.produce_printout:
             print ""
             print keyPresses[action]
