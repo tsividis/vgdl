@@ -928,15 +928,6 @@ class Agent:
                     plannerNodes = p.total_nodes_opened if i==0 else 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses,
                         run_induction = True)
-                    
-                    ## For an incomplete ablation
-                    if self.memory.totalGameSteps+self.memory.episodeSteps > MAX_STEPS:
-                        score = self.rle.getScore()
-                        self.forfeit_level = False
-
-                        self.bookkeeping.saveEpisodeState(self, self.annealing)
-
-                        return gameObject, win, score, self.memory.episodeSteps, self.forfeit_level
 
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
