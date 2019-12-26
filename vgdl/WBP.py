@@ -24,6 +24,7 @@ from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar,
 	RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
 		AimedFlakAvatar
 from rlenvironmentnonstatic import createRLInputGame
+from hyperparameters import hyperparameter_sets
 import cPickle
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
@@ -1249,68 +1250,6 @@ def read_gvgai_game(filename):
 
 
 
-
-## For local testing/debugging.
-
-hyperparameter_sets = [
-    {'idx'           : 0,
-     'short_horizon' : False,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 1,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 2,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 3,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 4,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 10,
-     }
-]
-
-
 if __name__ == "__main__":
 	import argparse
 
@@ -1327,7 +1266,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description='Process game number.')
 	parser.add_argument('--game_name', type=str, default=str(0), help='game name')
-	parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
+	parser.add_argument('--hyperparameter_index', type=str, default='short-term', help='hyperparameter_index')
 	parser.add_argument('--level', type=int, default=0, help='level')
 	args = parser.parse_args()
 	game_name = args.game_name
