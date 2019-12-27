@@ -297,19 +297,17 @@ class dynamicTypeDistribution_VGDL1(dynamicTypeDistribution):
             distributionsHaveChanged = False
 
             if step==1:
-                ## Sprite Induction Part 1:
                 ## every time you act, make sure there aren't new objects
                 ## if there are, update dynamicTypeDistribution etc.
                 objects = game.getObjects()
                 kill_list_keys = [s.ID for s in game.kill_list]
-                spritestoupdate = 0
                 for sprite in objects:
                     if objects[sprite]['sprite'].colorName not in COLOR_EXCEPTIONS and sprite not in self.distribution:
-                        spritestoupdate+=1
                         game.all_objects[sprite] = objects[sprite]
                         self.distributionInitSetup(game, sprite, dynamic_type_lesion)
-            elif step == 2:
-                ## See the update options for each sprite type the sprite could be
+
+                ## Populate options for future sprite locations conditioned on
+                ## hypothesized type and current location
                 objects = game.getObjects()
 
                 game = game
@@ -371,7 +369,8 @@ class dynamicTypeDistribution_VGDL1(dynamicTypeDistribution):
                         bestSpriteTypeDict[color][k] = self.distribution[k]
 
                 sample, distributionsHaveChanged, _ = self.sampleFromDynamicTypeDistribution(game, memory, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
-
+                # print [s for s in sample if s.color=='PINK'][0].__dict__
+                # embed()
             ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
             # self.distribution = self.distribution
             memory.ignoreList = []
