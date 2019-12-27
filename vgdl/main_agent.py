@@ -845,7 +845,6 @@ class Agent:
 
         ended, win = self.rle._isDone()
         
-        embed()
         ## Main episode loop
         while not ended:
 
