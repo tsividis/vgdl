@@ -939,7 +939,7 @@ class Agent:
 
                     ## Storing info on search budget
                     plannerNodes = p.total_nodes_opened if i==0 else 0
-                    hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses,
+                    hypotheses, theory_change_flag, effects = self.reversedExecuteStep(action, self.hypotheses,
                         run_induction = True)
 
                     if self.display_text:
@@ -1166,6 +1166,181 @@ class Agent:
             # self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
         return
 
+    def reversedExecuteStep(self, action, hypotheses, run_induction=True):
+
+        ### BEFORE STEP ###
+        theory_change_flag = False
+
+        self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+
+
+        try:
+            agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
+        except IndexError:
+            agentState = defaultdict(lambda: 0)
+
+        lastScore = self.rle.getScore()
+
+        res = self.rle.step(action)
+
+
+        ### AFTER STEP ###
+        
+        ## res['effectList'] = output of self.rle._performAction() = output of self.rle._game._eventHandling(), = self.rle._game.effectList
+        # embed()
+        try:
+            agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
+
+            for e in self.rle._game.effectList:
+                if 'changeResource' in e:
+                    changes = e[3]
+                    if changes['value'] < 0:
+                        # undo one negative change to account for eventhandler ordering
+                        agentState[changes['resource']] -= changes['value']
+                        break
+
+            self.rle.agentStatePrev = agentState
+
+        ## If agent is killed before we grab its agentState,
+        ## use what's printed in the effect label to get it. 
+        except (IndexError, AttributeError) as e:
+            ignored_negative_change = False
+            for e in self.rle._game.effectList:
+                if 'changeResource' in e:
+                    changes = e[3]
+                    if changes['value'] > 0 or ignored_negative_change:
+                        agentState[changes['resource']] += changes['value']
+                    else:
+                        agentState[changes['resource']] += 0
+                        ignored_negative_change = True
+            self.rle.agentStatePrev = agentState
+        for k,v in agentState.items():
+            agentState[k] = max(0, v)
+
+        t1 = time.time()
+        hypotheses = self.manageNewObjects(hypotheses)
+
+        if self.make_movie or self.record_video_info:
+            self.bookkeeping.statesEncountered.append(self.rle.getFullState())
+        if self.record_states:
+            self.bookkeeping.compactStates.append(self.compactify(self.rle, self.planner_nodes_opened_on_most_recent_step))
+        self.planner_nodes_opened_on_most_recent_step = 0
+        t1 = time.time()
+
+        distributionsHaveChanged = self.distribution.spriteInduction(self.rle._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+ 
+        ## First interaction-rule ablation (not used)
+        effects = self.rle.getEffectListByColor()
+        if self.interaction_lesion_replacement == 'nothing':
+            for i,e in enumerate(effects):
+                if e[0] in self.disallowed_events:
+                    print "replacing", e
+                    effects[i] = ('nothing', e[1], e[2])
+                    print "with", effects[i]
+                    print ""
+
+        if self.display_states:
+            print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
+
+        # t1 = time.time()
+        print "action", self.memory.totalGameSteps+self.rle.getTime()
+        if self.produce_printout:
+            print ""
+            print keyPresses[action]
+            print self.rle.show(color='blue')
+
+        event = {'agentState': agentState, 'agentAction': action, 'effectList': effects, \
+            'gameState': None, 'rle': self.rle}
+
+        newEffects = False
+
+        ## If any collisions occurred
+        if effects:
+            if self.display_text:
+                print effects
+            # #  PRECONDITIONS HANDLING
+            # # Current assumptions:
+            # # - Only one resource can change for each timestep
+            # # - The first time a resource changes, it goes from 0 to a positive value
+            for change_resource_effect in [e[3] for e in event['effectList'] if ('changeResource' in e)] + [e[3] for e in event['effectList'] if ('collectResource' in e)]:
+                resource = change_resource_effect['resource']
+                val = change_resource_effect['value']
+                limit = change_resource_effect['limit']
+                if (resource not in self.seen_resources and val>0):
+                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource))
+                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+                    self.seen_resources.append(resource)
+                    hypotheses[0].resource_limits[resource] = limit
+                    theory_change_flag = True
+                    newEffects = True
+                    self.finalEffectList = set()
+
+                if agentState[resource]>=limit and resource not in self.seen_limits:
+                    self.fakeInteractionRules.extend(hypotheses[0].updateInteractionsPreconditions(resource, limit))
+                    self.fakeInteractionRules = list(set(self.fakeInteractionRules))
+                    self.seen_limits.append(resource)
+
+                    theory_change_flag = True
+                    newEffects = True
+                    self.finalEffectList = set()
+
+            self.finalEventList.append(event)
+            newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
+            self.finalTimeStepList.append(newTimeStep)
+            for e in effects:
+                compactEvent = (e[0], e[1], e[2])
+                if compactEvent not in self.finalEffectList:
+                    self.finalEffectList.add(compactEvent)
+                    if self.display_text:
+                        print "New event: {}".format(compactEvent)
+                    newEffects = True
+        
+        self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
+            not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
+
+        ## Ideally you'd update the model at every step, but it takes a lot of time
+        ## so: Update when a new event happens (in which case you definitely need to update it), or when your MAP object-type hypothesis has changed for some class (in which case you definitely need to update it), or if we don't have a super-large number of time-steps in our history, do it sometimes (with probability .2)
+        if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
+            # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
+            if self.display_text:
+                print "new event", newEffects, "distributions changed", distributionsHaveChanged
+
+            if newEffects or distributionsHaveChanged:
+                theory_change_flag = True
+
+            t1 = time.time()
+            sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
+
+            game_object = Game(spriteInductionResult=sample)
+            
+            terminationCondition = {'ended': False, 'win':False, 'time':self.rle.getTime()}
+            trace = (self.finalTimeStepList, terminationCondition)
+
+            t1 = time.time()
+            hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
+            verbose=False, existingTheories=hypotheses))
+
+            if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
+                theory_change_flag = True
+
+        ## We also need to update termination conditions even when we haven't seen a new event,
+        ## because the state is informative about termination conditions.
+        oldTerminationSet = set(hypotheses[0].terminationSet)
+        if event['effectList'] and run_induction:
+            [t.updateTerminations(event=event) for t in hypotheses]
+
+        if set(hypotheses[0].terminationSet) != oldTerminationSet:
+            if self.display_text:
+                print "terminationSet Change"
+            theory_change_flag = True
+
+        if theory_change_flag and not distributionsHaveChanged and self.display_text:
+            print "changed theory:"
+            hypotheses[0].display()
+
+        return hypotheses, theory_change_flag, effects
+
+
     def executeStep(self, action, hypotheses, run_induction=True):
 
         ## Takes the specified action and does bookkeeping
@@ -1177,12 +1352,15 @@ class Agent:
         t1 = time.time()
         # self.distribution.spriteInduction(self.rle._game, self.memory, step=2, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
         # print "induction step 2 took {} seconds".format(time.time()-t1)
+        
+
         try:
             agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
         except IndexError:
             agentState = defaultdict(lambda: 0)
 
         lastScore = self.rle.getScore()
+
         res = self.rle.step(action)
 
         try:
