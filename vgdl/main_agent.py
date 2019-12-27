@@ -533,7 +533,7 @@ class Agent:
         ## Initialize dynamic-type distribution
         self.distribution = dynamicTypeDistribution_VGDL1()
 
-        ## Set up hypothetical locations for next timestep
+        ## Set up hypothetical locations for the next timestep
         self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
 
         ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
@@ -554,21 +554,28 @@ class Agent:
         return gameObject
 
     def completeHypotheses(self, allObjects, compactStates):
-        previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
-        current_colors = [o['type']['color'] for o in allObjects.values()]
-        if all([c in previous_colors for c in current_colors]):
-            self.observe(self.rle,  self.memory, 0, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
-        else:
-            self.observe(self.rle, self.memory, 5, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
-            ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
+        
 
-        ## Make sure any objects that appeared while we were observing are reflected in allObjects
-        for k,v in self.rle.getObjects().items():
-            if k not in allObjects:
-                allObjects[k] = v
+        # previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
+        # current_colors = [o['type']['color'] for o in allObjects.values()]
+        # if all([c in previous_colors for c in current_colors]):
+        #     self.observe(self.rle,  self.memory, 0, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
+        # else:
+        #     self.observe(self.rle, self.memory, 5, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
+        #     ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
+
+        # ## Make sure any objects that appeared while we were observing are reflected in allObjects
+        # for k,v in self.rle.getObjects().items():
+        #     if k not in allObjects:
+        #         allObjects[k] = v
+
+
+        self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
 
         spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
+        
+        ## TODO: Look into this loop. Is it needed?
         newHypotheses = []
         try:
             for hypothesis in self.hypotheses:
@@ -818,6 +825,7 @@ class Agent:
             gameObject = self.completeHypotheses(self.all_objects, self.bookkeeping.compactStates)
             if self.display_text:
                 print "had hypotheses -- completing them."
+            ## TODO: This belongs elsewhere
             # If theory is being carried over, falsify termination hypotheses
             # given new level state.
             [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
