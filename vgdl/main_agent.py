@@ -937,7 +937,7 @@ class Agent:
             ## Acting/learning/monitoring the need to re-plan
             if not quitting:
                 for i, action in enumerate(solution):
-                    self.hypotheses[0].dryingPaint = set()
+                    # self.hypotheses[0].dryingPaint = set()
 
                     if self.display_text:
                         t1 = time.time()
@@ -946,31 +946,39 @@ class Agent:
 
                     ## Storing info on search budget
                     plannerNodes = p.total_nodes_opened if i==0 else 0
-                    hypotheses, theory_change_flag, effects = self.reversedExecuteStep(action, self.hypotheses,
-                        run_induction = True)
+                    
 
+                    print actionDict[action]
+
+                    quitting, re_plan = self.reversedExecuteStep(action, self.hypotheses, run_induction = True)
+                    # hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
+                    
                     if self.display_text:
                         print "executeStep took {} seconds".format(time.time()-t1)
                     sys.stdout.flush()
                     
-                    self.memory.nextPositions = {}
-                    for k, v in self.rle._game.all_objects.iteritems():
-                        self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-                        try:
-                            if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                                self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
-                        except KeyError:
-                            pass
-                    self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+                    # self.memory.nextPositions = {}
+                    # for k, v in self.rle._game.all_objects.iteritems():
+                    #     self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+                    #     try:
+                    #         if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
+                    #             self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+                    #     except KeyError:
+                    #         pass
+                    # self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
 
-                    self.bookkeeping.effectsEncountered.extend(effects)
-                    self.memory.episodeSteps +=1
-                    if theory_change_flag:
-                        self.hypotheses = hypotheses
-                        break
+                    # self.bookkeeping.effectsEncountered.extend(effects)
+                    # self.memory.episodeSteps +=1
+                    # if theory_change_flag:
+                    #     self.hypotheses = hypotheses
+                    #     self.hypotheses[0].display()
+                    #     break
+
+                    # self.max_game_time_observed = max(self.max_game_time_observed, self.rle.getTime())
+
+                        
                     ended, win = self.rle._isDone()
 
-                    self.max_game_time_observed = max(self.max_game_time_observed, self.rle.getTime())
                     if ended:
                         break
 
@@ -978,11 +986,12 @@ class Agent:
                     # Check for disparities between plan and reality
                     # (e.g. stochastic effects)
                     if (i+1)%self.regrounding==0:
-
-                        if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, hypotheses[0], self.objectPositionsArray, i):
+                        if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, self.hypotheses[0], self.objectPositionsArray, i):
                             break
 
             else:
+                print "got a quit signal"
+                embed()
                 self.forfeit_level = self.metacontroller.annealUp()
 
                 win, effects = False, []
@@ -1082,14 +1091,16 @@ class Agent:
                 if s.ID not in hypDict and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                     regroundingFlag=True
-                    if self.agent.produce_printout:
-                        print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
+                    # if self.produce_printout:
+                    print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
+                    # embed()
                     break
                 if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
-                    if self.agent.produce_printout:
-                        print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
+                    # if self.produce_printout:
+                    print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
                             s, rle.getAvatars()[0], manhattan_distance(s.rect, rle.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                             'white', 'on_yellow')
+                    # embed()
                     regroundingFlag=True
                     break
                 rleDict[s.ID] = s
@@ -1175,12 +1186,18 @@ class Agent:
 
     def reversedExecuteStep(self, action, hypotheses, run_induction=True):
 
+        # self.rle.step(action)
 
+        self.hypotheses[0].dryingPaint = set()
 
-        res = self.rle.step(action)
+        quitting = False
 
-
-
+        print 'reversedExecuteStepeffects 1', self.rle.getEffectListByColor()
+        ended, win = self.rle._isDone()
+        
+        ## TODO: Elaborate these
+        if ended:
+            quitting = ended
         ### AFTER STEP ###
 
         theory_change_flag = False
@@ -1227,15 +1244,15 @@ class Agent:
         distributionsHaveChanged = self.distribution.spriteInduction(self.rle._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
  
         effects = self.rle.getEffectListByColor()
+        effectList = self.rle._game.effectList
+
+        print 'reversedExecuteStepeffects 2', effects
 
         if self.display_states:
             print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
 
         print "action", self.memory.totalGameSteps+self.rle.getTime()
-        if self.produce_printout:
-            print ""
-            # print keyPresses[action]
-            print self.rle.show(color='blue')
+
 
         event = {'agentState': self.agentState, 'agentAction': action, 'effectList': effects, \
             'gameState': None, 'rle': self.rle}
@@ -1244,8 +1261,9 @@ class Agent:
 
         ## If any collisions occurred
         if effects:
-            if self.display_text:
-                print effects
+            # if self.display_text:
+            # print effects
+            # embed()
             # #  PRECONDITIONS HANDLING
             # # Current assumptions:
             # # - Only one resource can change for each timestep
@@ -1290,8 +1308,8 @@ class Agent:
         ## so: Update when a new event happens (in which case you definitely need to update it), or when your MAP object-type hypothesis has changed for some class (in which case you definitely need to update it), or if we don't have a super-large number of time-steps in our history, do it sometimes (with probability .2)
         if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
-            if self.display_text:
-                print "new event", newEffects, "distributions changed", distributionsHaveChanged
+            # if self.display_text:
+            print "new event", newEffects, "distributions changed", distributionsHaveChanged
 
             if newEffects or distributionsHaveChanged:
                 theory_change_flag = True
@@ -1328,9 +1346,38 @@ class Agent:
 
         ## Setup for next timestep
         self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+        
 
 
-        return hypotheses, theory_change_flag, effects
+        self.memory.nextPositions = {}
+        for k, v in self.rle._game.all_objects.iteritems():
+            self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+            try:
+                if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
+                    self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+            except KeyError:
+                pass
+        self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+
+
+        self.bookkeeping.effectsEncountered.extend(effects)
+        self.memory.episodeSteps +=1
+        if theory_change_flag:
+            self.hypotheses = hypotheses
+            self.hypotheses[0].display()
+
+
+        self.rle.step(action)
+        if self.produce_printout:
+            print ""
+            # print keyPresses[action]
+            print self.rle.show(color='blue')
+
+
+        ### TODO: Return a signal to re-plan
+        re_plan = theory_change_flag
+
+        return quitting, re_plan#hypotheses, theory_change_flag, effects
 
 
     def executeStep(self, action, hypotheses, run_induction=True):
@@ -1398,6 +1445,7 @@ class Agent:
  
         ## First interaction-rule ablation (not used)
         effects = self.rle.getEffectListByColor()
+        print 'executeStep effects:', effects
         if self.interaction_lesion_replacement == 'nothing':
             for i,e in enumerate(effects):
                 if e[0] in self.disallowed_events:

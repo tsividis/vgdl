@@ -369,7 +369,7 @@ class dynamicTypeDistribution_VGDL1(dynamicTypeDistribution):
                         bestSpriteTypeDict[color][k] = self.distribution[k]
 
                 sample, distributionsHaveChanged, _ = self.sampleFromDynamicTypeDistribution(game, memory, game.all_objects, bestSpriteTypeDict, oldSpriteSet = oldSpriteSet)
-                # print [s for s in sample if s.color=='PINK'][0].__dict__
+                # print [s for s in sample if s.color=='RED'][0].__dict__
                 # embed()
             ## Reset ignoreList so that next time around you do inference about these objects. We skipped them this particular time-step because they had just appeared so we didn't have likelihoods set up for them.
             # self.distribution = self.distribution
