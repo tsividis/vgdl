@@ -529,11 +529,17 @@ class Agent:
         ## doing initial inference over sprite types, and returning partial
         ## candidate models.
 
+
+        ## Initialize dynamic-type distribution
         self.distribution = dynamicTypeDistribution_VGDL1()
 
-        ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
-        self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=None)
+        ## Set up hypothetical locations for next timestep
+        self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
 
+        ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
+        # self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=None)
+
+        ## Sample dynamic types
         spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
             allObjects, self.bestSpriteTypeDict)
 
