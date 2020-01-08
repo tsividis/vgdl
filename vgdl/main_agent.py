@@ -934,6 +934,7 @@ class Agent:
                     print colored(g, 'green')
                 print "==============================================================="
 
+            solution = [solution[0]]
             ## Acting/learning/monitoring the need to re-plan
             if not quitting:
                 for i, action in enumerate(solution):
@@ -978,9 +979,10 @@ class Agent:
 
                         
                     ended, win = self.rle._isDone()
-
                     if ended:
-                        break
+                        quitting = True
+                    # if ended:
+                        # break
 
                     ## Make sure agent is far enough from unpredictable dangerous objects.
                     # Check for disparities between plan and reality
