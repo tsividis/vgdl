@@ -342,28 +342,46 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         if self.visualize:
             self._game._clearAll(self.visualize)
 
-#        if self._game.playback_states:
-#            # off-policy learning from human action/state replay
-#            # 
-#            self._game.new_sprites = [] # momchil: taken care of? TODO no....
-#
-#            try:
-#                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=True)
-#            except:
-#                print "agent playback is failing!"
-#                embed()
-#
-#            keyPressType = self._game.playback_states[self._game.playback_index]['keyPressType']
-#            action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
-#            if keyPressType:
-#                action = revActionDict[keyPressType] 
-#                assert self._game.keystate[action] 
-#
-#            events = self._game.effectList
-#
-#            self._game.playback_index += 1
-#        else:
 
+        if self._game.playback_states:
+            # off-policy learning from human action/state replay
+            # 
+            self._game.new_sprites = [] # momchil: taken care of? TODO no....
+
+            try:
+                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=True)
+            except:
+                print "agent playback is failing!"
+                embed()
+
+            keyPressType = self._game.playback_states[self._game.playback_index]['keyPressType']
+            action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
+            if keyPressType:
+                action = revActionDict[keyPressType] 
+                assert self._game.keystate[action] 
+
+            events = self._game.effectList
+
+            self._game.playback_index += 1
+
+        else:
+
+            self._game.new_sprites = []
+
+            # update sprites
+            if onlyavatar:
+                if action != 0:
+                    self._avatar.update(self._game)
+
+            else:
+                for s in self._game:
+                    if action == 0 and s == self._avatar:
+                            continue
+                    if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
+                            s.update(self._game)
+
+            events = self._game._eventHandling()
+        '''
         # momchil: hybrid -- just choose actions from replay
         if self._game.playback_states:
             state = self._game.playback_states[self._game.playback_index]
@@ -397,42 +415,45 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
 
 
-        self._game.new_sprites = []
-        # update sprites
-        if onlyavatar:
-            if action != 0:
-                self._avatar.update(self._game)
+        #self._game.new_sprites = []
+        ## update sprites
+        #if onlyavatar:
+        #    if action != 0:
+        #        self._avatar.update(self._game)
 
-        else:
-            for s in self._game:
-                if action == 0 and s == self._avatar:
-                        continue
-                if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
-                        s.update(self._game)
-
-
-        if self._game.playback_states:
-            getstate = self._game.getFullState(keyPressType)
-
-        if self._game.playback_states and self._game.playback_index == 9:
-            # BINGO -- this breaks it!! momchil TODO fix!!
-            state = self._game.getFullState(keyPressType)
-            before = self._game.sprite_groups.copy()
-            self._game.setFullState(state, cheap=True)
-            after = self._game.sprite_groups.copy()
-
+        #else:
+        #    for s in self._game:
+        #        if action == 0 and s == self._avatar:
+        #                continue
+        #        if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
+        #                s.update(self._game)
 
 
         #if self._game.playback_states:
+        #    getstate = self._game.getFullState(keyPressType)
 
-        #    try:
-        #        self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=True)
-        #    except:
-        #        print "agent playback is failing!"
-        #        embed()
+        #if self._game.playback_states and self._game.playback_index == 9:
+        #    # BINGO -- this breaks it!! momchil TODO fix!!
+        #    state = self._game.getFullState(keyPressType)
+        #    before = self._game.sprite_groups.copy()
+        #    self._game.setFullState(state, cheap=True)
+        #    after = self._game.sprite_groups.copy()
 
 
-        events = self._game._eventHandling()
+
+        if self._game.playback_states:
+
+            try:
+                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=True, deoffset=True)
+            except:
+                print "agent playback is failing!"
+                embed()
+                assert False
+
+            events = self._game.effectList
+
+
+        #events = self._game._eventHandling()
 
 
         if self._game.playback_states:
@@ -449,7 +470,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
 
 
-
+        '''
 
 
 

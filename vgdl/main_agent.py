@@ -1021,7 +1021,7 @@ class Agent:
             annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
 
-            #ended = self.rle._game.ended # TODO momchil rm me
+            ended = self.rle._game.ended # TODO momchil rm me
             
             if ended:
                 self.episodeRecord.insert(0, (win, effects))

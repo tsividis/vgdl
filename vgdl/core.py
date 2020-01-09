@@ -939,12 +939,6 @@ class BasicGame(object):
                              'airsteering',
                              'strength',
                              ]
-    ignoredattributes = [ 
-                             'physicstype',
-                             'physics',
-                             'rect',
-                             'lastrect',
-                             ]
 
     def getAllObjects(self):
         ID_dict = {}
@@ -1033,17 +1027,17 @@ class BasicGame(object):
 
     def setFullState(self, fs, as_string=True, cheap=True, deoffset=False):
         """ Reset the game to be exactly as defined in the fullstate dict. """
-        #tt = self.time
-        #self.reset()
-        #self.time = tt # TODO momchil better fix; need for empaReplay
+        tt = self.time
+        self.reset()
+        self.time = tt # TODO momchil better fix; need for empaReplay
 
-        #self.keystate = fs['keystate']
-        #self.score = fs['score']
-        #self.ended = fs['ended']
-        #self.effectList = fs['effectList']
-        #self.effectListByClass = set([tuple(_) for _ in fs['effectListByClass']])
-        #self.effectListByColor = [tuple(_) for _ in fs['effectListByColor']]
-        #self.kill_list = []
+        self.keystate = fs['keystate']
+        self.score = fs['score']
+        self.ended = fs['ended']
+        self.effectList = fs['effectList']
+        self.effectListByClass = set([tuple(_) for _ in fs['effectListByClass']])
+        self.effectListByColor = [tuple(_) for _ in fs['effectListByColor']]
+        self.kill_list = []
 
         # momchil: BINGO -- it's in here
         for key, ss in fs['objects'].iteritems():
@@ -1058,6 +1052,7 @@ class BasicGame(object):
                     print 'pos'
                     embed()
                     assert False
+                assert pos[1] is not None
                 assert len(pos) == 2 # TODO momchil take care of overlapping sprites
                 attrs['x'] = int(pos[0])
                 attrs['y'] = int(pos[1])
@@ -1082,8 +1077,8 @@ class BasicGame(object):
                    # else:
                         s.__setattr__(a, val)
 
-        #        if s.ID in fs['kill_list_ID']:
-        #            self.kill_list.append(s) # TODO momchil test
+                if s.ID in fs['kill_list_ID']:
+                    self.kill_list.append(s) # TODO momchil test
 
     def getFullStateColorized(self,as_string=True,keyPressType=None):
         fs = self.getFullState(as_string=as_string, keyPressType=keyPressType)

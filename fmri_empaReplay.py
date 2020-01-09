@@ -14,7 +14,7 @@ from vgdl.main_agent import Agent
 
 import pygame
 
-# USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
+# USAGE: python fmri_empaReplay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
 # * - optional
 # copied from fmri_empaPlay.py
 

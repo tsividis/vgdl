@@ -1,6 +1,6 @@
 
 
-to install on mac, 
+------- to install on mac, 
 
 conda deactivate
 conda create -n pedro python=2
@@ -17,7 +17,7 @@ pip install IPython line_profiler ipdb
 python -m examples.gridphysics.aliens
 
 
-also see https://www.pygame.org/wiki/GettingStarted
+------- also see https://www.pygame.org/wiki/GettingStarted
 
 
 
