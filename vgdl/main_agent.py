@@ -214,7 +214,7 @@ class Bookkeeping:
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
 
-    def saveEpisodeState(self, agent, annealing):
+    def saveEpisodeState(self, agent):
         
         if not self.saveMidEpisode:
             return
@@ -229,7 +229,7 @@ class Bookkeeping:
                       'effectsEncountered': self.effectsEncountered,
                       'statesEncountered': self.statesEncountered,
                       'compactStates': self.compactStates,
-                      'annealing': annealing
+                      'annealing': agent.annealing
                       }
         filepath = 'savedCurricula/'+filename
         with open(filepath, 'wb') as f:
@@ -872,22 +872,23 @@ class Agent:
             if self.rle.getTime() == 0:
                 self.beginningOfEpisodeManagement()
 
-            self.bookkeeping.saveEpisodeState(self, self.annealing)
+            self.bookkeeping.saveEpisodeState(self)
 
 
             ### ENVIRONMENT ###
             if self.memory.totalGameSteps+self.memory.episodeSteps > MAX_STEPS:
                 score = self.rle.getScore()
 
-                self.bookkeeping.saveEpisodeState(self, self.annealing)
+                self.bookkeeping.saveEpisodeState(self)
 
                 return gameObject, win, score, self.memory.episodeSteps, self.forfeit_level
 
 
+            ### BEGINING OF EPISODE MANAGEMENT? ###
             ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
+            ## Later -- consider not constantly reinitializing vrles
             self.theoryRLEs = self.VrleInitPhase()
 
-            quitting = False
 
             self.metacontroller.setMaxNodes()
 
@@ -899,10 +900,16 @@ class Agent:
                 firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
-            planner_recommended_quitting = p.quitting
+
+            ### END MANAGEMENT ###
+
+            quitting = False
 
             bestNode, gameStringArray, objectPositionsArray = p.BFS()
+            planner_recommended_quitting = p.quitting
             
+
+            ### BOOKKEEPING ###
             self.total_planner_steps += p.total_nodes_opened
             self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
 
@@ -999,7 +1006,7 @@ class Agent:
                 win, effects = False, []
                 self.episodeRecord.insert(0, (win, effects))
 
-                self.bookkeeping.saveEpisodeState(self, self.annealing)
+                self.bookkeeping.saveEpisodeState(self)
 
                 display('Quitting')
 
