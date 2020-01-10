@@ -151,6 +151,9 @@ class Metacontroller:
         self.agent.takingRandomSteps = False
 
         if (not solution) or planner_recommended_quitting:
+
+            self.agent.steps_in_solution = 0
+
             # Here we make a distinction between quitting because you've
             # exhausted the number of nodes you can visit or because you
             # ran out of novelty. In the first case, you only wait longer,
@@ -356,6 +359,7 @@ class Agent:
     
         self.conservative = False
         self.regrounding = 1
+        self.takingRandomSteps = False
         # self.selective_regrounding = True ## not used
         self.reground_for_npcs = False ## delete this and the code that checks it, since you haven't used it in ages.
 
@@ -376,7 +380,8 @@ class Agent:
         self.seen_limits = []
         self.new_objects = {}
 
-
+        self.solution = []
+        self.steps_in_solution = 0
         self.objectPositionsArray = [] ##TODO: Pass to memory
         self.planner_nodes_opened_on_most_recent_step = 0
         self.memory = Memory()
@@ -879,50 +884,72 @@ class Agent:
             if self.memory.totalGameSteps+self.memory.episodeSteps > MAX_STEPS:
                 score = self.rle.getScore()
 
-                self.bookkeeping.saveEpisodeState(self)
-
                 return gameObject, win, score, self.memory.episodeSteps, self.forfeit_level
 
-
-            ### BEGINING OF EPISODE MANAGEMENT? ###
+            ### AGENT ###
             ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
             ## Later -- consider not constantly reinitializing vrles
             self.theoryRLEs = self.VrleInitPhase()
 
-
             self.metacontroller.setMaxNodes()
 
-            ## short_horizon and first_order_horizon are managed separately, so we don't pass these in their standard form to the planner.
-            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 
-            ## Initialize planner
-            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, annealing=self.annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
-                extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
-                objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
+            re_plan = False
 
-            ### END MANAGEMENT ###
+            ### can't pass steps_in_solution-1; that doesn't make sense
+            ### start by getting clear on the time sequence you have in objectPositionsarray, relative to when you're taking actions and then checking the array.
 
-            quitting = False
 
-            bestNode, gameStringArray, objectPositionsArray = p.BFS()
-            planner_recommended_quitting = p.quitting
+            ## Make sure agent is far enough from unpredictable dangerous objects.
+            # Check for disparities between plan and reality
+            # (e.g. stochastic effects)
+            if self.steps_in_solution%self.regrounding==0:
+                if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, self.hypotheses[0], self.objectPositionsArray, self.steps_in_solution):
+                    re_plan = True
+                    print "regrounding"
+
+            if self.steps_in_solution+1 >= len(self.solution):
+                print "no more steps in solution"
+                re_plan = True
+
+            # print "before planning"
+            # embed()
+
+            if re_plan==True:
+                ## Initialize planner
+                planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
+                p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, annealing=self.annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
+                    firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
+                    extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
+                    objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
+
+                bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                planner_recommended_quitting = p.quitting
             
+                quitting = False
+     
+                if bestNode is not None:
+                    self.solution = p.solution
+                    gameString_array = p.gameString_array
+                    self.objectPositionsArray = objectPositionsArray[::-1]
+                    if self.solution and self.display_text:
+                        print "got solution"
+                else:
+                    self.solution = []
+
+                self.steps_in_solution = 0
+
+            self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.rle, planner_recommended_quitting)
+
+
+            # print "after metacontroller re-planning"
+            # embed()
+
+            ### END AGENT ###
 
             ### BOOKKEEPING ###
             self.total_planner_steps += p.total_nodes_opened
             self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
-
-            if bestNode is not None:
-                solution = p.solution
-                gameString_array = p.gameString_array
-                self.objectPositionsArray = objectPositionsArray[::-1]
-                if solution and self.display_text:
-                    print "got solution"
-            else:
-                solution = []
-
-            solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(solution, self.rle, planner_recommended_quitting)
 
             if self.metacontroller.quitting:
                 self.metacontroller.quitting = False
@@ -930,93 +957,95 @@ class Agent:
                 ## Figure out why you had to do it and remove it.
                 quitting = True
                 action = 0
-                hypotheses, theory_change_flag, effects = self.executeStep(0, self.hypotheses, run_induction = True)
+                hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
-            if solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
-
-                print "found plan of length {}. Intended actions and predicted states:".format(len(solution))
+            # if self.solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
+            if self.solution:
+                print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
                 for i,g in enumerate(p.gameString_array[1:]):
-                    print actionDict[solution[i]]
+                    print actionDict[self.solution[i]]
                     print colored(g, 'green')
                 print "==============================================================="
 
-            solution = [solution[0]]
+
+            quitting, re_plan = self.reversedExecuteStep(None, self.hypotheses, run_induction = True)
+
+            # solution = [solution[0]]
             ## Acting/learning/monitoring the need to re-plan
-            if not quitting:
-                for i, action in enumerate(solution):
-                    # self.hypotheses[0].dryingPaint = set()
+            # if not quitting:
+            #     for i, action in enumerate(self.solution):
+            #         # self.hypotheses[0].dryingPaint = set()
 
-                    if self.display_text:
-                        t1 = time.time()
+            #         if self.display_text:
+            #             t1 = time.time()
 
-                    effects = []
+            #         effects = []
 
-                    ## Storing info on search budget
-                    plannerNodes = p.total_nodes_opened if i==0 else 0
+            #         ## Storing info on search budget
+            #         plannerNodes = p.total_nodes_opened if i==0 else 0
                     
+            #         print actionDict[action]
 
-                    print actionDict[action]
-
-                    quitting, re_plan = self.reversedExecuteStep(action, self.hypotheses, run_induction = True)
-                    # hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
+            #         quitting, re_plan = self.reversedExecuteStep(action, self.hypotheses, run_induction = True)
+            #         # hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
                     
-                    if self.display_text:
-                        print "executeStep took {} seconds".format(time.time()-t1)
-                    sys.stdout.flush()
+            #         if self.display_text:
+            #             print "executeStep took {} seconds".format(time.time()-t1)
+            #         sys.stdout.flush()
                     
-                    # self.memory.nextPositions = {}
-                    # for k, v in self.rle._game.all_objects.iteritems():
-                    #     self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-                    #     try:
-                    #         if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                    #             self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
-                    #     except KeyError:
-                    #         pass
-                    # self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+            #         # self.memory.nextPositions = {}
+            #         # for k, v in self.rle._game.all_objects.iteritems():
+            #         #     self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+            #         #     try:
+            #         #         if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
+            #         #             self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+            #         #     except KeyError:
+            #         #         pass
+            #         # self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
 
-                    # self.bookkeeping.effectsEncountered.extend(effects)
-                    # self.memory.episodeSteps +=1
-                    # if theory_change_flag:
-                    #     self.hypotheses = hypotheses
-                    #     self.hypotheses[0].display()
-                    #     break
+            #         # self.bookkeeping.effectsEncountered.extend(effects)
+            #         # self.memory.episodeSteps +=1
+            #         # if theory_change_flag:
+            #         #     self.hypotheses = hypotheses
+            #         #     self.hypotheses[0].display()
+            #         #     break
 
-                    # self.max_game_time_observed = max(self.max_game_time_observed, self.rle.getTime())
+            #         # self.max_game_time_observed = max(self.max_game_time_observed, self.rle.getTime())
 
                         
-                    ended, win = self.rle._isDone()
-                    if ended:
-                        quitting = True
-                    # if ended:
-                        # break
+            #         ended, win = self.rle._isDone()
+            #         if ended:
+            #             quitting = True
+            #         # if ended:
+            #             # break
 
-                    ## Make sure agent is far enough from unpredictable dangerous objects.
-                    # Check for disparities between plan and reality
-                    # (e.g. stochastic effects)
-                    if (i+1)%self.regrounding==0:
-                        if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, self.hypotheses[0], self.objectPositionsArray, i):
-                            break
+            #         ## Make sure agent is far enough from unpredictable dangerous objects.
+            #         # Check for disparities between plan and reality
+            #         # (e.g. stochastic effects)
+            #         if (i+1)%self.regrounding==0:
+            #             if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, self.hypotheses[0], self.objectPositionsArray, i):
+            #                 break
 
-            else:
-                print "got a quit signal"
-                embed()
-                self.forfeit_level = self.metacontroller.annealUp()
+            # else:
+            #     print "got a quit signal"
+            #     embed()
+            #     self.forfeit_level = self.metacontroller.annealUp()
 
-                win, effects = False, []
-                self.episodeRecord.insert(0, (win, effects))
+            #     win, effects = False, []
+            #     self.episodeRecord.insert(0, (win, effects))
 
-                self.bookkeeping.saveEpisodeState(self)
+            #     self.bookkeeping.saveEpisodeState(self)
 
-                display('Quitting')
+            #     display('Quitting')
 
-                return gameObject, False, self.rle.getScore(), self.memory.episodeSteps, self.forfeit_level
+            #     return gameObject, False, self.rle.getScore(), self.memory.episodeSteps, self.forfeit_level
 
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
             
-            if ended:
-                self.episodeRecord.insert(0, (win, effects))
+            # if ended:
+            #     self.episodeRecord.insert(0, (win, effects))
             
             if ended and not win and self.rle.getTime()==2000:
                 if self.produce_printout:
@@ -1085,10 +1114,17 @@ class Agent:
         
         ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
 
+        ## i corresponds to the index of the action we took
+
         regroundingFlag = False
+
+        if not objectPositionsArray:
+            return regroundingFlag
+
         rleDict, hypDict = {}, {}
 
-        for s in objectPositionsArray[i+1].getAliveSprites():
+        ## TODO: change to [i] and change what you're passing here to -1 of what it is.
+        for s in objectPositionsArray[i].getAliveSprites():
             hypDict[s.ID2] = s
 
         killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
@@ -1197,17 +1233,15 @@ class Agent:
 
         # self.rle.step(action)
 
+        action = self.solution[self.steps_in_solution]
+
+        self.steps_in_solution += 1
+
         self.hypotheses[0].dryingPaint = set()
 
         quitting = False
 
         print 'reversedExecuteStepeffects 1', self.rle.getEffectListByColor()
-        ended, win = self.rle._isDone()
-        
-        ## TODO: Elaborate these
-        if ended:
-            quitting = ended
-        ### AFTER STEP ###
 
         theory_change_flag = False
 
@@ -1252,10 +1286,18 @@ class Agent:
 
         distributionsHaveChanged = self.distribution.spriteInduction(self.rle._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
  
+
         effects = self.rle.getEffectListByColor()
         effectList = self.rle._game.effectList
 
         print 'reversedExecuteStepeffects 2', effects
+
+        ended, win = self.rle._isDone()
+        
+        ## TODO: Elaborate these
+        if ended:
+            quitting = ended
+            self.episodeRecord.insert(0, (win, effects))
 
         if self.display_states:
             print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
@@ -1349,7 +1391,7 @@ class Agent:
 
         if theory_change_flag and not distributionsHaveChanged and self.display_text:
             print "changed theory:"
-            hypotheses[0].display()
+            # hypotheses[0].display()
 
 
 
@@ -1373,9 +1415,9 @@ class Agent:
         self.memory.episodeSteps +=1
         if theory_change_flag:
             self.hypotheses = hypotheses
-            self.hypotheses[0].display()
+            # self.hypotheses[0].display()
 
-
+        print actionDict[action]
         self.rle.step(action)
         if self.produce_printout:
             print ""
