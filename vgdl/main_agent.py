@@ -1303,7 +1303,7 @@ class Agent:
             quitting = ended
             self.episodeRecord.insert(0, (win, effects))
 
-        if self.agentState and ended:
+        if effects and self.agentState:
             print self.agentState
             embed()
 
