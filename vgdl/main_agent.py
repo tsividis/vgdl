@@ -1189,25 +1189,8 @@ class Agent:
         self.bookkeeping.saveEpisodeState(self)
 
         hypotheses = self.hypotheses
-        # ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
-        # ## Later -- consider not constantly reinitializing vrles
-        # self.theoryRLEs = self.VrleInitPhase()
-        # self.quitting = False
-
-        # self.planAsNeeded()
 
         ended, win = self.rle._isDone()
-
-        # if self.metacontroller.quitting:
-        #     self.metacontroller.quitting = False
-        #     ## TODO: remove. agent should not be taking steps here.
-        #     ## Figure out why you had to do it and remove it.
-        #     self.quitting = True
-        #     action = 0
-
-        # if not ended:
-        #     action = self.solution[self.steps_in_solution]
-        #     self.steps_in_solution += 1
 
         self.hypotheses[0].dryingPaint = set()
 
