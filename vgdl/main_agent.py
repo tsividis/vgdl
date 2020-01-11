@@ -36,6 +36,29 @@ class Metacontroller:
         self.display_text = self.agent.display_text
         self.quitting = False
 
+    def isReplanningNecessary(self):
+        
+        re_plan = False
+        ### TODO: Pass to metacontroller
+        ## Make sure agent is far enough from unpredictable dangerous objects.
+        # Check for disparities between plan and reality
+        # (e.g. stochastic effects)
+        if self.agent.steps_in_solution%self.agent.regrounding==0:
+            if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.rle, self.agent.hypotheses[0], self.agent.objectPositionsArray, self.agent.steps_in_solution):
+                re_plan = True
+                print "regrounding"
+
+        if self.agent.steps_in_solution+1 >= len(self.agent.solution):
+            print "no more steps in solution"
+            re_plan = True
+
+        ended, win = self.agent.rle._isDone()
+
+        if ended:
+            re_plan = False
+
+        return re_plan
+
     def checkForRepeatedDeaths(self):
         return self.agent.checkForRepeatedDeaths(self.agent.episodeRecord, 2)
 
@@ -1100,21 +1123,9 @@ class Agent:
         self.quitting = False
         self.metacontroller.setMaxNodes()
 
-        ## Make sure agent is far enough from unpredictable dangerous objects.
-        # Check for disparities between plan and reality
-        # (e.g. stochastic effects)
-        if self.steps_in_solution%self.regrounding==0:
-            if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, self.hypotheses[0], self.objectPositionsArray, self.steps_in_solution):
-                self.re_plan = True
-                print "regrounding"
+        self.re_plan = self.metacontroller.isReplanningNecessary()
 
-        if self.steps_in_solution+1 >= len(self.solution):
-            print "no more steps in solution"
-            self.re_plan = True
-
-        ended, win = self.rle._isDone()
-
-        if not ended and self.re_plan==True:
+        if self.re_plan==True:
 
             # self.produce_plan()
 
