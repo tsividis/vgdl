@@ -1260,7 +1260,9 @@ class Agent:
         print "action", self.memory.totalGameSteps+self.rle.getTime()
 
 
-        event = {'agentState': self.agentState, 'agentAction': action, 'effectList': effects, \
+        ## 'action', here refers to the previously-taken action,
+        ## that led to the current state, current effects, current agentState
+        event = {'agentState': self.agentState, 'agentAction': self.action, 'effectList': effects, \
             'gameState': None, 'rle': self.rle}
 
         newEffects = False
@@ -1378,9 +1380,9 @@ class Agent:
 
         self.re_plan = theory_change_flag
 
-        action = self.planAsNeeded()
+        self.action = self.planAsNeeded()
 
-        return action, self.quitting
+        return self.action, self.quitting
 
 
     def executeStep(self, action, hypotheses, run_induction=True):
