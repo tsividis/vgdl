@@ -966,13 +966,6 @@ class Agent:
             self.total_planner_steps += p.total_nodes_opened
             self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
 
-            if self.metacontroller.quitting:
-                self.metacontroller.quitting = False
-                ## TODO: remove. agent should not be taking steps here.
-                ## Figure out why you had to do it and remove it.
-                quitting = True
-                action = 0
-                hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
 
             action, quitting, re_plan = self.reversedExecuteStep(None, self.hypotheses, run_induction = True)
 
@@ -1251,6 +1244,14 @@ class Agent:
         quitting = False
 
         ended, win = self.rle._isDone()
+
+        if self.metacontroller.quitting:
+            self.metacontroller.quitting = False
+            ## TODO: remove. agent should not be taking steps here.
+            ## Figure out why you had to do it and remove it.
+            quitting = True
+            action = 0
+
 
         if not ended:
             action = self.solution[self.steps_in_solution]
