@@ -182,6 +182,8 @@ class Metacontroller:
             print "No need to switch hyperparameters. Staying in {} mode".format(self.agent.hyperparameter_index)
 
         return solution
+
+
 class Memory:
     def __init__(self):
         self.ignoreList = []
@@ -871,8 +873,9 @@ class Agent:
 
         ended, win = self.rle._isDone()
         
+        quitting = False
         ## Main episode loop
-        while not ended:
+        while not quitting:
 
             if self.rle.getTime() == 0:
                 self.beginningOfEpisodeManagement()
@@ -938,6 +941,14 @@ class Agent:
                     self.solution = []
 
                 self.steps_in_solution = 0
+                ## Most common scenario: planner worked. Show projected plan and states, then act.
+                # if self.solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
+                if self.solution:
+                    print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
+                    for i,g in enumerate(p.gameString_array[1:]):
+                        print actionDict[self.solution[i]]
+                        print colored(g, 'green')
+                    print "==============================================================="
 
             self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.rle, planner_recommended_quitting)
 
@@ -958,15 +969,6 @@ class Agent:
                 quitting = True
                 action = 0
                 hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
-
-            ## Most common scenario: planner worked. Show projected plan and states, then act.
-            # if self.solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
-            if self.solution:
-                print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
-                for i,g in enumerate(p.gameString_array[1:]):
-                    print actionDict[self.solution[i]]
-                    print colored(g, 'green')
-                print "==============================================================="
 
 
             quitting, re_plan = self.reversedExecuteStep(None, self.hypotheses, run_induction = True)
@@ -1044,6 +1046,9 @@ class Agent:
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
             
+
+            # if ended:
+                # embed()
             # if ended:
             #     self.episodeRecord.insert(0, (win, effects))
             
@@ -1275,6 +1280,7 @@ class Agent:
         for k,v in self.agentState.items():
             self.agentState[k] = max(0, v)
 
+
         hypotheses = self.manageNewObjects(hypotheses)
 
         if self.make_movie or self.record_video_info:
@@ -1290,14 +1296,16 @@ class Agent:
         effects = self.rle.getEffectListByColor()
         effectList = self.rle._game.effectList
 
-        print 'reversedExecuteStepeffects 2', effects
-
         ended, win = self.rle._isDone()
         
         ## TODO: Elaborate these
         if ended:
             quitting = ended
             self.episodeRecord.insert(0, (win, effects))
+
+        if self.agentState and ended:
+            print self.agentState
+            embed()
 
         if self.display_states:
             print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
@@ -1410,6 +1418,10 @@ class Agent:
                 pass
         self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
 
+        try:
+            self.agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
+        except IndexError:
+            self.agentState = defaultdict(lambda: 0)
 
         self.bookkeeping.effectsEncountered.extend(effects)
         self.memory.episodeSteps +=1
