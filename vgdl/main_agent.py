@@ -24,7 +24,7 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
 
 MAX_STEPS = 10000
-actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
@@ -954,7 +954,7 @@ class Agent:
                         print colored(g, 'green')
                     print "==============================================================="
 
-            self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.rle, planner_recommended_quitting)
+                self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.rle, planner_recommended_quitting)
 
 
             # print "after metacontroller re-planning"
@@ -1242,13 +1242,16 @@ class Agent:
 
         # self.rle.step(action)
 
-        action = self.solution[self.steps_in_solution]
+        quitting = False
 
-        self.steps_in_solution += 1
+        ended, win = self.rle._isDone()
+
+        if not ended:
+            action = self.solution[self.steps_in_solution]
+            self.steps_in_solution += 1
 
         self.hypotheses[0].dryingPaint = set()
 
-        quitting = False
 
         print 'reversedExecuteStepeffects 1', self.rle.getEffectListByColor()
 
@@ -1299,8 +1302,6 @@ class Agent:
 
         effects = self.rle.getEffectListByColor()
         effectList = self.rle._game.effectList
-
-        ended, win = self.rle._isDone()
         
         ## TODO: Elaborate these
         if ended:
