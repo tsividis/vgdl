@@ -974,8 +974,14 @@ class Agent:
                 action = 0
                 hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
 
+            action, quitting, re_plan = self.reversedExecuteStep(None, self.hypotheses, run_induction = True)
 
-            quitting, re_plan = self.reversedExecuteStep(None, self.hypotheses, run_induction = True)
+            print actionDict[action]
+            self.rle.step(action)
+            if self.produce_printout:
+                print ""
+                # print keyPresses[action]
+                print self.rle.show(color='blue')
 
             # solution = [solution[0]]
             ## Acting/learning/monitoring the need to re-plan
@@ -1434,18 +1440,10 @@ class Agent:
             self.hypotheses = hypotheses
             self.hypotheses[0].display()
 
-        print actionDict[action]
-        self.rle.step(action)
-        if self.produce_printout:
-            print ""
-            # print keyPresses[action]
-            print self.rle.show(color='blue')
-
-
         ### TODO: Return a signal to re-plan
         re_plan = theory_change_flag
 
-        return quitting, re_plan#hypotheses, theory_change_flag, effects
+        return action, quitting, re_plan#hypotheses, theory_change_flag, effects
 
 
     def executeStep(self, action, hypotheses, run_induction=True):
