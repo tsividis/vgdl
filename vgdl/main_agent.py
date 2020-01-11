@@ -899,29 +899,29 @@ class Agent:
         ended, win = self.rle._isDone()
         
         quitting = False
+        episodeSteps = 0
         ## Main episode loop
         while not quitting:
 
-            if self.rle.getTime() == 0:
-                self.beginningOfEpisodeManagement()
-
-            self.bookkeeping.saveEpisodeState(self)
-
 
             ### ENVIRONMENT ###
-            if self.memory.totalGameSteps+self.memory.episodeSteps > MAX_STEPS:
+            if self.memory.totalGameSteps+episodeSteps > MAX_STEPS:
                 score = self.rle.getScore()
 
-                return gameObject, win, score, self.memory.episodeSteps, self.forfeit_level
+                return gameObject, win, score, episodeSteps, self.forfeit_level
 
 
-            action, quitting = self.reversedExecuteStep(None, self.hypotheses, run_induction = True)
+            ### TODO:
+            ### Save previous action so that your episode record is correct
+
+            action, quitting = self.reversedExecuteStep(None)
 
             self.rle.step(action)
             if self.produce_printout:
                 print ""
                 print actionDict[action]
                 print self.rle.show(color='blue')
+            episodeSteps += 1
 
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
@@ -1105,7 +1105,6 @@ class Agent:
                 self.distribution.spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
         else:
             self.distribution.spriteInduction(rle._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-            # self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
         return
 
     def planAsNeeded(self):
@@ -1126,8 +1125,6 @@ class Agent:
         self.re_plan = self.metacontroller.isReplanningNecessary()
 
         if self.re_plan==True:
-
-            # self.produce_plan()
 
             ## Initialize planner
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
@@ -1184,8 +1181,14 @@ class Agent:
 
 
 
-    def reversedExecuteStep(self, action, hypotheses, run_induction=True):
+    def reversedExecuteStep(self, action):
 
+        if self.rle.getTime() == 0:
+            self.beginningOfEpisodeManagement()
+
+        self.bookkeeping.saveEpisodeState(self)
+
+        hypotheses = self.hypotheses
         # ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
         # ## Later -- consider not constantly reinitializing vrles
         # self.theoryRLEs = self.VrleInitPhase()
@@ -1326,7 +1329,7 @@ class Agent:
 
         ## Ideally you'd update the model at every step, but it takes a lot of time
         ## so: Update when a new event happens (in which case you definitely need to update it), or when your MAP object-type hypothesis has changed for some class (in which case you definitely need to update it), or if we don't have a super-large number of time-steps in our history, do it sometimes (with probability .2)
-        if ((newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) and run_induction) or distributionsHaveChanged:
+        if (newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) or distributionsHaveChanged:
             # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
             # if self.display_text:
             print "new event", newEffects, "distributions changed", distributionsHaveChanged
@@ -1350,7 +1353,7 @@ class Agent:
         ## We also need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
         oldTerminationSet = set(hypotheses[0].terminationSet)
-        if event['effectList'] and run_induction:
+        if event['effectList']:
             [t.updateTerminations(event=event) for t in hypotheses]
 
         if set(hypotheses[0].terminationSet) != oldTerminationSet:
