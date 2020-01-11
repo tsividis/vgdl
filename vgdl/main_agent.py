@@ -956,12 +956,6 @@ class Agent:
 
                 self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.rle, planner_recommended_quitting)
 
-
-            # print "after metacontroller re-planning"
-            # embed()
-
-            ### END AGENT ###
-
             ### BOOKKEEPING ###
             self.total_planner_steps += p.total_nodes_opened
             self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
@@ -969,91 +963,14 @@ class Agent:
 
             action, quitting, re_plan = self.reversedExecuteStep(None, self.hypotheses, run_induction = True)
 
-            print actionDict[action]
             self.rle.step(action)
             if self.produce_printout:
                 print ""
-                # print keyPresses[action]
+                print actionDict[action]
                 print self.rle.show(color='blue')
-
-            # solution = [solution[0]]
-            ## Acting/learning/monitoring the need to re-plan
-            # if not quitting:
-            #     for i, action in enumerate(self.solution):
-            #         # self.hypotheses[0].dryingPaint = set()
-
-            #         if self.display_text:
-            #             t1 = time.time()
-
-            #         effects = []
-
-            #         ## Storing info on search budget
-            #         plannerNodes = p.total_nodes_opened if i==0 else 0
-                    
-            #         print actionDict[action]
-
-            #         quitting, re_plan = self.reversedExecuteStep(action, self.hypotheses, run_induction = True)
-            #         # hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, run_induction = True)
-                    
-            #         if self.display_text:
-            #             print "executeStep took {} seconds".format(time.time()-t1)
-            #         sys.stdout.flush()
-                    
-            #         # self.memory.nextPositions = {}
-            #         # for k, v in self.rle._game.all_objects.iteritems():
-            #         #     self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-            #         #     try:
-            #         #         if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-            #         #             self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
-            #         #     except KeyError:
-            #         #         pass
-            #         # self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
-
-            #         # self.bookkeeping.effectsEncountered.extend(effects)
-            #         # self.memory.episodeSteps +=1
-            #         # if theory_change_flag:
-            #         #     self.hypotheses = hypotheses
-            #         #     self.hypotheses[0].display()
-            #         #     break
-
-            #         # self.max_game_time_observed = max(self.max_game_time_observed, self.rle.getTime())
-
-                        
-            #         ended, win = self.rle._isDone()
-            #         if ended:
-            #             quitting = True
-            #         # if ended:
-            #             # break
-
-            #         ## Make sure agent is far enough from unpredictable dangerous objects.
-            #         # Check for disparities between plan and reality
-            #         # (e.g. stochastic effects)
-            #         if (i+1)%self.regrounding==0:
-            #             if (not self.takingRandomSteps) and self.checkForDangerOrAvatarMisLocation(self.rle, self.hypotheses[0], self.objectPositionsArray, i):
-            #                 break
-
-            # else:
-            #     print "got a quit signal"
-            #     embed()
-            #     self.forfeit_level = self.metacontroller.annealUp()
-
-            #     win, effects = False, []
-            #     self.episodeRecord.insert(0, (win, effects))
-
-            #     self.bookkeeping.saveEpisodeState(self)
-
-            #     display('Quitting')
-
-            #     return gameObject, False, self.rle.getScore(), self.memory.episodeSteps, self.forfeit_level
 
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
-            
-
-            # if ended:
-                # embed()
-            # if ended:
-            #     self.episodeRecord.insert(0, (win, effects))
             
             if ended and not win and self.rle.getTime()==2000:
                 if self.produce_printout:
