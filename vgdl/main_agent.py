@@ -407,6 +407,7 @@ class Agent:
 
         self.solution = []
         self.steps_in_solution = 0
+        self.action = None
         self.quitting = False
         self.re_plan = False
         self.objectPositionsArray = [] ##TODO: Pass to memory
