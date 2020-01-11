@@ -915,10 +915,14 @@ class Agent:
                 print "no more steps in solution"
                 re_plan = True
 
+            ened, win = self.rle._isDone()
+
             # print "before planning"
             # embed()
 
-            if re_plan==True:
+            ### Continuation: Making sure when the episode has ended that you don't re-plan, but just finish learning and then quit.
+
+            if not ended and re_plan==True:
                 ## Initialize planner
                 planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
                 p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, annealing=self.annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
@@ -1303,9 +1307,9 @@ class Agent:
             quitting = ended
             self.episodeRecord.insert(0, (win, effects))
 
-        if effects and self.agentState:
-            print self.agentState
-            embed()
+        # if effects and self.agentState:
+        #     print self.agentState
+        #     embed()
 
         if self.display_states:
             print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
