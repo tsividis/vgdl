@@ -319,7 +319,6 @@ class Agent:
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = 'short-term'
         self.hyperparameters = hyperparameter_sets[self.hyperparameter_index]
-        self.annealingFactor = 1. # meaningless
         self.annealing = 1.
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
         self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
@@ -921,9 +920,6 @@ class Agent:
                 print self.rle.show(color='blue')
             episodeSteps += 1
 
-
-            ### TODO: Why are you annealing here?
-            self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
             
 
