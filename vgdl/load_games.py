@@ -1,4 +1,4 @@
-from main_agent import Agent
+from main_agent import Agent, Environment
 from games_to_hyperparameters import *
 import time
 # import dill
@@ -78,6 +78,8 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
 
+    environment = Environment(game_name, agent, task_ID=task_ID, produce_printout = True)
+
     ##then pass this down for multiple episodes
     gameObject = None
     # print game_levels
@@ -96,7 +98,9 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         print "Playing {}".format(game_name)
     print "Typical runtime for this game: {}".format(estimated_time[game_name])
 
-    agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
+
+    make_movie = True
+    environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
 
     # print game_levels
 
