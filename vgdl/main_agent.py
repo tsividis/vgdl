@@ -385,7 +385,7 @@ class Agent:
         self.conservative = False
         self.regrounding = 1
         self.takingRandomSteps = False
-        # self.selective_regrounding = True ## not used
+
         self.reground_for_npcs = False ## delete this and the code that checks it, since you haven't used it in ages.
 
         self.distribution = None
@@ -904,19 +904,16 @@ class Agent:
         ## Main episode loop
         while not quitting:
 
-
             ### ENVIRONMENT ###
             if self.memory.totalGameSteps+episodeSteps > MAX_STEPS:
                 score = self.rle.getScore()
 
                 return gameObject, win, score, episodeSteps, self.forfeit_level
 
-
-            ### TODO:
-            ### Save previous action so that your episode record is correct
-
             action, quitting = self.reversedExecuteStep(None)
 
+
+            ### TODO: environment step should overload rle and produce a blue printout.
             self.rle.step(action)
             if self.produce_printout:
                 print ""
@@ -924,14 +921,11 @@ class Agent:
                 print self.rle.show(color='blue')
             episodeSteps += 1
 
+
+            ### TODO: Why are you annealing here?
             self.annealing *= self.annealingFactor
             ended, win = self.rle._isDone()
             
-            if ended and not win and self.rle.getTime()==2000:
-                if self.produce_printout:
-                    print "lost on timeout. switching hyperparameters"
-                self.hyperparameterSwitch(new_index=1)
-
 
         score = self.rle.getScore()
             
@@ -1121,9 +1115,22 @@ class Agent:
         ## Later -- consider not constantly reinitializing vrles
         self.theoryRLEs = self.VrleInitPhase()
         self.quitting = False
+        
+
+        ended, win = self.rle._isDone()
+
+
+        ## ended and not win and time==2000 means we lost on timeout
+        ## pass this to proper inference.
+        if ended and not win and self.rle.getTime()==2000:
+            if self.produce_printout:
+                print "lost on timeout. switching hyperparameters"
+            self.hyperparameterSwitch(new_index='long-term')
+
         self.metacontroller.setMaxNodes()
 
         self.re_plan = self.metacontroller.isReplanningNecessary()
+
 
         if self.re_plan==True:
 
@@ -1161,8 +1168,6 @@ class Agent:
             ### BOOKKEEPING ###
             self.total_planner_steps += p.total_nodes_opened
             self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
-
-        ended, win = self.rle._isDone()
 
         if self.metacontroller.quitting:
             self.metacontroller.quitting = False
