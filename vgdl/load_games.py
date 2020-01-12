@@ -1,4 +1,5 @@
-from main_agent import Agent, Environment
+from main_agent import Agent
+from environment import Environment
 from games_to_hyperparameters import *
 import time
 # import dill
@@ -99,7 +100,6 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     print "Typical runtime for this game: {}".format(estimated_time[game_name])
 
 
-    make_movie = True
     environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
 
     # print game_levels
