@@ -177,6 +177,31 @@ class Agent:
             if not os.path.exists(self.dirname_for_video):
                 os.makedirs(self.dirname_for_video)
 
+
+    # # ---------------------------------------------------------------------
+    # #     Simulator initialization functions
+    # # ---------------------------------------------------------------------
+    def initializeEnvironment(self):
+        ## Initialize game environment
+
+        if self.display_text:
+            print "initializing RLE"
+
+        if self.gameString==None or self.levelString==None:
+            self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
+        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
+        self.rle = self.rleCreateFunc()
+        return
+
+    def initializeRLEFromGame(self):
+        ## Part of a method for faster state copying, used in planner, etc.
+        gameString, levelString = self.gameString, self.levelString
+        if gameString == None or levelString == None:
+            gameString, levelString = defInputGame(self.gameFilename, randomize=False)
+        rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
+        rle = rleCreateFunc()
+        return rle
+
     def hyperparameterSwitch(self, new_index):
         if new_index!=self.hyperparameter_index:
             self.hyperparameter_index = new_index
@@ -330,6 +355,7 @@ class Agent:
             # embed()
         self.hypotheses = newHypotheses
 
+
     def compactify(self, rle, planner_nodes=0):
         ## Used for saving minimal state
         current_time = time.time()
@@ -347,6 +373,82 @@ class Agent:
                  }
         self.last_recorded_time = current_time
         return state
+
+    def makeHeatmap(self, statesEncountered, filename):
+        from vgdl.plotting import featurePlot
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import NullLocator
+        import numpy as np
+
+        states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
+                  if (not s['observe_state']) and s['objects']['avatar'].keys()]
+        width, height = self.rle.width, self.rle.height
+        correction_factor = self.rle.screensize[0]/width
+        corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
+
+        m = np.zeros((width, height))
+        Xs, Ys = [],[]
+
+        block_size=30
+        for s in corrected_states:
+            x = s[0]
+            y = s[1]
+            m[x, y] += 1
+            Xs.append(x*block_size+block_size/2.)
+            Ys.append(y*block_size+block_size/2.)
+
+        plt.imshow(m.T, cmap='viridis')
+        plt.gca().set_axis_off()
+        plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+            hspace = 0, wspace = 0)
+        plt.margins(0, 0)
+        plt.gca().xaxis.set_major_locator(NullLocator())
+        plt.gca().yaxis.set_major_locator(NullLocator())
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0)
+        plt.close()
+
+
+    def makeImages(self):
+        ## Used for making videos. First we save all states from all episodes as images, then we stitch together into a video.
+        # params_to_print_to_video = self.param_ID
+        params_to_print_to_video = ''
+        game_name_to_print_to_video = self.gameFilename
+        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
+
+    def makeMovie(self, play_movie=False):
+
+        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+
+        print "Creating Movie"
+        # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
+        # movie_dir = "videos/"
+        movie_dir = "videos/"+self.gameFilename
+        if not os.path.exists(movie_dir):
+            print movie_dir, "didn't exist. making new dir"
+            os.makedirs(movie_dir)
+
+        round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store' and self.gameFilename in d])
+        # video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+        # video_dirname = movie_dir+"/"+self.gameFilename+'_'+str(round_index)+".mp4"
+        video_dirname = movie_dir+"/"+str(self.movieName)+".mp4"
+        # images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
+        images_dir = "images/tmp/%09d.png"
+        com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+        command = "{}".format(com)
+        print "images/tmp contents:", os.getcwd()
+        print "in main agent:", command
+        subprocess.call(command, shell=True)
+        # empty image directory
+        shutil.rmtree("images/tmp/"+self.gameFilename)
+        os.makedirs("images/tmp/"+self.gameFilename)
+
+        if play_movie:
+            command = ('open', '-a', 'Quicktime Player', video_dirname)
+            subprocess.Popen(command)
+
+        return
 
     def beginningOfEpisodeManagement(self):
         ### AGENT EPISODE INIT STUFF ###
@@ -409,7 +511,6 @@ class Agent:
             self.agentState = defaultdict(lambda: 0)
 
         self.memory.episodeSteps = self.rle.getTime()
-
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
@@ -662,7 +763,7 @@ class Agent:
 
 
 
-    def step(self, action):
+    def reversedExecuteStep(self, action):
 
         if self.rle.getTime() == 0:
             self.beginningOfEpisodeManagement()
@@ -675,6 +776,8 @@ class Agent:
 
         self.hypotheses[0].dryingPaint = set()
 
+
+        print 'reversedExecuteStepeffects 1', self.rle.getEffectListByColor()
 
         theory_change_flag = False
 
@@ -729,6 +832,10 @@ class Agent:
             self.quitting = ended
             self.episodeRecord.insert(0, (win, effects))
 
+        # if effects and self.agentState:
+        #     print self.agentState
+        #     embed()
+
         if self.display_states:
             print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
 
@@ -744,6 +851,9 @@ class Agent:
 
         ## If any collisions occurred
         if effects:
+            # if self.display_text:
+            # print effects
+            # embed()
             # #  PRECONDITIONS HANDLING
             # # Current assumptions:
             # # - Only one resource can change for each timestep
