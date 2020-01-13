@@ -1,0 +1,88 @@
+import cPickle, cloudpickle
+from datetime import datetime
+import os, subprocess, shutil
+import time
+
+
+"""
+Class for supporting interrupted runs on cluster. Saves where we are in the curriculum as well as the agent state and allows for re-setting a run to a recent game/agent state.
+"""
+
+class Bookkeeping:
+    def __init__(self, saveMidEpisode, task_ID, param_ID, gameFilename):
+        self.saveMidEpisode = saveMidEpisode
+        self.task_ID = task_ID
+        self.param_ID = param_ID
+        self.gameFilename = gameFilename
+        self.episodeSaveFile = None
+        self.curriculumDir = 'savedCurricula'
+        self.curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        self.effectsEncountered = []
+        self.statesEncountered = []
+        self.compactStates = []
+
+        if self.curriculumDir not in os.listdir('.'):
+            os.makedirs(self.curriculumDir)
+
+    def saveCurriculumState(self, agent, episodeCompactStates):
+        if 'pedro' in os.getcwd():
+            return
+        filename = self.curriculumDir+'/'+curriculumSaveFile
+        savedState = {'agent':agent,
+                      'episodeCompactStates': episodeCompactStates}
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+
+    def saveEpisodeState(self, agent):
+        
+        if not self.saveMidEpisode:
+            return
+
+        # if 'pedro' in os.getcwd():
+            # return
+
+        filename = self.episodeSaveFile
+
+        print "starting to save episode state"
+        savedState = {'agent':agent,
+                      'effectsEncountered': self.effectsEncountered,
+                      'statesEncountered': self.statesEncountered,
+                      'compactStates': self.compactStates,
+                      'annealing': agent.annealing
+                      }
+        filepath = 'savedCurricula/'+filename
+        with open(filepath, 'wb') as f:
+            cloudpickle.dump(savedState, f)
+        print "done saving state"
+
+    def loadState(self, filename):
+        with open(filename, 'r') as f:
+            loadedState = cloudpickle.load(f)
+        # f.close()
+        return loadedState
+
+    def saveState(self):
+        filename = 'saved_state'
+        with open(filename, 'wb') as f:
+            cloudpickle.dump(self, f)
+        return
+
+    def loadCurriculumState(self, filename):
+        ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
+        if filename in os.listdir(self.curriculumDir):
+            try:
+                print "found saved curriculum state"
+                loadedState = self.loadState(self.curriculumDir+'/'+filename)
+                print "loaded curriculum state"
+                return loadedState
+            except:
+                os.remove(self.curriculumDir+'/'+filename)
+                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+                return None
+
+    def deleteEpisodeFile(self):
+        if self.saveMidEpisode:
+            ## if the episode ends, delete the mid-episode file we were saving.
+            self.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
+            os.remove(self.curriculumDir+'/'+self.episodeSaveFile)
+            print "finished an episode; removing episodeSaveFile"

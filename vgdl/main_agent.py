@@ -1087,12 +1087,8 @@ class Agent:
             print "changed theory:"
             # hypotheses[0].display()
 
-
-
         ## Setup for next timestep
         self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
-        
-
 
         self.memory.nextPositions = {}
         for k, v in self.rle._game.all_objects.iteritems():
