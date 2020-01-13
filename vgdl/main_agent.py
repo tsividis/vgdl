@@ -377,172 +377,6 @@ class Agent:
 
         self.memory.episodeSteps = self.environment.getTime()
 
-    def checkForRepeatedDeaths(self, episodeRecord, cutoff):
-        ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
-        count = 1
-        for i in range(1, len(episodeRecord)):
-            if episodeRecord[i][0]==False and episodeRecord[i][1]==episodeRecord[i-1][1]:
-                count+=1
-            else:
-                break
-        if count>cutoff:
-            return True
-        else:
-            return False
-
-    def noNewObjectsInAWhile(self, environment, age_cutoff):
-        ## Avoids switching to long-range planning in games where, e.g., things spawn from time to time. For games like that it makes more sense to wait for spawns to happen, rather than assuming you're in a static environment.
-        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
-            thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
-        else:
-            thingWeShoot = None         
-        
-        min_age = min([sprite.lastmove for sprite in environment.getAliveSprites() if sprite.name not in [thingWeShoot, 'avatar']])
-
-        try:
-            time_since_last_kill = environment.getTime() - max([item.deathage for item in environment.getDeadSprites() if item.name!=thingWeShoot])
-        except:
-            time_since_last_kill = environment.getTime()
-
-        if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
-            return True
-        else:
-            return False
-
-    def checkForMovingTypes(self, environment, hypothesis):
-        ## Another check for whether agent is in slow-moving games (where it's the only entity that generates motion)
-        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
-            thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
-        else:
-            thingWeShoot = None    
-        moving_types = [k for k in hypothesis.classes.keys() if k!=thingWeShoot and any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
-        moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
-        movingTypes = False
-        if moving_colors:
-            for s in environment.getAliveSprites():
-                if s.colorName in moving_colors:
-                    movingTypes = True
-                    break
-        return movingTypes
-
-    def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, objectPositionsArray, i):
-        
-        ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
-
-        ## i corresponds to the index of the action we took
-
-        regroundingFlag = False
-
-        if not objectPositionsArray:
-            return regroundingFlag
-
-        rleDict, hypDict = {}, {}
-
-        ## TODO: change to [i] and change what you're passing here to -1 of what it is.
-        for s in objectPositionsArray[i].getAliveSprites():
-            hypDict[s.ID2] = s
-
-        killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-        killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
-
-        for s in environment.getAliveSprites():
-            ## If the object isn't in our predicted environment or the positions vary
-            if s.name=='avatar' or s.colorName in killer_colors:
-                if s.ID not in hypDict and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
-
-                    regroundingFlag=True
-                    # if self.produce_printout:
-                    print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
-                    # embed()
-                    break
-                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
-                    # if self.produce_printout:
-                    print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                            s, environment.getAvatars()[0], manhattan_distance(s.rect, environment.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
-                            'white', 'on_yellow')
-                    # embed()
-                    regroundingFlag=True
-                    break
-                rleDict[s.ID] = s
-        return regroundingFlag
-
-    def matchEventToRuleByIDAndSpriteName(self, event, rule):
-        # Check if the two objects involved in the
-        # event are the same as those in the novelty
-        # termination rule (invariant by order)
-
-        if event[1] not in self.hypotheses[0].spriteObjects:
-            self.hypotheses[0].addSpriteToTheory(event[1])
-        if event[2] not in self.hypotheses[0].spriteObjects:
-            self.hypotheses[0].addSpriteToTheory(event[2])
-    
-        try:
-            hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
-            hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
-        except:
-            print "hypslot problem in main agent"
-            embed()
-
-
-        if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
-            if not rule.preconditions:
-                return True
-            else:
-                if not all([p.check(self.environment.agentStatePrev) for p in list(rule.preconditions)]):
-                    return False
-                else:
-                    return True
-        else:
-            return False
-
-    def manageNewObjects(self, hypotheses):
-        ## Add newly-seen objects to object-type distribution
-        current_objects = self.environment.getObjects()
-        for k in current_objects.keys():
-            spriteName = current_objects[k]['sprite'].name
-            if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
-                if self.display_text:
-                    print "new object", spriteName
-                self.all_objects[k] = current_objects[k]
-                self.distribution.distributionInitSetup(self.environment._game, k)
-                ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep, as likelihood function hasn't been seeded for these objects.
-                self.memory.ignoreList.append(k)
-                self.new_objects[spriteName] = 0
-
-        return hypotheses
-
-    def observe(self, environment, memory, obsSteps, bestSpriteTypeDict, display=False, hypothesis=None):
-        ## Agent just observes the state for 'obsSteps' steps and updates object-type distribution.
-        ## if called with obsSteps==0, it'll just initialize the object-type distribution
-        if display and self.produce_printout:
-            print "observing for {} steps".format(obsSteps)
-        if obsSteps>0:
-            for i in range(obsSteps):
-                self.distribution.spriteInduction(environment._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                # self.distribution.spriteInduction(environment._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                environment.step((0,0))
-                if self.make_movie or self.record_video_info:
-                    self.bookkeeping.statesEncountered.append(self.environment.getFullState(observe_state=True))
-                if self.record_states:
-                    self.bookkeeping.compactStates.append(self.compactify(self.environment))
-                if self.produce_printout:
-                    print "score: {}, timestep: {}".format(environment.getScore(), environment.getTime())
-                    print environment.show(color='blue')
-                print "action", self.memory.totalGameSteps+environment.getTime()
-                self.memory.nextPositions = {}
-                for k, v in environment._game.all_objects.iteritems():
-                    self.memory.nextPositions[k] = (int(environment._game.all_objects[k]['sprite'].rect.x), int(environment._game.all_objects[k]['sprite'].rect.y))
-                    try:
-                        if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                            self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
-                    except KeyError:
-                        pass
-                self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
-                self.distribution.spriteInduction(environment._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
-        else:
-            self.distribution.spriteInduction(environment._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-        return
-
     def planAsNeeded(self):
 
         """ 
@@ -571,7 +405,6 @@ class Agent:
         self.metacontroller.setMaxNodes()
 
         self.re_plan = self.metacontroller.isReplanningNecessary()
-
 
         if self.re_plan==True:
 
@@ -818,6 +651,124 @@ class Agent:
         self.action = self.planAsNeeded()
 
         return self.action, self.quitting
+
+    def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, objectPositionsArray, i):
+        
+        ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
+
+        ## i corresponds to the index of the action we took
+
+        regroundingFlag = False
+
+        if not objectPositionsArray:
+            return regroundingFlag
+
+        rleDict, hypDict = {}, {}
+
+        ## TODO: change to [i] and change what you're passing here to -1 of what it is.
+        for s in objectPositionsArray[i].getAliveSprites():
+            hypDict[s.ID2] = s
+
+        killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+        killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
+
+        for s in environment.getAliveSprites():
+            ## If the object isn't in our predicted environment or the positions vary
+            if s.name=='avatar' or s.colorName in killer_colors:
+                if s.ID not in hypDict and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+
+                    regroundingFlag=True
+                    # if self.produce_printout:
+                    print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
+                    # embed()
+                    break
+                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                    # if self.produce_printout:
+                    print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
+                            s, environment.getAvatars()[0], manhattan_distance(s.rect, environment.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+                            'white', 'on_yellow')
+                    # embed()
+                    regroundingFlag=True
+                    break
+                rleDict[s.ID] = s
+        return regroundingFlag
+
+    def matchEventToRuleByIDAndSpriteName(self, event, rule):
+        # Check if the two objects involved in the
+        # event are the same as those in the novelty
+        # termination rule (invariant by order)
+
+        if event[1] not in self.hypotheses[0].spriteObjects:
+            self.hypotheses[0].addSpriteToTheory(event[1])
+        if event[2] not in self.hypotheses[0].spriteObjects:
+            self.hypotheses[0].addSpriteToTheory(event[2])
+    
+        try:
+            hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
+            hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className
+        except:
+            print "hypslot problem in main agent"
+            embed()
+
+
+        if set([hypSlot1, hypSlot2]) == set([rule.slot1, rule.slot2]):
+            if not rule.preconditions:
+                return True
+            else:
+                if not all([p.check(self.environment.agentStatePrev) for p in list(rule.preconditions)]):
+                    return False
+                else:
+                    return True
+        else:
+            return False
+
+    def manageNewObjects(self, hypotheses):
+        ## Add newly-seen objects to object-type distribution
+        current_objects = self.environment.getObjects()
+        for k in current_objects.keys():
+            spriteName = current_objects[k]['sprite'].name
+            if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
+                if self.display_text:
+                    print "new object", spriteName
+                self.all_objects[k] = current_objects[k]
+                self.distribution.distributionInitSetup(self.environment._game, k)
+                ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep, as likelihood function hasn't been seeded for these objects.
+                self.memory.ignoreList.append(k)
+                self.new_objects[spriteName] = 0
+
+        return hypotheses
+
+    def observe(self, environment, memory, obsSteps, bestSpriteTypeDict, display=False, hypothesis=None):
+        ## Agent just observes the state for 'obsSteps' steps and updates object-type distribution.
+        ## if called with obsSteps==0, it'll just initialize the object-type distribution
+        if display and self.produce_printout:
+            print "observing for {} steps".format(obsSteps)
+        if obsSteps>0:
+            for i in range(obsSteps):
+                self.distribution.spriteInduction(environment._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                # self.distribution.spriteInduction(environment._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                environment.step((0,0))
+                if self.make_movie or self.record_video_info:
+                    self.bookkeeping.statesEncountered.append(self.environment.getFullState(observe_state=True))
+                if self.record_states:
+                    self.bookkeeping.compactStates.append(self.compactify(self.environment))
+                if self.produce_printout:
+                    print "score: {}, timestep: {}".format(environment.getScore(), environment.getTime())
+                    print environment.show(color='blue')
+                print "action", self.memory.totalGameSteps+environment.getTime()
+                self.memory.nextPositions = {}
+                for k, v in environment._game.all_objects.iteritems():
+                    self.memory.nextPositions[k] = (int(environment._game.all_objects[k]['sprite'].rect.x), int(environment._game.all_objects[k]['sprite'].rect.y))
+                    try:
+                        if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
+                            self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+                    except KeyError:
+                        pass
+                self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+                self.distribution.spriteInduction(environment._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
+        else:
+            self.distribution.spriteInduction(environment._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+        return
 
     def makeHeatmap(self, statesEncountered, filename):
         from vgdl.plotting import featurePlot
