@@ -197,9 +197,9 @@ class Agent:
         planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
         return planner_hyperparameters
 
-    def getSpritesByColor(self, rle, color):
+    def getSpritesByColor(self, environment, color):
         outList = []
-        spriteGroups = rle.getSpriteGroups()
+        spriteGroups = environment.getSpriteGroups()
         for k in spriteGroups.keys():
             if spriteGroups[k] and spriteGroups[k][0].colorName==color:
                 outList.extend(spriteGroups[k])
@@ -212,14 +212,14 @@ class Agent:
         ## returns the sprite in spriteList whose location best matches the location of sprite.
         return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
-    def setSpritePositions(self, rle, Vrle, hypothesis):
-        ## Sets positions of objects in Vrle to what they were in the rle. E.g., if we want to start a simulation according to the model specified by 'hypothesis' at the state contained in 'rle', this will return Vrle: a playable game whose rules run according to the model.
+    def setSpritePositions(self, environment, Vrle, hypothesis):
+        ## Sets positions of objects in Vrle to what they were in the environment. E.g., if we want to start a simulation according to the model specified by 'hypothesis' at the state contained in 'rle', this will return Vrle: a playable game whose rules run according to the model.
 
         old_sprite_groups = Vrle.getSpriteGroups()
         for k in old_sprite_groups.keys():
             if old_sprite_groups[k]:
                 color = Vrle.getSpriteGroups()[k][0].colorName
-                matchingSpritesInRLE = self.getSpritesByColor(rle, color)
+                matchingSpritesInRLE = self.getSpritesByColor(environment, color)
                 for sprite in old_sprite_groups[k]:
                     matchingSprite = self.find_nearest_sprite(sprite, matchingSpritesInRLE)
                     sprite.rect = matchingSprite.rect
@@ -331,11 +331,11 @@ class Agent:
         self.hypotheses = newHypotheses
 
 
-    def compactify(self, rle, planner_nodes=0):
+    def compactify(self, environment, planner_nodes=0):
         ## Used for saving minimal state
         current_time = time.time()
-        gameObject = rle._game
-        ended, win = rle._isDone()
+        gameObject = environment._game
+        ended, win = environment._isDone()
         state = {'timestep': gameObject.time,
                  'time_elapsed': current_time - self.last_recorded_time,
                  'score': gameObject.score,
@@ -343,8 +343,8 @@ class Agent:
                  'planner_nodes': planner_nodes, ## how many nodes were searched to determine this particular action? 0 if this is resulting from a cached plan.
                  'ended': ended,
                  'win': win,
-                 'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) for s in rle.getAliveSprites()],
-                 'events': list(rle.getEffectListByClass())
+                 'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) for s in environment.getAliveSprites()],
+                 'events': list(environment.getEffectListByClass())
                  }
         self.last_recorded_time = current_time
         return state
@@ -500,26 +500,26 @@ class Agent:
         else:
             return False
 
-    def noNewObjectsInAWhile(self, rle, age_cutoff):
+    def noNewObjectsInAWhile(self, environment, age_cutoff):
         ## Avoids switching to long-range planning in games where, e.g., things spawn from time to time. For games like that it makes more sense to wait for spawns to happen, rather than assuming you're in a static environment.
         if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
             thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
         else:
             thingWeShoot = None         
         
-        min_age = min([sprite.lastmove for sprite in rle.getAliveSprites() if sprite.name not in [thingWeShoot, 'avatar']])
+        min_age = min([sprite.lastmove for sprite in environment.getAliveSprites() if sprite.name not in [thingWeShoot, 'avatar']])
 
         try:
-            time_since_last_kill = rle.getTime() - max([item.deathage for item in rle.getDeadSprites() if item.name!=thingWeShoot])
+            time_since_last_kill = environment.getTime() - max([item.deathage for item in environment.getDeadSprites() if item.name!=thingWeShoot])
         except:
-            time_since_last_kill = rle.getTime()
+            time_since_last_kill = environment.getTime()
 
         if (min_age > age_cutoff) and (time_since_last_kill > age_cutoff):
             return True
         else:
             return False
 
-    def checkForMovingTypes(self, rle, hypothesis):
+    def checkForMovingTypes(self, environment, hypothesis):
         ## Another check for whether agent is in slow-moving games (where it's the only entity that generates motion)
         if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
             thingWeShoot = self.hypotheses[0].classes['avatar'][0].args['stype']
@@ -529,13 +529,13 @@ class Agent:
         moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
         movingTypes = False
         if moving_colors:
-            for s in rle.getAliveSprites():
+            for s in environment.getAliveSprites():
                 if s.colorName in moving_colors:
                     movingTypes = True
                     break
         return movingTypes
 
-    def checkForDangerOrAvatarMisLocation(self, rle, hypothesis, objectPositionsArray, i):
+    def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, objectPositionsArray, i):
         
         ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
 
@@ -555,20 +555,20 @@ class Agent:
         killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
         killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
 
-        for s in rle.getAliveSprites():
+        for s in environment.getAliveSprites():
             ## If the object isn't in our predicted environment or the positions vary
             if s.name=='avatar' or s.colorName in killer_colors:
-                if s.ID not in hypDict and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID not in hypDict and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                     regroundingFlag=True
                     # if self.produce_printout:
                     print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
                     # embed()
                     break
-                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, rle.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                     # if self.produce_printout:
                     print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                            s, rle.getAvatars()[0], manhattan_distance(s.rect, rle.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+                            s, environment.getAvatars()[0], manhattan_distance(s.rect, environment.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
                             'white', 'on_yellow')
                     # embed()
                     regroundingFlag=True
@@ -621,36 +621,36 @@ class Agent:
 
         return hypotheses
 
-    def observe(self, rle, memory, obsSteps, bestSpriteTypeDict, display=False, hypothesis=None):
+    def observe(self, environment, memory, obsSteps, bestSpriteTypeDict, display=False, hypothesis=None):
         ## Agent just observes the state for 'obsSteps' steps and updates object-type distribution.
         ## if called with obsSteps==0, it'll just initialize the object-type distribution
         if display and self.produce_printout:
             print "observing for {} steps".format(obsSteps)
         if obsSteps>0:
             for i in range(obsSteps):
-                self.distribution.spriteInduction(rle._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                # self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                rle.step((0,0))
+                self.distribution.spriteInduction(environment._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                # self.distribution.spriteInduction(environment._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+                environment.step((0,0))
                 if self.make_movie or self.record_video_info:
                     self.bookkeeping.statesEncountered.append(self.environment.getFullState(observe_state=True))
                 if self.record_states:
                     self.bookkeeping.compactStates.append(self.compactify(self.environment))
                 if self.produce_printout:
-                    print "score: {}, timestep: {}".format(rle.getScore(), rle.getTime())
-                    print rle.show(color='blue')
-                print "action", self.memory.totalGameSteps+rle.getTime()
+                    print "score: {}, timestep: {}".format(environment.getScore(), environment.getTime())
+                    print environment.show(color='blue')
+                print "action", self.memory.totalGameSteps+environment.getTime()
                 self.memory.nextPositions = {}
-                for k, v in rle._game.all_objects.iteritems():
-                    self.memory.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
+                for k, v in environment._game.all_objects.iteritems():
+                    self.memory.nextPositions[k] = (int(environment._game.all_objects[k]['sprite'].rect.x), int(environment._game.all_objects[k]['sprite'].rect.y))
                     try:
                         if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
                             self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
                     except KeyError:
                         pass
                 self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
-                self.distribution.spriteInduction(rle._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
+                self.distribution.spriteInduction(environment._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
         else:
-            self.distribution.spriteInduction(rle._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+            self.distribution.spriteInduction(environment._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
         return
 
     def planAsNeeded(self):
