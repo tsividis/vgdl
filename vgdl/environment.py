@@ -70,7 +70,7 @@ class Environment:
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
-        self.rle = self.rleCreateFunc()
+        self.environment = self.rleCreateFunc()
         return
 
     def initializeRLEFromGame(self):
@@ -79,8 +79,8 @@ class Environment:
         if gameString == None or levelString == None:
             gameString, levelString = defInputGame(self.gameFilename, randomize=False)
         rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-        rle = rleCreateFunc()
-        return rle
+        environment = rleCreateFunc()
+        return environment
 
 
     def makeHeatmap(self, statesEncountered, filename):
@@ -91,8 +91,8 @@ class Environment:
 
         states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
                   if (not s['observe_state']) and s['objects']['avatar'].keys()]
-        width, height = self.rle.width, self.rle.height
-        correction_factor = self.rle.screensize[0]/width
+        width, height = self.environment.width, self.environment.height
+        correction_factor = self.environment.screensize[0]/width
         corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
 
         m = np.zeros((width, height))
@@ -279,16 +279,16 @@ class Environment:
 
         ## Initialize external environment
         self.initializeEnvironment()
-        self.agent.rle = self.rle
+        self.agent.environment = self.environment
         self.agent.make_movie = self.make_movie
         
         print "Playing level {}".format(self.n_level + 1)
 
         if self.produce_printout:
             print ""
-            print self.rle.show(color='blue')
+            print self.environment.show(color='blue')
 
-        ended, win = self.rle._isDone()
+        ended, win = self.environment._isDone()
         
         quitting = False
         episodeSteps = 0
@@ -297,7 +297,7 @@ class Environment:
 
             ### ENVIRONMENT ###
             if self.agent.memory.totalGameSteps+episodeSteps > MAX_STEPS:
-                score = self.rle.getScore()
+                score = self.environment.getScore()
 
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
@@ -305,17 +305,17 @@ class Environment:
 
 
             ### TODO: environment step should overload rle and produce a blue printout.
-            self.rle.step(action)
+            self.environment.step(action)
             if self.produce_printout:
                 print ""
                 print actionDict[action]
-                print self.rle.show(color='blue')
+                print self.environment.show(color='blue')
             episodeSteps += 1
 
-            ended, win = self.rle._isDone()
+            ended, win = self.environment._isDone()
             
 
-        score = self.rle.getScore()
+        score = self.environment.getScore()
             
         if win:
             display('win')

@@ -190,7 +190,7 @@ class Agent:
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
-        self.rle = self.rleCreateFunc()
+        self.environment = self.rleCreateFunc()
         return
 
     def initializeRLEFromGame(self):
@@ -268,14 +268,14 @@ class Agent:
 
     def initializeVrle(self, hypothesis):
         ## Returns simulatable world in agent's head given 'hypothesis', including object goal
-        gameString, levelString, symbolDict = writeTheoryToTxt(self.rle, hypothesis, self.symbolDict,\
+        gameString, levelString, symbolDict = writeTheoryToTxt(self.environment, hypothesis, self.symbolDict,\
                  "./theory_files/{}.py".format(self.gameFilename))
         Vrle = createMindEnv(gameString, levelString, output=False)
 
-        self.setSpritePositions(self.rle, Vrle, hypothesis)
+        self.setSpritePositions(self.environment, Vrle, hypothesis)
         try:
-            Vrle.getAvatars()[0].resources = copy.deepcopy(self.rle.getAvatars()[0].resources)
-            Vrle.getAvatars()[0].orientation = copy.deepcopy(self.rle.getAvatars()[0].orientation)
+            Vrle.getAvatars()[0].resources = copy.deepcopy(self.environment.getAvatars()[0].resources)
+            Vrle.getAvatars()[0].orientation = copy.deepcopy(self.environment.getAvatars()[0].orientation)
         except (IndexError, AttributeError) as e:
             pass
         return Vrle
@@ -303,13 +303,13 @@ class Agent:
         self.distribution = dynamicTypeDistribution_VGDL1()
 
         ## Set up hypothetical locations for the next timestep
-        self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+        self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
 
         ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
-        # self.observe(self.rle,  self.memory, 4, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=None)
+        # self.observe(self.environment,  self.memory, 4, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=None)
 
         ## Sample dynamic types
-        spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory,
+        spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory,
             allObjects, self.bestSpriteTypeDict)
 
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
@@ -318,7 +318,7 @@ class Agent:
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
         
         self.hypotheses = [initialTheory]
-        self.symbolDict = generateSymbolDict(self.rle)
+        self.symbolDict = generateSymbolDict(self.environment)
 
         return gameObject
 
@@ -328,20 +328,20 @@ class Agent:
         # previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
         # current_colors = [o['type']['color'] for o in allObjects.values()]
         # if all([c in previous_colors for c in current_colors]):
-        #     self.observe(self.rle,  self.memory, 0, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
+        #     self.observe(self.environment,  self.memory, 0, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
         # else:
-        #     self.observe(self.rle, self.memory, 5, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
+        #     self.observe(self.environment, self.memory, 5, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
         #     ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
 
         # ## Make sure any objects that appeared while we were observing are reflected in allObjects
-        # for k,v in self.rle.getObjects().items():
+        # for k,v in self.environment.getObjects().items():
         #     if k not in allObjects:
         #         allObjects[k] = v
 
 
-        self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+        self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
 
-        spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
+        spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
         
         ## TODO: Look into this loop. Is it needed?
@@ -382,8 +382,8 @@ class Agent:
 
         states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
                   if (not s['observe_state']) and s['objects']['avatar'].keys()]
-        width, height = self.rle.width, self.rle.height
-        correction_factor = self.rle.screensize[0]/width
+        width, height = self.environment.width, self.environment.height
+        correction_factor = self.environment.screensize[0]/width
         corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
 
         m = np.zeros((width, height))
@@ -456,7 +456,7 @@ class Agent:
 
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
-        self.all_objects= self.rle.getObjects()
+        self.all_objects= self.environment.getObjects()
         self.annealing = 1
 
         ## Reset these for each episode. Used for data analysis
@@ -465,17 +465,17 @@ class Agent:
         self.bookkeeping.compactStates = []
 
         if self.make_movie or self.record_video_info:
-            self.bookkeeping.statesEncountered.append(self.rle.getFullState())
+            self.bookkeeping.statesEncountered.append(self.environment.getFullState())
         
         self.last_recorded_time = time.time()
         if self.record_states:
-            self.bookkeeping.compactStates.append(self.compactify(self.rle))
+            self.bookkeeping.compactStates.append(self.compactify(self.environment))
         
         ## Initialize memory of object positions
         self.memory.objectMemoryDict, self.memory.previousPositions = {}, {}
-        for k, v in self.rle._game.all_objects.iteritems():
-            self.memory.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
-            self.memory.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+        for k, v in self.environment._game.all_objects.iteritems():
+            self.memory.objectMemoryDict[k] = (int(self.environment._game.all_objects[k]['sprite'].rect.x), int(self.environment._game.all_objects[k]['sprite'].rect.y))
+            self.memory.previousPositions[k] = (int(self.environment._game.all_objects[k]['sprite'].rect.x), int(self.environment._game.all_objects[k]['sprite'].rect.y))
 
         ## initialize theory if necessary.
         if len(self.hypotheses) == 0:
@@ -489,7 +489,7 @@ class Agent:
             ## TODO: This belongs elsewhere
             # If theory is being carried over, falsify termination hypotheses
             # given new level state.
-            [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
+            [t.updateTerminations(rle=self.environment) for t in self.hypotheses]
 
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
@@ -497,20 +497,20 @@ class Agent:
             self, self.bookkeeping.effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, self.annealing = loadedState['agent'], loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.
-        resources = self.rle.getAvatars()[0].resources
+        resources = self.environment.getAvatars()[0].resources
         for resource, val in resources.items():
             if resource not in self.seen_resources and val>0:
                 self.seen_resources.append(resource)
-                self.hypotheses[0].resource_limits[resource] = self.rle.getResourceLimits()[resource]
-            if resource not in self.seen_limits and val==self.rle.etResourceLimits()[resource]:
+                self.hypotheses[0].resource_limits[resource] = self.environment.getResourceLimits()[resource]
+            if resource not in self.seen_limits and val==self.environment.etResourceLimits()[resource]:
                 self.seen_limits.append(resource)
 
         try:
-            self.agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
+            self.agentState = copy.deepcopy(self.environment.getAvatars()[0].resources)
         except IndexError:
             self.agentState = defaultdict(lambda: 0)
 
-        self.memory.episodeSteps = self.rle.getTime()
+        self.memory.episodeSteps = self.environment.getTime()
 
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
@@ -623,7 +623,7 @@ class Agent:
             if not rule.preconditions:
                 return True
             else:
-                if not all([p.check(self.rle.agentStatePrev) for p in list(rule.preconditions)]):
+                if not all([p.check(self.environment.agentStatePrev) for p in list(rule.preconditions)]):
                     return False
                 else:
                     return True
@@ -632,14 +632,14 @@ class Agent:
 
     def manageNewObjects(self, hypotheses):
         ## Add newly-seen objects to object-type distribution
-        current_objects = self.rle.getObjects()
+        current_objects = self.environment.getObjects()
         for k in current_objects.keys():
             spriteName = current_objects[k]['sprite'].name
             if spriteName not in [self.all_objects[key]['sprite'].name for key in self.all_objects.keys()]:
                 if self.display_text:
                     print "new object", spriteName
                 self.all_objects[k] = current_objects[k]
-                self.distribution.distributionInitSetup(self.rle._game, k)
+                self.distribution.distributionInitSetup(self.environment._game, k)
                 ## prevent spriteInduction from trying to infer anything about newly-appeared sprites in this timestep, as likelihood function hasn't been seeded for these objects.
                 self.memory.ignoreList.append(k)
                 self.new_objects[spriteName] = 0
@@ -657,9 +657,9 @@ class Agent:
                 # self.distribution.spriteInduction(rle._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 rle.step((0,0))
                 if self.make_movie or self.record_video_info:
-                    self.bookkeeping.statesEncountered.append(self.rle.getFullState(observe_state=True))
+                    self.bookkeeping.statesEncountered.append(self.environment.getFullState(observe_state=True))
                 if self.record_states:
-                    self.bookkeeping.compactStates.append(self.compactify(self.rle))
+                    self.bookkeeping.compactStates.append(self.compactify(self.environment))
                 if self.produce_printout:
                     print "score: {}, timestep: {}".format(rle.getScore(), rle.getTime())
                     print rle.show(color='blue')
@@ -693,12 +693,12 @@ class Agent:
         self.quitting = False
         
 
-        ended, win = self.rle._isDone()
+        ended, win = self.environment._isDone()
 
 
         ## ended and not win and time==2000 means we lost on timeout
         ## pass this to proper inference.
-        if ended and not win and self.rle.getTime()==2000:
+        if ended and not win and self.environment.getTime()==2000:
             if self.produce_printout:
                 print "lost on timeout. switching hyperparameters"
             self.hyperparameterSwitch(new_index='long-term')
@@ -739,7 +739,7 @@ class Agent:
                     print colored(g, 'green')
                 print "==============================================================="
 
-            self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.rle, planner_recommended_quitting)
+            self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.environment, planner_recommended_quitting)
 
             ### BOOKKEEPING ###
             self.total_planner_steps += p.total_nodes_opened
@@ -762,29 +762,28 @@ class Agent:
         return action
 
 
+    def step(self, action):
 
-    def reversedExecuteStep(self, action):
-
-        if self.rle.getTime() == 0:
+        if self.environment.getTime() == 0:
             self.beginningOfEpisodeManagement()
 
         self.bookkeeping.saveEpisodeState(self)
 
         hypotheses = self.hypotheses
 
-        ended, win = self.rle._isDone()
+        ended, win = self.environment._isDone()
 
         self.hypotheses[0].dryingPaint = set()
 
 
-        print 'reversedExecuteStepeffects 1', self.rle.getEffectListByColor()
+        print 'reversedExecuteStepeffects 1', self.environment.getEffectListByColor()
 
         theory_change_flag = False
 
         try:
-            self.agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
+            self.agentState = copy.deepcopy(self.environment.getAvatars()[0].resources)
 
-            for e in self.rle._game.effectList:
+            for e in self.environment._game.effectList:
                 if 'changeResource' in e:
                     changes = e[3]
                     if changes['value'] < 0:
@@ -792,13 +791,13 @@ class Agent:
                         self.agentState[changes['resource']] -= changes['value']
                         break
 
-            self.rle.agentStatePrev = self.agentState
+            self.environment.agentStatePrev = self.agentState
 
         ## If agent is killed before we grab its agentState,
         ## use what's printed in the effect label to get it. 
         except (IndexError, AttributeError) as e:
             ignored_negative_change = False
-            for e in self.rle._game.effectList:
+            for e in self.environment._game.effectList:
                 if 'changeResource' in e:
                     changes = e[3]
                     if changes['value'] > 0 or ignored_negative_change:
@@ -806,7 +805,7 @@ class Agent:
                     else:
                         self.agentState[changes['resource']] += 0
                         ignored_negative_change = True
-            self.rle.agentStatePrev = self.agentState
+            self.environment.agentStatePrev = self.agentState
         
         for k,v in self.agentState.items():
             self.agentState[k] = max(0, v)
@@ -815,17 +814,17 @@ class Agent:
         hypotheses = self.manageNewObjects(hypotheses)
 
         if self.make_movie or self.record_video_info:
-            self.bookkeeping.statesEncountered.append(self.rle.getFullState())
+            self.bookkeeping.statesEncountered.append(self.environment.getFullState())
         if self.record_states:
-            self.bookkeeping.compactStates.append(self.compactify(self.rle, self.planner_nodes_opened_on_most_recent_step))
+            self.bookkeeping.compactStates.append(self.compactify(self.environment, self.planner_nodes_opened_on_most_recent_step))
         
         self.planner_nodes_opened_on_most_recent_step = 0
 
-        distributionsHaveChanged = self.distribution.spriteInduction(self.rle._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
  
 
-        effects = self.rle.getEffectListByColor()
-        effectList = self.rle._game.effectList
+        effects = self.environment.getEffectListByColor()
+        effectList = self.environment._game.effectList
         
         ## TODO: Elaborate these
         if ended:
@@ -837,15 +836,15 @@ class Agent:
         #     embed()
 
         if self.display_states:
-            print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
+            print "score: {}, game step: {}".format(self.environment.getScore(), self.environment.getTime())
 
-        print "action", self.memory.totalGameSteps+self.rle.getTime()
+        print "action", self.memory.totalGameSteps+self.environment.getTime()
 
 
         ## 'action', here refers to the previously-taken action,
         ## that led to the current state, current effects, current agentState
         event = {'agentState': self.agentState, 'agentAction': self.action, 'effectList': effects, \
-            'gameState': None, 'rle': self.rle}
+            'gameState': None, 'rle': self.environment}
 
         newEffects = False
 
@@ -904,11 +903,11 @@ class Agent:
             if newEffects or distributionsHaveChanged:
                 theory_change_flag = True
 
-            sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.rle._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
+            sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
 
             game_object = Game(spriteInductionResult=sample)
             
-            terminationCondition = {'ended': False, 'win':False, 'time':self.rle.getTime()}
+            terminationCondition = {'ended': False, 'win':False, 'time':self.environment.getTime()}
             trace = (self.finalTimeStepList, terminationCondition)
 
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
@@ -933,11 +932,11 @@ class Agent:
             # hypotheses[0].display()
 
         ## Setup for next timestep
-        self.distribution.spriteInduction(self.rle._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+        self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
 
         self.memory.nextPositions = {}
-        for k, v in self.rle._game.all_objects.iteritems():
-            self.memory.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+        for k, v in self.environment._game.all_objects.iteritems():
+            self.memory.nextPositions[k] = (int(self.environment._game.all_objects[k]['sprite'].rect.x), int(self.environment._game.all_objects[k]['sprite'].rect.y))
             try:
                 if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
                     self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
@@ -946,7 +945,7 @@ class Agent:
         self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
 
         try:
-            self.agentState = copy.deepcopy(self.rle.getAvatars()[0].resources)
+            self.agentState = copy.deepcopy(self.environment.getAvatars()[0].resources)
         except IndexError:
             self.agentState = defaultdict(lambda: 0)
 
