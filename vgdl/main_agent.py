@@ -1,33 +1,30 @@
-from util import *
-from core import colorDict, VGDLParser, sys, keyPresses
-from ontology import *
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, \
-SpriteCounterRule, MultiSpriteCounterRule, ruleCluster, Theory, Game, writeTheoryToTxt, generateSymbolDict, \
-generateTheoryFromGame
-from metacontroller import Metacontroller
-from bookkeeping import Bookkeeping
-import os, subprocess, shutil
-from collections import defaultdict
-from hyperparameters import hyperparameter_sets, metacontroller_sets
-from math import log
-import WBP
+import os
+import subprocess
+import shutil
 import numpy as np
 import random
 import time
-from datetime import datetime
 import copy
-from agent_utils import translate_events, findNearestSprite, getSpritesByColor
-from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
-from dynamic_type_inference import dynamicTypeDistribution_VGDL1
-from termcolor import colored
+from collections import defaultdict
+from core import colorDict, VGDLParser, sys
+from datetime import datetime
+from math import log
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+from termcolor import colored
+from util import *
+from ontology import *
+from hyperparameters import hyperparameter_sets, metacontroller_sets
+from agent_utils import translate_events, findNearestSprite, getSpritesByColor
+from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+from metacontroller import Metacontroller
+from dynamic_type_inference import dynamicTypeDistribution_VGDL1
+import WBP
+from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
+from bookkeeping import Bookkeeping
 
-
-# MAX_STEPS = 10000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
-AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,
-RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
-AimedFlakAvatar, InertialAvatar, MarioAvatar]
+
+AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 
 class Agent:
