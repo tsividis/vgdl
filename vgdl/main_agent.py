@@ -177,31 +177,6 @@ class Agent:
             if not os.path.exists(self.dirname_for_video):
                 os.makedirs(self.dirname_for_video)
 
-
-    # # ---------------------------------------------------------------------
-    # #     Simulator initialization functions
-    # # ---------------------------------------------------------------------
-    def initializeEnvironment(self):
-        ## Initialize game environment
-
-        if self.display_text:
-            print "initializing RLE"
-
-        if self.gameString==None or self.levelString==None:
-            self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
-        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
-        self.environment = self.rleCreateFunc()
-        return
-
-    def initializeRLEFromGame(self):
-        ## Part of a method for faster state copying, used in planner, etc.
-        gameString, levelString = self.gameString, self.levelString
-        if gameString == None or levelString == None:
-            gameString, levelString = defInputGame(self.gameFilename, randomize=False)
-        rleCreateFunc = lambda: createRLInputGameFromStrings(gameString, levelString)
-        rle = rleCreateFunc()
-        return rle
-
     def hyperparameterSwitch(self, new_index):
         if new_index!=self.hyperparameter_index:
             self.hyperparameter_index = new_index
