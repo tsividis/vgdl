@@ -6,7 +6,7 @@ import cPickle, cloudpickle
 from datetime import datetime
 import os, subprocess, shutil
 import time
-
+from IPython import embed
 
 """
 Environment class for running VGDL experiments
@@ -158,6 +158,7 @@ class Environment:
             subprocess.Popen(command)
 
         return
+
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
@@ -173,14 +174,14 @@ class Environment:
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
 
-
         loaded_n_level=0
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.agent.param_ID+'_'+self.task_ID
         loadedState = self.agent.bookkeeping.loadCurriculumState(curriculumSaveFile)
         if loadedState is not None:
-            self = loadedState['agent']
+            self.agent = loadedState['agent']
             loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
-
+            # print "loaded a game"
+            # embed()
         j=0
         fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
@@ -206,7 +207,9 @@ class Environment:
             forfeit_level = False
             while not win and not forfeit_level:# and i<15:
                 self.n_level = n_level
+                self.agent.n_level = n_level
                 self.within_level_iteration = i
+                self.agent.within_level_iteration = i
                 gameObject, win, score, steps, forfeit_level = self.playEpisode(gameObject, win)
                 
                 ## TODO: clean up below stuff, too.
@@ -231,8 +234,11 @@ class Environment:
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
 
+                # print "about to save state"
+                # embed()
                 self.agent.bookkeeping.saveCurriculumState(self.agent, episodeCompactStates)
-
+                # print "saved state"
+                # embed()
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
@@ -243,7 +249,9 @@ class Environment:
 
                 if win:
                     self.n_level += 1
+                    self.agent.n_level += 1
                     self.within_level_iteration = 0
+                    self.agent.within_level_iteration = 0
                     
                 ## will write video data at the end of each episode
                 if self.record_video_info:

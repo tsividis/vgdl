@@ -2,6 +2,7 @@ import cPickle, cloudpickle
 from datetime import datetime
 import os, subprocess, shutil
 import time
+from IPython import embed
 
 
 """
@@ -25,16 +26,30 @@ class Bookkeeping:
             os.makedirs(self.curriculumDir)
 
     def saveCurriculumState(self, agent, episodeCompactStates):
-        if 'pedro' in os.getcwd():
-            return
-        filename = self.curriculumDir+'/'+curriculumSaveFile
+        # if 'pedro' in os.getcwd():
+            # return
+        filename = self.curriculumDir+'/'+self.curriculumSaveFile
         savedState = {'agent':agent,
                       'episodeCompactStates': episodeCompactStates}
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
 
+    def loadCurriculumState(self, filename):
+        ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
+        print self.curriculumDir
+        print filename
+        if filename in os.listdir(self.curriculumDir):
+            try:
+                print "found saved curriculum state"
+                loadedState = self.loadState(self.curriculumDir+'/'+filename)
+                print "loaded curriculum state"
+                return loadedState
+            except:
+                os.remove(self.curriculumDir+'/'+filename)
+                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+                return None
+
     def saveEpisodeState(self, agent):
-        
         if not self.saveMidEpisode:
             return
 
@@ -66,19 +81,6 @@ class Bookkeeping:
         with open(filename, 'wb') as f:
             cloudpickle.dump(self, f)
         return
-
-    def loadCurriculumState(self, filename):
-        ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
-        if filename in os.listdir(self.curriculumDir):
-            try:
-                print "found saved curriculum state"
-                loadedState = self.loadState(self.curriculumDir+'/'+filename)
-                print "loaded curriculum state"
-                return loadedState
-            except:
-                os.remove(self.curriculumDir+'/'+filename)
-                print "failed to load curriculum state. deleting corrupted file and starting from scratch"
-                return None
 
     def deleteEpisodeFile(self):
         if self.saveMidEpisode:
