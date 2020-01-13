@@ -26,8 +26,8 @@ class Bookkeeping:
             os.makedirs(self.curriculumDir)
 
     def saveCurriculumState(self, agent, episodeCompactStates):
-        # if 'pedro' in os.getcwd():
-            # return
+        if 'pedro' in os.getcwd():
+            return
         filename = self.curriculumDir+'/'+self.curriculumSaveFile
         savedState = {'agent':agent,
                       'episodeCompactStates': episodeCompactStates}
