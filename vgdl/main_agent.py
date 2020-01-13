@@ -662,7 +662,7 @@ class Agent:
 
 
 
-    def reversedExecuteStep(self, action):
+    def step(self, action):
 
         if self.rle.getTime() == 0:
             self.beginningOfEpisodeManagement()
@@ -675,8 +675,6 @@ class Agent:
 
         self.hypotheses[0].dryingPaint = set()
 
-
-        print 'reversedExecuteStepeffects 1', self.rle.getEffectListByColor()
 
         theory_change_flag = False
 
@@ -731,10 +729,6 @@ class Agent:
             self.quitting = ended
             self.episodeRecord.insert(0, (win, effects))
 
-        # if effects and self.agentState:
-        #     print self.agentState
-        #     embed()
-
         if self.display_states:
             print "score: {}, game step: {}".format(self.rle.getScore(), self.rle.getTime())
 
@@ -750,9 +744,6 @@ class Agent:
 
         ## If any collisions occurred
         if effects:
-            # if self.display_text:
-            # print effects
-            # embed()
             # #  PRECONDITIONS HANDLING
             # # Current assumptions:
             # # - Only one resource can change for each timestep

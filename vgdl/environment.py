@@ -301,7 +301,7 @@ class Environment:
 
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
-            action, quitting = self.agent.reversedExecuteStep(None)
+            action, quitting = self.agent.step(None)
 
 
             ### TODO: environment step should overload rle and produce a blue printout.
