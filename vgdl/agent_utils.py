@@ -2,6 +2,21 @@ from WBP import *
 import time
 from termcolor import colored
 
+def getSpritesByColor(environment, color):
+    outList = []
+    spriteGroups = environment.getSpriteGroups()
+    for k in spriteGroups.keys():
+        if spriteGroups[k] and spriteGroups[k][0].colorName==color:
+            outList.extend(spriteGroups[k])
+    if outList:
+        return outList
+    else:
+        return None
+
+def findNearestSprite(sprite, spriteList):
+    ## returns the sprite in spriteList whose location best matches the location of sprite.
+    return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
+
 def translate_events(events, all_objects, rle):
 	if events is None:
 		return None

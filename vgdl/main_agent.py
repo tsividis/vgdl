@@ -11,14 +11,12 @@ from collections import defaultdict
 from hyperparameters import hyperparameter_sets, metacontroller_sets
 from math import log
 import WBP
-import importlib
 import numpy as np
 import random
-import cPickle, cloudpickle
 import time
 from datetime import datetime
 import copy
-from agent_utils import translate_events
+from agent_utils import translate_events, findNearestSprite, getSpritesByColor
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from dynamic_type_inference import dynamicTypeDistribution_VGDL1
 from termcolor import colored
@@ -197,20 +195,6 @@ class Agent:
         planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
         return planner_hyperparameters
 
-    def getSpritesByColor(self, environment, color):
-        outList = []
-        spriteGroups = environment.getSpriteGroups()
-        for k in spriteGroups.keys():
-            if spriteGroups[k] and spriteGroups[k][0].colorName==color:
-                outList.extend(spriteGroups[k])
-        if outList:
-            return outList
-        else:
-            return None
-
-    def find_nearest_sprite(self, sprite, spriteList):
-        ## returns the sprite in spriteList whose location best matches the location of sprite.
-        return sorted(spriteList, key=lambda x:abs(x.rect[0]-sprite.rect[0])+abs(x.rect[1]-sprite.rect[1]))[0]
 
     def setSpritePositions(self, environment, Vrle, hypothesis):
         ## Sets positions of objects in Vrle to what they were in the environment. E.g., if we want to start a simulation according to the model specified by 'hypothesis' at the state contained in 'rle', this will return Vrle: a playable game whose rules run according to the model.
@@ -219,9 +203,9 @@ class Agent:
         for k in old_sprite_groups.keys():
             if old_sprite_groups[k]:
                 color = Vrle.getSpriteGroups()[k][0].colorName
-                matchingSpritesInRLE = self.getSpritesByColor(environment, color)
+                matchingSpritesInRLE = getSpritesByColor(environment, color)
                 for sprite in old_sprite_groups[k]:
-                    matchingSprite = self.find_nearest_sprite(sprite, matchingSpritesInRLE)
+                    matchingSprite = findNearestSprite(sprite, matchingSpritesInRLE)
                     sprite.rect = matchingSprite.rect
                     sprite.lastmove = matchingSprite.lastmove
                     sprite.ID2 = matchingSprite.ID
@@ -298,22 +282,6 @@ class Agent:
         return gameObject
 
     def completeHypotheses(self, allObjects, compactStates):
-        
-
-        # previous_colors = [o['type']['color'] for o in self.previous_objects.values()]
-        # current_colors = [o['type']['color'] for o in allObjects.values()]
-        # if all([c in previous_colors for c in current_colors]):
-        #     self.observe(self.environment,  self.memory, 0, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if no new colors on screen, just set up likelihood updates
-        # else:
-        #     self.observe(self.environment, self.memory, 5, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=self.hypotheses[0]) ## if new objects, observe for a few steps so that you're not completely clueless about object movements in the new level, before you start planning.
-        #     ## That is: VGDL description for Missiles specifies a particular orientation, but really the constraint is on horizontal/vertical movement. This decouples the way VGDL wants to take a description from what the actual claim is, and allows you to claim, e.g., that token 1 of some class is moving LEFT and token 2 of the same class is moving RIGHT at a given point in time.
-
-        # ## Make sure any objects that appeared while we were observing are reflected in allObjects
-        # for k,v in self.environment.getObjects().items():
-        #     if k not in allObjects:
-        #         allObjects[k] = v
-
-
         self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
 
         spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
@@ -326,8 +294,6 @@ class Agent:
                 newHypotheses.append(gameObject.addNewObjectsToTheory(hypothesis, spriteTypeHypothesis))
         except:
             pass
-            # print "failed in addNewObjectsToTheory"
-            # embed()
         self.hypotheses = newHypotheses
 
 
@@ -348,82 +314,6 @@ class Agent:
                  }
         self.last_recorded_time = current_time
         return state
-
-    def makeHeatmap(self, statesEncountered, filename):
-        from vgdl.plotting import featurePlot
-        import matplotlib.pyplot as plt
-        from matplotlib.ticker import NullLocator
-        import numpy as np
-
-        states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
-                  if (not s['observe_state']) and s['objects']['avatar'].keys()]
-        width, height = self.environment.width, self.environment.height
-        correction_factor = self.environment.screensize[0]/width
-        corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
-
-        m = np.zeros((width, height))
-        Xs, Ys = [],[]
-
-        block_size=30
-        for s in corrected_states:
-            x = s[0]
-            y = s[1]
-            m[x, y] += 1
-            Xs.append(x*block_size+block_size/2.)
-            Ys.append(y*block_size+block_size/2.)
-
-        plt.imshow(m.T, cmap='viridis')
-        plt.gca().set_axis_off()
-        plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
-            hspace = 0, wspace = 0)
-        plt.margins(0, 0)
-        plt.gca().xaxis.set_major_locator(NullLocator())
-        plt.gca().yaxis.set_major_locator(NullLocator())
-        plt.savefig(filename, bbox_inches='tight', pad_inches=0)
-        plt.close()
-
-
-    def makeImages(self):
-        ## Used for making videos. First we save all states from all episodes as images, then we stitch together into a video.
-        # params_to_print_to_video = self.param_ID
-        params_to_print_to_video = ''
-        game_name_to_print_to_video = self.gameFilename
-        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
-
-    def makeMovie(self, play_movie=False):
-
-        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
-
-        print "Creating Movie"
-        # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
-        # movie_dir = "videos/"
-        movie_dir = "videos/"+self.gameFilename
-        if not os.path.exists(movie_dir):
-            print movie_dir, "didn't exist. making new dir"
-            os.makedirs(movie_dir)
-
-        round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store' and self.gameFilename in d])
-        # video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
-        # video_dirname = movie_dir+"/"+self.gameFilename+'_'+str(round_index)+".mp4"
-        video_dirname = movie_dir+"/"+str(self.movieName)+".mp4"
-        # images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
-        images_dir = "images/tmp/%09d.png"
-        com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
-        command = "{}".format(com)
-        print "images/tmp contents:", os.getcwd()
-        print "in main agent:", command
-        subprocess.call(command, shell=True)
-        # empty image directory
-        shutil.rmtree("images/tmp/"+self.gameFilename)
-        os.makedirs("images/tmp/"+self.gameFilename)
-
-        if play_movie:
-            command = ('open', '-a', 'Quicktime Player', video_dirname)
-            subprocess.Popen(command)
-
-        return
 
     def beginningOfEpisodeManagement(self):
         ### AGENT EPISODE INIT STUFF ###
@@ -750,9 +640,6 @@ class Agent:
 
         self.hypotheses[0].dryingPaint = set()
 
-
-        print 'reversedExecuteStepeffects 1', self.environment.getEffectListByColor()
-
         theory_change_flag = False
 
         try:
@@ -805,10 +692,6 @@ class Agent:
         if ended:
             self.quitting = ended
             self.episodeRecord.insert(0, (win, effects))
-
-        # if effects and self.agentState:
-        #     print self.agentState
-        #     embed()
 
         if self.display_states:
             print "score: {}, game step: {}".format(self.environment.getScore(), self.environment.getTime())
@@ -935,6 +818,81 @@ class Agent:
         self.action = self.planAsNeeded()
 
         return self.action, self.quitting
+
+    def makeHeatmap(self, statesEncountered, filename):
+        from vgdl.plotting import featurePlot
+        import matplotlib.pyplot as plt
+        from matplotlib.ticker import NullLocator
+        import numpy as np
+
+        states = [s['objects']['avatar'].keys()[0] for s in statesEncountered
+                  if (not s['observe_state']) and s['objects']['avatar'].keys()]
+        width, height = self.environment.width, self.environment.height
+        correction_factor = self.environment.screensize[0]/width
+        corrected_states = [(s[0]/correction_factor, s[1]/correction_factor) for s in states]
+
+        m = np.zeros((width, height))
+        Xs, Ys = [],[]
+
+        block_size=30
+        for s in corrected_states:
+            x = s[0]
+            y = s[1]
+            m[x, y] += 1
+            Xs.append(x*block_size+block_size/2.)
+            Ys.append(y*block_size+block_size/2.)
+
+        plt.imshow(m.T, cmap='viridis')
+        plt.gca().set_axis_off()
+        plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
+            hspace = 0, wspace = 0)
+        plt.margins(0, 0)
+        plt.gca().xaxis.set_major_locator(NullLocator())
+        plt.gca().yaxis.set_major_locator(NullLocator())
+        plt.savefig(filename, bbox_inches='tight', pad_inches=0)
+        plt.close()
+
+    def makeImages(self):
+        ## Used for making videos. First we save all states from all episodes as images, then we stitch together into a video.
+        # params_to_print_to_video = self.param_ID
+        params_to_print_to_video = ''
+        game_name_to_print_to_video = self.gameFilename
+        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
+
+    def makeMovie(self, play_movie=False):
+
+        VGDLParser.playGame(self.gameString, self.levelString, self.bookkeeping.statesEncountered, \
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+
+        print "Creating Movie"
+        # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
+        # movie_dir = "videos/"
+        movie_dir = "videos/"+self.gameFilename
+        if not os.path.exists(movie_dir):
+            print movie_dir, "didn't exist. making new dir"
+            os.makedirs(movie_dir)
+
+        round_index = len([d for d in os.listdir(movie_dir) if d != '.DS_Store' and self.gameFilename in d])
+        # video_dirname = movie_dir+"/round"+str(round_index)+".mp4"
+        # video_dirname = movie_dir+"/"+self.gameFilename+'_'+str(round_index)+".mp4"
+        video_dirname = movie_dir+"/"+str(self.movieName)+".mp4"
+        # images_dir = "images/tmp/{}/%09d.png".format(self.gameFilename)
+        images_dir = "images/tmp/%09d.png"
+        com = "ffmpeg -i " +images_dir+ " -pix_fmt yuv420p -filter:v 'setpts=4.0*PTS' "+ video_dirname
+        command = "{}".format(com)
+        print "images/tmp contents:", os.getcwd()
+        print "in main agent:", command
+        subprocess.call(command, shell=True)
+        # empty image directory
+        shutil.rmtree("images/tmp/"+self.gameFilename)
+        os.makedirs("images/tmp/"+self.gameFilename)
+
+        if play_movie:
+            command = ('open', '-a', 'Quicktime Player', video_dirname)
+            subprocess.Popen(command)
+
+        return
 
 class Memory:
     def __init__(self):
