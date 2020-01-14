@@ -33,7 +33,7 @@ date = args.date
 game = args.game if args.game!='' else None
 heatmap = args.heatmap
 
-relative_path = 'demo_data_files/EMPA'
+relative_path = '../data/demo_data_files/EMPA'
 
 path = '{}/{}/results'.format(relative_path, date)
 
@@ -111,7 +111,8 @@ def process_model_run(data, modelrun_ID):
 		for episode_num, episode in enumerate(level):
 			episode_events = defaultdict(lambda:0)
 			for t, state in enumerate(episode):
-				timestep, entropy, score, planner_nodes, episode_end, win, planner_settings, events = state['timestep'], state['entropy'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings'], state['events']
+				timestep, score, planner_nodes, episode_end, win, planner_settings, events = state['timestep'], state['score'], state['planner_nodes'], state['ended'], state['win'], state['planner_settings'], state['events']
+				entropy = 0
 				# if events:
 					# embed()
 				timestep_events = set()
