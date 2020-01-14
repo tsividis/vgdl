@@ -48,7 +48,6 @@ class Agent:
         self.hyperparameter_sets = hyperparameter_sets
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[self.hyperparameter_index]
-        embed()
         self.annealing = 1.
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
         self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
