@@ -13,7 +13,7 @@ from hyperparameters import *
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
-parser.add_argument('--hyperparameter_index', type=int, default=3, help='hyperparameter_index')
+parser.add_argument('--hyperparameter_index', type=str, default='short-term', help='hyperparameter_index')
 parser.add_argument('--metacontroller_index', type=int, default=0, help='metacontroller_index')
 parser.add_argument('--IW_k', type=int, default=1, help='IW_k')
 parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra_atom_allowed')

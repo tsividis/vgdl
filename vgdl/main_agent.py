@@ -26,9 +26,8 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-
 class Agent:
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -47,8 +46,9 @@ class Agent:
         self.movieName = movieName
         ## Main params are loaded from hyperparameters.py
         self.hyperparameter_sets = hyperparameter_sets
-        self.hyperparameter_index = 'short-term'
+        self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[self.hyperparameter_index]
+        embed()
         self.annealing = 1.
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
         self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
@@ -147,7 +147,6 @@ class Agent:
 
         self.total_planner_steps = 0
         self.levels_won = 0
-
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
@@ -253,7 +252,6 @@ class Agent:
         ## Creates initial hypothesis objects by observing the game,
         ## doing initial inference over sprite types, and returning partial
         ## candidate models.
-
 
         ## Initialize dynamic-type distribution
         self.distribution = dynamicTypeDistribution_VGDL1()
