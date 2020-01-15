@@ -163,8 +163,10 @@ class Agent:
                 print "pedro NOT in os.getcwd(); using short dirname"
                 print "param_ID, gamefilename", self.param_ID, self.gameFilename
                 dirname_for_results = "results/{}/{}/".format(self.param_ID, self.gameFilename)
+            print "chose dirname:", dirname_for_results
             filename = "{}{}_{}".format(dirname_for_results, self.gameFilename, self.timestamp)
             self.filename = filename
+            print "chose filename", self.filename
             if not os.path.exists(dirname_for_results):
                 try:
                     # print "path didn't exist; making", dirname
