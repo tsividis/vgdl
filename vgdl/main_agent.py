@@ -156,7 +156,10 @@ class Agent:
             # dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename) # old data location
             # print "in main_agent"
             # print os.getcwd()
-            dirname_for_results = "../data/demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
+            if 'pedro' in os.getcwd():
+                dirname_for_results = "../data/demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
+            else:
+                dirname_for_results = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname_for_results, self.gameFilename, self.timestamp)
             self.filename = filename
             if not os.path.exists(dirname_for_results):
