@@ -168,6 +168,7 @@ class Agent:
             self.filename = filename
             print "chose filename", self.filename
             if not os.path.exists(dirname_for_results):
+                print "dirname_for_results {} didn't exist".format(dirname_for_results)
                 try:
                     # print "path didn't exist; making", dirname
                     os.makedirs(dirname_for_results)
