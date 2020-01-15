@@ -155,10 +155,13 @@ class Agent:
         if self.record_states:
             # dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename) # old data location
             # print "in main_agent"
-            # print os.getcwd()
+            print "current working dir", os.getcwd()
             if 'pedro' in os.getcwd():
+                print "pedro in os.getcwd(); using long dirname"
                 dirname_for_results = "../data/demo_data_files/EMPA/local/results/{}/{}/".format(self.param_ID, self.gameFilename)
             else:
+                print "pedro NOT in os.getcwd(); using short dirname"
+                print "param_ID, gamefilename", self.param_ID, self.gameFilename
                 dirname_for_results = "results/{}/{}/".format(self.param_ID, self.gameFilename)
             filename = "{}{}_{}".format(dirname_for_results, self.gameFilename, self.timestamp)
             self.filename = filename
@@ -167,7 +170,7 @@ class Agent:
                     # print "path didn't exist; making", dirname
                     os.makedirs(dirname_for_results)
                 except:
-                    print "failed  to make dir {} in main_agent.py".format(dirname_for_results)
+                    print "failed to make dir {} in main_agent.py".format(dirname_for_results)
         if self.write_video_info:
             self.dirname_for_video = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(self.dirname_for_video):
