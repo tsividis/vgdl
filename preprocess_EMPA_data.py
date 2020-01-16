@@ -33,7 +33,8 @@ date = args.date
 game = args.game if args.game!='' else None
 heatmap = args.heatmap
 
-relative_path = '../data/demo_data_files/EMPA'
+# relative_path = '../data/demo_data_files/EMPA'
+relative_path = 'data_files/EMPA'
 
 path = '{}/{}/results'.format(relative_path, date)
 
@@ -235,6 +236,7 @@ def merge_results(date):
 	## param_specification/game_name/game_pickle_file
 	## to
 	## param_specification/all_games/pickle_files
+	# embed()
 	if 'all' not in os.listdir('{}/{}/results'.format(relative_path, date)):
 		os.makedirs('{}/{}/results/all'.format(relative_path, date))
 		os.makedirs('{}/{}/results/all/all'.format(relative_path, date))
