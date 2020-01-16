@@ -23,8 +23,6 @@ class Environment:
         self.levelString = None
         self.display_text = False
         self.display_states = False
-        self.record_video_info = True
-        self.write_video_info = True
         self.saveMidEpisode = False
         self.timestamp = False
         self.task_ID = task_ID
@@ -32,16 +30,13 @@ class Environment:
         self.produce_printout = produce_printout
         self.movieName = movieName
         self.agent = agent
+        self.agent.record_video_info = True
+        self.agent.write_video_info = True
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
         
         self.timestamp = timestamp
-
-        if self.write_video_info:
-            self.dirname_for_video = "raw_video_info/{}/{}/".format(agent.param_ID, self.gameFilename)
-            if not os.path.exists(self.dirname_for_video):
-                os.makedirs(self.dirname_for_video)
 
     # ---------------------------------------------------------------------
     #     Simulator initialization functions
@@ -211,7 +206,7 @@ class Environment:
                     # self.statesEncountered = statesEncountered
                     self.makeImages()
                 
-                if self.record_video_info:
+                if self.agent.record_video_info:
                     allStatesEncountered.extend(statesEncountered)
 
                 i += 1
@@ -239,10 +234,10 @@ class Environment:
                     self.agent.within_level_iteration = 0
                     
                 ## will write video data at the end of each episode
-                if self.record_video_info:
+                if self.agent.record_video_info:
                     fullStateList = [v for k,v in sorted(fullStateEpisodes.items())]
-                if self.write_video_info:
-                    videofilename = "{}{}_{}".format(self.dirname_for_video, self.gameFilename, self.timestamp)
+                if self.agent.write_video_info:
+                    videofilename = "{}{}_{}".format(self.agent.dirname_for_video, self.gameFilename, self.timestamp)
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     with open(videofilename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.agent.param_ID, 'episodes':fullStateList, 'time_elapsed':time.time()-starttime}, f)
