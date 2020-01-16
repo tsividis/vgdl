@@ -4,17 +4,17 @@
 #SBATCH --array=0-1
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1440
-#SBATCH --qos=normal
+#SBATCH --partition=sched_om_tenenbaum
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=32G
 #SBATCH --requeue
 ##SBATCH --output /dev/null
 
 # --array=0-2%30 tells it to run array instances 0-2 and to never run more than 30 jobs at a time.
-# if i'm using qos=tenenbaum i shouldn't exceed 30.
-# if i use qos normal i can run more. but then jobs might get taken down and will resume later.
+# if i'm using partition=sched_om_tenenbaum i shouldn't exceed 30.
+# if i use partition=normal i can run more. but then jobs might get taken down and will resume later.
 # given that I don't have safe states it's hard to do that well.
-# use qos=use-everything when running the large batches.
+# use partition=use-everything when running the large batches.
 
 # This is the root path of the repo
 ROOT="/om2/user/tsividis/vgdl"
