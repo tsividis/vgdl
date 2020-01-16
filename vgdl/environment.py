@@ -23,11 +23,9 @@ class Environment:
         self.levelString = None
         self.display_text = False
         self.display_states = False
-        self.record_states = True
         self.record_video_info = True
         self.write_video_info = True
         self.saveMidEpisode = False
-        self.filename = None
         self.timestamp = False
         self.task_ID = task_ID
         self.loaded_n_level = 0
@@ -40,19 +38,6 @@ class Environment:
         
         self.timestamp = timestamp
 
-        if self.record_states:
-            # dirname = "results/{}/{}/".format(self.param_ID, self.gameFilename) # old data location
-            # print "in main_agent"
-            # print os.getcwd()
-            dirname_for_results = "../data/demo_data_files/EMPA/local/results/{}/{}/".format(agent.param_ID, self.gameFilename)
-            filename = "{}{}_{}".format(dirname_for_results, self.gameFilename, self.timestamp)
-            self.filename = filename
-            if not os.path.exists(dirname_for_results):
-                try:
-                    # print "path didn't exist; making", dirname
-                    os.makedirs(dirname_for_results)
-                except:
-                    print "failed  to make dir {} in main_agent.py".format(dirname_for_results)
         if self.write_video_info:
             self.dirname_for_video = "raw_video_info/{}/{}/".format(agent.param_ID, self.gameFilename)
             if not os.path.exists(self.dirname_for_video):
@@ -240,11 +225,11 @@ class Environment:
                 # print "saved state"
                 # embed()
                 ## will write all previous episodes to the file at the end of each episode.
-                if self.record_states:
+                if self.agent.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
                     episodeList = [v for k,v in sorted(episodeCompactStates.items())]
 
-                    with open(self.filename, 'wb') as f:
+                    with open(self.agent.filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.agent.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
 
                 if win:

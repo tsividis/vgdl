@@ -36,8 +36,8 @@ class Bookkeeping:
 
     def loadCurriculumState(self, filename):
         ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
-        print self.curriculumDir
-        print filename
+        print "Curriculum directory:", self.curriculumDir
+        print "Filename:", filename
         if filename in os.listdir(self.curriculumDir):
             try:
                 print "found saved curriculum state"
