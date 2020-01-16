@@ -678,14 +678,14 @@ class Agent:
         for s in environment.getAliveSprites():
             ## If the object isn't in our predicted environment or the positions vary
             if s.name=='avatar' or s.colorName in killer_colors:
-                if s.ID not in hypDict and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if environment.getAvatars() and s.ID not in hypDict and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
                     regroundingFlag=True
                     # if self.produce_printout:
                     print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
                     # embed()
                     break
-                if s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+                if environment.getAvatars() and s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                     # if self.produce_printout:
                     print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
                             s, environment.getAvatars()[0], manhattan_distance(s.rect, environment.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
