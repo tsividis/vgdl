@@ -431,6 +431,10 @@ class Agent:
                 self.solution = []
 
             self.steps_in_solution = 0
+
+            if self.environment.getTime()>100 and len(self.solution)==1:
+                print "found solution of length 1. Embedding for debug"
+                embed()
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             # if self.solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
             if self.solution:
@@ -447,6 +451,7 @@ class Agent:
             self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
 
         if self.metacontroller.quitting:
+            print "Metacontroller suggests quitting:", self.metacontroller.quitting
             self.metacontroller.quitting = False
             ## TODO: remove. agent should not be taking steps here.
             ## Figure out why you had to do it and remove it.
@@ -454,10 +459,11 @@ class Agent:
             action = 0
 
         if not ended:
-            action = self.solution[self.steps_in_solution]
-            self.steps_in_solution += 1
+            if not self.quitting:
+                action = self.solution[self.steps_in_solution]
+                self.steps_in_solution += 1
         else:
-            action = None
+            action = 0
             self.quitting = True
 
         return action
@@ -653,6 +659,7 @@ class Agent:
 
         self.action = self.planAsNeeded()
 
+        print "quitting:", self.quitting
         return self.action, self.quitting
 
     def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, objectPositionsArray, i):
@@ -672,8 +679,12 @@ class Agent:
         for s in objectPositionsArray[i].getAliveSprites():
             hypDict[s.ID2] = s
 
-        killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-        killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
+        try:
+            killer_types = [inter.slot2 for inter in hypothesis.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+            killer_colors = [hypothesis.classes[k][0].color for k in killer_types]
+        except:
+            print "problem in checkForDangerOrAvatarMisLocation"
+            embed()
 
         for s in environment.getAliveSprites():
             ## If the object isn't in our predicted environment or the positions vary

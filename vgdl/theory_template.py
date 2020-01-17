@@ -2108,6 +2108,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 	DIRECTION_MAP = {(0,-1):'UP', (0,1):'DOWN', (1,0):'RIGHT', (-1,0):'LEFT'}
 
+	if rle.getTime()>100:
+		print "in writeTheoryToTxt"
+		embed()
 	for k,v in rle._game.sprite_groups.items():
 		if k!='avatar' and k not in rle._obstypes:
 			rle._obstypes[k] = [rle._sprite2state(sprite, oriented=False) for sprite in v if sprite not in rle._game.kill_list]

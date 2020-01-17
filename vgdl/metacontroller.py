@@ -100,7 +100,7 @@ class Metacontroller:
 
         if self.agent.produce_printout:
             print "==============================================================="
-            print "planning with max_nodes: {}, short_horizon: {}".format(self.agent.max_nodes, self.agent.shortHorizon)
+            print "Metacontroller as set/kept max_nodes: {}, short_horizon: {}".format(self.agent.max_nodes, self.agent.shortHorizon)
 
     def annealUp(self):
         ## Agent failed the game either because it made a mistake it couldn't recover from or because search timed out.
@@ -166,9 +166,9 @@ class Metacontroller:
                     self.agent.max_nodes = self.agent.conservative_max_nodes
             else:
                 conservative = False
-            if self.display_text:
-                print "planning in {} mode".format(self.agent.hyperparameter_index)
-                print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.agent.max_nodes, self.agent.shortHorizon, conservative)
+            # if self.display_text:
+            print "planning in {} mode".format(self.agent.hyperparameter_index)
+            print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.agent.max_nodes, self.agent.shortHorizon, conservative)
 
             # TODO: Implement conservative mode as a separate mode.
             if conservative: #aka 'stall' mode
