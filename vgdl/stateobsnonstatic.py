@@ -197,12 +197,22 @@ class StateObsHandlerNonStatic(object):
 
 
     def _rawSensor(self, state):
-        # modified to handle killed sprites
-        kill_dict = defaultdict(list)
-        for sprite in self._game.kill_list:
-            kill_dict[sprite.name].append(self._sprite2state(sprite, oriented=False))
-        return [(state in ostates and state not in kill_dict[name])
-            for name, ostates in sorted(self._obstypes.items())[::-1]]
+        ## is the state (tuple) we care about in the list of
+        ## locations for each alive sprite type in the game?
+
+        aliveSpriteLocs = {k:[] for k in self._game.sprite_groups.keys() if k!='avatar'}
+        for sprite in self.getAliveSprites():
+            if sprite.name!='avatar':
+                aliveSpriteLocs[sprite.name].append(self._sprite2state(sprite, oriented=False))
+
+        return [state in ostates for name, ostates in sorted(aliveSpriteLocs.items())[::-1]]
+
+        # #modified to handle killed sprites
+        # kill_dict = defaultdict(list)
+        # for sprite in self._game.kill_list:
+        #     kill_dict[sprite.name].append(self._sprite2state(sprite, oriented=False))
+        # return [(state in ostates and state not in kill_dict[name])
+        #     for name, ostates in sorted(self._obstypes.items())[::-1]]
 
         # sprite_sensor = []
         # grid_kill_list = [(sprite.name, self._sprite2state(sprite, oriented=False)) for sprite in self._game.kill_list]
