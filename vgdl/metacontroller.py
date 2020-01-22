@@ -34,15 +34,6 @@ class Metacontroller:
 
         return re_plan
 
-    # def checkForRepeatedDeaths(self):
-        # return self.agent.checkForRepeatedDeaths(self.agent.episodeRecord, 2)
-
-    # def checkForMovingTypes(self, env):
-        # return self.agent.checkForMovingTypes(env, self.agent.hypotheses[0])
-
-    # def noNewObjectsInAWhile(self, env):
-        # return self.agent.noNewObjectsInAWhile(env, self.agent.noNewObjectNum)
-
     def checkForRepeatedDeaths(self, episodeRecord, cutoff):
         ## Has agent died the same way (i.e., killed by the same object) multiple times? (Used for metacontroller policy)
         count = 1
@@ -142,11 +133,20 @@ class Metacontroller:
                 planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
 
             elif self.agent.hyperparameter_index == 'short-term':
+                
+                ## Do things move?
                 movingTypes = self.checkForMovingTypes(env, self.agent.hypotheses[0])
-                if env.getTime()>self.agent.bookkeeping.compactStates[-1]['timestep']:
+
+                ## Does the score change with each time-step?
+                if len(self.agent.bookkeeping.compactStates)>1 and env.getTime()>self.agent.bookkeeping.compactStates[-2]['timestep']:
                     scoreChange = env.getScore()!=self.agent.bookkeeping.compactStates[-1]['score']
                 else:
-                    scoreChange = True
+                    scoreChange = False
+
+                if scoreChange:
+                    print "found scoreChange"
+                    embed()
+
                 if self.display_text:
                     print "moving types: {}".format(movingTypes)
                     print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(env, self.agent.hypotheses[0], self.agent.noNewObjectNum))

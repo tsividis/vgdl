@@ -524,7 +524,7 @@ class Agent:
             self.bookkeeping.statesEncountered.append(self.environment.getFullState())
         if self.record_states:
             self.bookkeeping.compactStates.append(self.compactify(self.environment, self.planner_nodes_opened_on_most_recent_step))
-        
+
         self.planner_nodes_opened_on_most_recent_step = 0
 
         distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
