@@ -1,4 +1,4 @@
-from main_agent import Agent
+from EMPA import Agent
 from games_to_hyperparameters import *
 import time
 # import dill

@@ -1,4 +1,4 @@
-from main_agent import Agent
+from EMPA import Agent
 from environment import Environment
 from games_to_hyperparameters import *
 import time
