@@ -107,7 +107,7 @@ class Metacontroller:
             print "annealing up from {} to {} nodes".format(curr_max_nodes, self.agent.max_nodes)
         if self.agent.max_nodes > self.agent.absolute_max_nodes:
             if self.agent.produce_printout:
-                print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.agent.max_nodes/self.agent.max_nodes_annealing)
+                print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.agent.absolute_max_nodes, self.agent.max_nodes/self.agent.max_nodes_annealing)
             self.agent.max_nodes /= self.agent.max_nodes_annealing
             self.agent.stored_max_nodes = self.agent.max_nodes
             forfeit_level = True
@@ -221,6 +221,7 @@ class Metacontroller:
                 self.agent.longHorizonObservations += 1
                 self.agent.takingRandomSteps = True
             else:
+                self.annealUp()
                 self.quitting = True
                 print "DECIDING TO QUIT"
 
