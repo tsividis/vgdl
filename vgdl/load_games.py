@@ -20,6 +20,7 @@ parser.add_argument('--extra_atom_allowed', type=bool, default=True, help='extra
 parser.add_argument('--task_ID', type=int, default=0, help='task_ID')
 parser.add_argument('--heatmap', type=str2bool, default=False, help='heatmap')
 parser.add_argument('--make_movie', type=str2bool, default=False, help='make_movie')
+parser.add_argument('--produce_printout', type=str2bool, default=True, help='produce_printout')
 
 args = parser.parse_args()
 game_number = args.game_number
@@ -31,6 +32,7 @@ extra_atom_allowed = args.extra_atom_allowed
 task_ID = str(args.task_ID)
 make_movie = args.make_movie
 heatmap = args.heatmap
+produce_printout = args.produce_printout
 
 if game_name==str(0):
     game_name = game_names[game_number]
@@ -79,7 +81,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
 
-    environment = Environment(game_name, agent, task_ID=task_ID, produce_printout = True)
+    environment = Environment(game_name, agent, task_ID=task_ID, produce_printout = produce_printout)
 
     ##then pass this down for multiple episodes
     gameObject = None
