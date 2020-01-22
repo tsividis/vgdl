@@ -151,7 +151,8 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         print "Playing and producing game-play video for {}".format(game_name)
     else: 
         print "Playing {}".format(game_name)
-    print "Typical runtime for this game: {}".format(estimated_time[game_name])
+    if game_name in estimated_time:
+        print "Typical runtime for this game: {}".format(estimated_time[game_name])
 
     agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
 
