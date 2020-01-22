@@ -1,4 +1,4 @@
-BasicGame key_handler=Pulse square_size=40
+BasicGame
     SpriteSet
         hole   > Immovable color=RED
         avatar > MovingAvatar color=DARKBLUE
