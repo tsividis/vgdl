@@ -15,13 +15,16 @@ class Metacontroller:
         ## Make sure agent is far enough from unpredictable dangerous objects.
         # Check for disparities between plan and reality
         # (e.g. stochastic effects)
-        if self.agent.steps_in_solution%self.agent.regrounding==0:
+        if self.agent.steps_in_solution%self.agent.regrounding==0 and self.agent.environment.getTime()>0:
             if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.environment, self.agent.hypotheses[0], self.agent.objectPositionsArray, self.agent.steps_in_solution):
                 re_plan = True
                 print "regrounding"
 
-        if self.agent.steps_in_solution+1 >= len(self.agent.solution):
-            print "no more steps in solution"
+        if self.agent.steps_in_solution >= len(self.agent.solution):
+            if self.agent.environment.getTime()==0:
+                print "New episode; need to plan."
+            else:
+                print "No steps remaining in previously-conceived plan; need to re-plan"
             re_plan = True
 
         ended, win = self.agent.environment._isDone()
@@ -100,7 +103,7 @@ class Metacontroller:
 
         if self.agent.produce_printout:
             print "==============================================================="
-            print "Metacontroller as set/kept max_nodes: {}, short_horizon: {}".format(self.agent.max_nodes, self.agent.shortHorizon)
+            print "Will plan with max_nodes: {}, short_horizon: {}".format(self.agent.max_nodes, self.agent.shortHorizon)
 
     def annealUp(self):
         ## Agent failed the game either because it made a mistake it couldn't recover from or because search timed out.

@@ -380,6 +380,9 @@ class Agent:
 
         self.memory.episodeSteps = self.environment.getTime()
 
+        self.solution = []
+        self.steps_in_solution = 0
+
     def planAsNeeded(self):
 
         """ 
@@ -405,11 +408,11 @@ class Agent:
                 print "lost on timeout. switching hyperparameters"
             self.hyperparameterSwitch(new_index='long-term')
 
-        self.metacontroller.setMaxNodes()
-
         self.re_plan = self.metacontroller.isReplanningNecessary()
 
         if self.re_plan==True:
+
+            self.metacontroller.setMaxNodes()
 
             ## Initialize planner
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
@@ -694,7 +697,6 @@ class Agent:
                     regroundingFlag=True
                     # if self.produce_printout:
                     print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
-                    # embed()
                     break
                 if environment.getAvatars() and s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
                     # if self.produce_printout:
