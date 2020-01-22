@@ -254,6 +254,7 @@ class Environment:
             self.makeMovie(play_movie=play_movie)
 
         endtime = time.time()
+        print "Game took {} seconds".format(endtime-starttime)
 
     def playEpisode(self, gameObject, win=False):
 
