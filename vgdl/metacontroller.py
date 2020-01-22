@@ -124,12 +124,12 @@ class Metacontroller:
             if self.checkForRepeatedDeaths(self.agent.episodeRecord, 2):
                 if self.agent.hyperparameter_index == 'long-term':
                     new_index = 'long-term' ## don't switch away from idx_1
-                    conservative = False
+                    stall_mode = False
                 if self.agent.hyperparameter_index == 'short-term':
                     if self.display_text:
                         print "Repeated deaths. Switching to long-range planning"
                     new_index = 'long-term'
-                    conservative = False
+                    stall_mode = False
                 planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
 
             elif self.agent.hyperparameter_index == 'short-term':
@@ -158,26 +158,26 @@ class Metacontroller:
                     ## switch to long-range planning
                     new_index = 'long-term'
                     planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
-                    conservative = False
+                    stall_mode = False
                 else:
                     if self.agent.produce_printout:
                         print "planning in 'stall' mode"
                     new_index = 'short-term'
                     planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
-                    conservative = True
+                    stall_mode = True
                     self.agent.stored_max_nodes = self.agent.max_nodes ##taking annealing into account
-                    self.agent.max_nodes = self.agent.conservative_max_nodes
+                    self.agent.max_nodes = self.agent.stall_mode_max_nodes
             else:
-                conservative = False
+                stall_mode = False
             # if self.display_text:
             print "planning in {} mode".format(self.agent.hyperparameter_index)
-            print "max_nodes: {}, short_horizon: {}, conservative: {}".format(self.agent.max_nodes, self.agent.shortHorizon, conservative)
+            print "max_nodes: {}, short_horizon: {}, stall_mode: {}".format(self.agent.max_nodes, self.agent.shortHorizon, stall_mode)
 
-            # TODO: Implement conservative mode as a separate mode.
-            if conservative: #aka 'stall' mode
+            # TODO: Implement stall_mode mode as a separate mode.
+            if stall_mode: #aka 'stall' mode
                 ## Replan in new mode
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
-                    seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, firstOrderHorizon=self.agent.firstOrderHorizon, conservative=conservative, hyperparameters=planner_hyperparameters, 
+                    seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, firstOrderHorizon=self.agent.firstOrderHorizon, stall_mode=stall_mode, hyperparameters=planner_hyperparameters, 
                     extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, objectNumberTrackingLimit=self.agent.objectNumberTrackingLimit,
                     objectLocationTrackingLimit=self.agent.objectLocationTrackingLimit, lesion=self.agent.planner_lesion)
                 planner_recommended_quitting = p.quitting

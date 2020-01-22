@@ -65,7 +65,7 @@ class Agent:
         self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
         self.longhorizonAnnealing = self.metacontroller_params['longhorizonAnnealing']
         self.shortHorizonRandomChoice = self.metacontroller_params['shortHorizonRandomChoice']
-        self.conservative_max_nodes = self.metacontroller_params['conservative_max_nodes']
+        self.stall_mode_max_nodes = self.metacontroller_params['stall_mode_max_nodes']
         self.extra_atom = self.metacontroller_params['extra_atom']
         self.noNewObjectNum = self.metacontroller_params['noNewObjectNum']
         self.objectLocationTrackingLimit = self.metacontroller_params['objectLocationTrackingLimit']
@@ -109,7 +109,7 @@ class Agent:
         self.param_ID = self.param_ID+'_batchID='+str(0)
     
     
-        self.conservative = False
+        self.stall_mode = False
         self.regrounding = 1
         self.takingRandomSteps = False
 
@@ -415,7 +415,7 @@ class Agent:
             ## Initialize planner
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
-                firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
+                firstOrderHorizon=self.firstOrderHorizon, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
 

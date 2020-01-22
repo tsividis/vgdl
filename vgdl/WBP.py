@@ -40,24 +40,19 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], max_nodes=100000,
-		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=1, objectNumberTrackingLimit=1000, objectLocationTrackingLimit=1000, 
+		firstOrderHorizon=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1, objectNumberTrackingLimit=1000, objectLocationTrackingLimit=1000, 
 		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
 		self.hyperparameter_index = hyperparameters['idx'] ## for keeping track of what we're running
 		self.hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx'])
-		self.T = len(rle._obstypes.keys())+1 #number of object types. Adding avatar, which is not in obstypes.
-		self.vecDim = [rle.outdim[0]*rle.outdim[1], 2, self.T]
 		self.trueAtoms = defaultdict(lambda:0) ## set of atoms that have been true at some point thus far in the planner.
-		self.objectTypes = rle._game.sprite_groups.keys()
-		self.objectTypes.sort()
+		self.objectTypes = sorted(rle._game.sprite_groups.keys())
 		self.seen_limits = seen_limits ## Filling up agent's stores of any given resource it can pick up is a curiosity goal; we keep track of what we've witnessed here so that we can only assign credit (and return a plan) if it's the first time the agent has done this
 		self.IW_k = IW_k
 		self.objIDs = {}
 		self.solution = None
 		self.vecSize = None
-		self.addWaitAction = True
-		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
 		self.objectNumberTrackingLimit = objectNumberTrackingLimit
 		self.objectLocationTrackingLimit = objectLocationTrackingLimit
@@ -77,7 +72,11 @@ class WBP():
 		self.extra_atom = extra_atom
 		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-		self.hypotenuse_squared = self.rle.outdim[0]**2 + self.rle.outdim[1]**2
+
+
+		###################################################
+		### 		Model-related settings				###
+		###################################################
 
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
@@ -90,39 +89,26 @@ class WBP():
 			movingTypesInGame = True
 		else:
 			movingTypesInGame = False
-		
-		if self.hyperparameter_index in [1, 'long-term']:
-			if movingTypesInGame:
-				self.position_score_multiplier = -10
-			else:
-				self.position_score_multiplier = -1
-		elif self.hyperparameter_index in [3, 'short-term']:
-			self.position_score_multiplier = -10
-		else:
-			print "Warning: haven't thought about position_score_multiplier for idx {}".format(self.hyperparameter_index)
-			self.position_score_multiplier = -10
-
-		#################
-		#################
-		self.display = False
-
-		if self.display:
-			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
-
 
 		if self.theory.classes['avatar'][0].args and 'stype' in self.theory.classes['avatar'][0].args:
 			self.thingWeShoot = self.theory.classes['avatar'][0].args['stype']
 		else:
 			self.thingWeShoot = None
 
-		self.boxes = []
-		for rule in self.theory.interactionSet:
-			if rule.interaction == 'bounceForward':
-				self.boxes.append(rule.slot1)
+		self.killer_types = [inter.slot2 for inter in self.theory.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
+
+		self.position_score_multiplier = -10
+		if self.hyperparameter_index in ['long-term'] and not movingTypesInGame:
+			self.position_score_multiplier = -1
+
+		self.display = False
 
 		if self.display:
+			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
 			print 'max nodes', self.max_nodes
 			print "exta atom is {}".format(self.extra_atom)
+		if self.killer_types:
+			print 'killer types', self.killer_types
 
 		i=1
 		for k in rle._game.all_objects.keys():
@@ -133,11 +119,7 @@ class WBP():
 		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
 			self.pixel_size)
 
-		self.killer_types = [inter.slot2 for inter in self.theory.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
-		if self.display and self.killer_types:
-			print 'killer types', self.killer_types
-
-		self.conservative = conservative ## stall mode
+		self.stall_mode = stall_mode
 		self.winning_states = []
 		self.total_nodes_opened, self.total_nodes_selected = 0, 0
 
@@ -146,10 +128,10 @@ class WBP():
 			print "available actions:", self.actions
 
 		## 'stall' mode generates a quick-and-dirty plan that just tries to ensure safety -- increase negative multiplier on proximity to items thought to be dangerous, then plan.
-		if self.conservative:
+		if self.stall_mode:
 			self.hyperparameters['sprite_negative_mult'] = 100
 			if self.display:
-				print "Planning conservatively. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
+				print "Planning stall_modely. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
 		else:
 			if self.display:
 				print "Planning normally."
@@ -202,8 +184,7 @@ class WBP():
 	def getAvailableActions(self):		
 		## get actions from avatar-type definition
 		self.actions = self.rle._game.getAvatars()[0].declare_possible_actions().values()
-		if self.conservative or self.addWaitAction:
-			self.actions.append(NONE)
+		self.actions.append(NONE)
 		self.actions = sorted(self.actions)		
 
 		return
@@ -363,7 +344,7 @@ class WBP():
 
 			if current in [None, 'pickMaxNode']:
 
-				if self.conservative:
+				if self.stall_mode:
 					node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
 				else:
 					if self.display:
@@ -374,7 +355,7 @@ class WBP():
 				self.solution = node.actionSeq
 
 				## If you planned in 'stall' mode and didn't get a solution, make sure you return something anyway (otherwise main agent cycle will break)
-				if self.conservative and not self.solution:
+				if self.stall_mode and not self.solution:
 					# print "you should never actually end up here"
 					if QReward:
 						node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
@@ -413,8 +394,6 @@ class WBP():
 			##
 			## Normal case:
 			##
-
-			self.statesEncountered.append(current.rle._game.getFullState())
 
 			## Update dictionary of locations visited by avatar in search, to encourage it to move around (this is to counterbalance IW: If we're tracking lots of different items in IW, it's possible to get novelty by just watching the world unfold, and usually this isn't the way to find a good plan. So avatar will move around even if it could have gotten IW novelty without doing so.)
 			try:
@@ -520,7 +499,6 @@ class WBP():
 						ended, win, t = child.rle._isDone(getTermination=True)
 
 						self.solution = child.actionSeq
-						self.statesEncountered.append(child.rle._game.getFullState())
 					else:
 						if not (child.terminal and not child.win):
 							QNovelty.append(child)
@@ -539,7 +517,7 @@ class WBP():
 		self.solution = []
 
 		## Stall mode
-		if self.conservative:
+		if self.stall_mode:
 			if QReward:
 				if self.display:
 					print "In short-horizon mode; selecting highest-reward longest sequence"
@@ -565,10 +543,10 @@ class WBP():
 				parentNode = parentNode.parent
 			self.gameString_array = gameString_array[::-1]
 			self.object_positions_array = object_positions_array[::-1]
-			if not self.conservative and self.display:
+			if not self.stall_mode and self.display:
 				print "End of shorthorizon plan"
-			elif self.conservative and self.display:
-				print "End of conservative plan"
+			elif self.stall_mode and self.display:
+				print "End of stall_mode plan"
 			return node, gameString_array, object_positions_array
 		return None, None, None
 
@@ -1210,24 +1188,6 @@ class Node():
 					i+=1
 		return
 
-	def playBack(self, make_movie=False):
-		vrle = copy.deepcopy(self.rle)
-		self.finalStatesEncountered = []
-		terminal = vrle._isDone()[0]
-		i=0
-		if not make_movie:
-			print vrle.show()
-		while not terminal and i<len(self.actionSeq):
-			a = self.actionSeq[i]
-			vrle.step(a)
-			if not make_movie:
-				print actionDict[a]
-				print vrle.show()
-			else:
-				self.finalStatesEncountered.append(vrle._game.getFullState())
-			terminal = vrle._isDone()[0]
-			i+=1
-
 def gen_color():
 	from vgdl.colors import colorDict
 	color_list = colorDict.values()
@@ -1299,7 +1259,7 @@ if __name__ == "__main__":
 
 	## Initialize planner
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, 
-			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
+			firstOrderHorizon=hyperparameters['first_order_horizon'], stall_mode=False, 
 			hyperparameters=planner_hyperparameters, extra_atom=True)
 
 	t1 = time.time()
@@ -1328,4 +1288,3 @@ if __name__ == "__main__":
 	print "total nodes opened: {}. total nodes selected: {}".format(p.total_nodes_opened, p.total_nodes_selected)
 	print "total time searched: {} seconds".format(t2)
 
-	embed()
