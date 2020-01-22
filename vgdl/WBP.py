@@ -39,7 +39,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
-	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], annealing=1, max_nodes=100000, shortHorizon=False,
+	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], max_nodes=100000,
 		firstOrderHorizon=False, conservative=False, hyperparameters={}, extra_atom=False, IW_k=1, objectNumberTrackingLimit=1000, objectLocationTrackingLimit=1000, 
 		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False):
 		self.rle = rle
@@ -57,7 +57,6 @@ class WBP():
 		self.solution = None
 		self.vecSize = None
 		self.addWaitAction = True
-		self.annealing = annealing
 		self.statesEncountered = []
 		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
 		self.objectNumberTrackingLimit = objectNumberTrackingLimit
@@ -1086,10 +1085,10 @@ class Node():
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
 				if 'avatar' == term.termination.s2:
-					avatarNoveltyVals.append([self.WBP.annealing*noveltytermination_val,
+					avatarNoveltyVals.append([noveltytermination_val,
 						ranking])
 				else:
-					heuristicVal += self.WBP.annealing * noveltytermination_val
+					heuristicVal += noveltytermination_val
 
 		if avatarNoveltyVals:
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
@@ -1298,15 +1297,8 @@ if __name__ == "__main__":
 	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
 	max_nodes = 500 if hyperparameters['short_horizon'] else 1000
 
-
-    # p = WBP.WBP(rle, gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, annealing=self.annealing, max_nodes=self.max_nodes, shortHorizon=self.shortHorizon,
-    #     firstOrderHorizon=self.firstOrderHorizon, conservative=self.conservative, hyperparameters=planner_hyperparameters, 
-    #     extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
-    #     objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
-
-
 	## Initialize planner
-	p = WBP(rle, gameFilename, max_nodes=max_nodes, shortHorizon=hyperparameters['short_horizon'],
+	p = WBP(rle, gameFilename, max_nodes=max_nodes, 
 			firstOrderHorizon=hyperparameters['first_order_horizon'], conservative=False, 
 			hyperparameters=planner_hyperparameters, extra_atom=True)
 
