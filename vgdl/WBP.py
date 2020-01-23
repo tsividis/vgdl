@@ -1,40 +1,26 @@
-from IPython import embed
+import copy
 import itertools
 import numpy as np
-from numpy import zeros
 import pygame
-from ontology import BASEDIRS
-from core import VGDLSprite, colorDict, sys
-from stateobsnonstatic import StateObsHandlerNonStatic
-from rlenvironmentnonstatic import *
-import argparse
 import random
-import math
-from threading import Thread
-from collections import defaultdict, deque
 import time
-import copy
-from threading import Lock
-from Queue import Queue
-from util import *
-from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile
-from theory_template import TimeStep, Precondition, InteractionRule, TerminationRule, TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
-NoveltyRule, generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryFromGame
-from ontology import MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, \
-	RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, \
-		AimedFlakAvatar
-from rlenvironmentnonstatic import createRLInputGame
+from collections import defaultdict
 from hyperparameters import hyperparameter_sets
-import cPickle
-
+from IPython import embed
+from ontology import Immovable, Passive, Resource, ResourcePack, RandomNPC, Chaser, AStarChaser, OrientedSprite, Missile, MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar, RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar, AimedFlakAvatar
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+from rlenvironmentnonstatic import *
+from theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
+NoveltyRule, generateTheoryFromGame
+from util import *
+
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
 
 #############################################
-# Sprites with 'DARKGRAY' colorName are not
-# updated in _performAction and fastcopy
+# Sprites with 'DARKGRAY' colorName are not #
+# updated in _performAction and fastcopy	#
 #############################################
 
 ## Base class for width-based planners (IW(k) and 2BFS)
