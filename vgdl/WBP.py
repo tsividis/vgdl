@@ -359,6 +359,39 @@ class WBP():
 
 		return current_actions
 
+	def check_node_for_subgoal_progress(self, node):
+		
+		if not self.firstOrderHorizon:
+			return False
+
+		foundWin = False
+		ended, win = node.terminal, node.win
+		for term in self.theory.terminationSet:
+			if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+				stype = term.termination.stype
+				n_stypes = len([0 for sprite in node.rle.findObjectsInRLE(stype)])
+				if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
+					if ended and not win:
+						node.win, foundWin = False, False
+					else:
+						node.terminal = True
+						node.win, foundWin = True, True
+						if self.display:
+							print "exiting early because progress was made toward", stype
+
+			elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+				stypes = term.termination.stypes
+				n_stypes = sum([len(node.rle.findObjectsInRLE(stype)) for stype in stypes if node.rle.findObjectsInRLE(stype)])
+				if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
+					if ended and not win:
+						node.win, foundWin = False, False
+					else:
+						node.terminal = True
+						node.win, foundWin = True, True
+						if self.display:
+							print "exiting early because progress was made toward", stypes
+		return foundWin
+
 	def BFS(self):
 		QNovelty, QReward = [], []
 		visited = []
@@ -391,7 +424,6 @@ class WBP():
 			self.update_visited_positions(current.rle)
 			current.updateNoveltyDict(QNovelty, QReward)
 			visited.append(current)
-
 			current_actions = self.trim_futile_actions(current)
 
 			if self.display:
@@ -402,62 +434,35 @@ class WBP():
 
 			## See what happens when we take each available action from current node
 			for a in current_actions:
-				skipAction = False
-				if not skipAction:
-					child = Node(self.rle, self, current.actionSeq+[a], current)
+				child = Node(self.rle, self, current.actionSeq+[a], current)
 
-					ended, win = child.terminal, child.win
+				ended, win = child.terminal, child.win
 
-					if self.firstOrderHorizon:
-						# Return plan if first-order progress was made towards
-						# a win condition (if we're running in short-term mode)
-						foundWin = False
-						for term in self.theory.terminationSet:
-							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
-								stype = term.termination.stype
-								n_stypes = len([0 for sprite in child.rle.findObjectsInRLE(stype)])
-								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
-									if ended and not win:
-										child.win, foundWin = False, False
-									else:
-										child.terminal = True
-										child.win, foundWin = True, True
-										if self.display:
-											print "exiting early because progress was made toward", stype
+				# Return plan if first-order progress was made towards
+				# a win condition (if we're running in short-term mode)
+				foundWin = self.check_node_for_subgoal_progress(child)
+				if foundWin:
+					break
 
-							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
-								stypes = term.termination.stypes
-								n_stypes = sum([len(child.rle.findObjectsInRLE(stype)) for stype in stypes if child.rle.findObjectsInRLE(stype)])
-								if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
-									if ended and not win:
-										child.win, foundWin = False, False
-									else:
-										child.terminal = True
-										child.win, foundWin = True, True
-										if self.display:
-											print "exiting early because progress was made toward", stypes
-							if foundWin:
-								break
+				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
+				if child.win:
+					## Store winning state (and grab winning plan and states) so we can compare predictions with reality in main_agent as we execute the plan
+					self.winning_states.append(child)
+					node = child
+					gameString_array, object_positions_array = [], []
+					while node is not None:
+						gameString_array.append(node.rle.show(color='green'))
+						object_positions_array.append(node.rle)
+						node = node.parent
+					self.gameString_array = gameString_array[::-1]
+					self.object_positions_array = object_positions_array[::-1]
+					ended, win, t = child.rle._isDone(getTermination=True)
 
-					## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
-					if child.win:
-						## Store winning state (and grab winning plan and states) so we can compare predictions with reality in main_agent as we execute the plan
-						self.winning_states.append(child)
-						node = child
-						gameString_array, object_positions_array = [], []
-						while node is not None:
-							gameString_array.append(node.rle.show(color='green'))
-							object_positions_array.append(node.rle)
-							node = node.parent
-						self.gameString_array = gameString_array[::-1]
-						self.object_positions_array = object_positions_array[::-1]
-						ended, win, t = child.rle._isDone(getTermination=True)
-
-						self.solution = child.actionSeq
-					else:
-						if not (child.terminal and not child.win):
-							QNovelty.append(child)
-							QReward.append(child)
+					self.solution = child.actionSeq
+				else:
+					if not (child.terminal and not child.win):
+						QNovelty.append(child)
+						QReward.append(child)
 			i+=1
 			self.total_nodes_selected = i
 			self.total_nodes_opened += len(current_actions)
