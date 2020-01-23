@@ -314,8 +314,6 @@ class WBP():
 		if self.display:
 			print "was in None or PickMaxNode"
 
-		print 'RETURNING CONTINGENCY PLAN'
-		embed()
 		return node
 
 	def BFS(self):
@@ -336,7 +334,6 @@ class WBP():
 			if i>0 and i%100==0 and self.display:
 				print "searching node {}".format(i)
 
-			QReward = []
 			## Pop best node according to heuristics
 			current = self.rewardSelection(QReward, QNovelty)
 			
