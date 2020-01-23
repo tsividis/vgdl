@@ -72,7 +72,7 @@ class WBP():
 		self.stall_mode = stall_mode
 		if self.stall_mode:
 			self.hyperparameters['sprite_negative_mult'] = 100
-		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
+		self.padding = 5  ##5  is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
 
 		###################################################
 		###    Bookkeeping and output data structures   ###
@@ -92,7 +92,7 @@ class WBP():
 
 		self.winning_states = []
 		self.total_nodes_opened, self.total_nodes_selected = 0, 0
-		self.getAvailableActions()
+		self.actions = self.getAvailableActions()
 		self.solution = None
 		self.gameString_array = []
 
@@ -145,12 +145,12 @@ class WBP():
 		for term in self.theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				stype = term.termination.stype
-				objs = self.findObjectsInRLE(self.rle, stype)
+				objs = self.rle.findObjectsInRLE(stype)
 				n_stypes = len(objs) if objs is not None else 0
 				self.starting_stype_n[stype] = n_stypes
 			elif isinstance(term, MultiSpriteCounterRule):
 				stypes = term.termination.stypes
-				n_stypes = sum([len(self.findObjectsInRLE(self.rle, stype)) for stype in stypes if self.findObjectsInRLE(self.rle, stype)])
+				n_stypes = sum([len(self.rle.findObjectsInRLE(stype)) for stype in stypes if self.rle.findObjectsInRLE(stype)])
 				self.starting_stype_n[tuple(stypes)] = n_stypes
 
 		###################################################
@@ -172,26 +172,15 @@ class WBP():
 			print "available actions:", self.actions
 			print "ignoring presences for", self.classesWhosePresenceWeIgnore
 			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
-		
 
-	def findObjectsInRLE(self, rle, objName):
-		try:
-			objLocs = [rle._rect2pos(sprite.rect) for sprite in rle.getAliveSprites() if sprite.name==objName]
-		except:
-			return []
-		return objLocs
-
-	def findAvatarInRLE(self, rle):
-		avatar_loc = rle._rect2pos(rle._game.sprite_groups['avatar'][0].rect)
-		return avatar_loc
 
 	def getAvailableActions(self):		
 		## get actions from avatar-type definition
-		self.actions = self.rle._game.getAvatars()[0].declare_possible_actions().values()
-		self.actions.append(NONE)
-		self.actions = sorted(self.actions)		
+		actions = self.rle._game.getAvatars()[0].declare_possible_actions().values()
+		actions.append(NONE)
+		actions = sorted(actions)		
 
-		return
+		return actions
 
 	def calculateAtoms(self, rle):
 		
@@ -253,7 +242,7 @@ class WBP():
 
 		if self.extra_atom:
 			try:
-				avatar_pos = self.findAvatarInRLE(rle)
+				avatar_pos = rle.findAvatarInRLE()
 				vecValue = avatar_pos[1] + avatar_pos[0]*rle.outdim[0] + 1
 			except:
 				vecValue = [0]
@@ -262,9 +251,6 @@ class WBP():
 			lst.append(hash(tuple(stateIW1)))
 		return set(lst)
 
-	def compareDicts(self, d1,d2):
-		## only tells us what is in d2 that isn't in d1, as well as differences in values between shared keys
-		return [k for k in d2.keys() if (k not in d1.keys() or d1[k]!=d2[k])]
 
 	def noveltySelection(self, QNovelty, QReward):
 		bestNodes = sorted(QNovelty, key=lambda n: (n.novelty, -n.intrinsic_reward))
@@ -412,7 +398,7 @@ class WBP():
 				# Removing this just enlarges the search tree
 				if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
 						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
-						self.findObjectsInRLE(current.rle, current.rle._game.getAvatars()[0].stype) and
+						current.rle.findObjectsInRLE(current.rle._game.getAvatars()[0].stype) and
 						'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
 						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
 						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
@@ -455,7 +441,7 @@ class WBP():
 						for term in self.theory.terminationSet:
 							if isinstance(term, SpriteCounterRule) and term.termination.win==True:
 								stype = term.termination.stype
-								n_stypes = len([0 for sprite in self.findObjectsInRLE(child.rle, stype)])
+								n_stypes = len([0 for sprite in child.rle.findObjectsInRLE(stype)])
 								if stype in self.starting_stype_n.keys() and self.starting_stype_n[stype] > n_stypes:
 									if ended and not win:
 										child.win, foundWin = False, False
@@ -467,7 +453,7 @@ class WBP():
 
 							elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 								stypes = term.termination.stypes
-								n_stypes = sum([len(self.findObjectsInRLE(child.rle, stype)) for stype in stypes if self.findObjectsInRLE(child.rle, stype)])
+								n_stypes = sum([len(child.rle.findObjectsInRLE(stype)) for stype in stypes if child.rle.findObjectsInRLE(stype)])
 								if tuple(stypes) in self.starting_stype_n.keys() and self.starting_stype_n[tuple(stypes)] > n_stypes:
 									if ended and not win:
 										child.win, foundWin = False, False
@@ -660,7 +646,7 @@ class Node():
 					for term in self.WBP.theory.terminationSet:
 						if isinstance(term, SpriteCounterRule) and term.termination.win==True:
 							stype = term.termination.stype
-							n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(vrle, stype)])
+							n_stypes = len([0 for sprite in vrle.findObjectsInRLE(stype)])
 							if stype in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[stype] > n_stypes:
 								if not (terminal and not win):
 									terminal, win = True, True
@@ -668,7 +654,7 @@ class Node():
 										print "exiting rollout early because progress was made toward", stype
 						elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
 							stypes = term.termination.stypes
-							n_stypes = sum([len(self.WBP.findObjectsInRLE(vrle, stype)) for stype in stypes if self.WBP.findObjectsInRLE(vrle, stype)])
+							n_stypes = sum([len(vrle.findObjectsInRLE(stype)) for stype in stypes if vrle.findObjectsInRLE(stype)])
 							if tuple(stypes) in self.WBP.starting_stype_n.keys() and self.WBP.starting_stype_n[tuple(stypes)] > n_stypes:
 								if not(terminal and not win):
 									terminal, win = True, True
@@ -799,7 +785,7 @@ class Node():
 			return val
 		else:
 			## Normal case
-			n_stypes = len([0 for sprite in self.WBP.findObjectsInRLE(rle, stype)]) if self.WBP.findObjectsInRLE(rle, stype) else 0
+			n_stypes = len([0 for sprite in rle.findObjectsInRLE(stype)]) if rle.findObjectsInRLE(stype) else 0
 			distance_to_goal = abs(n_stypes - limit)
 
 		if distance_to_goal!=0:
@@ -810,7 +796,7 @@ class Node():
 		if compute_second_order:
 			## Get all positions of objects whose type is in killer_types; compute minimum distance
 			## of each to the stypes we have to destroy. Return min over all mins.
-			objs = [self.WBP.findObjectsInRLE(rle, ktype) for ktype in killer_types]
+			objs = [rle.findObjectsInRLE(ktype) for ktype in killer_types]
 			objs = [obj for obj in objs if obj]
 
 			try:
@@ -822,7 +808,7 @@ class Node():
 				kill_positions = np.array([])
 
 			possiblePairList = []
-			stype_positions = self.WBP.findObjectsInRLE(rle, stype)
+			stype_positions = rle.findObjectsInRLE(stype)
 			try:
 				# A consequence of the two-way generic interactions in the
 				# theory is that minimum-distance object pairs whose interactions
@@ -855,7 +841,7 @@ class Node():
 			val += added_val
 
 			if avatar_preconditions:
-				avatars = [self.WBP.findObjectsInRLE(rle, ktype[0]) for ktype in avatar_preconditions]
+				avatars = [rle.findObjectsInRLE(ktype[0]) for ktype in avatar_preconditions]
 
 				resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
@@ -866,7 +852,7 @@ class Node():
 				resource_yielder_names = [[r for r in ryn if r] for ryn in resource_yielder_names] ## Remove 'None' yielded by last else condition above
 
 				try:
-					resource_positions = [np.concatenate([self.WBP.findObjectsInRLE(rle, yielder) for yielder in yielders]) for yielders in resource_yielder_names]
+					resource_positions = [np.concatenate([rle.findObjectsInRLE( yielder) for yielder in yielders]) for yielders in resource_yielder_names]
 				except:
 					resource_positions = []
 
@@ -966,8 +952,8 @@ class Node():
 				s1 = s2
 				s2 = 'avatar'
 
-			s2_positions = self.WBP.findObjectsInRLE(rle, s2)
-			s1_positions = self.WBP.findObjectsInRLE(rle, s1)
+			s2_positions = rle.findObjectsInRLE(s2)
+			s1_positions = rle.findObjectsInRLE(s1)
 		
 			## Don't return a value for novelty for the mere existence of a projectile that has novelty bonuses
 			if self.WBP.thingWeShoot in theory.classes and self.WBP.thingWeShoot in [s1,s2]:

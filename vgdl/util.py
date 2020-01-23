@@ -39,6 +39,10 @@ def sort_dictionary_by_key(dictionary):
 	sorted_dict = collections.OrderedDict(dictionary)
 	return sorted_dict
 
+def compareDicts(self, d1,d2):
+	## only tells us what is in d2 that isn't in d1, as well as differences in values between shared keys
+	return [k for k in d2.keys() if (k not in d1.keys() or d1[k]!=d2[k])]
+
 """File I/O and strings"""
 def write_to_csv(foldername, filename, game):
 	dirname = 'model_results'

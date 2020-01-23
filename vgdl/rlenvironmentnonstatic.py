@@ -281,6 +281,17 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def getDeadSprites(self):
         return self._game.kill_list
 
+    def findObjectsInRLE(self, objName):
+        try:
+            objLocs = [self._rect2pos(sprite.rect) for sprite in self.getAliveSprites() if sprite.name==objName]
+        except:
+            return []
+        return objLocs
+
+    def findAvatarInRLE(self):
+        avatar_loc = self._rect2pos(self._game.sprite_groups['avatar'][0].rect)
+        return avatar_loc
+
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
         # self._game.terminations.sort(key=lambda x: 0 if (x.name=='SpriteCounter' and x.stype=='avatar' and x.win==  False) else 1 if x.name=='SpriteCounter' else 2)
