@@ -316,6 +316,49 @@ class WBP():
 
 		return node
 
+	def update_visited_positions(self, rle):
+		## Update dictionary of locations visited by avatar in search, to encourage it to move around (this is to counterbalance IW: If we're tracking lots of different items in IW, it's possible to get novelty by just watching the world unfold, and usually this isn't the way to find a good plan. So avatar will move around even if it could have gotten IW novelty without doing so.)
+		try:
+			(x, y) = np.array((rle._game.getAvatars()[0].rect.x,
+				rle._game.getAvatars()[0].rect.y))/self.pixel_size
+			self.visited_positions[x, y] += 1
+		except IndexError:
+			pass
+
+	def trim_futile_actions(self, current):
+		current_actions = self.actions
+		try:
+			# If there's already a Missile on the screen
+			# and the projectile class is a singleton
+			# and the action chosen is shooting
+			# and we're safe:
+			# Don't search actual actions -- just search what happens if you wait for the thing you shot to get somewhere.
+			# Removing this just enlarges the search tree
+			if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
+					'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
+					current.rle.findObjectsInRLE(current.rle._game.getAvatars()[0].stype) and
+					'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
+					bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+					len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
+				current_actions = [0]
+				avatar = current.rle._game.getAvatars()[0]
+				killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
+				if killer_sprites:
+					nearest = find_nearest_sprite(avatar, killer_sprites)
+					if manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
+						current_actions = [0]
+					else:
+						current_actions = self.actions
+						if self.display:
+							print "didn't change current_actions; will plan normally"
+							print "nearest dangerous sprite:", manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
+
+		except (IndexError, AttributeError, TypeError) as e:
+			print "Problem checking missile-shooting conditions."
+			pass
+
+		return current_actions
+
 	def BFS(self):
 		QNovelty, QReward = [], []
 		visited = []
@@ -336,7 +379,6 @@ class WBP():
 
 			## Pop best node according to heuristics
 			current = self.rewardSelection(QReward, QNovelty)
-			
 
 			if current in [None, 'pickMaxNode']:
 				node = self.return_contingency_plan(start, visited, QReward)
@@ -346,48 +388,11 @@ class WBP():
 			## Normal case:
 			##
 
-			## Update dictionary of locations visited by avatar in search, to encourage it to move around (this is to counterbalance IW: If we're tracking lots of different items in IW, it's possible to get novelty by just watching the world unfold, and usually this isn't the way to find a good plan. So avatar will move around even if it could have gotten IW novelty without doing so.)
-			try:
-				(x, y) = np.array((current.rle._game.getAvatars()[0].rect.x,
-					current.rle._game.getAvatars()[0].rect.y))/self.pixel_size
-				self.visited_positions[x, y] += 1
-			except IndexError:
-				pass
-
+			self.update_visited_positions(current.rle)
 			current.updateNoveltyDict(QNovelty, QReward)
 			visited.append(current)
 
-			current_actions = self.actions
-
-			try:
-				# If there's already a Missile on the screen
-				# and the projectile class is a singleton
-				# and the action chosen is shooting
-				# and we're safe:
-				# Don't search actual actions -- just search what happens if you wait for the thing you shot to get somewhere.
-				# Removing this just enlarges the search tree
-				if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
-						'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
-						current.rle.findObjectsInRLE(current.rle._game.getAvatars()[0].stype) and
-						'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
-						bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-						len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
-					current_actions = [0]
-					avatar = current.rle._game.getAvatars()[0]
-					killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
-					if killer_sprites:
-						nearest = find_nearest_sprite(avatar, killer_sprites)
-						if manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
-							current_actions = [0]
-						else:
-							current_actions = self.actions
-							if self.display:
-								print "didn't change current_actions; will plan normally"
-								print "nearest dangerous sprite:", manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
-
-			except (IndexError, AttributeError, TypeError) as e:
-				print "Problem checking missile-shooting conditions."
-				pass
+			current_actions = self.trim_futile_actions(current)
 
 			if self.display:
 				print "________________"
