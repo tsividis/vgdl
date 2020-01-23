@@ -19,7 +19,7 @@ import random
 import math
 import importlib
 from colors import *
-from util import factorize, assign_symbols_to_objects
+from util import factorize, assign_symbols_to_objects, quickcopy
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
 import time
@@ -291,6 +291,65 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def findAvatarInRLE(self):
         avatar_loc = self._rect2pos(self._game.sprite_groups['avatar'][0].rect)
         return avatar_loc
+
+    def fastcopy(self):
+        ## Method for rapid copying of a simulator environment (the self)
+        newRle = empty_copy(self)
+        for k,v in self.__dict__.iteritems():
+            ctype = str(type(getattr(self,k)))
+            if 'defaultdict' in ctype or 'dict' in ctype:
+                newRle.__dict__[k] = v.copy()
+            elif 'list' in ctype:
+                newRle.__dict__[k] = v[:]
+            else:
+                newRle.__dict__[k] = v
+
+        newRle._game = empty_copy(self._game)
+        ignoreKeys = ['spriteDistribution',
+                      'object_token_spriteDistribution',
+                      'spriteUpdateDict',
+                      'movement_options',
+                      'object_token_movement_options',
+                      'uiud']
+        sprite_attrs = ['ID', 'name','rect','x','y','orientation','stypes',
+                        'lastrect','lastmove','stypes', 'lastdisplacement',
+                        'speed','cooldown','direction','color','colorName']
+
+        for k,v in self._game.__dict__.iteritems():
+            if k in ignoreKeys: continue
+
+            ctype = str(type(getattr(self._game,k)))
+
+            if 'list' in ctype:
+                if k != 'kill_list':
+                    newRle._game.__dict__[k] = v[:]
+                else:
+                    newRle._game.kill_list = v[:]
+            elif 'defaultdict' in ctype or 'dict' in ctype:
+                if k != 'sprite_groups':
+                    newRle._game.__dict__[k] = quickcopy(v)
+                else:
+                    new_sprite_groups = defaultdict(list)
+                    for group_name, group in self._game.sprite_groups.iteritems():
+                        for sprite in group:
+                            if sprite.colorName == 'DARKGRAY':
+                                new_sprite_groups[group_name].append(sprite)
+                            else:
+                                new_sprite = empty_copy(sprite)
+                                try:
+                                    for attr in sprite.__dict__.keys():
+                                        if hasattr(sprite, attr):
+                                            setattr(new_sprite, attr, getattr(sprite, attr))
+                                    setattr(new_sprite, 'resources', quickcopy(sprite.__dict__['resources']))
+                                except:
+                                    embed()
+                                new_sprite_groups[group_name].append(new_sprite)
+                    newRle._game.sprite_groups = new_sprite_groups
+            elif 'vgdl' in ctype:
+                newRle._game.__dict__[k] = quickcopy(v)
+            else:
+                setattr(newRle._game, k, quickcopy(v))
+        return newRle
 
     def _isDone(self, getTermination=False):
         # remember reward if the final state ends the game
@@ -647,3 +706,11 @@ if __name__ == "__main__":
         # testSimpleGame1(1, 0, True, True, OBSERVATION_GLOBAL) # to uncomment
         # testFrogs(1, 0, True, True, OBSERVATION_GLOBAL)
         # testAliens(1, 0, True, True, OBSERVATION_GLOBAL)
+
+
+def empty_copy(obj):
+    class Empty(obj.__class__):
+        def __init__(self): pass
+    newcopy = Empty()
+    newcopy.__class__ = obj.__class__
+    return newcopy

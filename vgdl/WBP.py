@@ -554,71 +554,12 @@ class Node():
 		self.okOutcomes = None
 		self.badOutcomes = None
 
-	def fastcopy(self, rle):
-		## Method for rapid copying of a simulator environment (the rle)
-		newRle = self.empty_copy(rle)
-		for k,v in rle.__dict__.iteritems():
-			ctype = str(type(getattr(rle,k)))
-			if 'defaultdict' in ctype or 'dict' in ctype:
-				newRle.__dict__[k] = v.copy()
-			elif 'list' in ctype:
-				newRle.__dict__[k] = v[:]
-			else:
-				newRle.__dict__[k] = v
-
-		newRle._game = self.empty_copy(rle._game)
-		ignoreKeys = ['spriteDistribution',
-					  'object_token_spriteDistribution',
-					  'spriteUpdateDict',
-					  'movement_options',
-					  'object_token_movement_options',
-					  'uiud']
-		sprite_attrs = ['ID', 'name','rect','x','y','orientation','stypes',
-						'lastrect','lastmove','stypes', 'lastdisplacement',
-						'speed','cooldown','direction','color','colorName']
-
-		for k,v in rle._game.__dict__.iteritems():
-			if k in ignoreKeys: continue
-
-			ctype = str(type(getattr(rle._game,k)))
-
-			if 'list' in ctype:
-				if k != 'kill_list':
-					newRle._game.__dict__[k] = v[:]
-				else:
-					newRle._game.kill_list = v[:]
-			elif 'defaultdict' in ctype or 'dict' in ctype:
-				if k != 'sprite_groups':
-					newRle._game.__dict__[k] = quickcopy(v)
-				else:
-					new_sprite_groups = defaultdict(list)
-					for group_name, group in rle._game.sprite_groups.iteritems():
-						for sprite in group:
-							if sprite.colorName == 'DARKGRAY':
-								new_sprite_groups[group_name].append(sprite)
-							else:
-								new_sprite = self.empty_copy(sprite)
-								try:
-									for attr in sprite.__dict__.keys():
-										if hasattr(sprite, attr):
-											setattr(new_sprite, attr, getattr(sprite, attr))
-									setattr(new_sprite, 'resources', quickcopy(sprite.__dict__['resources']))
-								except:
-									embed()
-								new_sprite_groups[group_name].append(new_sprite)
-					newRle._game.sprite_groups = new_sprite_groups
-			elif 'vgdl' in ctype:
-				newRle._game.__dict__[k] = quickcopy(v)
-			else:
-				setattr(newRle._game, k, quickcopy(v))
-		return newRle
-
 	def rollout(self, Vrle, thingWeShoot):
 		## Do rollouts when we shoot projectiles, to get credit for their trajectory rather than just their one-step value
 		successfulRollout = False
 		j=0
 		while not successfulRollout:
-			vrle = self.fastcopy(Vrle)
+			vrle = Vrle.fastcopy()
 			potentialProjectiles = [s for s in vrle._game.sprite_groups[thingWeShoot] if vrle._game.sprite_groups[thingWeShoot] and s.lastmove==0]
 			thingWeShot = potentialProjectiles[0] if potentialProjectiles else None
 
@@ -1064,18 +1005,11 @@ class Node():
 			# print "index error in position score"
 			return 0
 
-	def empty_copy(self, obj):
-		class Empty(obj.__class__):
-			def __init__(self): pass
-		newcopy = Empty()
-		newcopy.__class__ = obj.__class__
-		return newcopy
-
 	def getToCurrentState(self):
 		if self.parent and self.parent.rle is not None:
 			## try to copy parent lastState. Then take action and store as current lastState. If that fails, replay from beginning and store as current lastState
 			try:
-				vrle = self.fastcopy(self.parent.rle)
+				vrle = self.parent.rle.fastcopy()
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
 					res = vrle.step(a, return_obs=True)
@@ -1087,7 +1021,7 @@ class Node():
 				embed()
 		else:
 			self.reconstructed=True
-			vrle = self.fastcopy(self.rle)
+			vrle = self.rle.fastcopy()
 			self.terminal, self.win = vrle._isDone()
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
