@@ -269,9 +269,6 @@ class WBP():
 			if current.terminal and not current.win:
 				print "rewardSelection picked a loss node!!"
 				embed()
-			if current.badOutcomes:
-				print "picked a node with >0 badoutcomes"
-				embed()
 		except:
 			if self.display:
 				print("RewardSelection didn't find a node that satisfied novelty criteria.")
@@ -292,7 +289,6 @@ class WBP():
 
 		start = Node(self.rle, self, [], None)
 		visited.append(start)
-		# start.eval()
 
 		QNovelty.append(start)
 		QReward.append(start)
@@ -333,7 +329,6 @@ class WBP():
 							print "QReward was empty -- returning a plan of a single 'none' action"
 						start = Node(self.rle, self, [], None)
 						child = Node(self.rle, self, start.actionSeq+[0], start)
-						# child.eval()
 						node = child
 
 					parentNode = node
@@ -415,7 +410,6 @@ class WBP():
 				skipAction = False
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
-					# child.eval() ## Evaluate child node value
 
 					ended, win = child.terminal, child.win
 
@@ -495,7 +489,6 @@ class WBP():
 					print "QReward was empty -- returning a futile plan of a single 'none' action"
 				start = Node(self.rle, self, [], None)
 				child = Node(self.rle, self, start.actionSeq+[0], start)
-				# child.eval()
 				node = child
 
 			parentNode = node
@@ -526,17 +519,12 @@ class Node():
 		self.novelty = None
 		self.reward = None
 		self.intrinsic_reward = 0
-		self.metabolic_cost = 0
 		self.children = None
 		self.reconstructed=False
-		self.expanded = False
-		self.rolloutDepth = max(rle.outdim)
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
 		else:
 			self.rolloutArray = []
-		self.okOutcomes = None
-		self.badOutcomes = None
 
 		self.eval()
 
@@ -554,7 +542,7 @@ class Node():
 			i=0
 			terminal, win = vrle._isDone()
 
-			while i<self.rolloutDepth and thingWeShot not in vrle._game.kill_list and not terminal:
+			while i<max(vrle.outdim) and thingWeShot not in vrle._game.kill_list and not terminal:
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT]) ## move randomly during rollout
 				res = vrle.step(a, getTermination=True, getEffectList=True)
 				if self.WBP.display:
@@ -1000,8 +988,6 @@ class Node():
 					a = self.actionSeq[-1]
 					res = vrle.step(a, return_obs=True)
 					self.terminal, self.win = res['ended'], res['win']
-					self.metabolic_cost = 0
-
 			except:
 				print "conditions met but copy failed"
 				embed()
@@ -1013,7 +999,6 @@ class Node():
 			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
 				res = vrle.step(a, return_obs=True)
-				self.metabolic_cost = 0
 				self.terminal, self.win = res['ended'], res['win']
 				i += 1
 		return vrle, self.terminal, self.win
