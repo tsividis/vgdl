@@ -288,11 +288,11 @@ class WBP():
 
 	def BFS(self):
 		QNovelty, QReward = [], []
-		visited, rejected = [], []
+		visited = []
+
 		start = Node(self.rle, self, [], None)
-		start.rle = self.rle
 		visited.append(start)
-		start.eval()
+		# start.eval()
 
 		QNovelty.append(start)
 		QReward.append(start)
@@ -332,9 +332,8 @@ class WBP():
 						if self.display:
 							print "QReward was empty -- returning a plan of a single 'none' action"
 						start = Node(self.rle, self, [], None)
-						start.rle = self.rle
 						child = Node(self.rle, self, start.actionSeq+[0], start)
-						child.eval()
+						# child.eval()
 						node = child
 
 					parentNode = node
@@ -416,7 +415,7 @@ class WBP():
 				skipAction = False
 				if not skipAction:
 					child = Node(self.rle, self, current.actionSeq+[a], current)
-					child.eval() ## Evaluate child node value
+					# child.eval() ## Evaluate child node value
 
 					ended, win = child.terminal, child.win
 
@@ -495,9 +494,8 @@ class WBP():
 				if self.display:
 					print "QReward was empty -- returning a futile plan of a single 'none' action"
 				start = Node(self.rle, self, [], None)
-				start.rle = self.rle
 				child = Node(self.rle, self, start.actionSeq+[0], start)
-				child.eval()
+				# child.eval()
 				node = child
 
 			parentNode = node
@@ -539,6 +537,8 @@ class Node():
 			self.rolloutArray = []
 		self.okOutcomes = None
 		self.badOutcomes = None
+
+		self.eval()
 
 	def rollout(self, Vrle, thingWeShoot):
 		## Do rollouts when we shoot projectiles, to get credit for their trajectory rather than just their one-step value
