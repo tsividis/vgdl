@@ -1103,29 +1103,10 @@ class Node():
 					i+=1
 		return
 
-def gen_color():
-	from vgdl.colors import colorDict
-	color_list = colorDict.values()
-	color_list = [c for c in color_list if c not in ['UUWSWF']]
-	for color in color_list:
-		yield color
-	
-def read_gvgai_game(filename):
-	with open(filename, 'r') as f:
-		new_doc = []
-		g = gen_color()
-		for line in f.readlines():
-			new_line = (" ".join([string if string[:4]!="img="
-				else "color={}".format(next(g))
-				for string in line.split(" ")]))
-			new_doc.append(new_line)
-		new_doc = "\n".join(new_doc)
-	return new_doc
-
-
 
 if __name__ == "__main__":
 	import argparse
+	from util import read_gvgai_game
 
 	## Continuous physics games can't work right now. RLE is discretized, getSensors() relies on this, and a lot of the induction/planning
 	## architecture depends on that. Will take some work to do this well. Best plan is to shrink the grid squares and increase speeds/strengths of

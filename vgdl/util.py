@@ -148,7 +148,24 @@ def get_object_color(objectID, all_objects, game, colorDict):
 		color = [all_objects[k]['type']['color'] for k in all_objects.keys() if all_objects[k]['sprite'].name==objectName][0]
 		return color
 
-
+def gen_color():
+	from vgdl.colors import colorDict
+	color_list = colorDict.values()
+	color_list = [c for c in color_list if c not in ['UUWSWF']]
+	for color in color_list:
+		yield color
+	
+def read_gvgai_game(filename):
+	with open(filename, 'r') as f:
+		new_doc = []
+		g = gen_color()
+		for line in f.readlines():
+			new_line = (" ".join([string if string[:4]!="img="
+				else "color={}".format(next(g))
+				for string in line.split(" ")]))
+			new_doc.append(new_line)
+		new_doc = "\n".join(new_doc)
+	return new_doc
 """Other"""
 def quickcopy(obj):
 	return cPickle.loads(cPickle.dumps(obj))
