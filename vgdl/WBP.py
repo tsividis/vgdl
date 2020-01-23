@@ -44,16 +44,13 @@ class WBP():
 		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
+
+		###################################################
+		### 		Parameter settings					###
+		###################################################
 		self.hyperparameter_index = hyperparameters['idx'] ## for keeping track of what we're running
 		self.hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx'])
-		self.trueAtoms = defaultdict(lambda:0) ## set of atoms that have been true at some point thus far in the planner.
-		self.objectTypes = sorted(rle._game.sprite_groups.keys())
-		self.seen_limits = seen_limits ## Filling up agent's stores of any given resource it can pick up is a curiosity goal; we keep track of what we've witnessed here so that we can only assign credit (and return a plan) if it's the first time the agent has done this
 		self.IW_k = IW_k
-		self.objIDs = {}
-		self.solution = None
-		self.vecSize = None
-		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
 		self.objectNumberTrackingLimit = objectNumberTrackingLimit
 		self.objectLocationTrackingLimit = objectLocationTrackingLimit
 		self.max_nodes = max_nodes
@@ -70,12 +67,37 @@ class WBP():
 			# print "no firstOrderHorizon"
 			self.firstOrderHorizon = False
 		self.extra_atom = extra_atom
-		self.gameString_array = []
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
-
+		## 'stall' mode generates a quick-and-dirty plan that just tries to ensure safety -- increase negative multiplier on proximity to items thought to be dangerous, then plan.
+		self.stall_mode = stall_mode
+		if self.stall_mode:
+			self.hyperparameters['sprite_negative_mult'] = 100
+		self.padding = 5  ##5 is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
 
 		###################################################
-		### 		Model-related settings				###
+		###    Bookkeeping and output data structures   ###
+		###################################################
+
+		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
+		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
+			self.pixel_size)
+
+		self.objIDs = {}
+		self.trueAtoms = defaultdict(lambda:0) ## set of atoms that have been true at some point thus far in the planner.
+		self.objectTypes = sorted(rle._game.sprite_groups.keys())
+		self.seen_limits = seen_limits ## Filling up agent's stores of any given resource it can pick up is a curiosity goal; we keep track of what we've witnessed here so that we can only assign credit (and return a plan) if it's the first time the agent has done this
+		
+		for i,k in enumerate(rle._game.all_objects.keys()):
+			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
+
+		self.winning_states = []
+		self.total_nodes_opened, self.total_nodes_selected = 0, 0
+		self.getAvailableActions()
+		self.solution = None
+		self.gameString_array = []
+
+		###################################################
+		### 		Theory-based heuristics				###
 		###################################################
 
 		if theory == None:
@@ -101,41 +123,6 @@ class WBP():
 		if self.hyperparameter_index in ['long-term'] and not movingTypesInGame:
 			self.position_score_multiplier = -1
 
-		self.display = False
-
-		if self.display:
-			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
-			print 'max nodes', self.max_nodes
-			print "exta atom is {}".format(self.extra_atom)
-		if self.killer_types:
-			print 'killer types', self.killer_types
-
-		i=1
-		for k in rle._game.all_objects.keys():
-			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
-			i+=1
-
-		self.pixel_size = self.rle._game.screensize[0]/self.rle._game.width
-		self.visited_positions = np.zeros(np.array(self.rle._game.screensize)/
-			self.pixel_size)
-
-		self.stall_mode = stall_mode
-		self.winning_states = []
-		self.total_nodes_opened, self.total_nodes_selected = 0, 0
-
-		self.getAvailableActions()
-		if self.display:
-			print "available actions:", self.actions
-
-		## 'stall' mode generates a quick-and-dirty plan that just tries to ensure safety -- increase negative multiplier on proximity to items thought to be dangerous, then plan.
-		if self.stall_mode:
-			self.hyperparameters['sprite_negative_mult'] = 100
-			if self.display:
-				print "Planning stall_modely. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
-		else:
-			if self.display:
-				print "Planning normally."
-		
 		## Ignore objects we don't want to track (i.e., object we know are guaranteed not to move, or objects that move but are too numerous to use IW1 without dramatically expanding the search space.)
 		self.objectsToTrack = []
 		for k in rle._game.sprite_groups.keys():
@@ -153,10 +140,6 @@ class WBP():
 			if (len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit):
 				self.classesWhoseLocationsWeIgnore.append(k)
 
-		if self.display:
-			print "ignoring presences for", self.classesWhosePresenceWeIgnore
-			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
-		
 		## Used to track subgoals. If we start planning in an episode with, say, 8 object tokens of a type we want to get to 0 of, subgoal progress occurs if any node we open has <8 of them.
 		self.starting_stype_n = {}
 		for term in self.theory.terminationSet:
@@ -169,6 +152,27 @@ class WBP():
 				stypes = term.termination.stypes
 				n_stypes = sum([len(self.findObjectsInRLE(self.rle, stype)) for stype in stypes if self.findObjectsInRLE(self.rle, stype)])
 				self.starting_stype_n[tuple(stypes)] = n_stypes
+
+		###################################################
+		### 		Diagnostic printouts				###
+		###################################################
+		self.display = False
+		if self.display:
+			print "In planner; MovingTypesInGame: {}. Planning with idx {} and position_multiplier {}".format(movingTypesInGame, self.hyperparameter_index, self.position_score_multiplier)
+
+			if self.stall_mode:
+				print "Planning in stall_mode. Switched sprite_negative_mult to {}".format(self.hyperparameters['sprite_negative_mult'])
+			else:
+				print "Planning normally"
+
+			print 'max nodes', self.max_nodes
+			print "exta atom is {}".format(self.extra_atom)
+			if self.killer_types:
+				print 'killer types', self.killer_types
+			print "available actions:", self.actions
+			print "ignoring presences for", self.classesWhosePresenceWeIgnore
+			print "ignoring locations for", self.classesWhoseLocationsWeIgnore
+		
 
 	def findObjectsInRLE(self, rle, objName):
 		try:
@@ -246,8 +250,6 @@ class WBP():
 						present.append(0)
 		ind = sum([present[i]*2**i for i in range(len(present))])
 		lst.append(ind)
-		if not self.vecSize:
-			self.vecSize = len(lst)
 
 		if self.extra_atom:
 			try:
@@ -263,13 +265,6 @@ class WBP():
 	def compareDicts(self, d1,d2):
 		## only tells us what is in d2 that isn't in d1, as well as differences in values between shared keys
 		return [k for k in d2.keys() if (k not in d1.keys() or d1[k]!=d2[k])]
-
-	def delta(self, node1, node2):
-		if node1 is None:
-			diff = node2.state
-		else:
-			diff = node2.state-node1.state
-		return diff
 
 	def noveltySelection(self, QNovelty, QReward):
 		bestNodes = sorted(QNovelty, key=lambda n: (n.novelty, -n.intrinsic_reward))
