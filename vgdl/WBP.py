@@ -168,24 +168,29 @@ class WBP():
 
 		return actions
 
+	def isFlicker(self, rle, sprite_name):
+		## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect on the game state: Using its Flicker on every possible location on the board.
+		if ((rle._game.sprite_groups[sprite_name] and 
+			rle._game.sprite_groups[sprite_name][0].colorName in self.theory.spriteObjects.keys() and 
+			any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[sprite_name][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])) or
+			sprite_name in self.classesWhoseLocationsWeIgnore) or sprite_name==self.thingWeShoot:
+			return True
+		else:
+			return False
+
 	def calculateAtoms(self, rle):
 		
 		## Hashes the state according to object-token location and presence/absence of items of each type. Idea is to prune states where no new atom is made true in this search episode.
 
 		lst = []
 		## Track specific locations of objects
-		kl_set = set(rle._game.kill_list)
+		dead_objects = set(rle._game.kill_list)
 		for k in self.objectsToTrack:
-			## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect on the game state: Using its Flicker on every possible location on the board.
-			if ((len(rle._game.sprite_groups[k])>0 and
-					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
-					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])) or
-				k in self.classesWhoseLocationsWeIgnore) or k==self.thingWeShoot:
-
+			if self.isFlicker(rle, k):
 				pass
 			else:
 				for o in rle._game.sprite_groups[k]:
-					if o not in kl_set:
+					if o not in dead_objects:
 						## turn location into vector position (rows appended one after the other.)
 						pos = float(o.rect.left)/rle._game.block_size, float(o.rect.top)/rle._game.block_size
 						vecValue = 10*pos[1] + 10*pos[0]*rle.outdim[0] + 10
@@ -212,14 +217,14 @@ class WBP():
 		## Track present/absent objects
 		present = []
 		for k in [t for t in self.objectTypes if t not in ['wall', 'avatar']]:
-			if (len(rle._game.sprite_groups[k])>0 and
+			if k==self.thingWeShoot or (rle._game.sprite_groups[k] and
 					rle._game.sprite_groups[k][0].colorName in self.theory.spriteObjects.keys() and
 					any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[k][0].colorName].vgdlType) for obj in self.objectsWhosePresenceWeIgnore]) or
-					k in self.classesWhosePresenceWeIgnore) or k==self.thingWeShoot:
+					k in self.classesWhosePresenceWeIgnore):
 				pass
 			else:
 				for o in sorted(rle._game.sprite_groups[k], key=lambda s:s.ID):
-					if o not in kl_set:
+					if o not in dead_objects:
 						present.append(1)
 					else:
 						present.append(0)
@@ -237,39 +242,23 @@ class WBP():
 			lst.append(hash(tuple(stateIW1)))
 		return set(lst)
 
-
-	def noveltySelection(self, QNovelty, QReward):
-		bestNodes = sorted(QNovelty, key=lambda n: (n.novelty, -n.intrinsic_reward))
-		current = bestNodes.pop(0)
-		QNovelty.remove(current)
-		try:
-			QReward.remove(current)
-		except:
-			pass
-		return current
-
 	def rewardSelection(self, QReward, QNovelty):
 		if 'IW' in self.lesion:
 			## IW ablations: don't filter for novelty
-			acceptableNodes = QReward
-			acceptableNodes = filter(lambda n: (not n.terminal or n.win), acceptableNodes)
+			acceptableNodes = filter(lambda n: (not n.terminal or n.win), QReward)
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward))
 		else:
 			## Normal case: Always use novelty to filter. 
 			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-			# # # ## sort max to min for pop()
+			## Sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
-		
-		try:
-			
+
+		if bestNodes:
 			current = bestNodes.pop(0)
-			if (current.terminal, current.win) == (True, False):
-				print "rewardSelection picked a loss node!!"
-				embed()
 			if current.terminal and not current.win:
 				print "rewardSelection picked a loss node!!"
-				embed()
-		except:
+				embed()		
+		else:
 			if self.display:
 				print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			return 'pickMaxNode'
@@ -282,6 +271,52 @@ class WBP():
 
 		return current
 
+	def return_contingency_plan(self, start_node, visited_nodes, QReward):
+		if self.stall_mode:
+			node = max(visited_nodes, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+		else:
+			if self.display:
+				print "Failed to find a novel node. Quitting"
+			node = start_node
+
+		parentNode = node
+		self.solution = node.actionSeq
+
+		## If you planned in 'stall' mode and didn't get a solution, make sure you return something anyway (otherwise main agent cycle will break)
+		if self.stall_mode and not self.solution:
+			# print "you should never actually end up here"
+			if QReward:
+				node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+			else:
+				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
+				## This is a plan of taking a single 'wait' action.
+				if self.display:
+					print "QReward was empty -- returning a plan of a single 'none' action"
+				start = Node(self.rle, self, [], None)
+				child = Node(self.rle, self, start.actionSeq+[0], start)
+				node = child
+
+			parentNode = node
+			self.solution = node.actionSeq
+
+		gameString_array, object_positions_array = [], []
+		while parentNode is not None:
+			gameString_array.append(parentNode.rle.show())
+			object_positions_array.append(copy.deepcopy(parentNode.rle))
+			parentNode = parentNode.parent
+		self.gameString_array = gameString_array[::-1]
+		self.object_positions_array = object_positions_array[::-1]
+
+		## If we failed to find a plan and weren't in 'stall' mode, we should tell the metacontroller we'd like to quit.
+		## It then will quit if this happens a couple times.
+		self.quitting = True
+
+		if self.display:
+			print "was in None or PickMaxNode"
+
+		print 'RETURNING CONTINGENCY PLAN'
+		embed()
+		return node
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -301,56 +336,14 @@ class WBP():
 			if i>0 and i%100==0 and self.display:
 				print "searching node {}".format(i)
 
+			QReward = []
 			## Pop best node according to heuristics
 			current = self.rewardSelection(QReward, QNovelty)
 			
 
 			if current in [None, 'pickMaxNode']:
-
-				if self.stall_mode:
-					node = max(visited, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-				else:
-					if self.display:
-						print "Failed to find a novel node. Quitting"
-					node = start
-
-				parentNode = node
-				self.solution = node.actionSeq
-
-				## If you planned in 'stall' mode and didn't get a solution, make sure you return something anyway (otherwise main agent cycle will break)
-				if self.stall_mode and not self.solution:
-					# print "you should never actually end up here"
-					if QReward:
-						node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
-					else:
-						## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
-						## This is a plan of taking a single 'wait' action.
-						if self.display:
-							print "QReward was empty -- returning a plan of a single 'none' action"
-						start = Node(self.rle, self, [], None)
-						child = Node(self.rle, self, start.actionSeq+[0], start)
-						node = child
-
-					parentNode = node
-					self.solution = node.actionSeq
-
-				gameString_array, object_positions_array = [], []
-				while parentNode is not None:
-					gameString_array.append(parentNode.rle.show())
-					object_positions_array.append(copy.deepcopy(parentNode.rle))
-					parentNode = parentNode.parent
-				self.gameString_array = gameString_array[::-1]
-				self.object_positions_array = object_positions_array[::-1]
-
-				## If we failed to find a plan and weren't in 'stall' mode, we should tell the metacontroller we'd like to quit.
-				## It then will quit if this happens a couple times.
-				self.quitting = True
-
-				if self.display:
-					print "was in None or PickMaxNode"
-
-				return node, gameString_array, object_positions_array
-
+				node = self.return_contingency_plan(start, visited, QReward)
+				return node, self.gameString_array, self.object_positions_array
 			
 			##
 			## Normal case:
