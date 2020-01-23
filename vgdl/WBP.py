@@ -390,7 +390,10 @@ class WBP():
 						node.win, foundWin = True, True
 						if self.display:
 							print "exiting early because progress was made toward", stypes
-		return foundWin
+			if foundWin:
+				break
+
+		return node
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -440,9 +443,7 @@ class WBP():
 
 				# Return plan if first-order progress was made towards
 				# a win condition (if we're running in short-term mode)
-				foundWin = self.check_node_for_subgoal_progress(child)
-				if foundWin:
-					break
+				child = self.check_node_for_subgoal_progress(child)
 
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
