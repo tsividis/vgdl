@@ -435,9 +435,6 @@ class Agent:
 
             self.steps_in_solution = 0
 
-            if self.environment.getTime()>100 and len(self.solution)==1:
-                print "found solution of length 1. Embedding for debug"
-                embed()
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             # if self.solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
             if self.solution:
