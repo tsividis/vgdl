@@ -11,7 +11,6 @@ class Metacontroller:
     def isReplanningNecessary(self):
         
         re_plan = False
-        ### TODO: Pass to metacontroller
         ## Make sure agent is far enough from unpredictable dangerous objects.
         # Check for disparities between plan and reality
         # (e.g. stochastic effects)
@@ -184,14 +183,21 @@ class Metacontroller:
                 p.BFS()
                 self.agent.total_planner_steps += p.total_nodes_opened
                 self.agent.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
-                # print "total planner steps in main_agent:", self.total_planner_steps
-                if p.bestNode is not None:
-                    solution = p.solution
-                    self.agent.predicted_states = p.predicted_states
-                    if solution and self.display_text:
-                        print "got solution"
-                else:
-                    solution = []
+
+                if p.bestNode==None and p.solution:
+                    print "bestNode of None and p.solution!!"
+                    embed()
+
+                solution = p.solution
+                self.agent.predicted_states = p.predicted_states
+
+                # if p.bestNode is not None:
+                #     solution = p.solution
+                #     self.agent.predicted_states = p.predicted_states
+                #     if solution and self.display_text:
+                #         print "got solution"
+                # else:
+                #     solution = []
         self.agent.takingRandomSteps = False
 
         if (not solution) or planner_recommended_quitting:

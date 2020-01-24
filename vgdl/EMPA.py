@@ -411,6 +411,7 @@ class Agent:
         if self.re_plan==True:
 
             self.metacontroller.setMaxNodes()
+            self.steps_in_solution = 0
 
             ## Initialize planner
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
@@ -420,20 +421,23 @@ class Agent:
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
 
             p.BFS()
-            planner_recommended_quitting = p.quitting
+            if p.bestNode==None and p.solution:
+                print "bestNode of None and p.solution!!"
+                embed()
  
-            if p.bestNode is not None:
-                self.solution = p.solution
-                self.predicted_states = p.predicted_states
-                if self.solution and self.display_text:
-                    print "got solution"
-            else:
-                self.solution = []
+            # if p.bestNode is not None:
+            #     self.solution = p.solution
+            #     self.predicted_states = p.predicted_states
+            #     if self.solution and self.display_text:
+            #         print "got solution"
+            # else:
+            #     self.solution = []
 
-            self.steps_in_solution = 0
+            self.solution = p.solution
+            self.predicted_states = p.predicted_states
+            planner_recommended_quitting = p.quitting
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
-            # if self.solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
             if self.solution:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
                 for i,g in enumerate(p.printable_predicted_states[1:]):

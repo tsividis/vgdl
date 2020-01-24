@@ -80,6 +80,7 @@ class WBP():
 		self.total_nodes_opened, self.total_nodes_selected = 0, 0
 		self.actions = self.getAvailableActions()
 		self.solution = None
+		self.predicted_states = []
 		self.printable_predicted_states = []
 		self.bestNode = None
 
@@ -292,38 +293,6 @@ class WBP():
 
 		return
 
-
-	def return_contingency_plan(self, start_node, visited_nodes, QReward):
-		if self.stall_mode:
-			node = max(visited_nodes, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
-		else:
-			if self.display:
-				print "Failed to find a novel node. Quitting"
-			node = start_node
-
-		## If you planned in 'stall' mode and didn't get a solution, make sure you return something anyway (otherwise main agent cycle will break)
-		if self.stall_mode and not self.solution:
-			# print "you should never actually end up here"
-			if QReward:
-				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
-			else:
-				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
-				## This is a plan of taking a single 'wait' action.
-				if self.display:
-					print "QReward was empty -- returning a plan of a single 'none' action"
-				start = Node(self.rle, self, [], None)
-				child = Node(self.rle, self, start.actionSeq+[0], start)
-				node = child
-
-		self.bestNode = node
-		self.solution = node.actionSeq
-
-		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(parentNode)
-
-		if self.display:
-			print "was in None or PickMaxNode"
-
-		return node
 
 	def update_visited_positions(self, rle):
 		## Update dictionary of locations visited by avatar in search, to encourage it to move around (this is to counterbalance IW: If we're tracking lots of different items in IW, it's possible to get novelty by just watching the world unfold, and usually this isn't the way to find a good plan. So avatar will move around even if it could have gotten IW novelty without doing so.)
