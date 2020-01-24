@@ -425,7 +425,7 @@ class Agent:
             if bestNode is not None:
                 self.solution = p.solution
                 gameString_array = p.gameString_array
-                self.objectPositionsArray = objectPositionsArray[::-1]
+                self.objectPositionsArray = objectPositionsArray
                 if self.solution and self.display_text:
                     print "got solution"
             else:

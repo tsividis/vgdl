@@ -188,7 +188,7 @@ class Metacontroller:
                 if bestNode is not None:
                     solution = p.solution
                     gameString_array = p.gameString_array
-                    self.agent.objectPositionsArray = objectPositionsArray[::-1]
+                    self.agent.objectPositionsArray = objectPositionsArray
                     if solution and self.display_text:
                         print "got solution"
                 else:

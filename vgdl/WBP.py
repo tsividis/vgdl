@@ -299,14 +299,17 @@ class WBP():
 			parentNode = node
 			self.solution = node.actionSeq
 
-		gameString_array, object_positions_array = [], []
-		while parentNode is not None:
-			gameString_array.append(parentNode.rle.show())
-			object_positions_array.append(copy.deepcopy(parentNode.rle))
-			parentNode = parentNode.parent
-		self.gameString_array = gameString_array[::-1]
-		self.object_positions_array = object_positions_array[::-1]
+		# gameString_array, object_positions_array = [], []
+		# while parentNode is not None:
+		# 	gameString_array.append(parentNode.rle.show())
+		# 	object_positions_array.append(copy.deepcopy(parentNode.rle))
+		# 	parentNode = parentNode.parent
+		# self.gameString_array = gameString_array[::-1]
+		# self.object_positions_array = object_positions_array[::-1]
 
+		self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(parentNode)
+		## TODO: why is this one different?
+		self.gameString_array = self.gameString_array[::-1]
 		## If we failed to find a plan and weren't in 'stall' mode, we should tell the metacontroller we'd like to quit.
 		## It then will quit if this happens a couple times.
 		self.quitting = True
@@ -395,6 +398,14 @@ class WBP():
 
 		return node
 
+	def extract_predicted_states_from_tree(self, node):
+		gameString_array, object_positions_array = [], []
+		while node is not None:
+			gameString_array.append(node.rle.show())
+			object_positions_array.append(node.rle)
+			node = node.parent
+		return gameString_array, object_positions_array[::-1]
+
 	def BFS(self):
 		QNovelty, QReward = [], []
 		visited = []
@@ -450,13 +461,14 @@ class WBP():
 					## Store winning state (and grab winning plan and states) so we can compare predictions with reality in main_agent as we execute the plan
 					self.winning_states.append(child)
 					node = child
-					gameString_array, object_positions_array = [], []
-					while node is not None:
-						gameString_array.append(node.rle.show(color='green'))
-						object_positions_array.append(node.rle)
-						node = node.parent
-					self.gameString_array = gameString_array[::-1]
-					self.object_positions_array = object_positions_array[::-1]
+					self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(node)
+					# gameString_array, object_positions_array = [], []
+					# while node is not None:
+					# 	gameString_array.append(node.rle.show(color='green'))
+					# 	object_positions_array.append(node.rle)
+					# 	node = node.parent
+					# self.gameString_array = gameString_array[::-1]
+					# self.object_positions_array = object_positions_array
 					ended, win, t = child.rle._isDone(getTermination=True)
 
 					self.solution = child.actionSeq
@@ -473,7 +485,7 @@ class WBP():
 				bestNode = bestNodes[0]
 				if self.display:
 					print "found winning states"
-				return bestNode, gameString_array, object_positions_array
+				return bestNode, self.gameString_array, self.object_positions_array
 
 		self.solution = []
 
@@ -495,18 +507,21 @@ class WBP():
 			parentNode = node
 			self.solution = node.actionSeq
 
-			gameString_array, object_positions_array = [], []
-			while parentNode is not None:
-				gameString_array.append(parentNode.rle.show())
-				object_positions_array.append(copy.deepcopy(parentNode.rle))
-				parentNode = parentNode.parent
-			self.gameString_array = gameString_array[::-1]
-			self.object_positions_array = object_positions_array[::-1]
+			# gameString_array, object_positions_array = [], []
+			# while parentNode is not None:
+			# 	gameString_array.append(parentNode.rle.show())
+			# 	object_positions_array.append(copy.deepcopy(parentNode.rle))
+			# 	parentNode = parentNode.parent
+			# self.gameString_array = gameString_array[::-1]
+			# self.object_positions_array = object_positions_array[::-1]
+			self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(parentNode)
+			##TODO: why is this one different?
+			self.gameString_array = self.gameString_array[::-1]
 			if not self.stall_mode and self.display:
 				print "End of shorthorizon plan"
 			elif self.stall_mode and self.display:
 				print "End of stall_mode plan"
-			return node, gameString_array, object_positions_array
+			return node, self.gameString_array, self.object_positions_array
 		return None, None, None
 
 class Node():
