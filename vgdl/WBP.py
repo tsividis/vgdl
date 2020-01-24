@@ -80,7 +80,7 @@ class WBP():
 		self.total_nodes_opened, self.total_nodes_selected = 0, 0
 		self.actions = self.getAvailableActions()
 		self.solution = None
-		self.gameString_array = []
+		self.printable_predicted_states = []
 		self.bestNode = None
 
 		###################################################
@@ -297,7 +297,7 @@ class WBP():
 		self.bestNode = node
 		self.solution = node.actionSeq
 
-		self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(parentNode)
+		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(parentNode)
 
 		## If we failed to find a plan and weren't in 'stall' mode, we should tell the metacontroller we'd like to quit.
 		## It then will quit if this happens a couple times.
@@ -388,12 +388,12 @@ class WBP():
 		return node
 
 	def extract_predicted_states_from_tree(self, node):
-		gameString_array, object_positions_array = [], []
+		printable_predicted_states, predicted_states = [], []
 		while node is not None:
-			gameString_array.append(node.rle.show())
-			object_positions_array.append(node.rle)
+			printable_predicted_states.append(node.rle.show())
+			predicted_states.append(node.rle)
 			node = node.parent
-		return gameString_array[::-1], object_positions_array[::-1]
+		return printable_predicted_states[::-1], predicted_states[::-1]
 
 	def BFS(self):
 		QNovelty, QReward = [], []
@@ -451,7 +451,7 @@ class WBP():
 					## Store winning state (and grab winning plan and states) so we can compare predictions with reality in main_agent as we execute the plan
 					self.winning_states.append(child)
 
-					self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(child)
+					self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
 
 					ended, win, t = child.rle._isDone(getTermination=True)
 
@@ -488,7 +488,7 @@ class WBP():
 				child = Node(self.rle, self, start.actionSeq+[0], start)
 				node = child
 
-			self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(node)
+			self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
 			self.bestNode = node
 			self.solution = node.actionSeq
 
@@ -1130,8 +1130,8 @@ if __name__ == "__main__":
 	if solution and not p.quitting:
 		print "============================================="
 		print "got solution of length", len(solution)
-		print colored(p.gameString_array[0], 'green')
-		for i,g in enumerate(p.gameString_array[1:]):
+		print colored(p.printable_predicted_states[0], 'green')
+		for i,g in enumerate(p.printable_predicted_states[1:]):
 			print actionDict[solution[i]]
 			print colored(g, 'green')
 		print "============================================="

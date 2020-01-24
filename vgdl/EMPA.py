@@ -137,7 +137,7 @@ class Agent:
         self.action = None
         self.quitting = False
         self.re_plan = False
-        self.objectPositionsArray = [] ##TODO: Pass to memory
+        self.predicted_states = [] ##TODO: Pass to memory
         self.planner_nodes_opened_on_most_recent_step = 0
         self.memory = Memory()
         self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename)
@@ -424,8 +424,7 @@ class Agent:
  
             if p.bestNode is not None:
                 self.solution = p.solution
-                gameString_array = p.gameString_array
-                self.objectPositionsArray = p.object_positions_array
+                self.predicted_states = p.predicted_states
                 if self.solution and self.display_text:
                     print "got solution"
             else:
@@ -437,7 +436,7 @@ class Agent:
             # if self.solution and not self.takingRandomSteps and self.display_states and self.produce_printout:
             if self.solution:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
-                for i,g in enumerate(p.gameString_array[1:]):
+                for i,g in enumerate(p.printable_predicted_states[1:]):
                     print actionDict[self.solution[i]]
                     print colored(g, 'green')
                 print "==============================================================="
@@ -660,7 +659,7 @@ class Agent:
         print "quitting:", self.quitting
         return self.action, self.quitting
 
-    def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, objectPositionsArray, i):
+    def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, predicted_states, i):
         
         ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
 
@@ -668,13 +667,13 @@ class Agent:
 
         regroundingFlag = False
 
-        if not objectPositionsArray:
+        if not predicted_states:
             return regroundingFlag
 
         rleDict, hypDict = {}, {}
 
         ## TODO: change to [i] and change what you're passing here to -1 of what it is.
-        for s in objectPositionsArray[i].getAliveSprites():
+        for s in predicted_states[i].getAliveSprites():
             hypDict[s.ID2] = s
 
         try:

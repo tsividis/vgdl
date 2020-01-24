@@ -16,7 +16,7 @@ class Metacontroller:
         # Check for disparities between plan and reality
         # (e.g. stochastic effects)
         if self.agent.steps_in_solution%self.agent.regrounding==0 and self.agent.environment.getTime()>0:
-            if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.environment, self.agent.hypotheses[0], self.agent.objectPositionsArray, self.agent.steps_in_solution):
+            if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.environment, self.agent.hypotheses[0], self.agent.predicted_states, self.agent.steps_in_solution):
                 re_plan = True
                 print "regrounding"
 
@@ -187,8 +187,7 @@ class Metacontroller:
                 # print "total planner steps in main_agent:", self.total_planner_steps
                 if p.bestNode is not None:
                     solution = p.solution
-                    gameString_array = p.gameString_array
-                    self.agent.objectPositionsArray = p.object_positions_array
+                    self.agent.predicted_states = p.predicted_states
                     if solution and self.display_text:
                         print "got solution"
                 else:
