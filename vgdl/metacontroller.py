@@ -117,6 +117,7 @@ class Metacontroller:
     def determinePlanningModeAndReplanIfNecessary(self, solution, env, planner_recommended_quitting):
         self.display_text = True
         self.agent.produce_printout = True
+        predicted_states, printable_predicted_states = self.agent.predicted_states, self.agent.printable_predicted_states
 
         if not solution:
             ## If planner didn't give a solution, switch modes according to metacontroller policy
@@ -189,8 +190,9 @@ class Metacontroller:
                     embed()
 
                 solution = p.solution
-                self.agent.predicted_states = p.predicted_states
-
+                # self.agent.predicted_states = p.predicted_states
+                predicted_states = p.predicted_states
+                printable_predicted_states = p.printable_predicted_states
                 # if p.bestNode is not None:
                 #     solution = p.solution
                 #     self.agent.predicted_states = p.predicted_states
@@ -232,4 +234,4 @@ class Metacontroller:
         else:
             print "No need to switch hyperparameters. Staying in {} mode".format(self.agent.hyperparameter_index)
 
-        return solution
+        return solution, predicted_states, printable_predicted_states

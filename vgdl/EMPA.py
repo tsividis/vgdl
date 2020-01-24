@@ -138,6 +138,7 @@ class Agent:
         self.quitting = False
         self.re_plan = False
         self.predicted_states = [] ##TODO: Pass to memory
+        self.printable_predicted_states = []
         self.planner_nodes_opened_on_most_recent_step = 0
         self.memory = Memory()
         self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename)
@@ -435,17 +436,19 @@ class Agent:
 
             self.solution = p.solution
             self.predicted_states = p.predicted_states
+            self.printable_predicted_states = p.printable_predicted_states
             planner_recommended_quitting = p.quitting
+            
+            self.solution, self.predicted_states, self.printable_predicted_states = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.environment, planner_recommended_quitting)
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if self.solution:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
-                for i,g in enumerate(p.printable_predicted_states[1:]):
+                for i,g in enumerate(self.printable_predicted_states[1:]):
                     print actionDict[self.solution[i]]
                     print colored(g, 'green')
                 print "==============================================================="
 
-            self.solution = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.environment, planner_recommended_quitting)
 
             ### BOOKKEEPING ###
             self.total_planner_steps += p.total_nodes_opened
