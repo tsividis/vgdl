@@ -272,29 +272,25 @@ class WBP():
 
 		return current
 
-	def return_stall_mode_plan(self, QReward):
-		## Stall mode
-		if self.stall_mode:
-			if QReward:
-				if self.display:
-					print "In short-horizon mode; selecting highest-reward longest sequence"
-				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
-			else:
-				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
-				## This is a plan of taking a single 'wait' action.
-				if self.display:
-					print "QReward was empty -- returning a futile plan of a single 'none' action"
-				start = Node(self.rle, self, [], None)
-				child = Node(self.rle, self, start.actionSeq+[0], start)
-				node = child
-
-			self.bestNode = node
-			self.solution = node.actionSeq
-
-			self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
-
+	def return_best_non_win_plan(self, QReward):
+		if QReward:
+			node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
+		else:
+			## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
+			## This is a plan of taking a single 'wait' action.
 			if self.display:
-				print "End of stall_mode plan"
+				print "QReward was empty -- returning plan of a single 'none' action"
+			start = Node(self.rle, self, [], None)
+			child = Node(self.rle, self, start.actionSeq+[0], start)
+			node = child
+
+		self.bestNode = node
+		self.solution = node.actionSeq
+
+		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
+
+		if self.display:
+			print "End of stall_mode plan"
 
 		return
 
@@ -499,7 +495,7 @@ class WBP():
 		self.solution = []
 
 		if self.stall_mode:
-			self.return_stall_mode_plan(QReward)
+			self.return_best_non_win_plan(QReward)
 			return
 
 		return
