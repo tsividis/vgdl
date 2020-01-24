@@ -278,28 +278,6 @@ class WBP():
 				print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			return 'pickMaxNode'
 		
-
-
-
-	def return_best_non_win_plan(self, nodeList):
-		if nodeList:
-			node = max(nodeList, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
-		else:
-			## Return *some* plan here to make sure things don't break
-			## This is a plan of taking a single 'wait' action.
-			if self.display:
-				print "nodeList was empty -- returning plan of a single 'none' action"
-			start = Node(self.rle, self, [], None)
-			child = Node(self.rle, self, start.actionSeq+[0], start)
-			node = child
-
-		self.bestNode = node
-		self.solution = node.actionSeq
-
-		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
-
-		return
-
 	def updateNoveltyDict(self, node, QReward):
 		jointSet = list(set(QReward))
 		for c in node.candidates:
@@ -311,6 +289,64 @@ class WBP():
 		for n in jointSet:
 			n.novelty = n.updateNovelty()
 		return
+
+	def return_best_non_win_plan(self, QReward):
+		if QReward:
+			node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
+		else:
+			## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
+			## This is a plan of taking a single 'wait' action.
+			if self.display:
+				print "QReward was empty -- returning plan of a single 'none' action"
+			start = Node(self.rle, self, [], None)
+			child = Node(self.rle, self, start.actionSeq+[0], start)
+			node = child
+
+		self.bestNode = node
+		self.solution = node.actionSeq
+
+		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
+
+		if self.display:
+			print "End of stall_mode plan"
+
+		return
+
+	def return_contingency_plan(self, start_node, QReward):
+		if self.stall_mode:
+			node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
+		else:
+			if self.display:
+				print "Failed to find a novel node. Quitting"
+			node = start_node
+
+		## If you planned in 'stall' mode and didn't get a solution, make sure you return something anyway (otherwise main agent cycle will break)
+		if self.stall_mode and not self.solution:
+			# print "you should never actually end up here"
+			if QReward:
+				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
+			else:
+				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
+				## This is a plan of taking a single 'wait' action.
+				if self.display:
+					print "QReward was empty -- returning a plan of a single 'none' action"
+				start = Node(self.rle, self, [], None)
+				child = Node(self.rle, self, start.actionSeq+[0], start)
+				node = child
+
+		self.bestNode = node
+		self.solution = node.actionSeq
+
+		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
+
+		## If we failed to find a plan and weren't in 'stall' mode, we should tell the metacontroller we'd like to quit.
+		## It then will quit if this happens a couple times.
+		self.quitting = True
+
+		if self.display:
+			print "was in None or PickMaxNode"
+
+		return node
 
 	def update_visited_positions(self, rle):
 		## Update dictionary of locations visited by avatar in search, to encourage it to move around (this is to counterbalance IW: If we're tracking lots of different items in IW, it's possible to get novelty by just watching the world unfold, and usually this isn't the way to find a good plan. So avatar will move around even if it could have gotten IW novelty without doing so.)
@@ -394,7 +430,7 @@ class WBP():
 	def extract_predicted_states_from_tree(self, node):
 		printable_predicted_states, predicted_states = [], []
 		while node is not None:
-			printable_predicted_states.append(node.rle.show(color='green'))
+			printable_predicted_states.append(node.rle.show())
 			predicted_states.append(node.rle)
 			node = node.parent
 		return printable_predicted_states[::-1], predicted_states[::-1]
@@ -420,8 +456,7 @@ class WBP():
 			## If we're out of novel nodes, we should tell the metacontroller we'd like to quit.
 			## It then will quit if this happens a couple times.
 			if current in [None, 'pickMaxNode']:
-				self.quitting = True
-				node = self.return_best_non_win_plan(QReward)
+				node = self.return_contingency_plan(start, QReward)
 				return
 			
 			## Bookkeeping -- streamline
@@ -464,7 +499,6 @@ class WBP():
 					print "found winning states"
 				return
 
-		## TODO: Do we need this here?
 		self.solution = []
 
 		if self.stall_mode:
