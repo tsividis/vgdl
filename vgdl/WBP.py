@@ -293,6 +293,17 @@ class WBP():
 
 		return
 
+	def updateNoveltyDict(self, node, QNovelty, QReward):
+		jointSet = list(set(QNovelty+QReward))
+		for c in node.candidates:
+			if self.trueAtoms[c] == 0:
+				self.trueAtoms[c] = 1
+				for n in jointSet:
+					if c in n.candidates:
+						n.candidates.remove(c)
+		for n in jointSet:
+			n.novelty = n.updateNovelty()
+		return
 
 	def update_visited_positions(self, rle):
 		## Update dictionary of locations visited by avatar in search, to encourage it to move around (this is to counterbalance IW: If we're tracking lots of different items in IW, it's possible to get novelty by just watching the world unfold, and usually this isn't the way to find a good plan. So avatar will move around even if it could have gotten IW novelty without doing so.)
@@ -383,10 +394,10 @@ class WBP():
 
 	def BFS(self):
 		QNovelty, QReward = [], []
-		visited = []
+		# visited = []
 
 		start = Node(self.rle, self, [], None)
-		visited.append(start)
+		# visited.append(start)
 
 		QNovelty.append(start)
 		QReward.append(start)
@@ -402,36 +413,30 @@ class WBP():
 			## Pop best node according to heuristics
 			current = self.rewardSelection(QReward, QNovelty)
 
+			## If we're out of novel nodes, we should tell the metacontroller we'd like to quit.
+			## It then will quit if this happens a couple times.
 			if current in [None, 'pickMaxNode']:
-				## If we're out of novel nodes, we should tell the metacontroller we'd like to quit.
-				## It then will quit if this happens a couple times.
 				self.quitting = True
 				node = self.return_best_non_win_plan(QReward)
 				return
 			
-			##
-			## Normal case:
-			##
-
+			## Bookkeeping -- streamline
 			self.update_visited_positions(current.rle)
-			current.updateNoveltyDict(QNovelty, QReward)
-			visited.append(current)
+			self.updateNoveltyDict(current, QNovelty, QReward)
+			# visited.append(current)
+
 			current_actions = self.trim_futile_actions(current)
 
+			## TODO: remove.
 			if self.display:
 				print "________________"
 				if current.actionSeq:
 					print actionDict[current.actionSeq[-1]]
 				print current.rle.show()
 
-			## See what happens when we take each available action from current node
+			## Node expansion
 			for a in current_actions:
 				child = Node(self.rle, self, current.actionSeq+[a], current)
-
-				ended, win = child.terminal, child.win
-
-				# Return plan if first-order progress was made towards
-				# a win condition (if we're running in short-term mode)
 				child = self.check_node_for_subgoal_progress(child)
 
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
@@ -441,7 +446,8 @@ class WBP():
 
 					self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
 
-					ended, win, t = child.rle._isDone(getTermination=True)
+					## TODO: Remove
+					# ended, win, t = child.rle._isDone(getTermination=True)
 
 				else:
 					if not (child.terminal and not child.win):
@@ -1008,18 +1014,6 @@ class Node():
 		else:
 			self.novelty = min([len(c) for c in self.candidates])
 		return self.novelty
-
-	def updateNoveltyDict(self, QNovelty, QReward):
-		jointSet = list(set(QNovelty+QReward))
-		for c in self.candidates:
-			if self.WBP.trueAtoms[c] == 0:
-				self.WBP.trueAtoms[c] = 1
-				for n in jointSet:
-					if c in n.candidates:
-						n.candidates.remove(c)
-		for n in jointSet:
-			n.novelty = n.updateNovelty()
-		return
 
 	def updateObjIDs(self, vrle):
 		i = 0
