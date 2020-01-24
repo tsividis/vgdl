@@ -284,7 +284,7 @@ class WBP():
 		if self.stall_mode and not self.solution:
 			# print "you should never actually end up here"
 			if QReward:
-				node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
 			else:
 				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
 				## This is a plan of taking a single 'wait' action.
@@ -478,7 +478,7 @@ class WBP():
 			if QReward:
 				if self.display:
 					print "In short-horizon mode; selecting highest-reward longest sequence"
-				node = max(QReward, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
 			else:
 				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
 				## This is a plan of taking a single 'wait' action.
