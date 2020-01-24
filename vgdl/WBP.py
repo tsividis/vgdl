@@ -280,8 +280,6 @@ class WBP():
 				print "Failed to find a novel node. Quitting"
 			node = start_node
 
-		self.solution = node.actionSeq
-
 		## If you planned in 'stall' mode and didn't get a solution, make sure you return something anyway (otherwise main agent cycle will break)
 		if self.stall_mode and not self.solution:
 			# print "you should never actually end up here"
@@ -296,7 +294,8 @@ class WBP():
 				child = Node(self.rle, self, start.actionSeq+[0], start)
 				node = child
 
-			self.solution = node.actionSeq
+		self.bestNode = node
+		self.solution = node.actionSeq
 
 		self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(parentNode)
 
@@ -456,7 +455,6 @@ class WBP():
 
 					ended, win, t = child.rle._isDone(getTermination=True)
 
-					self.solution = child.actionSeq
 				else:
 					if not (child.terminal and not child.win):
 						QNovelty.append(child)
@@ -468,6 +466,7 @@ class WBP():
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				self.bestNode = bestNodes[0]
+				self.solution = self.bestNode.actionSeq
 				if self.display:
 					print "found winning states"
 				return
@@ -489,14 +488,15 @@ class WBP():
 				child = Node(self.rle, self, start.actionSeq+[0], start)
 				node = child
 
-			self.solution = node.actionSeq
 			self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(node)
 			self.bestNode = node
+			self.solution = node.actionSeq
 
 			if not self.stall_mode and self.display:
 				print "End of shorthorizon plan"
 			elif self.stall_mode and self.display:
 				print "End of stall_mode plan"
+
 			return
 		return
 
