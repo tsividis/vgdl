@@ -244,7 +244,7 @@ class WBP():
 			lst.append(hash(tuple(stateIW1)))
 		return set(lst)
 
-	def rewardSelection(self, QReward, QNovelty):
+	def rewardSelection(self, QReward):
 		if 'IW' in self.lesion:
 			## IW ablations: don't filter for novelty
 			acceptableNodes = filter(lambda n: (not n.terminal or n.win), QReward)
@@ -259,17 +259,13 @@ class WBP():
 			current = bestNodes.pop(0)
 			if current.terminal and not current.win:
 				print "rewardSelection picked a loss node!!"
-				embed()		
+				embed()
 		else:
 			if self.display:
 				print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			return 'pickMaxNode'
 		
 		QReward.remove(current)
-		try:
-			QNovelty.remove(current)
-		except:
-			pass
 
 		return current
 
@@ -293,8 +289,8 @@ class WBP():
 
 		return
 
-	def updateNoveltyDict(self, node, QNovelty, QReward):
-		jointSet = list(set(QNovelty+QReward))
+	def updateNoveltyDict(self, node, QReward):
+		jointSet = list(set(QReward))
 		for c in node.candidates:
 			if self.trueAtoms[c] == 0:
 				self.trueAtoms[c] = 1
@@ -393,25 +389,22 @@ class WBP():
 		return printable_predicted_states[::-1], predicted_states[::-1]
 
 	def BFS(self):
-		QNovelty, QReward = [], []
-		# visited = []
+		QReward = []
 
 		start = Node(self.rle, self, [], None)
-		# visited.append(start)
 
-		QNovelty.append(start)
 		QReward.append(start)
-		i=0
+		self.total_nodes_selected = 0
 
 		print "planning..."
 		
-		while (len(QNovelty)>0 or len(QReward)>0) and i<self.max_nodes:
+		while len(QReward)>0 and self.total_nodes_selected < self.max_nodes:
 
-			if i>0 and i%100==0 and self.display:
+			if self.total_nodes_selected > 0 and self.total_nodes_selected%100 == 0 and self.display:
 				print "searching node {}".format(i)
 
 			## Pop best node according to heuristics
-			current = self.rewardSelection(QReward, QNovelty)
+			current = self.rewardSelection(QReward)
 
 			## If we're out of novel nodes, we should tell the metacontroller we'd like to quit.
 			## It then will quit if this happens a couple times.
@@ -422,10 +415,7 @@ class WBP():
 			
 			## Bookkeeping -- streamline
 			self.update_visited_positions(current.rle)
-			self.updateNoveltyDict(current, QNovelty, QReward)
-			# visited.append(current)
-
-			current_actions = self.trim_futile_actions(current)
+			self.updateNoveltyDict(current, QReward)
 
 			## TODO: remove.
 			if self.display:
@@ -434,6 +424,11 @@ class WBP():
 					print actionDict[current.actionSeq[-1]]
 				print current.rle.show()
 
+			current_actions = self.trim_futile_actions(current)
+
+			self.total_nodes_selected += 1
+			self.total_nodes_opened += len(current_actions)
+
 			## Node expansion
 			for a in current_actions:
 				child = Node(self.rle, self, current.actionSeq+[a], current)
@@ -441,21 +436,14 @@ class WBP():
 
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
-					## Store winning state (and grab winning plan and states) so we can compare predictions with reality in main_agent as we execute the plan
 					self.winning_states.append(child)
-
 					self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
-
 					## TODO: Remove
 					# ended, win, t = child.rle._isDone(getTermination=True)
 
 				else:
 					if not (child.terminal and not child.win):
-						QNovelty.append(child)
 						QReward.append(child)
-			i+=1
-			self.total_nodes_selected = i
-			self.total_nodes_opened += len(current_actions)
 
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
