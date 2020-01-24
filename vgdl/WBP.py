@@ -245,29 +245,40 @@ class WBP():
 		return set(lst)
 
 	def rewardSelection(self, QReward):
-		if 'IW' in self.lesion:
+		if not self.lesion:
+			
+			## Normal case: Always use novelty to filter. 
+			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
+			
+			## Sort max to min for pop()
+			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+
+		elif 'IW' in self.lesion:
+			
 			## IW ablations: don't filter for novelty
 			acceptableNodes = filter(lambda n: (not n.terminal or n.win), QReward)
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward))
 		else:
-			## Normal case: Always use novelty to filter. 
-			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-			## Sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+			print "Unspecified planner lesion requested"
+			embed()
+
 
 		if bestNodes:
 			current = bestNodes.pop(0)
+			QReward.remove(current)
+
 			if current.terminal and not current.win:
 				print "rewardSelection picked a loss node!!"
 				embed()
+
+			return current
+
 		else:
 			if self.display:
 				print("RewardSelection didn't find a node that satisfied novelty criteria.")
 			return 'pickMaxNode'
 		
-		QReward.remove(current)
 
-		return current
 
 
 	def return_best_non_win_plan(self, nodeList):
