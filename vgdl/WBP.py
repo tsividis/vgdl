@@ -272,9 +272,35 @@ class WBP():
 
 		return current
 
+	def return_stall_mode_plan(self, QReward):
+		## Stall mode
+		if self.stall_mode:
+			if QReward:
+				if self.display:
+					print "In short-horizon mode; selecting highest-reward longest sequence"
+				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
+			else:
+				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
+				## This is a plan of taking a single 'wait' action.
+				if self.display:
+					print "QReward was empty -- returning a futile plan of a single 'none' action"
+				start = Node(self.rle, self, [], None)
+				child = Node(self.rle, self, start.actionSeq+[0], start)
+				node = child
+
+			self.bestNode = node
+			self.solution = node.actionSeq
+
+			self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
+
+			if self.display:
+				print "End of stall_mode plan"
+
+		return
+
 	def return_contingency_plan(self, start_node, visited_nodes, QReward):
 		if self.stall_mode:
-			node = max(visited_nodes, key=lambda n:(n.intrinsic_reward, len(n.actionSeq)))
+			node = max(visited_nodes, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
 		else:
 			if self.display:
 				print "Failed to find a novel node. Quitting"
@@ -418,7 +444,6 @@ class WBP():
 
 			if current in [None, 'pickMaxNode']:
 				node = self.return_contingency_plan(start, visited, QReward)
-				self.bestNode = node
 				return
 			
 			##
@@ -473,31 +498,10 @@ class WBP():
 
 		self.solution = []
 
-		## Stall mode
 		if self.stall_mode:
-			if QReward:
-				if self.display:
-					print "In short-horizon mode; selecting highest-reward longest sequence"
-				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
-			else:
-				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
-				## This is a plan of taking a single 'wait' action.
-				if self.display:
-					print "QReward was empty -- returning a futile plan of a single 'none' action"
-				start = Node(self.rle, self, [], None)
-				child = Node(self.rle, self, start.actionSeq+[0], start)
-				node = child
-
-			self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
-			self.bestNode = node
-			self.solution = node.actionSeq
-
-			if not self.stall_mode and self.display:
-				print "End of shorthorizon plan"
-			elif self.stall_mode and self.display:
-				print "End of stall_mode plan"
-
+			self.return_stall_mode_plan(QReward)
 			return
+
 		return
 
 class Node():
