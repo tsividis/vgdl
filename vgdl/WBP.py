@@ -81,6 +81,7 @@ class WBP():
 		self.actions = self.getAvailableActions()
 		self.solution = None
 		self.gameString_array = []
+		self.bestNode = None
 
 		###################################################
 		### 		Theory-based heuristics				###
@@ -418,7 +419,8 @@ class WBP():
 
 			if current in [None, 'pickMaxNode']:
 				node = self.return_contingency_plan(start, visited, QReward)
-				return node, self.gameString_array, self.object_positions_array
+				self.bestNode = node
+				return
 			
 			##
 			## Normal case:
@@ -465,10 +467,10 @@ class WBP():
 
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
-				bestNode = bestNodes[0]
+				self.bestNode = bestNodes[0]
 				if self.display:
 					print "found winning states"
-				return bestNode, self.gameString_array, self.object_positions_array
+				return
 
 		self.solution = []
 
@@ -489,13 +491,14 @@ class WBP():
 
 			self.solution = node.actionSeq
 			self.gameString_array, self.object_positions_array = self.extract_predicted_states_from_tree(node)
+			self.bestNode = node
 
 			if not self.stall_mode and self.display:
 				print "End of shorthorizon plan"
 			elif self.stall_mode and self.display:
 				print "End of stall_mode plan"
-			return node, self.gameString_array, self.object_positions_array
-		return None, None, None
+			return
+		return
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -1119,13 +1122,11 @@ if __name__ == "__main__":
 			hyperparameters=planner_hyperparameters, extra_atom=True)
 
 	t1 = time.time()
-	bestNode, gameStringArray, objectPositionsArray = p.BFS()
+	p.BFS()
 	t2 = time.time()-t1
 	solution = []
-	if bestNode is not None:
+	if p.bestNode is not None:
 		solution = p.solution
-		gameString_array = p.gameString_array
-		objectPositionsArray = objectPositionsArray[::-1]
 	if solution and not p.quitting:
 		print "============================================="
 		print "got solution of length", len(solution)

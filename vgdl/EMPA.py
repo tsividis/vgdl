@@ -419,13 +419,13 @@ class Agent:
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
 
-            bestNode, gameStringArray, objectPositionsArray = p.BFS()
+            p.BFS()
             planner_recommended_quitting = p.quitting
  
-            if bestNode is not None:
+            if p.bestNode is not None:
                 self.solution = p.solution
                 gameString_array = p.gameString_array
-                self.objectPositionsArray = objectPositionsArray
+                self.objectPositionsArray = p.object_positions_array
                 if self.solution and self.display_text:
                     print "got solution"
             else:

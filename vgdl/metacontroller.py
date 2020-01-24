@@ -181,14 +181,14 @@ class Metacontroller:
                     extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, objectNumberTrackingLimit=self.agent.objectNumberTrackingLimit,
                     objectLocationTrackingLimit=self.agent.objectLocationTrackingLimit, lesion=self.agent.planner_lesion)
                 planner_recommended_quitting = p.quitting
-                bestNode, gameStringArray, objectPositionsArray = p.BFS()
+                p.BFS()
                 self.agent.total_planner_steps += p.total_nodes_opened
                 self.agent.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
                 # print "total planner steps in main_agent:", self.total_planner_steps
-                if bestNode is not None:
+                if p.bestNode is not None:
                     solution = p.solution
                     gameString_array = p.gameString_array
-                    self.agent.objectPositionsArray = objectPositionsArray
+                    self.agent.objectPositionsArray = p.object_positions_array
                     if solution and self.display_text:
                         print "got solution"
                 else:
