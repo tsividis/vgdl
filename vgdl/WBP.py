@@ -972,8 +972,8 @@ class Node():
 				vrle = self.parent.rle.fastcopy()
 				if len(self.actionSeq)>0:
 					a = self.actionSeq[-1]
-					res = vrle.step(a, return_obs=True)
-					self.terminal, self.win = res['ended'], res['win']
+					res = vrle.step(a)
+					self.terminal, self.win = vrle._isDone()
 			except:
 				print "conditions met but copy failed"
 				embed()
