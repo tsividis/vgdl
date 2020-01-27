@@ -265,11 +265,17 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return self._game.effectListByClass
 
     def getAliveSprites(self):
+        if self._game.time == self._game.alive_sprites_update_time:
+            return self._game.alive_sprites
+
         aliveSprites = []
         for spriteList in self.getSpriteGroups().values():
             for sprite in spriteList:
                 if sprite not in self.getDeadSprites():
                     aliveSprites.append(sprite)
+
+        self._game.alive_sprites = aliveSprites
+        self._game.alive_sprites_update_time = self._game.time
         return aliveSprites
 
     def getAliveSpritesByName(self, spriteName):
@@ -376,6 +382,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             return False, False
 
     def _getSensors(self, state=None):
+
         # Get position and orientation
         if state is None:
             # state = { x, y, (rot?) }
@@ -386,6 +393,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             pos = state
 
         res = zeros(self.outdim[0]*self.outdim[1])
+
         # Get sensor data given current state (i.e. position)
         # and whether local state or whole game state is required
         if self.observationType == OBSERVATION_LOCAL:
@@ -424,6 +432,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 for s in range(0,len(os)):
                     if os[s]==True:
                         res[i] = int(res[i]) | (2<<s)
+
         return res
 
     def _performAction(self, action=[], onlyavatar=False):

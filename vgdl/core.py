@@ -267,6 +267,13 @@ class BasicGame(object):
         # contains instance lists
         self.sprite_groups = dict()
         self.extra_sprites = dict()
+        ## Caching of frequently-used data structures
+        self.alive_sprites = []
+        self.alive_sprites_update_time = None
+        self.alive_sprite_locs = {}
+        self.alive_sprite_locs_update_time = None
+        self.presences = None
+        self.presences_update_time = None
         # which sprite types (abstract or not) are singletons?
         self.singletons = []
         # collision effects (ordered by execution order)

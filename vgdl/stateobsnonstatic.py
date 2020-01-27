@@ -13,6 +13,7 @@ from ontology import RotatingAvatar, BASEDIRS, GridPhysics, ShootAvatar, kill_ef
 from core import Avatar
 from tools import listRotate
 from IPython import embed
+import time
 
 from collections import defaultdict
 
@@ -154,6 +155,7 @@ class StateObsHandlerNonStatic(object):
         self._avatar.lastmove = 0
 
     def getState(self):
+
         if self._avatar is None:
             return (-1,-1, 'dead')
         if self.mortalOther:
@@ -171,13 +173,38 @@ class StateObsHandlerNonStatic(object):
 
     def _getPresences(self):
         """ Binary vector of which non-avatar sprites are present. """
-        res = []
-        for skey, pos in sorted(self._gravepoints):
-            if pos in [self._rect2pos(s.rect) for s in self._game.sprite_groups[skey]
-                       if s not in self._game.kill_list]:
-                res.append(1)
-            else:
-                res.append(0)
+        if self._game.time == self._game.presences_update_time:
+            return self._game.presences
+        else:
+            res = []
+            # if self._game.time in [60]:
+                # embed()
+            # print len(self._gravepoints)
+            # t1 = time.time()
+            sprite_names = set([s[0] for s in self._gravepoints])
+            sprite_positions_by_type = dict()
+            for sprite_name in sprite_names:
+                sprite_positions_by_type[sprite_name] = [self._rect2pos(s.rect) for s in self.getAliveSpritesByName(sprite_name)]
+            
+            for skey, pos in sorted(self._gravepoints):
+                if pos in sprite_positions_by_type[skey]:
+                    res.append(1)
+                else:
+                    res.append(0)   
+            # print "{} seconds".format(time.time()-t1)         
+
+            # t1 = time.time()
+            # for skey, pos in sorted(self._gravepoints):
+            #     if pos in [self._rect2pos(s.rect) for s in self._game.sprite_groups[skey]
+            #                if s not in self._game.kill_list]:
+            #         res.append(1)
+            #     else:
+            #         res.append(0)
+            # print "{} seconds".format(time.time()-t1)         
+
+            self._game.presences = tuple(res)
+            self._game.presences_update_time = self._game.time
+
         return tuple(res)
 
     def _setPresences(self, p):
@@ -200,10 +227,17 @@ class StateObsHandlerNonStatic(object):
         ## is the state (tuple) we care about in the list of
         ## locations for each alive sprite type in the game?
 
-        aliveSpriteLocs = {k:[] for k in self._game.sprite_groups.keys() if k!='avatar'}
-        for sprite in self.getAliveSprites():
-            if sprite.name!='avatar':
-                aliveSpriteLocs[sprite.name].append(self._sprite2state(sprite, oriented=False))
+        if self._game.time == self._game.alive_sprite_locs_update_time:
+            aliveSpriteLocs = self._game.alive_sprite_locs
+        else:
+            aliveSpriteLocs = {k:[] for k in self._game.sprite_groups.keys() if k!='avatar'}
+
+            for sprite in self.getAliveSprites():
+                if sprite.name!='avatar':
+                    aliveSpriteLocs[sprite.name].append(self._sprite2state(sprite, oriented=False))
+            
+            self._game.alive_sprite_locs = aliveSpriteLocs
+            self._game.alive_sprite_locs_update_time = self._game.time
 
         return [state in ostates for name, ostates in sorted(aliveSpriteLocs.items())[::-1]]
 
