@@ -290,7 +290,7 @@ class WBP():
 			n.novelty = n.updateNovelty()
 		return
 
-	def return_best_non_win_plan(self, QReward):
+	def return_best_non_win_node(self, QReward):
 		if QReward:
 			node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
 		else:
@@ -301,7 +301,10 @@ class WBP():
 			start = Node(self.rle, self, [], None)
 			child = Node(self.rle, self, start.actionSeq+[0], start)
 			node = child
+		return node
 
+	def return_best_non_win_plan(self, QReward):
+		node = self.return_best_non_win_node(QReward)
 		self.bestNode = node
 		self.solution = node.actionSeq
 
@@ -313,26 +316,11 @@ class WBP():
 		return
 
 	def return_contingency_plan(self, start_node, QReward):
-		if self.stall_mode:
-			node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
-		else:
-			if self.display:
-				print "Failed to find a novel node. Quitting"
-			node = start_node
 
-		## If you planned in 'stall' mode and didn't get a solution, make sure you return something anyway (otherwise main agent cycle will break)
-		if self.stall_mode and not self.solution:
-			# print "you should never actually end up here"
-			if QReward:
-				node = max(QReward, key=lambda n:(-n.intrinsic_reward, len(n.actionSeq)))
-			else:
-				## QReward only has nodes that didn't result in loss states. Return *some* plan here to make sure things don't break
-				## This is a plan of taking a single 'wait' action.
-				if self.display:
-					print "QReward was empty -- returning a plan of a single 'none' action"
-				start = Node(self.rle, self, [], None)
-				child = Node(self.rle, self, start.actionSeq+[0], start)
-				node = child
+		if self.stall_mode:
+			node = self.return_best_non_win_node(QReward)
+		else:
+			node = start_node
 
 		self.bestNode = node
 		self.solution = node.actionSeq
@@ -343,8 +331,6 @@ class WBP():
 		## It then will quit if this happens a couple times.
 		self.quitting = True
 
-		if self.display:
-			print "was in None or PickMaxNode"
 
 		return node
 
@@ -456,6 +442,7 @@ class WBP():
 			## If we're out of novel nodes, we should tell the metacontroller we'd like to quit.
 			## It then will quit if this happens a couple times.
 			if current in [None, 'pickMaxNode']:
+				self.quitting = True
 				node = self.return_contingency_plan(start, QReward)
 				return
 			
