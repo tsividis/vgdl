@@ -657,7 +657,7 @@ class Agent:
         self.memory.episodeSteps +=1
         if theory_change_flag:
             self.hypotheses = hypotheses
-            self.hypotheses[0].display()
+            # self.hypotheses[0].display()
 
         self.re_plan = theory_change_flag
 

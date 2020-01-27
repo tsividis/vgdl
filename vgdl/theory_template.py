@@ -2035,7 +2035,7 @@ def getKeywordsFromOntology(interactionName):
 	else:
 		return []
 
-def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
+def writeTheoryToTxt(rle, theory, symbolDict, txtFile):
 	"""
 	Turns a Theory object in to a VGDL text file that can be read and turned into a simulatable, playable rle object.
 	Four parts to this: spriteSet (object definitions), interactionSet (effects), terminationSet (termination rules), levelMapping (printing the initial map of the game)
@@ -2128,15 +2128,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 			except KeyError:
 				print "in writeTheoryToTxt, keyError"
 				embed()
-
-	if goalLoc:
-		newGoalCode = state[goalLoc[0]][goalLoc[1]]
-		if newGoalCode == 0:
-			newGoalType = 'blank_space'
-		else:
-			newGoalIndex = int(round(math.log(newGoalCode,2)))-1
-			newGoalType = sorted(_obstypes.keys())[::-1][newGoalIndex]
-			newGoalColor = colorDict[str(rle._game.sprite_constr[newGoalType][1]['color'])]
 
 	## teleport sprites have to be handled separately, as the spriteType is relational -- it depends on what is in the interactionRules. As in: we learn about teleportation as an effect (and represent it as such in our internal Theory representation), but then have to edit the object type when we write a VGDL text file, because proper VGDL uses both object-type and interaction to represent teleportation.
 	if theory.interactionSet[0].args is not None:
@@ -2233,19 +2224,9 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				else:
 					sname = c
 					theoryString += "\t\t%s > %s color=%s%s\n"%(sname, stype, s.color, argsString)
-					if goalLoc and newGoalType != 'blank_space' and s.color==newGoalColor:
-						sname = colorToSprite[s.color]
-						theoryString += "\t\t%s > %s color=%s%s\n"%("goal", stype, s.color, argsString)
 
 	for resource in resourcesToAdd:
 		theoryString += "\t\t%s > Resource color=RESOURCETOADD limit=%s\n"%(resource, theory.resource_limits[resource])
-
-	if goalLoc:
-		if newGoalType == 'blank_space':
-			# we've selected an empty square to be the goal.
-			theoryString += "\t\tgoal > Passive color=LIGHTRED\n"
-
-
 
 	immovable_predicates = ['stepBack', 'undoAll']
 	kill_predicates = ['killSprite']
@@ -2383,10 +2364,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 
 			theoryString += "limit=%s win=%s\n" % (str(terminationRule.termination.limit), str(terminationRule.termination.win))
 
-
-	if goalLoc and goalConditionNotFound:
-		theoryString += "\t\tSpriteCounter stype=goal limit=0 win=True\n"
-
 	## fourth phase: the level mapping
 	mappedState = []
 	for i in range(rle.outdim[0]):
@@ -2405,14 +2382,6 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile, goalLoc = None):
 				except:
 					print "in map"
 					embed()
-
-			try:
-				if mappedState[r][c] == " " and goalLoc == (r,c):
-					# an empty square has been selected as the goal
-					mappedState[r][c] = "G"
-			except:
-				print "mappedState problem2"
-				embed()
 
 	levelString = 'level="""\n'
 	for mappedRow in mappedState:

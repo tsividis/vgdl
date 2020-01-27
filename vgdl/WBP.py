@@ -324,13 +324,11 @@ class WBP():
 
 		self.bestNode = node
 		self.solution = node.actionSeq
-
 		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
 
 		## If we failed to find a plan and weren't in 'stall' mode, we should tell the metacontroller we'd like to quit.
 		## It then will quit if this happens a couple times.
 		self.quitting = True
-
 
 		return node
 
@@ -416,7 +414,7 @@ class WBP():
 	def extract_predicted_states_from_tree(self, node):
 		printable_predicted_states, predicted_states = [], []
 		while node is not None:
-			printable_predicted_states.append(node.rle.show())
+			printable_predicted_states.append(node.rle.show('green'))
 			predicted_states.append(node.rle)
 			node = node.parent
 		return printable_predicted_states[::-1], predicted_states[::-1]
@@ -443,7 +441,7 @@ class WBP():
 			## It then will quit if this happens a couple times.
 			if current in [None, 'pickMaxNode']:
 				self.quitting = True
-				node = self.return_contingency_plan(start, QReward)
+				self.return_contingency_plan(start, QReward)
 				return
 			
 			## Bookkeeping -- streamline
