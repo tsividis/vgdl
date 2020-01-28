@@ -446,8 +446,7 @@ class Agent:
             # t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
-                extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
-                objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
+                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 

@@ -178,8 +178,7 @@ class Metacontroller:
                 ## Replan in new mode
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
                     seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, return_subgoal_plans=self.agent.return_subgoal_plans, stall_mode=stall_mode, hyperparameters=planner_hyperparameters, 
-                    extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, objectNumberTrackingLimit=self.agent.objectNumberTrackingLimit,
-                    objectLocationTrackingLimit=self.agent.objectLocationTrackingLimit, lesion=self.agent.planner_lesion)
+                    extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, lesion=self.agent.planner_lesion)
                 planner_recommended_quitting = p.quitting
                 p.BFS()
                 self.agent.total_planner_steps += p.total_nodes_opened
@@ -209,14 +208,12 @@ class Metacontroller:
                 self.agent.extra_atom = True
             
             ## if you don't get a plan with short-horizon mode you'll plan in stall mode. You only get here if you're in long-term planning and don't find a plan.
-
             if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit: 
                 if self.agent.produce_printout:
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.agent.random_steps_on_plan_failure)
                 solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.
                 for i in range(self.agent.random_steps_on_plan_failure):
-                    solution.append(random.choice(self.agent.hypotheses[0].getLegalActions()
-))
+                    solution.append(random.choice(self.agent.hypotheses[0].getLegalActions()))
                 self.agent.longHorizonObservations += 1
                 self.agent.takingRandomSteps = True
             else:

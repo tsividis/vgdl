@@ -17,6 +17,8 @@ from util import *
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
+OBJECT_NUMBER_TRACKING_LIMIT = 1000
+OBJECT_LOCATION_TRACKING_LIMIT = 1000
 
 #############################################
 # Sprites with 'DARKGRAY' colorName are not #
@@ -26,7 +28,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], max_nodes=100000,
-		return_subgoal_plans=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1, objectNumberTrackingLimit=1000, objectLocationTrackingLimit=1000, 
+		return_subgoal_plans=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1, 
 		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
@@ -37,8 +39,9 @@ class WBP():
 		self.hyperparameter_index = hyperparameters['idx'] ## for keeping track of what we're running
 		self.hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['idx'])
 		self.IW_k = IW_k
-		self.objectNumberTrackingLimit = objectNumberTrackingLimit
-		self.objectLocationTrackingLimit = objectLocationTrackingLimit
+		self.padding = 5  #5 is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
+		self.objectNumberTrackingLimit = OBJECT_NUMBER_TRACKING_LIMIT
+		self.objectLocationTrackingLimit = OBJECT_LOCATION_TRACKING_LIMIT
 		self.max_nodes = max_nodes
 		self.objectsWhoseLocationsWeIgnore = objectsWhoseLocationsWeIgnore
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
@@ -58,7 +61,6 @@ class WBP():
 		self.stall_mode = stall_mode
 		if self.stall_mode:
 			self.hyperparameters['sprite_negative_mult'] = 100
-		self.padding = 5  ##5  is arbitrary; just to make sure we don't get overlap when we add positions in our self-made hash used to track IW atoms
 
 		###################################################
 		###    Bookkeeping and output data structures   ###
@@ -93,7 +95,6 @@ class WBP():
 			self.theory=copy.deepcopy(theory)
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
-
 	
 		if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
 			movingTypesInGame = True
