@@ -190,8 +190,7 @@ class StateObsHandlerNonStatic(object):
                 if pos in sprite_positions_by_type[skey]:
                     res.append(1)
                 else:
-                    res.append(0)   
-            print "Get Presences: {} seconds".format(time.time()-t1)         
+                    res.append(0)          
 
             # t1 = time.time()
             # for skey, pos in sorted(self._gravepoints):
