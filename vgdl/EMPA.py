@@ -445,6 +445,8 @@ class Agent:
 
             ## Initialize planner
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
+
+            t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
                 firstOrderHorizon=self.firstOrderHorizon, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
@@ -649,7 +651,9 @@ class Agent:
         
 
         print "phase 6: {}".format(time.time()-t1)
-        t1 = time.time()
+        
+
+        inf_t1 = time.time()
 
         self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
             not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
@@ -663,9 +667,10 @@ class Agent:
 
             if newEffects or distributionsHaveChanged:
                 theory_change_flag = True
-
+            t1 = time.time()
             sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
-
+            print "inference phase 1: {}".format(time.time()-t1)
+            t1 = time.time()
             game_object = Game(spriteInductionResult=sample)
             
             terminationCondition = {'ended': False, 'win':False, 'time':self.environment.getTime()}
@@ -674,10 +679,13 @@ class Agent:
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
             verbose=False, existingTheories=hypotheses))
 
+            print "inference phase 2: {}".format(time.time()-t1)
+            t1 = time.time()
+
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
-        print "phase 7: {}".format(time.time()-t1)
+        print "phase 7: {}".format(time.time()-inf_t1)
         t1 = time.time()
 
         ## We also need to update termination conditions even when we haven't seen a new event,

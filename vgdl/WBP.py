@@ -87,13 +87,16 @@ class WBP():
 		###################################################
 		### 		Theory-based heuristics				###
 		###################################################
-
 		if theory == None:
 			self.theory = generateTheoryFromGame(rle, alterGoal=False)
 		else:
+			t1 = time.time()
 			self.theory=copy.deepcopy(theory)
+			print "plan init 1: {}".format(time.time()-t1)
+			t1 = time.time()
 			self.theory.interactionSet.extend(fakeInteractionRules)
 			self.theory.updateTerminations()
+			print "plan init 2: {}".format(time.time()-t1)
 	
 		if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
 			movingTypesInGame = True
