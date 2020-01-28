@@ -524,11 +524,13 @@ class Node():
 			thingWeShot = vrle.find_projectile_if_new(thingWeShoot)
 
 			prevHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
+			
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
 
 			while i<max(vrle.outdim) and thingWeShot not in vrle._game.kill_list and not terminal:
+				
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT]) ## move randomly during rollout
 				res = vrle.step(a, getTermination=True, getEffectList=True)
 				if self.WBP.display:
