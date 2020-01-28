@@ -378,7 +378,7 @@ class WBP():
 	def check_node_for_subgoal_progress(self, node):
 		
 		if not self.firstOrderHorizon:
-			return False
+			return node
 
 		foundWin = False
 		ended, win = node.terminal, node.win
@@ -987,34 +987,48 @@ class Node():
 				i += 1
 		return vrle, self.terminal, self.win
 
-	def eval(self):
-		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
-
-		self.rle, self.terminal, self.win = self.getToCurrentState()
-
-		self.updateObjIDs(self.rle)
-
-		self.state = self.WBP.calculateAtoms(self.rle)
-
+	def find_candidate_atoms_in_state(self):
 		for i in range(1,self.WBP.IW_k+1):
 			for c in itertools.combinations(self.state, i):
 				c = tuple(sorted(c))
 				if self.WBP.trueAtoms[c] == 0:
 					self.candidates.add(c)
+		return
 
+	def do_IW_bookkeeping(self.rle):
+		self.updateObjIDs(self.rle)
+		self.state = self.WBP.calculateAtoms(self.rle)
+		self.find_candidate_atoms_in_state()
 		self.updateNovelty()
+		return
 
+	def do_rollout_if_appropriate(self):
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			## if the thing we shoot is a missile, do a rollout
-			if 'Missile' in str(self.WBP.theory.classes[self.WBP.thingWeShoot][0].vgdlType):
+			if does_avatar_shoot_missiles():
 				self.rolloutArray = self.rollout(self.rle, self.WBP.thingWeShoot)
+		return
+
+	def does_avatar_shoot_missiles(self):
+		return 'Missile' in str(self.WBP.theory.classes[self.WBP.thingWeShoot][0].vgdlType)
+
+	def eval(self):
+		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
+
+		self.rle, self.terminal, self.win = self.getToCurrentState()
+
+		self.do_IW_bookkeeping(self.rle)
+
+		self.do_rollout_if_appropriate()
 
 		## Calculate heuristic value
 		self.heuristicVal = self.heuristics(**self.WBP.hyperparameters)
 
+		## These are also heuristics; do these in self.heuristics()
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 
+		## Compress.
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
