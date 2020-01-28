@@ -444,16 +444,8 @@ class WBP():
 				self.return_contingency_plan(start, QReward)
 				return
 			
-			## Bookkeeping -- streamline
 			self.update_visited_positions(current.rle)
 			self.updateNoveltyDict(current, QReward)
-
-			## TODO: remove.
-			if self.display:
-				print "________________"
-				if current.actionSeq:
-					print actionDict[current.actionSeq[-1]]
-				print current.rle.show()
 
 			current_actions = self.trim_futile_actions(current)
 
@@ -469,9 +461,6 @@ class WBP():
 				if child.win:
 					self.winning_states.append(child)
 					self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
-					## TODO: Remove
-					# ended, win, t = child.rle._isDone(getTermination=True)
-
 				else:
 					if not (child.terminal and not child.win):
 						QReward.append(child)

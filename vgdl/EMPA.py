@@ -496,8 +496,6 @@ class Agent:
         if self.metacontroller.quitting:
             print "Metacontroller suggests quitting:", self.metacontroller.quitting
             self.metacontroller.quitting = False
-            ## TODO: remove. agent should not be taking steps here.
-            ## Figure out why you had to do it and remove it.
             self.quitting = True
             action = 0
 
@@ -587,7 +585,6 @@ class Agent:
         effects = self.environment.getEffectListByColor()
         effectList = self.environment._game.effectList
         
-        ## TODO: Elaborate these
         if ended:
             self.quitting = ended
             self.episodeRecord.insert(0, (win, effects))
@@ -767,7 +764,6 @@ class Agent:
 
         rleDict, hypDict = {}, {}
 
-        ## TODO: change to [i] and change what you're passing here to -1 of what it is.
         for s in predicted_states[i].getAliveSprites():
             hypDict[s.ID2] = s
 

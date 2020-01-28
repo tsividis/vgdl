@@ -190,16 +190,9 @@ class Metacontroller:
                     embed()
 
                 solution = p.solution
-                # self.agent.predicted_states = p.predicted_states
                 predicted_states = p.predicted_states
                 printable_predicted_states = p.printable_predicted_states
-                # if p.bestNode is not None:
-                #     solution = p.solution
-                #     self.agent.predicted_states = p.predicted_states
-                #     if solution and self.display_text:
-                #         print "got solution"
-                # else:
-                #     solution = []
+
         self.agent.takingRandomSteps = False
 
         if (not solution) or planner_recommended_quitting:
