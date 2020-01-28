@@ -1013,6 +1013,8 @@ class Theory(object):
 
 		self.terminationSet = sorted(self.terminationSet, key=lambda t:t.ruleType)
 
+		self.falsified = list(set(self.falsified))
+		self.multi_falsified = list(set(self.multi_falsified))
 		return
 
 	def doWeMakeANoveltyRule(self, rule, thingWeShoot):
