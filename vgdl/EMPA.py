@@ -231,16 +231,23 @@ class Agent:
 
     def initializeVrle(self, hypothesis):
         ## Returns simulatable world in agent's head given 'hypothesis', including object goal
+        t1 = time.time()
         gameString, levelString, symbolDict = writeTheoryToTxt(self.environment, hypothesis, self.symbolDict,\
                  "./theory_files/{}.py".format(self.gameFilename))
+        print "writeTheory: {}".format(time.time()-t1)
+        t1 = time.time()
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.environment, Vrle, hypothesis)
+        print "createMindEnv and setSpritePositions: {}".format(time.time()-t1)
+        t1 = time.time()
         try:
             Vrle.getAvatars()[0].resources = copy.deepcopy(self.environment.getAvatars()[0].resources)
             Vrle.getAvatars()[0].orientation = copy.deepcopy(self.environment.getAvatars()[0].orientation)
         except (IndexError, AttributeError) as e:
             pass
+        print "Avatar resource stuff: {}".format(time.time()-t1)
+
         return Vrle
 
     def VrleInitPhase(self):
@@ -248,11 +255,26 @@ class Agent:
         VRLEs = []
 
         for hypothesis in self.hypotheses[0:1]:
+            t1 = time.time()
             tempHypothesis = copy.deepcopy(hypothesis)
+            print "vrleInitPhase1: {}".format(time.time()-t1)
+            t1 = time.time()
+
             tmpFakeInteractionRules = copy.deepcopy(self.fakeInteractionRules)
+            print "vrleInitPhase 2: {}".format(time.time()-t1)
+            t1 = time.time()
+
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
+            print "vrleInitPhase3: {}".format(time.time()-t1)
+            t1 = time.time()
+
             tempHypothesis.updateTerminations()
+            print "vrleInitPhase4: {}".format(time.time()-t1)
+            t1 = time.time()
+
             VRLEs.append(self.initializeVrle(tempHypothesis))
+            print "vrleInitPhase5: {}".format(time.time()-t1)
+
 
         return VRLEs
 
@@ -391,14 +413,14 @@ class Agent:
         re-plans, and sets self.solution
         """
 
+        t1 = time.time()
         ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
         ## Later -- consider not constantly reinitializing vrles
-        self.theoryRLEs = self.VrleInitPhase()
         self.quitting = False
         
-
+        print "plan phase 1: {}".format(time.time()-t1)
+        t1 = time.time()
         ended, win = self.environment._isDone()
-
 
         ## ended and not win and time==2000 means we lost on timeout
         ## pass this to proper inference.
@@ -409,10 +431,17 @@ class Agent:
 
         self.re_plan = self.metacontroller.isReplanningNecessary()
 
+        print "plan phase 2: {}".format(time.time()-t1)
+        t1 = time.time()
+
         if self.re_plan==True:
+            self.theoryRLEs = self.VrleInitPhase()
 
             self.metacontroller.setMaxNodes()
             self.steps_in_solution = 0
+
+            print "plan phase 3: {}".format(time.time()-t1)
+            t1 = time.time()
 
             ## Initialize planner
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
@@ -420,12 +449,16 @@ class Agent:
                 firstOrderHorizon=self.firstOrderHorizon, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
+            print "plan phase 4: {}".format(time.time()-t1)
+            t1 = time.time()
 
             p.BFS()
             if p.bestNode==None and p.solution:
                 print "bestNode of None and p.solution!!"
                 embed()
- 
+            print "plan phase 5: {}".format(time.time()-t1)
+            t1 = time.time()
+
             # if p.bestNode is not None:
             #     self.solution = p.solution
             #     self.predicted_states = p.predicted_states
@@ -439,7 +472,10 @@ class Agent:
             self.printable_predicted_states = p.printable_predicted_states
             planner_recommended_quitting = p.quitting
             
+
             self.solution, self.predicted_states, self.printable_predicted_states = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.environment, planner_recommended_quitting)
+            print "plan phase 6: {}".format(time.time()-t1)
+            t1 = time.time()
 
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if self.solution:
@@ -475,8 +511,14 @@ class Agent:
 
     def step(self, action):
 
+        t1 = time.time()
+
         if self.environment.getTime() == 0:
             self.beginningOfEpisodeManagement()
+
+        print "phase 1: {}".format(time.time()-t1)
+        t1 = time.time()
+
 
         self.bookkeeping.saveEpisodeState(self)
 
@@ -518,6 +560,8 @@ class Agent:
         for k,v in self.agentState.items():
             self.agentState[k] = max(0, v)
 
+        print "phase 2: {}".format(time.time()-t1)
+        t1 = time.time()
 
         hypotheses = self.manageNewObjects(hypotheses)
 
@@ -528,8 +572,14 @@ class Agent:
 
         self.planner_nodes_opened_on_most_recent_step = 0
 
+        print "phase 3: {}".format(time.time()-t1)
+        t1 = time.time()
+
         distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
- 
+        
+        print "phase 4: {}".format(time.time()-t1)
+        t1 = time.time()
+
 
         effects = self.environment.getEffectListByColor()
         effectList = self.environment._game.effectList
@@ -543,6 +593,9 @@ class Agent:
             print "score: {}, game step: {}".format(self.environment.getScore(), self.environment.getTime())
 
         print "action", self.memory.totalGameSteps+self.environment.getTime()
+        
+        print "phase 5: {}".format(time.time()-t1)
+        t1 = time.time()
 
 
         ## 'action', here refers to the previously-taken action,
@@ -594,6 +647,10 @@ class Agent:
                         print "New event: {}".format(compactEvent)
                     newEffects = True
         
+
+        print "phase 6: {}".format(time.time()-t1)
+        t1 = time.time()
+
         self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
             not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
@@ -620,6 +677,9 @@ class Agent:
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
+        print "phase 7: {}".format(time.time()-t1)
+        t1 = time.time()
+
         ## We also need to update termination conditions even when we haven't seen a new event,
         ## because the state is informative about termination conditions.
         oldTerminationSet = set(hypotheses[0].terminationSet)
@@ -635,8 +695,14 @@ class Agent:
             print "changed theory:"
             # hypotheses[0].display()
 
+        print "phase 8: {}".format(time.time()-t1)
+        t1 = time.time()
+
         ## Setup for next timestep
         self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+
+        print "phase 9: {}".format(time.time()-t1)
+        t1 = time.time()
 
         self.memory.nextPositions = {}
         for k, v in self.environment._game.all_objects.iteritems():
@@ -647,6 +713,9 @@ class Agent:
             except KeyError:
                 pass
         self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+
+        print "phase 10: {}".format(time.time()-t1)
+        t1 = time.time()
 
         try:
             self.agentState = copy.deepcopy(self.environment.getAvatars()[0].resources)
@@ -661,7 +730,13 @@ class Agent:
 
         self.re_plan = theory_change_flag
 
+        print "phase 11: {}".format(time.time()-t1)
+        t1 = time.time()
+
         self.action = self.planAsNeeded()
+
+        print "phase 12: {}".format(time.time()-t1)
+        t1 = time.time()
 
         print "quitting:", self.quitting
         return self.action, self.quitting

@@ -308,7 +308,7 @@ class dynamicTypeDistribution_VGDL1(dynamicTypeDistribution):
 
                 ## Populate options for future sprite locations conditioned on
                 ## hypothesized type and current location
-                objects = game.getObjects()
+                # objects = game.getObjects()
 
                 game = game
                 sprite_count, param_count=0, 0

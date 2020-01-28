@@ -180,7 +180,7 @@ class StateObsHandlerNonStatic(object):
             # if self._game.time in [60]:
                 # embed()
             # print len(self._gravepoints)
-            # t1 = time.time()
+            t1 = time.time()
             sprite_names = set([s[0] for s in self._gravepoints])
             sprite_positions_by_type = dict()
             for sprite_name in sprite_names:
@@ -191,7 +191,7 @@ class StateObsHandlerNonStatic(object):
                     res.append(1)
                 else:
                     res.append(0)   
-            # print "{} seconds".format(time.time()-t1)         
+            print "Get Presences: {} seconds".format(time.time()-t1)         
 
             # t1 = time.time()
             # for skey, pos in sorted(self._gravepoints):
