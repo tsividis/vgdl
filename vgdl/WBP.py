@@ -997,8 +997,8 @@ class Node():
 			i=0
 			while not self.terminal and len(self.actionSeq)>i:
 				a = self.actionSeq[i]
-				res = vrle.step(a, return_obs=True)
-				self.terminal, self.win = res['ended'], res['win']
+				res = vrle.step(a)
+				self.terminal, self.win = vrle._isDone()
 				i += 1
 		return vrle, self.terminal, self.win
 
