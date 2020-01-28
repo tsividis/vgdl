@@ -177,7 +177,7 @@ class Metacontroller:
             if stall_mode: #aka 'stall' mode
                 ## Replan in new mode
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
-                    seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, firstOrderHorizon=self.agent.firstOrderHorizon, stall_mode=stall_mode, hyperparameters=planner_hyperparameters, 
+                    seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, return_subgoal_plans=self.agent.return_subgoal_plans, stall_mode=stall_mode, hyperparameters=planner_hyperparameters, 
                     extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, objectNumberTrackingLimit=self.agent.objectNumberTrackingLimit,
                     objectLocationTrackingLimit=self.agent.objectLocationTrackingLimit, lesion=self.agent.planner_lesion)
                 planner_recommended_quitting = p.quitting

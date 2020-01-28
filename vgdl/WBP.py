@@ -26,7 +26,7 @@ actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RI
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], max_nodes=100000,
-		firstOrderHorizon=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1, objectNumberTrackingLimit=1000, objectLocationTrackingLimit=1000, 
+		return_subgoal_plans=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1, objectNumberTrackingLimit=1000, objectLocationTrackingLimit=1000, 
 		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False):
 		self.rle = rle
 		self.gameFilename = gameFilename
@@ -48,10 +48,10 @@ class WBP():
 		self.quitting = False
 		self.lesion = lesion
 		# Compute starting number of each SpriteCounter stype
-		self.firstOrderHorizon = firstOrderHorizon
+		self.return_subgoal_plans = return_subgoal_plans
 		if any([s in self.lesion for s in ['AGH2', 'AGH3']]):
-			# print "no firstOrderHorizon"
-			self.firstOrderHorizon = False
+			# print "no return_subgoal_plans"
+			self.return_subgoal_plans = False
 		self.extra_atom = extra_atom
 		self.rolloutHyperparameters = dict([(k,v) if 'second' not in k else (k,0) for k,v in self.hyperparameters.items()])
 		## 'stall' mode generates a quick-and-dirty plan that just tries to ensure safety -- increase negative multiplier on proximity to items thought to be dangerous, then plan.
@@ -377,7 +377,7 @@ class WBP():
 
 	def check_node_for_subgoal_progress(self, node):
 		
-		if not self.firstOrderHorizon:
+		if not self.return_subgoal_plans:
 			return node
 
 		foundWin = False
@@ -548,7 +548,7 @@ class Node():
 				if self.WBP.display and win and t.name=='SpriteCounter':
 					print t.stype
 
-				if self.WBP.firstOrderHorizon:
+				if self.WBP.return_subgoal_plans:
 					# Return plan if any subgoal progress was made towards
 					# a win condition
 					foundWin = False
@@ -1113,12 +1113,12 @@ if __name__ == "__main__":
 
 
 	hyperparameters = hyperparameter_sets[hyperparameter_index]
-	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+	planner_hyperparameters = dict((k, hyperparameters[k]) for k in hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])
 	max_nodes = 500 if hyperparameters['short_horizon'] else 1000
 
 	## Initialize planner
 	p = WBP(rle, gameFilename, max_nodes=max_nodes, 
-			firstOrderHorizon=hyperparameters['first_order_horizon'], stall_mode=False, 
+			return_subgoal_plans=hyperparameters['return_subgoal_plans'], stall_mode=False, 
 			hyperparameters=planner_hyperparameters, extra_atom=True)
 
 	t1 = time.time()

@@ -49,7 +49,7 @@ class Agent:
         self.hyperparameter_index = hyperparameter_index
         self.hyperparameters = hyperparameter_sets[self.hyperparameter_index]
         self.shortHorizon = self.hyperparameters['short_horizon'] # Params used in short-horizon planning
-        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
+        self.return_subgoal_plans = self.hyperparameters['return_subgoal_plans'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k # Only using IW 1
         self.extra_atom_allowed = extra_atom_allowed # Adding optional extra atom to IW
         self.epsilon_greedy = False # Ablation
@@ -184,7 +184,7 @@ class Agent:
             self.hyperparameter_index = new_index
             self.hyperparameters = self.hyperparameter_sets[new_index]
             self.shortHorizon = self.hyperparameters['short_horizon']
-            self.firstOrderHorizon = self.hyperparameters['first_order_horizon']
+            self.return_subgoal_plans = self.hyperparameters['return_subgoal_plans']
             if self.shortHorizon == True:
                 self.starting_max_nodes = self.shortHorizonNodes
                 self.max_nodes_annealing = self.shortHorizonAnnealing
@@ -196,7 +196,7 @@ class Agent:
 
             if self.display_text:
                 print "Switching hyperparameters to {}".format(new_index)
-        planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])
+        planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])
         return planner_hyperparameters
 
 
@@ -444,11 +444,11 @@ class Agent:
             # t1 = time.time()
 
             ## Initialize planner
-            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'first_order_horizon'])  
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
 
             # t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
-                firstOrderHorizon=self.firstOrderHorizon, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
+                return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, objectNumberTrackingLimit=self.objectNumberTrackingLimit,
                 objectLocationTrackingLimit=self.objectLocationTrackingLimit, lesion=self.planner_lesion)
             # print "plan phase 4: {}".format(time.time()-t1)

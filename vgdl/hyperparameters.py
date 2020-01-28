@@ -3,7 +3,7 @@
 hyperparameter_sets = {
     'short-term':{'idx'           : 'short-term',
      'short_horizon' : True,
-     'first_order_horizon': True,
+     'return_subgoal_plans': True,
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': 10, #normally .1
@@ -14,7 +14,7 @@ hyperparameter_sets = {
      },
      'long-term':{'idx'           : 'long-term',
      'short_horizon' : False,
-     'first_order_horizon': False,
+     'return_subgoal_plans': False,
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
      'sprite_negative_mult': 10.,
