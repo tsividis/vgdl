@@ -289,9 +289,6 @@ class Agent:
         ## Set up hypothetical locations for the next timestep
         self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
 
-        ## 15 steps of observation before playing. Number is arbitrary; a lower number just leads to more frequent early re-planning --> more compute, but doesn't change sample efficiency.
-        # self.observe(self.environment,  self.memory, 4, self.bestSpriteTypeDict,  display=self.display_states, hypothesis=None)
-
         ## Sample dynamic types
         spriteTypeHypothesis, _, self.best_params = self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory,
             allObjects, self.bestSpriteTypeDict)
