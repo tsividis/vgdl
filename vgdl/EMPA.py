@@ -795,6 +795,10 @@ class Agent:
                     # embed()
                     regroundingFlag=True
                     break
+                if s.name=='avatar' and s.rect!=hypDict[s.ID].rect:
+                    print colored("Regrounding because avatar is not where we expected", 'white', 'on_yellow')
+                    regroundingFlag = True
+                    break
                 rleDict[s.ID] = s
         return regroundingFlag
 

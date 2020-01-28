@@ -533,15 +533,21 @@ class Node():
 				
 				a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT]) ## move randomly during rollout
 				res = vrle.step(a, getTermination=True, getEffectList=True)
+
 				if self.WBP.display:
 					print vrle.show(indent=True, color='cyan')
+				
 				currHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
+
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
+
 				terminal, win, t = vrle._isDone(getTermination=True)
+				
 				if self.WBP.display and win and t.name=='SpriteCounter':
 					print t.stype
+
 				if self.WBP.firstOrderHorizon:
 					# Return plan if any subgoal progress was made towards
 					# a win condition
@@ -606,6 +612,7 @@ class Node():
 		# Second order: distance to the closest instance of a target sprite type.
 
 		val = 0
+
 		if not surrogate_multisprite_counter:
 			compute_second_order = True
 		else:
@@ -640,8 +647,7 @@ class Node():
 		except (IndexError, AttributeError) as e:
 			pass
 
-		# This list comprehension checks whether the avatar kills the stype with a preconditioned
-		# interaction, and if so adds 'avatar' to the list as well as the precondition for that rule
+		# This list comprehension checks whether the avatar kills the stype with a preconditioned interaction, and if so adds 'avatar' to the list as well as the precondition for that rule
 		avatar_preconditions = [
 			(inter.slot2, inter.preconditions) for inter in theory.interactionSet
 			if (inter.interaction in ['killSprite', 'killIfOtherHasMore', 'transformTo']  and
@@ -651,8 +657,7 @@ class Node():
 
 		tmp_list = []
 
-		## If we have preconditions, find the objects that we should go to given that we satisfy the relevant preconditions. E.g., if we have a key and want to know what
-		## happens with item x, go to it.
+		## If we have preconditions, find the objects that we should go to given that we satisfy the relevant preconditions. E.g., if we have a key and want to know what happens with item x, go to it.
 		for avatar in avatar_preconditions:
 
 			precondition = list(avatar[1])[0]
@@ -677,19 +682,8 @@ class Node():
 		# Get attributes from terminationSet
 		limit = term.termination.limit
 
-		## No longer used (I think)
-		if 'SpawnPoint' in str(theory.classes[stype][0].vgdlType) and not killer_types:
-			distance_to_goal = 0
-			## Special case, where you want to track whether that spawnPoint has a limit, etc.
-			## Distance to goal here is how many sprites the spawnPoint still has to shoot before it expires.
-			for o in rle._game.sprite_groups[stype]:
-				distance_to_goal += abs(o.total-o.counter)
-			val += mult * first_alpha * distance_to_goal
-			return val
-		else:
-			## Normal case
-			n_stypes = len([0 for sprite in rle.findObjectsInRLE(stype)]) if rle.findObjectsInRLE(stype) else 0
-			distance_to_goal = abs(n_stypes - limit)
+		n_stypes = len([0 for sprite in rle.findObjectsInRLE(stype)]) if rle.findObjectsInRLE(stype) else 0
+		distance_to_goal = abs(n_stypes - limit)
 
 		if distance_to_goal!=0:
 			val -= float(mult * first_alpha) / distance_to_goal ## Penalize quadratically for classes for which we'd have to kill many instances.
@@ -972,7 +966,6 @@ class Node():
 		try:
 			(x, y) = np.array((self.rle._game.getAvatars()[0].rect.x,
 				self.rle._game.getAvatars()[0].rect.y))/self.WBP.pixel_size
-			# print factor * self.WBP.visited_positions[x, y]
 			return factor * self.WBP.visited_positions[x, y]**2
 		except IndexError:
 			# print "index error in position score"
