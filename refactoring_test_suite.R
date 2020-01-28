@@ -3,7 +3,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 
 ## gameplay data
 EMPA_dates = list('mar28')
-refactor_dates = list('refactor_jan15')
+refactor_dates = list('refactor_jan24')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load helper functions
@@ -74,15 +74,16 @@ names(colors) = c('EMPA', 'EMPA_refactor', 'human')
 ### Learning curve plots
 ## plotting all agents/models
 agents_to_plot = c('human', 'EMPA', 'EMPA_refactor')
-games_to_plot = c('bait', 'zelda', 'butterflies', 'avoidgeorge','frogs','plaqueattack')
-games_in_order = unique(alldata$game_name)[order(unique(alldata$game_name))]
+# games_to_plot = c('bait', 'zelda', 'butterflies', 'avoidgeorge','frogs','plaqueattack')
+games_to_plot = unique(rEMPAdata$game_name)
+games_in_order = unique(rEMPAdata$game_name)[order(unique(rEMPAdata$game_name))]
 plots = list()
 for (k in 1:length(games_to_plot)){
 # for (k in 1:length(games_in_order)){
   # game = games_in_order[k]
   game = games_to_plot[k]
 
-  max_x = 1000
+  max_x = 10000
   
   ## used for interpolating data points to sparse DDQN data
   if(max_x<5000){
@@ -95,7 +96,7 @@ for (k in 1:length(games_to_plot)){
     step_size=10000
   }
   
-  d = filter(alldata, game_name==game, agent_type %in% agents_to_plot)
+  d = filter(alldata, game_name==as.character(game), agent_type %in% agents_to_plot)
   ### assign correct colors to each subject ID
   plotcolors = c()
   for (agent in agents_to_plot){

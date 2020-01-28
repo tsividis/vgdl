@@ -492,6 +492,8 @@ class WBP():
 
 		return
 
+
+
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
 		self.rle = rle
@@ -518,10 +520,10 @@ class Node():
 		j=0
 		while not successfulRollout:
 			vrle = Vrle.fastcopy()
-			potentialProjectiles = [s for s in vrle._game.sprite_groups[thingWeShoot] if vrle._game.sprite_groups[thingWeShoot] and s.lastmove==0]
-			thingWeShot = potentialProjectiles[0] if potentialProjectiles else None
 
-			prevHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
+			thingWeShot = vrle.find_projectile_if_new(thingWeShoot)
+
+			prevHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			rolloutArray = []
 			i=0
 			terminal, win = vrle._isDone()
@@ -531,7 +533,7 @@ class Node():
 				res = vrle.step(a, getTermination=True, getEffectList=True)
 				if self.WBP.display:
 					print vrle.show(indent=True, color='cyan')
-				currHeuristicVal = self.heuristics(vrle, **self.WBP.rolloutHyperparameters)
+				currHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
 				prevHeuristicVal = currHeuristicVal
@@ -906,7 +908,7 @@ class Node():
 
 		return val
 
-	def heuristics(self, rle=None, sprite_first_alpha=10000.,
+	def calculate_theory_driven_heuristics(self, rle=None, sprite_first_alpha=10000.,
 		sprite_second_alpha=100, sprite_negative_mult=.1,
 		multisprite_first_alpha=10000, multisprite_second_alpha=100,
 		novelty_first_alpha=1000, novelty_second_alpha=10, time_alpha=10):
@@ -950,8 +952,19 @@ class Node():
 
 		if avatarNoveltyVals:
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
-				
+		
+		self.heuristicVal = heuristicVal
+
 		return heuristicVal
+
+	def calculate_intrinsic_reward(self):
+
+		## Calculate theory-driven heuristic reward
+		self.heuristicVal = self.calculate_theory_driven_heuristics(**self.WBP.hyperparameters)
+		
+		## Add position_score (to counteract IW) and game score
+		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
+		return
 
 	def position_score(self, factor=1.):
 		try:
@@ -995,7 +1008,7 @@ class Node():
 					self.candidates.add(c)
 		return
 
-	def do_IW_bookkeeping(self.rle):
+	def do_IW_bookkeeping(self):
 		self.updateObjIDs(self.rle)
 		self.state = self.WBP.calculateAtoms(self.rle)
 		self.find_candidate_atoms_in_state()
@@ -1005,30 +1018,14 @@ class Node():
 	def do_rollout_if_appropriate(self):
 		if self.WBP.allowRollouts and len(self.actionSeq)>0 and self.actionSeq[-1]==32:
 			## if the thing we shoot is a missile, do a rollout
-			if does_avatar_shoot_missiles():
+			if self.does_avatar_shoot_missiles():
 				self.rolloutArray = self.rollout(self.rle, self.WBP.thingWeShoot)
 		return
 
 	def does_avatar_shoot_missiles(self):
 		return 'Missile' in str(self.WBP.theory.classes[self.WBP.thingWeShoot][0].vgdlType)
 
-	def eval(self):
-		# ## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
-
-		self.rle, self.terminal, self.win = self.getToCurrentState()
-
-		self.do_IW_bookkeeping(self.rle)
-
-		self.do_rollout_if_appropriate()
-
-		## Calculate heuristic value
-		self.heuristicVal = self.heuristics(**self.WBP.hyperparameters)
-
-		## These are also heuristics; do these in self.heuristics()
-		## Add position_score (to counteract IW) and game score
-		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
-
-		## Compress.
+	def calculate_resource_driven_curiosity_bonus(self):
 		try:
 			## Planner should return a plan when the agent has reached the limit of any particular resource (because we now should be curious about new objects, which we're taking care of in main_agent)
 			if any([self.rle._game.getAvatars()[0].resources[k]==self.WBP.theory.resource_limits[k] for k in self.rle._game.getAvatars()[0].resources.keys() if k not in self.WBP.seen_limits]):
@@ -1037,6 +1034,20 @@ class Node():
 				self.win=True
 		except IndexError:
 			pass
+		return
+
+	def eval(self):
+		## Evaluate current node, including calculating intrinsic reward: f(rewards, heuristics, etc.)
+
+		self.rle, self.terminal, self.win = self.getToCurrentState()
+
+		self.do_IW_bookkeeping()
+
+		self.do_rollout_if_appropriate()
+
+		self.calculate_resource_driven_curiosity_bonus()
+
+		self.calculate_intrinsic_reward()
 
 		return self.win
 

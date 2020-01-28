@@ -240,6 +240,11 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     def getAvatars(self):
         return self._game.getAvatars()
 
+    def find_projectile_if_new(self, projectile):
+        potentialProjectiles = [s for s in self._game.sprite_groups[projectile] if self._game.sprite_groups[projectile] and s.lastmove==0]
+        new_projectile = potentialProjectiles[0] if potentialProjectiles else None
+        return new_projectile
+
     def getObjects(self):
         return self._game.getObjects()
 
