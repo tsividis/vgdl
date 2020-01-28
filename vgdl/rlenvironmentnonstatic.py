@@ -24,7 +24,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
 import time
 import cPickle
-# from line_profiler import LineProfiler
+
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'
