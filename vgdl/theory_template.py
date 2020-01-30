@@ -271,8 +271,6 @@ class Theory(object):
 		self.falsified = []
 		self.multi_falsified = []
 
-		self.posterior = False
-
 		self.goalColor = False 
 
 		self.resource_limits = defaultdict(lambda:1)
@@ -293,22 +291,6 @@ class Theory(object):
 		# Get mapping from sprite color to Sprite object
 		for s in self.spriteSet:
 			self.spriteObjects[s.color] = s
-
-	"""Main functions"""
-	def prior(self):
-		## not used.
-		def phi(numClasses, numRules, lamda):
-			#TODO: Refine this to take into account the minimum necessary size of the ruleset.
-			return lamda*numClasses + (1-lamda)*numRules
-
-		#Mode is p(r-1) / (1-p). For now we pick p=.5, r=5 to reflect that phi=4 is modal.
-		def negBin(k, r, p):
-			return scipy.misc.comb(k+r-1, k) * p**k * (1-p)**r
-
-		numClasses, numRules = len(self.classes.keys()), len(self.interactionSet)
-		k = phi(numClasses, numRules, .5)
-
-		return negBin(k,5,.5)
 
 	def getLegalActions(self):
 		legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
@@ -402,40 +384,6 @@ class Theory(object):
 		return classGameState
 
 
-	def explainTermination(self, timestep, prevTimeSteps,result):
-		"""
-		adds all hypotheses about the termination conditions to the terminationSet
-		params:
-		timestep: the very last time step (at which termination occurs)
-		prevTimeSteps: all time steps previous to the termination time step
-		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
-		"""
-		win = result['win']
-		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-		prevClassGameStates = [self.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
-		classGameState = self.makeGameStateWithClasses(timestep.gameState['objects'])
-		for c in classGameState:
-			timestep_amt = classGameState[c]
-			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
-			if timestep_amt_unique:
-				classesWithDiffAmounts[c] = timestep_amt
-
-		for event in timestep.events:
-			for i in [1,2]:
-				terminationClassColor = event[i] #self.getClass(event[i])
-				terminationClassSymbol = self.colorToClassMapper(terminationClassColor)
-				if terminationClassSymbol in classesWithDiffAmounts:
-					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
-					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
-					if not spriteCounterRule in self.terminationSet:
-						self.terminationSet.append(spriteCounterRule)
-
-		time = result["time"]
-		timeoutRule = TimeoutRule(limit=time, win=win)
-		if not timeoutRule in self.terminationSet:
-			self.terminationSet.append(timeoutRule)
-
-
 	def likelihood(self, timestep, sparse=False):
 		"""
 		Makes sure that:
@@ -468,42 +416,6 @@ class Theory(object):
 			newInteractionRules.append(rule)
 
 		return newInteractionRules
-
-	def checkTerminationCounterInState(self, c, termCondition):
-		"""
-		c = game state with classes instead of colors
-		"""
-		return c[termCondition.termination.stype] == termCondition.termination.limit
-
-
-	def getBadTerminationConditions(self, allTraces, verbose=False):
-		"""
-		Returns the list of termination conditions which are contradicted by the data.
-		"""
-		badTerminationConditions = []
-		for termCondition in self.terminationSet:
-			if termCondition.ruleType == "SpriteCounterRule":
-				for timesteps,result in allTraces:
-					for i in range(len(timesteps)):
-						t = timesteps[i]
-						c = self.makeGameStateWithClasses(t.gameState["objects"])
-						if i == len(timesteps) - 1:
-							if self.checkTerminationCounterInState(c, termCondition) and termCondition.termination.win != result["win"]:
-								if not termCondition in badTerminationConditions:
-									badTerminationConditions.append(termCondition)
-						else:
-							if self.checkTerminationCounterInState(c, termCondition): # if condition were true, would have ended on this time step.
-								if not termCondition in badTerminationConditions:
-									badTerminationConditions.append(termCondition)
-
-			elif termCondition.ruleType == "TimeoutRule":
-				for timesteps, result in allTraces:
-					if result["time"] > termCondition.termination.limit:
-						if not termCondition in badTerminationConditions:
-							badTerminationConditions.append(termCondition)
-
-		return badTerminationConditions
-
 
 	def checkEventsInTimeStep(self, timestep):
 		"""
@@ -1141,187 +1053,7 @@ class Theory(object):
 				return classAssignments
 		else: return False
 
-	"""Prediction/generalization functions (not used)"""
-	def findRuleClusters(self):
-		ruleClusters = []
-		uniquePairs = list(set([(rule.slot1, rule.slot2) for rule in self.interactionSet]))
-		for pair in uniquePairs:
-			rules = [(r.interaction, r.preconditions) for r in self.interactionSet if (r.slot1,r.slot2)==pair]
-			ruleClusters.append(ruleCluster(rules, pair))
-		return ruleClusters
 
-	def predict(self, pair, lamda, tree, beta=1.,softmaxTemp=.1):
-		## not used
-
-		#Takes a pair of object, generates a prediction (distribution over predicates) for what happens if those collide.
-
-		predicateList = ['killSprite', 'cloneSprite', 'stepBack', 'transformTo', 'undoAll',
-		'bounceForward', 'conveySprite', 'windGust', 'slipForward', 'attractGaze', 'turnAround',
-		'reverseDirection', 'flipDirection', 'bounceDirection', 'wallBounce', 'wallStop',
-		'killIfSlow', 'killIfFromAbove', 'killIfAlive', 'collectResource', 'killIfHasMore',
-		'killIfOtherHasMore', 'killIfHasLess', 'killIfOtherHasLess', 'wrapAround',
-		'pullWithIt', 'teleportToExit']
-
-		#Get class memberships
-		classes = (self.getClassFromColor(pair[0]), self.getClassFromColor(pair[1]))
-		if False in classes:
-			print "Can't make predictions; theory does not contain {}".format([el[0] for el in zip(pair, classes) if not el[1]])
-			return False
-		else:
-			pair = classes
-
-		inversePair = (pair[1], pair[0]) #a collision between cx and cy is the same as a collision between cy and cx. Locate both.
-
-		knownRules = [rc for rc in self.findRuleClusters() if rc.pairs==pair or rc.pairs==inversePair]
-		if len(knownRules)>0:
-			#findRuleClusters will only return a single element if it works. It's a cluster, and contains all the matching rules.
-			knownRules = knownRules[0].clusteredRules
-			restOfRules = [p for p in predicateList if p not in [k[0] for k in knownRules]]
-
-			knownRules = [[k, 1.] for k in knownRules]
-			allRules = knownRules + [[r, 0.] for r in restOfRules]
-
-			return allRules
-		extrapolatedRules = [[r[0], r[1]*lamda] for r in self.extrapolateRule(pair, tree, beta)]
-		guessedRules = [[r[0], r[1]*(1-lamda)] for r in self.guessRule(predicateList)]
-
-		allRules = extrapolatedRules + guessedRules
-		scores = softmax([r[1] for r in allRules], softmaxTemp)
-		outList = [list(z) for z in zip([e[0] for e in allRules], scores)]
-
-		#merge original extrapolated rules if they use the same predicates
-		mergedRules = [outList[0]]
-		for i in range(1, len(extrapolatedRules)):
-			rule = outList[i]
-			for m in mergedRules:
-				if m[0]==rule[0]:
-					m[1] += rule[1]
-			if all([rule[0]!=m for m in [mR[0] for mR in mergedRules]]):
-				mergedRules.append(rule)
-
-		mergedRules = [[m[0].clusteredRules, m[1]] for m in mergedRules]
-		outList = mergedRules + outList[len(extrapolatedRules)+1:]
-
-		return outList
-
-	def guessRule(self, predicateList):
-		## Not used
-		## Currently returns interactions (no preconditions, and not in the form of interactionRules)
-		remainingPredicates = list(set(predicateList)-set([rule.interaction for rule in self.interactionSet]))
-		scores = [1./len(remainingPredicates)]*len(remainingPredicates)
-		return zip(remainingPredicates, scores)
-
-	def extrapolateRule(self, pair, tree, beta=1.,softmaxTemp=False):
-		## Not used
-		## Returns interactionRules (including preconditions) that are already in the interactionSet weighted by their similarity to the provided pair.
-		#TODO: think about default softmaxTemp.
-		if len(self.interactionSet)==0:
-			print "Can't extrapolate; our theory has no rules in the interactionSet!"
-			return
-		classPairs = list(set([(rule.slot1, rule.slot2) for rule in self.interactionSet]))
-		similarityScores = [self.pairSimilarity(pair, classPair, tree, beta) for classPair in classPairs]
-		similarityScores = normalize(similarityScores)
-		if softmaxTemp:
-			similarityScores = softmax(similarityScores,softmaxTemp)
-
-
-		classSimilarities = zip(classPairs, similarityScores)
-
-		ruleClusters = self.findRuleClusters()
-		for ruleCluster in ruleClusters:
-			ruleCluster.score = [cS[1] for cS in classSimilarities if cS[0]==ruleCluster.pairs][0]
-
-		return ([[rc, rc.score] for rc in ruleClusters])
-
-	def levenshtein(self, source, target):
-		source, target = list(source), list(target)
-		if max(len(source), len(target)) == 0:
-			return 1.
-		else:
-			z = 1.*max(len(source), len(target))
-			return 1. - self.levenshteinDistance(source, target)/z
-
-	def levenshteinDistance(self, source, target):
-		if len(source) < len(target):
-			return self.levenshteinDistance(target, source)
-
-		# So now we have len(source) >= len(target).
-		if len(target) == 0:
-			return len(source)
-
-		# We call tuple() to force strings to be used as sequences
-		# ('c', 'a', 't', 's') - numpy uses them as values by default.
-		source = np.array(tuple(source))
-		target = np.array(tuple(target))
-		# We use a dynamic programming algorithm, but with the
-		# added optimization that we only need the last two rows
-		# of the matrix.
-		previous_row = np.arange(len(target) + 1)
-		for s in source:
-			# Insertion (target grows longer than source):
-			current_row = previous_row + 1
-
-			# Substitution or matching:
-			# Target and source items are aligned, and either
-			# are different (cost of 1), or are the same (cost of 0).
-			current_row[1:] = np.minimum(
-					current_row[1:],
-					np.add(previous_row[:-1], [(t!=s).any() for t in target]))
-
-			# Deletion (target grows shorter than source):
-			current_row[1:] = np.minimum(
-					current_row[1:],
-					current_row[0:-1] + 1)
-
-			previous_row = current_row
-
-		return previous_row[-1]
-
-	def levenshtein2(self, s1, s2):
-		#Levenshtein (edit) distance. additions and deletions cost the same. No replacements.
-		count = 0
-		s1, s2 = list(s1), list(s2)
-		for i in range(len(s1)):
-			if s1[i] not in s2:
-				s2.append(s1[i])
-				count += 1
-		to_remove = []
-		for i in range(len(s2)):
-			if s2[i] not in s1:
-				to_remove.append(s2[i])
-				count += 1
-		for i in range(len(to_remove)):
-			s2.remove(to_remove[i])
-		return 1./(1+count)
-
-	def ruleSimilarity(self, cx, cy):
-		#Looks at rules in which cx participated in as slot 1, compares them to rules in which
-		#cy participated as slot 1. Compares in terms of their edit distance.
-		#Then does the same for slot 2.
-		cxSlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet
-		if r.slot1==cx]
-		cySlot1 = [(r.interaction, r.slot2, r.preconditions) for r in self.interactionSet
-		if r.slot1==cy]
-
-		cxSlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet
-		if r.slot2==cx]
-		cySlot2 = [(r.interaction, r.slot1, r.preconditions) for r in self.interactionSet
-		if r.slot2==cy]
-
-		return .5*self.levenshtein(cxSlot1, cySlot1) + .5*self.levenshtein(cxSlot2, cySlot2)
-
-	def pairSimilarity(self, pair1, pair2, tree, beta=1.):
-		cx, cm, cy, cn = pair1[0], pair1[1], pair2[0], pair2[1]
-		return (self.similarity(cx, cy, tree, beta) + self.similarity(cm, cn, tree, beta)) / 2.
-
-	def similarity(self, cx, cy, tree, beta=1.):
-		# Returns beta*treeSimilarity(c1,c2) + (1-beta)*ruleSimilarity(c1,c2)
-		# Uses whatever tree is passed in. Currently we only have VGDLTree, which is
-		# the original tree based on the VGDL ontology.
-		n1, n2 = self.classes[cx][0].vgdlType, self.classes[cy][0].vgdlType
-		treeSimilarity = tree.similarity(n1, n2)
-		ruleSimilarity = self.ruleSimilarity(cx,cy)
-		return beta*treeSimilarity + (1-beta)*ruleSimilarity
 
 	def generateNumberConcepts(self, item, num):
 		"""
@@ -1413,13 +1145,6 @@ class Theory(object):
 		return not self.__eq__(other)
 
 
-def normalize(array):
-	z = float(sum(array))
-	if z == 0:
-		return [1./len(array)]*len(array) #if all items have the same score of 0, return the same score for all.
-	else:
-		return [a/z for a in array]
-
 class Game(object):
 	"""
 	VGDL Game and Induction State.
@@ -1451,19 +1176,6 @@ class Game(object):
 		s = SpriteParser()
 		return s.parseGame(self.vgdlString)
 
-	def posterior(self):
-		## Not used
-		#TODO: Consider allowing some amount of probability mass to uninstantiated hypotheses
-		#The problem with this is it's not clear what the content of those hypotheses,
-		#so it's unclear what you'd do with this new distribution.
-		if len(self.hypothesisSpace)>0:
-			z = 1.*sum([t.prior() for t in self.hypothesisSpace])
-			for t in self.hypothesisSpace:
-				t.posterior = t.prior()/z
-			return [t.posterior for t in self.hypothesisSpace]
-		else:
-			print "Empty hypothesis space; can't give you a posterior."
-
 	def entropy(self, theory):
 		entropySum = 0
 		numSpritesInClasses = float(sum([1 for c in theory.classes for i in c]))
@@ -1479,126 +1191,6 @@ class Game(object):
 		temp_hypotheses = [(h, -1 * h.depth, self.entropy(h)) for h in hypotheses]
 		temp_hypotheses = sorted(temp_hypotheses, key=operator.itemgetter(1,2))
 		return [h[0] for h in temp_hypotheses]
-
-	def explainTermination(self, theory, timestep, prevTimeSteps,result):
-		"""
-		adds all hypotheses about the termination conditions to the terminationSet
-		params:
-		theory: the theory (aka model) that we are basing our new theories on. Assume it's a member of hypothesis space.
-		timestep: the very last time step (at which termination occurs)
-		prevTimeSteps: all time steps previous to the termination time step
-		result: a dictionary for which the key 'win' is a boolean describing whether the game was won
-		"""
-
-		win = result['win']
-		classesWithDiffAmounts = {} # objects which have different amounts in the termination time step from any previous timestep
-		try:
-			prevClassGameStates = [theory.makeGameStateWithClasses(t.gameState['objects']) for t in prevTimeSteps]
-		except TypeError:
-			print "TypeError in explainTermination"
-			embed()
-		classGameState = theory.makeGameStateWithClasses(timestep.gameState['objects'])
-		rulesToAdd = []
-		for c in classGameState:
-			timestep_amt = classGameState[c]
-			timestep_amt_unique = not timestep_amt in [g[c] for g in prevClassGameStates]
-			if timestep_amt_unique:
-				classesWithDiffAmounts[c] = timestep_amt
-
-		for event in timestep.events:
-			# add sprite counter rules to the termination set, if applicable.
-			# Infer potential sprite counter rules by looking at sprite counts for this timestep.
-			for i in [1,2]:
-				terminationClassColor = event[i] #self.getClass(event[i])
-				terminationClassSymbol = theory.colorToClassMapper(terminationClassColor)
-				if terminationClassSymbol in classesWithDiffAmounts:
-					timestep_amt = classesWithDiffAmounts[terminationClassSymbol]
-					spriteCounterRule= SpriteCounterRule(terminationClassSymbol,timestep_amt,win)
-					if not spriteCounterRule in theory.terminationSet:
-						rulesToAdd.append(spriteCounterRule)
-
-
-		time = result["time"]
-		timeoutRule = TimeoutRule(limit=time, win=win)
-		# add a timeout rule to the termination set, if applicable. Use time at the end of this round.
-		if not timeoutRule in theory.terminationSet:
-			rulesToAdd.append(timeoutRule)
-
-		theoryIsSufficient = len(rulesToAdd) > 0
-
-		if not theoryIsSufficient:
-			# parent theory's termination set was insufficient for explaining the termination conditions of this time step. Need to add children theories to the hypothesis space.
-			self.hypothesisSpace.remove(theory)
-			for r in rulesToAdd:
-				t = deepcopy(theory)
-				t.terminationSet.add(r)
-				self.hypothesisSpace.add(t)
-
-	def completeTheory(self, theory, numSamples):
-
-		def sampleCompletedTheory(game, theory):
-			"""
-			Assign all remaining sprites to a class for a given theory in a given game.
-			This literally gives you a single *sample* from the possible ways you could extend the theory to include
-			all seen objects.
-			"""
-			# Find all remaining sprites
-			spritesLeft = []
-			for sprite in theory.spriteSet:
-				if not theory.getClass(sprite):
-					spritesLeft.append(sprite)
-
-			# For each sprite, assign it to a random possible class
-			allClassAssignments = []			# Will save the class assignments here
-			tempTheory = copy.deepcopy(theory) 	# Temporary theory
-			for sprite in spritesLeft:
-				possibleClasses,gotNewClass = tempTheory.searchForPossibleClasses(sprite, 1) # Second param is possible number of new classes
-				sampledClass = choice(possibleClasses)
-
-				classAssignments = [(sampledClass, sprite)]
-				allClassAssignments.extend(classAssignments)
-				tempTheory = tempTheory.createChild([None, classAssignments]) # Update the tempTheory; don't really want to save these theories
-
-			# Finalize the temporary theory
-			if tempTheory:
-				newTheory = theory.createChild([None, allClassAssignments])
-
-			return newTheory
-
-
-		newHypothesisSpace = []
-		for i in range(numSamples):
-			newHypothesisSpace.append(sampleCompletedTheory(self, theory))
-		return newHypothesisSpace
-
-	def predict(self, pair, lamda, numCompletionSamples=10, tree=False, beta=1., softmaxTemp=.1):
-
-		## Not used
-
-		if not tree:
-			tree = self.VGDLTree
-
-		predictions = []
-
-		for theory in self.hypothesisSpace:
-			prediction = theory.predict(pair, lamda, tree, beta, softmaxTemp)
-			if prediction:
-				predictions.append([prediction, theory.prior()])
-			else: #prediction failed because we didn't have a complete theory
-				newTheories = self.completeTheory(theory, numCompletionSamples)
-				for t in newTheories:
-					predictions.append([t.predict(pair, lamda, tree, beta, softmaxTemp), t.prior()])
-
-		predicates = [p[0] for p in predictions[0][0]]
-		weights = [prediction[1] for prediction in predictions]
-		z = sum(weights)
-		weights = weights/z
-		predLists = [prediction[0] for prediction in predictions]
-		probs = [[p[1]*weights[i] for p in predLists[i]] for i in range(len(predictions))]
-		print len(weights), len(probs), len(probs[0])
-		sums = [sum([p[i] for p in probs]) for i in range(len(predicates))]
-
-		return zip(predicates, sums)
 
 
 	def DFSinduction(self, theory, timesteps, maxNumTheories, override=False, verbose=False):
@@ -1834,89 +1426,6 @@ class Game(object):
 
 		return self.hypothesisSpace
 
-	def induction(self, trace, verbose=False, allTraces=None):
-		"""
-		Iterates through trace, performing theory induction on each timestep, contingent on theories inferred for the previous steps.
-		"""
-		T = Theory(self)
-
-		##change this!
-		if self.spriteInductionResult:
-			T.initializeSpriteSet(vgdlSpriteParse=False, spriteInductionResult=self.spriteInductionResult)
-			print "initialized from sprite induction result"
-		elif self.vgdlSpriteParse:
-			T.initializeSpriteSet(vgdlSpriteParse=self.vgdlSpriteParse, spriteInductionResult=False)
-			print "initialized from sprite parse"
-
-		self.hypothesisSpace = [T]
-		newTheories = []
-
-		# For every timestep
-		timesteps, result = trace
-		for i in range(len(timesteps)):
-			timestep = timesteps[i]
-
-			if verbose:
-				print "explaining events {}".format(timestep.events)
-				print "___________________________________________________________________"
-
-			# For every theory
-			for theory in self.hypothesisSpace:
-				if theory.likelihood(timestep) < 1.0: 	# Theory needs to be changed
-					newTheories.extend(theory.explainTimeStep(timestep, timestep, timesteps))
-
-			# Make sure only to add unique theories
-			for theory in newTheories:
-				# theory.display()
-				theoryIsNew = True
-				for existingTheory in self.hypothesisSpace:
-					if theory==existingTheory:
-						theoryIsNew = False
-						break
-				if theoryIsNew:
-					self.hypothesisSpace.append(theory)
-
-			self.cleanHypothesisSpace(timesteps[0:i+1], 1) #All timesteps up to now should be fully explained
-
-			if verbose:
-				print "{} hypotheses:".format(len(self.hypothesisSpace))
-
-			# Sort hypotheses (right now by simple length metric), then print.
-			hypotheses = sorted(self.hypothesisSpace, key=lambda x:len(x.interactionSet)*len(x.classes.keys()))
-
-			if verbose:
-				for h in hypotheses:
-					h.display()
-				print "___________________________________________________________________"
-				print ""
-
-		# Termination set induction
-		if result:
-			hypothesisSpaceWithTermConditions = []
-			for theory in self.hypothesisSpace:
-				theory.explainTermination(timesteps[-1], timesteps[:-1], result)
-				hypothesisSpaceWithTermConditions.append(theory)
-
-			self.hypothesisSpace = hypothesisSpaceWithTermConditions
-
-		return self.hypothesisSpace
-
-	def cleanHypothesisSpace(self, subtrace, threshold):
-		"""
-		Removes theories from hypothesisSpace if their likelihood for the timesteps
-		passed in 'subtrace' is below threshold.
-		"""
-		newHypothesisSpace = []
-
-		for t in self.hypothesisSpace:
-
-			if all(t.likelihood(s)>=threshold for s in subtrace):
-				t.dryingPaint = set()
-				newHypothesisSpace.append(t)
-
-
-		self.hypothesisSpace = newHypothesisSpace
-		return
 
 def generateTheoryFromGame(rle, alterGoal=True):
 	"""
