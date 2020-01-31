@@ -3,7 +3,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 
 ## gameplay data
 EMPA_dates = list('mar28')
-refactor_dates = list('refactor_jan24')
+refactor_dates = list('refactor_jan28')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load helper functions
