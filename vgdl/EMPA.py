@@ -448,7 +448,7 @@ class Agent:
             ### we want to make a super simple game where we explore 10 nodes and can easily visualize them. Have the agent explore 5, then re-start search, and explore 5 more to see if they're novel nodes.
             ## p.rewardSelection() should just pick the best unexplored node, regardless of where the start state is.
 
-            # self.IW_k = 1
+            self.IW_k = 2
             # t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
