@@ -139,13 +139,9 @@ class Metacontroller:
 
                 ## Does the score change with each time-step?
                 if len(self.agent.bookkeeping.compactStates)>1 and env.getTime()>self.agent.bookkeeping.compactStates[-2]['timestep']:
-                    scoreChange = env.getScore()!=self.agent.bookkeeping.compactStates[-1]['score']
+                    scoreChange = env.getScore()!=self.agent.bookkeeping.compactStates[-2]['score']
                 else:
                     scoreChange = False
-
-                if scoreChange:
-                    print "found scoreChange"
-                    embed()
 
                 if self.display_text:
                     print "moving types: {}".format(movingTypes)
