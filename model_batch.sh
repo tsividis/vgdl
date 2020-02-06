@@ -49,5 +49,5 @@ if [ ! -d "${ROOT}/slurm_logs/main" ]; then
 fi
 
 # finally, run the model
-singularity exec  -B "/$BASE:/$BASE" $CONT python -u -m vgdl.load_games --game_number $GAME_NUMBER --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --task_ID $SLURM_ARRAY_TASK_ID --make_movie False
 # echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --metacontroller_index ${META_IDX}"

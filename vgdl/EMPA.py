@@ -53,7 +53,6 @@ class Agent:
         self.IW_k = IW_k # Only using IW 1
         self.extra_atom_allowed = extra_atom_allowed # Adding optional extra atom to IW
         self.epsilon_greedy = False # Ablation
-        self.switch_to_exploit_step = 1000 # Used for e-greedy ablation
         self.absolute_max_nodes = 64000 #To save on compute, don't deal with games that require more than this
         self.shortHorizonNodes = 500 ## This isn't used, but code needs further cleanup to actually delete it.
         self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
@@ -443,12 +442,6 @@ class Agent:
             ## Initialize planner
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
 
-
-
-            ### we want to make a super simple game where we explore 10 nodes and can easily visualize them. Have the agent explore 5, then re-start search, and explore 5 more to see if they're novel nodes.
-            ## p.rewardSelection() should just pick the best unexplored node, regardless of where the start state is.
-
-            self.IW_k = 2
             # t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
@@ -457,9 +450,7 @@ class Agent:
             # t1 = time.time()
 
             p.BFS()
-            # if p.bestNode is not None and p.bestNode.win==True:#p.bestNode.rle._isDone()==(True, True):
-            #     print "found winning bestnode. embed to explore"
-            #     embed()
+
             # print "plan phase 5: {}".format(time.time()-t1)
             # t1 = time.time()
 

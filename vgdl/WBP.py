@@ -316,7 +316,7 @@ class WBP():
 
 		return
 
-	def return_contingency_plan(self, start_node, QReward):
+	def return_non_win_plan(self, start_node, QReward):
 
 		if self.stall_mode:
 			node = self.return_best_non_win_node(QReward)
@@ -326,10 +326,6 @@ class WBP():
 		self.bestNode = node
 		self.solution = node.actionSeq
 		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(node)
-
-		## If we failed to find a plan and weren't in 'stall' mode, we should tell the metacontroller we'd like to quit.
-		## It then will quit if this happens a couple times.
-		self.quitting = True
 
 		return node
 
@@ -442,7 +438,7 @@ class WBP():
 			## It then will quit if this happens a couple times.
 			if current in [None, 'pickMaxNode']:
 				self.quitting = True
-				self.return_contingency_plan(start, QReward)
+				self.return_non_win_plan(start, QReward)
 				return
 			
 			self.update_visited_positions(current.rle)
@@ -480,6 +476,12 @@ class WBP():
 			print "returning best non-win-plan"
 			self.return_best_non_win_plan(QReward)
 			return
+
+		## Above segment can be changed to this:
+		# if self.stall_mode:
+		# 	print "returning best non-win-plan"
+		# 	self.return_non_win_plan(start, QReward)
+		# 	return
 
 		return
 

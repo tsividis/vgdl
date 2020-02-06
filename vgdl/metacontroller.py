@@ -169,7 +169,6 @@ class Metacontroller:
             print "planning in {} mode".format(self.agent.hyperparameter_index)
             print "max_nodes: {}, short_horizon: {}, stall_mode: {}".format(self.agent.max_nodes, self.agent.shortHorizon, stall_mode)
 
-            # TODO: Implement stall_mode mode as a separate mode.
             if stall_mode: #aka 'stall' mode
                 ## Replan in new mode
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
@@ -179,10 +178,6 @@ class Metacontroller:
                 p.BFS()
                 self.agent.total_planner_steps += p.total_nodes_opened
                 self.agent.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
-
-                if p.bestNode==None and p.solution:
-                    print "bestNode of None and p.solution!!"
-                    embed()
 
                 solution = p.solution
                 predicted_states = p.predicted_states
