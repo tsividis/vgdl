@@ -1,6 +1,5 @@
-# game_names = ['aliens', 'avoidgeorge', 'bait', 'boulderdash', 'chase', 'expt_antagonist', 'expt_preconditions', 'expt_push_boulders', 'expt_relational', 'frogs', 'lemmings', 'portals', 'plaqueattack', 'sokoban', 'survivezombies', 'zelda']
+game_names = ['aliens', 'avoidgeorge', 'bait', 'boulderdash', 'chase', 'expt_antagonist', 'expt_preconditions', 'expt_push_boulders', 'expt_relational', 'frogs', 'lemmings', 'portals', 'plaqueattack', 'sokoban', 'survivezombies', 'zelda']
 
-game_names = ['expt_relational']
 # # low memory -- 16gb
 # game_names = ['aliens', 'variant_aliens_1', 'variant_aliens_2', 'variant_aliens_3', 'variant_aliens_4', 
 # 'avoidgeorge', 'variant_avoidgeorge_1', 'variant_avoidgeorge_2', 'variant_avoidgeorge_3', 'variant_avoidgeorge_4',
