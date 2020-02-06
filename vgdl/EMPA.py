@@ -53,7 +53,7 @@ class Agent:
         self.IW_k = IW_k # Only using IW 1
         self.extra_atom_allowed = extra_atom_allowed # Adding optional extra atom to IW
         self.epsilon_greedy = False # Ablation
-        self.absolute_max_nodes = 64000 #To save on compute, don't deal with games that require more than this
+        self.absolute_max_nodes = 32000 #To save on compute, don't deal with games that require more than this
         self.shortHorizonNodes = 500 ## This isn't used, but code needs further cleanup to actually delete it.
         self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
         self.forfeit_level = False

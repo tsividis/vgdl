@@ -109,7 +109,7 @@ class Metacontroller:
                 print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.agent.absolute_max_nodes, self.agent.max_nodes/self.agent.max_nodes_annealing)
             self.agent.max_nodes /= self.agent.max_nodes_annealing
             self.agent.stored_max_nodes = self.agent.max_nodes
-            forfeit_level = True
+            self.agent.forfeit_level = True
         return forfeit_level
 
     ##overload the agent functions so that you can call them directly from here
