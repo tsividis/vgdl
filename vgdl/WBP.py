@@ -461,7 +461,6 @@ class WBP():
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
 					self.winning_states.append(child)
-					self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
 				else:
 					if not (child.terminal and not child.win):
 						QReward.append(child)
@@ -469,6 +468,7 @@ class WBP():
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				self.bestNode = bestNodes[0]
+				self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(self.bestNode)
 				self.solution = self.bestNode.actionSeq
 				if self.display:
 					print "found winning states"
@@ -477,6 +477,7 @@ class WBP():
 		self.solution = []
 
 		if self.stall_mode:
+			print "returning best non-win-plan"
 			self.return_best_non_win_plan(QReward)
 			return
 
