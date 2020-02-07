@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-15
+#SBATCH --array=0-1
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=2880
 #SBATCH --partition=tenenbaum
 #SBTACH --cpus-per-task=2
-#SBATCH --mem=32G
+#SBATCH --mem=64G
 #SBATCH --requeue
 ##SBATCH --output /dev/null
 
