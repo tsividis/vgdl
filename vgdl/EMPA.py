@@ -212,7 +212,7 @@ class Agent:
                     sprite.rect = matchingSprite.rect
                     sprite.lastmove = matchingSprite.lastmove
                     sprite.ID2 = matchingSprite.ID
-                    if 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
+                    if sprite.name in hypothesis.classes and 'Missile' in str(hypothesis.classes[sprite.name][0].vgdlType) and self.best_params!=None:
                         try:
                             ## Enforce consistency: inferred value for individual orientations has to be consistent with what we're saying the horizontal/vertical orientation is of the entire group.
 
