@@ -59,7 +59,14 @@ Test it:
     show collections
     db.subjects.find({}, {subj_id: 1})
 
-Should see `plays`, `subjects`, `states`, `sessions`, `regressors`, `runs`, etc
+Should see `plays`, `subjects`, `regressors`, `runs`. Might have to clear them up:
+
+    db.subjects.remove({})
+    db.plays.remove({})
+    db.runs.remove({})
+    db.regressors.remove({})
+
+Don't touch the `games` collection!
 
 To edit games, use the [jsVGDL](https://github.com/yl3506/heroku_vgdl) repo (ask Yichen for access) -- 
 - Make sure in `app.js`, we are connecting to the local Mongo server (look for `mongoose.connect` around line 142, should connect to localhost)
@@ -95,6 +102,7 @@ Find the experimental protocol [here](https://docs.google.com/presentation/d/1IK
 - Each _run_ has 3 _blocks_ of 3 _instances_ (game levels) each.
 - Each _instance_ corresponds to a game level which the subject plays on repeat (multiple _plays_) for 1 min total. This is necessary because we want the same amount of fMRI data for each game, but subjects might finish some instances faster than others.
 
+Might have to clear collections if re-running the same run, (it will just add more play TODO fix).
 
 fMRI Human Replay
 -----
@@ -123,13 +131,15 @@ To have EMPA play the same sequence of game instances as the subject, do:
 
 E.g.
 
-    python fmri_empaPlay.py 0 0
+    python fmri_empaPlay.py 0 0 0 0 0
 
 Note that this is generative play, that is, EMPA is playing the same levels in the same order as the subject, but it is choosing its own actions and hence the state sequence will diverge from that of the human.
 
 This is useful for making sure EMPA can play the games and learn the theory.
 
 Also saves a video file in `videos/`.
+
+Might have to clear `savedCurricula` if re-running the same run / play.
 
 
 fMRI EMPA Replay
@@ -150,3 +160,14 @@ It is important for EMPA to learn using the same state-action sequence as the hu
 TODO
 
 Currently, this is broken.
+
+
+Tips
+-----
+
+To see where you `embed()`ed, do:
+
+    import sys, traceback
+    traceback.print_stack()
+
+

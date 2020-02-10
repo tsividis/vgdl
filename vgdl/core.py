@@ -974,6 +974,14 @@ class BasicGame(object):
             obs[key] = ss
             for s in self.getSprites(key):
                 pos = (s.rect.left, s.rect.top)
+
+                if s.rect.left != s.x or s.rect.top != s.y:
+                    print 'mismatch!' #
+                    # momchil note: happens b/c we call VGDLSprite.update() (which sets .x = .rect.x etc) before moving the avatar
+                    # .rect is the updated coordinate
+                    #embed()
+                    #assert False
+
                 attrs = {}
                 while pos in ss:
                     # two objects of the same type in the same location, we need to disambiguate
