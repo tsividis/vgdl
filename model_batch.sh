@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-1
+#SBATCH --array=0-179
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=2880
 #SBATCH --partition=tenenbaum
@@ -27,7 +27,7 @@ SRC=""
 DST=""
 
 # Figure out which game and hyperparameter
-N_GAMES=16
+N_GAMES=90
 # N_PARAMS=3
 GAME_NUMBER=$(($SLURM_ARRAY_TASK_ID % $N_GAMES))
 # META_IDX=$(($SLURM_ARRAY_TASK_ID / $N_GAMES))
