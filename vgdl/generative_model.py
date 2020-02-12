@@ -10,6 +10,7 @@ import random
 
 INTERSECT_THRESHOLD = .5
 
+classes_in_game = ['a','b', 'c']
 avatar_states = [0,1,2]
 conditions = ['collision']
 effects = ['killSprite', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
@@ -104,8 +105,13 @@ class Detector:
 				condition = (rule_condition, rule_classes)
 			if random.random() > effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
-		# else:
-			## false positive stuff
+		else:
+			for cond in conditions:
+				if random.random() < condition_false_positive_rates[cond]:
+					classes_involved = tuple([random.choice(classes_in_game), random.choice(classes_in_game)])
+					condition = (cond, classes_involved)
+			if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
+				effect = random.choice(effects)
 		
 		return condition, effect
 
@@ -170,10 +176,10 @@ class Detector:
 	def print_history(self, states):
 		## Prep for formatting
 		max_rule_length, max_condition_length, max_effect_length = 0, 0, 0
-		max_line_length = 0
 		for i in self.timestep_to_conditions.keys():
-			line_length = len(states[i].rules)
-			rule_length, condition_length, effect_length = len(str(states[i].rules)), len(str(self.timestep_to_conditions[i])), len(str(self.timestep_to_effects[i]))
+			# embed()
+			rule_length = max([len(str(r)) for r in states[i].rules]) if states[i].rules else 0
+			condition_length, effect_length = len(str(self.timestep_to_conditions[i])), len(str(self.timestep_to_effects[i]))
 			
 			if rule_length > max_rule_length:
 				max_rule_length = rule_length
@@ -196,11 +202,10 @@ class Detector:
 						print i, " "*(4-len(str(i))), "|", rule, " "*(max_rule_length-rule_length), "|", conditions, " "*(max_condition_length-condition_length), "|", effects
 					else:
 						condition_length, effect_length = 0, 0
-						print " "*5, "|", rule, " "*(max_rule_length-rule_length), "|", " "*(max_condition_length-condition_length), "|"
+						print " "*5, "|", rule, " "*(max_rule_length-rule_length), "|", " "*(max_condition_length-condition_length), " |"
 				except:
 					embed()
 		print ""
-
 
 
 r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('killSprite'))
