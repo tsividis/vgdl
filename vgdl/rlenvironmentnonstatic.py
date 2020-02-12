@@ -404,12 +404,60 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
 
         if self._game.playback_states:
+            s = self._game.getFullState()
+
             if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
                 print 'wrong effectListLen!'
                 embed()
             if len(self._game.kill_list) != self._game.playback_states[self._game.playback_index - 1]['kill_listLen']: 
                 print 'wrong kill_listLen!'
                 embed()
+            if len(self._game.collision_eff) != self._game.playback_states[self._game.playback_index - 1]['collision_effLen']: 
+                print 'wrong collision_eff!'
+                embed()
+            if len(self._game.sprite_groups) != self._game.playback_states[self._game.playback_index - 1]['sprite_groupsLen']: 
+                print 'wrong sprite_groupsLen!'
+                embed()
+            if len(self._game.effectListByColor) != len(self._game.playback_states[self._game.playback_index - 1]['effectListByColor']): 
+                print 'wrong effectListByColor!'
+                embed()
+            if len(self._game.effectListByClass) != len(self._game.playback_states[self._game.playback_index - 1]['effectListByClass']): 
+                print 'wrong effectListByClass!'
+                embed()
+            # TODO momchil different; weird
+            #if self._game.keystate != state['keystate']:
+            #    print 'wrong keystate'
+            #    embed()
+
+            for sname, sprites in state['objects'].iteritems():
+
+                assert sname in s['objects'].keys(), 'sname not found'
+                for pos, attrs in sprites.iteritems():
+
+                    # deoffset -- objects are offest in the actual human game, but not here
+                    p = tuple(map(int, pos[1:-1].split(', ')))
+                    p = (p[0] - attrs['offset'][0], p[1] - attrs['offset'][1])
+                    if str(p) not in s['objects'][sname].keys():
+                        print 'pos not found'
+                        embed()
+
+                    attrs_c = s['objects'][sname][str(p)] # current attrs
+                    attrs['x'] -= attrs['offset'][0]
+                    attrs['y'] -= attrs['offset'][1]
+
+                    for attr, val in attrs.iteritems():
+                        assert attr in attrs_c.keys(), 'attr not found'
+
+                        # offset b/c it's (0,0) here
+                        # symbol b/c none here
+                        # colorName b/c randomized there
+                        # ID and ID2 b/c generated anew
+                        # TODO check lastdisplacement and deathage
+                        if val != attrs_c[attr] and attr not in ['offset', 'lastdisplacement', 'deathage', 'symbol', 'colorName', 'ID', 'ID2']:
+                            print 'wrong attr value'
+                            embed()
+                            time.sleep(1000)
+
             # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
             #if len(self._game.new_sprites) != self._game.playback_states[self._game.playback_index - 1]['new_spritesLen']:
             #    print 'wrong new_spritesLen!'
