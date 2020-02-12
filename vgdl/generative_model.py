@@ -25,7 +25,7 @@ for p in effects:
 
 for c in conditions:
 	condition_false_negative_rates[c] = .1
-	condition_false_positive_rates[c] = .05
+	# condition_false_positive_rates[c] = .05
 
 class State:
 	def __init__(self):
@@ -75,7 +75,7 @@ class Rule:
 		return str((self.conditions, self.effect))
 
 	def __hash__(self):
-		return hash(((hash(c) for c in sorted(self.conditions)), hash(self.effect)))
+		return hash((tuple([hash(c) for c in sorted(self.conditions)]), hash(self.effect)))
 
 	def __eq__(self, other):
 		return hash(self)==hash(other)
@@ -122,33 +122,34 @@ class Detector:
 
 			if random.random() > false_negative_rate:
 				condition = (rule_condition, rule_classes)
+				# condition = Condition(rule_condition, rule_classes)
+
 			if random.random() > effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
-		else:
-			## False Positives
-			for cond in conditions:
-				if random.random() < condition_false_positive_rates[cond]:
-					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
-					# condition = Condition(cond, (classes_involved))
-					condition = (cond, classes_involved)
-					print "randomly smapled", condition
-			if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
-				effect = Effect(random.choice(effects))
-				print "randomly sampled", effect
+		# else:
+		# 	## False Positives
+		# 	for cond in conditions:
+		# 		if random.random() < condition_false_positive_rates[cond]:
+		# 			classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
+		# 			# condition = Condition(cond, (classes_involved))
+		# 			condition = (cond, classes_involved)
+		# 			print "randomly smapled", condition
+		# 	if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
+		# 		effect = Effect(random.choice(effects))
+		# 		print "randomly sampled", effect
 		return condition, effect
 
 	def detect_rules(self, state):
 		conditions_set, effects_set = set(), set()
 		for rule in rules:
+			print rule
 			c, e = self.detect_rule(state, rule)
+			print c
 			if c is not None:
 				conditions_set.add(c)
 			if e is not None:
 				effects_set.add(e)
-		if conditions_set:
-			print "found conditions set"
-			# print conditions_set
-			# embed()
+
 		self.conditions_set = self.conditions_set.__or__(conditions_set)
 		self.effects_set = self.effects_set.__or__(effects_set)
 		return conditions_set, effects_set
