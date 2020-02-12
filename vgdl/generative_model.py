@@ -36,7 +36,7 @@ class State:
 class Condition:
 	def __init__(self, condition=None, classes=None, assertion_about_state={}):
 		self.condition = condition
-		self.classes = classes
+		self.classes = tuple(sorted(classes)) if classes is not None else None
 		self.assertion_about_state = assertion_about_state
 
 	def __repr__(self):
@@ -46,7 +46,7 @@ class Condition:
 			return str((self.assertion_about_state))
 
 	def __hash__(self):
-		return hash((self.condition, tuple(sorted(self.classes)), tuple(sorted(self.assertion_about_state))))
+		return hash((self.condition, self.classes, tuple(sorted(self.assertion_about_state))))
 
 	def __eq__(self, other):
 		return hash(self)==hash(other)
@@ -121,7 +121,7 @@ class Detector:
 					rule_classes = cond.classes
 
 			if random.random() > false_negative_rate:
-				condition = (rule_condition, tuple(sorted(rule_classes)))
+				condition = (rule_condition, rule_classes)
 			if random.random() > effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
 		else:
