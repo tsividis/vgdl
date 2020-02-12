@@ -131,7 +131,7 @@ To have EMPA play the same sequence of game instances as the subject, do:
 
 E.g.
 
-    python fmri_empaPlay.py 0 0 0 0 0
+    rm savedCurricula/*; python fmri_empaPlay.py 0 0 0 0 0
 
 Note that this is generative play, that is, EMPA is playing the same levels in the same order as the subject, but it is choosing its own actions and hence the state sequence will diverge from that of the human.
 
@@ -151,7 +151,7 @@ To have EMPA replay the human state-action sequence and learn a theory (as if it
 
 E.g.
 
-    python fmri_empaReplay.py 0 0
+    rm savedCurricula/*; python fmri_empaReplay.py 0 0
         
 This will be used to generate independent variables for the fMRI analysis. The idea is that, if humans have something like EMPA in their heads, then they should be inferring theories like those that EMPA would infer. 
 
