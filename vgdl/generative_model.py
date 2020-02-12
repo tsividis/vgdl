@@ -14,9 +14,9 @@ classes_in_game = ['a','b', 'c']
 avatar_states = [0,1,2]
 conditions = ['collision']
 effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
-condition_false_negative_rates = defaultdict(lambda: 0)
+condition_false_negative_rates = defaultdict(lambda: .1)
 effect_false_negative_rates = defaultdict(lambda: 0)
-condition_false_positive_rates = defaultdict(lambda: 0)
+condition_false_positive_rates = defaultdict(lambda: .05)
 effect_false_positive_rates = defaultdict(lambda: 0)
 
 for p in effects:
@@ -123,14 +123,17 @@ class Detector:
 			false_negative_rate = 0.
 			rule_condition, rule_classes = None, None
 			for cond in rule.conditions:
-				false_negative_rate += condition_false_negative_rates[cond.condition]
-				if cond.classes is not None:
-					rule_condition = cond.condition
-					rule_classes = cond.classes
+				# if cond.classes is None:
+					# embed()
+				if random.random() < condition_false_negative_rates[cond.condition]:
+					condition = cond
+			# 	# false_negative_rate += condition_false_negative_rates[cond.condition]
+			# 	if cond.classes is not None:
+			# 		rule_condition = cond.condition
+			# 		rule_classes = cond.classes
 
-			if random.random() > false_negative_rate:
-				# condition = (rule_condition, rule_classes)
-				condition = Condition(rule_condition, rule_classes)
+			# if random.random() > false_negative_rate:
+			# 	condition = Condition(rule_condition, rule_classes)
 
 			if random.random() > effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
@@ -140,7 +143,6 @@ class Detector:
 				if random.random() < condition_false_positive_rates[cond]:
 					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
 					condition = Condition(cond, (classes_involved))
-					# condition = (cond, classes_involved)
 			if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
 				effect = Effect(random.choice(effects))
 		return condition, effect
