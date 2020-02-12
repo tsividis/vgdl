@@ -407,6 +407,7 @@ class Agent:
                 print("Playing level {}".format(n_level+1))
 
             if playback:
+                # fMRI playback from human play
                 (self.gameString, self.levelString, self.playback_states) = level_game
             else:
                 (self.gameString, self.levelString) = level_game
@@ -448,7 +449,13 @@ class Agent:
             while not win and not quit_level:# and i<15:
                 self.n_level = n_level
                 self.within_level_iteration = i
-                gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+
+                if playback:
+                    # fMRI playback from human play
+                    gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.replayEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+                else:
+                    gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level = self.playEpisode(gameObject, flexible_goals, win, first_time_playing_level)
+
                 self.total_game_steps += steps
                 allCompactStates.append(compactStates)
                 episode_results = (n_level, steps, win, score, self.total_planner_steps)
@@ -647,6 +654,8 @@ class Agent:
             persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, padding=10)
         if self.produce_printout:
             print "Won {} out of {} episodes.".format(sum(wins), i)
+
+
 
     def playEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
         from vgdl.util import manhattanDist
@@ -927,6 +936,7 @@ class Agent:
                         if self.saveMidEpisode:
                             self.saveEpisodeState(episodeSaveFile, effectsEncountered, statesEncountered, compactStates, annealing)
                             self.episodeSaveTime = time.time()
+
                         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
                     if self.display_text:
@@ -1015,6 +1025,7 @@ class Agent:
                 print colored('________________________________________________________________', 'white', 'on_red')
                 print colored(output, 'white', 'on_red')
                 print colored('________________________________________________________________', 'white', 'on_red')
+
                 return gameObject, False, self.rle._game.score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 
 
@@ -1050,6 +1061,129 @@ class Agent:
             print colored(output, 'white', 'on_red')
             print colored('________________________________________________________________', 'white', 'on_red')
 
+
+        return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
+
+
+    def replayEpisode(self, gameObject, flexible_goals=False, win=False, first_time_playing_level=False, pool=None):
+        # minimalist version of playEpisode exclusively dedicated to replay from human play
+        # no planning, no bells & whistles
+        # TODO momchil potentially dedupe / merge w/ playEpisode; had to do it separately b/c playEpisode kept breaking
+
+        from vgdl.util import manhattanDist
+
+        episodeSaveTime = time.time() ## in seconds
+        quit_level = False
+        ## Initialize external environment
+        self.initializeEnvironment()
+        if self.display_text:
+            print "initializing RLE"
+        # print "Game name:", self.gameFilename
+        # print "Starting episode"
+        # print "Playing level {}".format(self.n_level + 1)
+        if self.produce_printout:
+            print ""
+            print self.rle.show(color='blue')
+
+        self.quits = 0
+        self.longHorizonObservations = 0
+        self.previous_objects = self.all_objects if self.all_objects else {}
+        self.all_objects= self.rle._game.getObjects()
+
+        annealing = 1
+        ## Start storing encountered states.
+        effectsEncountered = []
+        statesEncountered = []
+        compactStates = [] ## for easy analysis of score over time.
+
+        if self.make_movie or self.record_video_info:
+            statesEncountered.append(self.rle._game.getFullState())
+        
+        self.last_recorded_time = time.time()
+        if self.record_states:
+            compactStates.append(self.compactify(self.rle))
+        ## Initialize memory of object positions
+        self.rle._game.objectMemoryDict, self.rle._game.previousPositions = {}, {}
+        for k, v in self.rle._game.all_objects.iteritems():
+            self.rle._game.objectMemoryDict[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+            self.rle._game.previousPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+
+        ## initialize theory if necessary.
+        if len(self.hypotheses) == 0:
+            gameObject = self.initializeHypotheses(self.all_objects, statesEncountered, compactStates, learnSprites=True)
+            if self.display_text:
+                print "initializing hypotheses"
+        else:
+            gameObject = self.completeHypotheses(self.all_objects, statesEncountered, compactStates, first_time_playing_level)
+            if self.display_text:
+                print "had hypotheses -- completing them."
+            # If theory is being carried over, falsify termination hypotheses
+            # given new level state.
+            if not flexible_goals:
+                [t.updateTerminations(rle=self.rle) for t in self.hypotheses]
+
+
+        ## Do beginning-of-episode Avatar resource-management.
+        resources = self.rle._game.getAvatars()[0].resources
+        for resource, val in resources.items():
+            if resource not in self.seen_resources and val>0:
+                self.seen_resources.append(resource)
+                self.hypotheses[0].resource_limits[resource] = self.rle._game.resources_limits[resource]
+            if resource not in self.seen_limits and val==self.rle._game.resources_limits[resource]:
+                self.seen_limits.append(resource)
+
+        ended, win = self.rle._isDone()
+
+        legalActions = [0, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+        if self.hypotheses[0].classes['avatar'][0].args and 'stype' in self.hypotheses[0].classes['avatar'][0].args:
+            legalActions.append(K_SPACE)
+
+        steps = self.rle._game.time
+        emptyPlans = 0
+        while not ended:
+
+            quitting = False
+
+            action = -666 # TODO momchil maybe take it from replay here, and not in _performAction?
+
+            plannerNodes = 0
+            hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
+                run_induction = not flexible_goals)
+            print 'HYPOTHESIS 4' # momchil
+            hypotheses[0].display()
+
+            self.rle._game.nextPositions = {}
+            for k, v in self.rle._game.all_objects.iteritems():
+                self.rle._game.nextPositions[k] = (int(self.rle._game.all_objects[k]['sprite'].rect.x), int(self.rle._game.all_objects[k]['sprite'].rect.y))
+                try:
+                    if self.rle._game.previousPositions[k] != self.rle._game.nextPositions[k]:
+                        self.rle._game.objectMemoryDict[k] = copy.deepcopy(self.rle._game.previousPositions[k])
+                except KeyError:
+                    pass
+            self.rle._game.previousPositions = copy.deepcopy(self.rle._game.nextPositions)
+
+            effectsEncountered.extend(effects)
+            steps +=1
+            if theory_change_flag:
+                self.hypotheses = hypotheses
+
+            ended, win = self.rle._isDone()
+
+            #ended = self.rle._game.ended # TODO momchil rm me
+
+            self.max_game_time_observed = max(self.max_game_time_observed, self.rle._game.time)
+            if ended:
+                break
+
+            if self.rle._game.playback_index == len(self.rle._game.playback_states):
+                # TODO momchil make ended = true instead or something
+                embed()
+                break
+
+
+        score = self.rle._game.score
+
+        quit_level = True 
 
         return gameObject, win, score, steps, statesEncountered, effectsEncountered, compactStates, quit_level
 

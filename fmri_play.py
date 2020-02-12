@@ -6,6 +6,8 @@ import time
 
 # see db_api.py
 
+assert False, ' don''t -- it will mess up the current stuff in the db'
+
 import json
 import sys
 import csv
