@@ -13,7 +13,7 @@ INTERSECT_THRESHOLD = .5
 classes_in_game = ['a','b', 'c']
 avatar_states = [0,1,2]
 conditions = ['collision']
-effects = ['killSprite', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
+effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
 condition_false_negative_rates = defaultdict(lambda: 0)
 effect_false_negative_rates = defaultdict(lambda: 0)
 condition_false_positive_rates = defaultdict(lambda: 0)
@@ -74,6 +74,12 @@ class Rule:
 	def __repr__(self):
 		return str((self.conditions, self.effect))
 
+	def __hash__(self):
+		return hash(((hash(c) for c in sorted(self.conditions)), hash(self.effect)))
+
+	def __eq__(self, other):
+		return hash(self)==hash(other)
+
 	def apply(self, state):
 		for condition in self.conditions:
 			if condition.assertion_about_state:
@@ -85,6 +91,7 @@ class Rule:
 			return self
 
 		return None
+
 
 class Detector:
 	def __init__(self):
@@ -114,7 +121,7 @@ class Detector:
 					rule_classes = cond.classes
 
 			if random.random() > false_negative_rate:
-				condition = (rule_condition, rule_classes)
+				condition = (rule_condition, tuple(sorted(rule_classes)))
 			if random.random() > effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
 		else:
@@ -122,7 +129,8 @@ class Detector:
 			for cond in conditions:
 				if random.random() < condition_false_positive_rates[cond]:
 					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
-					condition = Condition(cond, (classes_involved))
+					# condition = Condition(cond, (classes_involved))
+					condition = (cond, classes_involved)
 					print "randomly smapled", condition
 			if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
 				effect = Effect(random.choice(effects))
@@ -175,6 +183,8 @@ class Detector:
 			for condition in self.conditions_set:
 				curr_condition_timesteps = self.conditions_to_timesteps[condition]
 
+				# embed()
+				# proposed_rule = Rule(conditions=[Condition(condition[0], condition[1])], effect=Effect(effect))
 				proposed_rule = (condition, effect)
 				
 				# calculates (|E intersect C| / |C|)
@@ -226,13 +236,17 @@ class Detector:
 		print ""
 
 
-r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('killSprite'))
+r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
 
 r2 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
 
 r3 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('bounceForward'))
 
-rules = [r1, r2, r3]
+r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
+
+r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
+
+rules = [r1, r2, r3, r4, r5]
 
 state = State()
 
@@ -255,16 +269,12 @@ def print_history(states):
 		print i, state.rules
 
 
-    # self.effect_intersect_pct[proposed_rule] = float(len(curr_condition_timesteps.intersection(curr_effect_timesteps))) / len(curr_effect_timesteps)
-
-
-
 states = generate_states(500)
 d = Detector()
 d.populate_dictionaries(states)
 d.learn_theory()
 
-# ## Print what actually happened and what the detectors found
+### Print what actually happened and what the detectors found
 d.print_history(states)
 
 # ## Print all rules and their P(E|C)
@@ -273,10 +283,15 @@ for k,v in sorted(d.cond_intersect_pct.items()):
 	print k,v
 print ""
 
-# ## Print all rules and their P(C|E)
+### Print all rules and their P(C|E)
 print "Rules and their P(C|E):"
 for k,v in sorted(d.effect_intersect_pct.items()):
 	print k,v
+print ""
+
+print "Actual rules"
+for rule in rules:
+	print rule
 print ""
 
 embed()
