@@ -106,12 +106,13 @@ class Detector:
 			if random.random() > effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
 		else:
+			## False Positives
 			for cond in conditions:
 				if random.random() < condition_false_positive_rates[cond]:
 					classes_involved = tuple([random.choice(classes_in_game), random.choice(classes_in_game)])
-					condition = (cond, classes_involved)
+					condition = Condition(cond, (classes_involved))
 			if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
-				effect = random.choice(effects)
+				effect = Effect(random.choice(effects))
 		
 		return condition, effect
 
