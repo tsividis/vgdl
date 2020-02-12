@@ -45,12 +45,24 @@ class Condition:
 		else:
 			return str((self.assertion_about_state))
 
+	def __hash__(self):
+		return hash((self.condition, tuple(sorted(self.classes)), tuple(sorted(self.assertion_about_state))))
+
+	def __eq__(self, other):
+		return hash(self)==hash(other)
+
 class Effect:
 	def __init__(self, effect):
 		self.effect = effect
 
 	def __repr__(self):
 		return str(self.effect)
+
+	def __hash__(self):
+		return hash(self.effect)
+	
+	def __eq__(self, other):
+		return hash(self)==hash(other)
 
 class Rule:
 	def __init__(self, conditions, effect, occurrence_rate=.2):
@@ -109,11 +121,12 @@ class Detector:
 			## False Positives
 			for cond in conditions:
 				if random.random() < condition_false_positive_rates[cond]:
-					classes_involved = tuple([random.choice(classes_in_game), random.choice(classes_in_game)])
+					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
 					condition = Condition(cond, (classes_involved))
+					print "randomly smapled", condition
 			if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
 				effect = Effect(random.choice(effects))
-		
+				print "randomly sampled", effect
 		return condition, effect
 
 	def detect_rules(self, state):
@@ -124,6 +137,10 @@ class Detector:
 				conditions_set.add(c)
 			if e is not None:
 				effects_set.add(e)
+		if conditions_set:
+			print "found conditions set"
+			# print conditions_set
+			# embed()
 		self.conditions_set = self.conditions_set.__or__(conditions_set)
 		self.effects_set = self.effects_set.__or__(effects_set)
 		return conditions_set, effects_set
