@@ -3,7 +3,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 
 ## gameplay data
 EMPA_dates = list('mar28')
-refactor_dates = list('refactor_jan28')
+refactor_dates = list('refactor_feb13')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load helper functions
@@ -73,7 +73,8 @@ names(colors) = c('EMPA', 'EMPA_refactor', 'human')
 
 ### Learning curve plots
 ## plotting all agents/models
-agents_to_plot = c('human', 'EMPA', 'EMPA_refactor')
+# agents_to_plot = c('human', 'EMPA', 'EMPA_refactor')
+agents_to_plot=c('EMPA_refactor')
 # games_to_plot = c('bait', 'zelda', 'butterflies', 'avoidgeorge','frogs','plaqueattack')
 games_to_plot = unique(rEMPAdata$game_name)
 games_in_order = unique(rEMPAdata$game_name)[order(unique(rEMPAdata$game_name))]
@@ -300,9 +301,10 @@ m = multiplot(plotlist = plots, layout=layout)
 
 humankappadata = calculate_kappas(filter(alldata, agent_type=='human'),step_minimum=NA)
 EMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA'),step_minimum=NA)
+rEMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA_refactor'),step_minimum=NA)
 DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
 
-kappadata = rbind(humankappadata, EMPAkappadata, DDQNkappadata)
+kappadata = rbind(humankappadata, EMPAkappadata, rEMPAkappadata)
 
 max_DDQNkappadata = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), kappa=as.numeric())
 non_max_DDQNkappadata = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), kappa=as.numeric())
@@ -317,7 +319,7 @@ means_and_CIs = bootstrap_means_and_CIs(kappadata)
 
 
 ## Human-normed figure (figure 3)
-main_plot_agent_types = c('DDQN 100k', 'EMPA')
+main_plot_agent_types = c('EMPA_refactor', 'EMPA')
 s = filter(means_and_CIs, agent_type=='EMPA')
 ordered_names = s[order(log(s$mean)),]$game_name
 p = ggplot()+
@@ -327,10 +329,10 @@ p = ggplot()+
            aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
   geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
                  aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
-  geom_point(data=non_max_DDQNkappadata,
-             aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
-  geom_point(data=max_DDQNkappadata,
-             aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  # geom_point(data=non_max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  # geom_point(data=max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
   scale_x_discrete(limits=ordered_names)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
@@ -338,11 +340,12 @@ logtickmarks=(log(tickmarks))
 tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-p = p + scale_fill_manual(values=colors,name="Model",
-                          breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
-                          labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
-                                                                                      breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
-                                                                                      labels=c("EMPA", "EMPA fail", "DDQN"))
+p = p+scale_fill_manual(values=colors)
+# p = p + scale_fill_manual(values=colors,name="Model",
+                          # breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+                          # labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
+                          #                                                             breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+                          #                                                             labels=c("EMPA", "EMPA fail", "DDQN"))
 ## 14x10
 
 
@@ -533,4 +536,38 @@ for (game in unique(alldata$game_name)){
   closest_to_empa_subjects = rbind(closest_to_empa_subjects, data.frame(game_name=game, subject_ID=subjects[subjects$distance_to_empa==min(subjects$distance_to_empa),]$subject_ID[1]))
 }
 
+
+bootstrap_means_and_CIs = function(kappadata, modeltype1, modeltype2){
+  ## Bootstrap 10k samples
+  N=10
+  M=10
+  means_and_CIs = data.frame(game_name=as.character(), agent_type=as.character(), mean=as.numeric(), low_margin=as.numeric(), high_margin=as.numeric())
+  for (game in unique(kappadata$game_name)){
+    data1 = filter(kappadata, agent_type==modeltype1, game_name==game, !is.na(kappa))
+    data2 = filter(kappadata, agent_type==modeltype2, game_name==game, !is.na(kappa))
+    kappa_ratios = numeric(N)
+    all_kappa_ratios = data.frame(values=as.numeric())
+    ## double loop for speedup?
+    for (j in 1:M){
+      for (i in 1:N){
+        kappas = bootstrap_kappa_ratio(data1, data2)
+        kappa_ratios[i] = kappas
+      }
+      all_kappa_ratios = rbind(all_kappa_ratios, data.frame(values=kappa_ratios))
+    }
+    low_mean_high = calculate_CI(all_kappa_ratios$values)
+    
+    ## failure for models counts as 1e-7
+    if(low_mean_high[2]==0){
+      low_mean_high = c(1e-7, 1e-7, 1e-7)
+    }  
+    
+    
+    row = data.frame(game_name=game, agent_type=modeltype1, mean=low_mean_high[2], low_margin=low_mean_high[1], high_margin=low_mean_high[3])
+    means_and_CIs = rbind(means_and_CIs, row)
+  }
+  means_and_CIs = transform(means_and_CIs, agent_type=factor(agent_type, levels=c('EMPA', 'EMPA fail')))
+  
+  return(means_and_CIs)
+}
 

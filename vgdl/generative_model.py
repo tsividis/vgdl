@@ -1,7 +1,7 @@
 from collections import defaultdict
 from IPython import embed
 import random
-
+import itertools
 
 ### TODO: Allow for false positives and false negatives
 ### TODO: You want to be able to use a condition about the avatar state as an actual rule, and then evaluate its conditional probability.
@@ -46,7 +46,7 @@ class Condition:
 			return str((self.assertion_about_state))
 
 	def __hash__(self):
-		return hash((self.condition, self.classes, tuple(sorted(self.assertion_about_state))))
+		return hash((self.condition, self.classes, tuple(sorted(self.assertion_about_state.items()))))
 
 	def __eq__(self, other):
 		return hash(self)==hash(other)
@@ -111,7 +111,7 @@ class Detector:
 		self.timestep_to_effects = defaultdict(lambda:[])
 		self.conditions_to_timesteps = defaultdict(lambda:set())
 		self.effects_to_timesteps = defaultdict(lambda:set())	
-		self.effect_to_conditions = defaultdict(lambda:[])	
+		self.effect_to_conditions = defaultdict(lambda:set())	
 
 		self.cond_intersect_pct = defaultdict(lambda:0)
 		self.effect_intersect_pct = defaultdict(lambda:0)
@@ -125,7 +125,7 @@ class Detector:
 			for cond in rule.conditions:
 				# if cond.classes is None:
 					# embed()
-				if random.random() < condition_false_negative_rates[cond.condition]:
+				if cond.classes is not None and random.random() > condition_false_negative_rates[cond.condition]:
 					condition = cond
 			# 	# false_negative_rate += condition_false_negative_rates[cond.condition]
 			# 	if cond.classes is not None:
@@ -156,6 +156,9 @@ class Detector:
 			if e is not None:
 				effects_set.add(e)
 
+		## Add things we 'know' about the state
+		conditions_set.add(Condition(assertion_about_state={'avatar_state':state.assertions_about_state['avatar_state']}))
+
 		self.conditions_set = self.conditions_set.__or__(conditions_set)
 		self.effects_set = self.effects_set.__or__(effects_set)
 		return conditions_set, effects_set
@@ -163,20 +166,53 @@ class Detector:
 
 	def populate_dictionaries(self, states):
 
+		## Iterate through states and populate basic-level proposals
 		for i,state in enumerate(states):
 			conditions, effects = d.detect_rules(state)
 			self.timestep_to_conditions[i] = conditions
 			self.timestep_to_effects[i] = effects
 
-			for condition in conditions:
+			# if len(conditions)>1:
+			# 	print conditions
+			# 	embed()
+			condition_proposals = self.generate_condition_proposals(conditions)
+
+			for condition in condition_proposals:
 				if condition is not None:
 					self.conditions_to_timesteps[condition].add(i)
 		
 				for effect in effects:
 					if effect is not None:
 						self.effects_to_timesteps[effect].add(i)
-						self.effect_to_conditions[effect].append(condition)
+						# self.effect_to_conditions[effect].add(condition)
+			# for condition in conditions:
+			# 	if condition is not None:
+			# 		self.conditions_to_timesteps[condition].add(i)
+		
+			# 	for effect in effects:
+			# 		if effect is not None:
+			# 			self.effects_to_timesteps[effect].add(i)
+			# 			self.effect_to_conditions[effect].add(condition)
+		
+		# condition_proposals = self.generate_condition_proposals()
+
 		return
+
+
+### One function should make the proposals (i.e., the conjunctions of conditions), and another should evaluate them.
+	def get_condition_timesteps(self, conditions):
+		intersecting_timesteps = self.conditions_to_timesteps[conditions[0]]
+		if len(conditions)>1:
+			for condition in conditions:
+				intersecting_timesteps = intersecting_timesteps.intersection(self.conditions_to_timesteps[condition])
+		return intersecting_timesteps
+
+	def generate_condition_proposals(self, conditions):
+		## For now, doing the simple/dumb thing
+		normal_proposals = [c for c in conditions if not c.assertion_about_state]
+		state_proposals = [c for c in conditions if c.assertion_about_state]
+
+		return list(itertools.product(normal_proposals, state_proposals))+[(p,) for p in normal_proposals]
 
 	def learn_theory(self):
 		self.bindings = []
@@ -185,14 +221,18 @@ class Detector:
 			max_effect_intersection_pct = 0
 
 			curr_effect_timesteps = self.effects_to_timesteps[effect]
+			condition_proposals = self.generate_condition_proposals(self.conditions_set)
 
 			# loop through each effect-condition pairing
-			for condition in self.conditions_set:
-				curr_condition_timesteps = self.conditions_to_timesteps[condition]
+			for condition_proposal in condition_proposals:
+				self.effect_to_conditions[effect].add(condition_proposal)
 
+				curr_condition_timesteps = self.conditions_to_timesteps[condition_proposal]
+				# curr_condition_timesteps = self.get_condition_timesteps(condition_proposal)
 				# embed()
+
 				# proposed_rule = Rule(conditions=[Condition(condition[0], condition[1])], effect=Effect(effect))
-				proposed_rule = (condition, effect)
+				proposed_rule = (condition_proposal, effect)
 				
 				# calculates (|E intersect C| / |C|)
 				if len(curr_condition_timesteps)>0:
@@ -207,6 +247,37 @@ class Detector:
 					self.bindings.append(proposed_rule)
 
 		return 
+
+
+	# def learn_theory(self):
+	# 	self.bindings = []
+	# 	for effect in self.effects_set:
+	# 		max_cond_intersection_pct = 0
+	# 		max_effect_intersection_pct = 0
+
+	# 		curr_effect_timesteps = self.effects_to_timesteps[effect]
+
+	# 		# loop through each effect-condition pairing
+	# 		for condition in self.conditions_set:
+	# 			curr_condition_timesteps = self.conditions_to_timesteps[condition]
+
+	# 			# embed()
+	# 			# proposed_rule = Rule(conditions=[Condition(condition[0], condition[1])], effect=Effect(effect))
+	# 			proposed_rule = (condition, effect)
+				
+	# 			# calculates (|E intersect C| / |C|)
+	# 			if len(curr_condition_timesteps)>0:
+	# 				self.cond_intersect_pct[proposed_rule] = float(len(curr_condition_timesteps.intersection(curr_effect_timesteps))) / len(curr_condition_timesteps)
+
+	# 			# calculates (|E intersect C| / |E|)
+	# 			if len(curr_effect_timesteps)>0:
+	# 				self.effect_intersect_pct[proposed_rule] = float(len(curr_condition_timesteps.intersection(curr_effect_timesteps))) / len(curr_effect_timesteps)
+
+	# 			# check against threshold, append to bindings
+	# 			if self.cond_intersect_pct[proposed_rule] > INTERSECT_THRESHOLD:
+	# 				self.bindings.append(proposed_rule)
+
+	# 	return 
 
 	def print_history(self, states):
 		## Prep for formatting
@@ -242,6 +313,9 @@ class Detector:
 					embed()
 		print ""
 
+def get_set_overlap_percentage(set1,set2):
+	numerator = 1.0*len(set1&set2)
+	return (numerator/len(set1) + numerator/len(set2))/2
 
 r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
 
@@ -296,10 +370,26 @@ for k,v in sorted(d.effect_intersect_pct.items()):
 	print k,v
 print ""
 
+print "Rules and their P(E|C), sorted by E:"
+for effect in d.effects_set:
+	effect_keys = [k for k in d.cond_intersect_pct.keys() if effect in k]
+	for item in sorted([(k,d.cond_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
+		print item
+	print ""
+
+print "Rules and their P(C|E), sorted by E:"
+for effect in d.effects_set:
+	effect_keys = [k for k in d.effect_intersect_pct.keys() if effect in k]
+	for item in sorted([(k,d.effect_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
+		print item
+	print ""
+
 print "Actual rules"
 for rule in rules:
 	print rule
 print ""
+
+ke = [k for k in d.effect_to_conditions.keys() if k.effect=='kill_a'][0]
 
 embed()
 
