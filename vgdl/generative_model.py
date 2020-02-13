@@ -3,17 +3,16 @@ from IPython import embed
 import random
 import itertools
 
-### TODO: Allow for false positives and false negatives
-### TODO: You want to be able to use a condition about the avatar state as an actual rule, and then evaluate its conditional probability.
-### Probably the way to do this is not to iterate through all the conditions and effects separately, but to have a method that takes a given rule and can then evaluate its specific conditional probabilities.
-
 
 INTERSECT_THRESHOLD = .5
+TIMESTEPS_EXPLAINED_BY_COMBINATION_OF_RULES_THRESHOLD = .9
+SET_OVERLAP_CUTOFF = .7 #
 
 classes_in_game = ['a','b', 'c']
 avatar_states = [0,1,2]
 conditions = ['collision']
 effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
+
 condition_false_negative_rates = defaultdict(lambda: .1)
 effect_false_negative_rates = defaultdict(lambda: 0)
 condition_false_positive_rates = defaultdict(lambda: .05)
@@ -112,11 +111,15 @@ class Detector:
 		self.conditions_to_timesteps = defaultdict(lambda:set())
 		self.effects_to_timesteps = defaultdict(lambda:set())	
 		self.effect_to_conditions = defaultdict(lambda:set())	
-
+		self.effect_to_explanations = defaultdict(lambda:set())
 		self.cond_intersect_pct = defaultdict(lambda:0)
 		self.effect_intersect_pct = defaultdict(lambda:0)
 
+		self.composite_rank = defaultdict(lambda:0)
+		self.filtered_composite_rank = defaultdict(lambda:0)
+
 	def detect_rule(self, state, rule):
+
 		condition = None
 		effect = None
 		if rule in state.rules:
@@ -172,9 +175,6 @@ class Detector:
 			self.timestep_to_conditions[i] = conditions
 			self.timestep_to_effects[i] = effects
 
-			# if len(conditions)>1:
-			# 	print conditions
-			# 	embed()
 			condition_proposals = self.generate_condition_proposals(conditions)
 
 			for condition in condition_proposals:
@@ -184,17 +184,6 @@ class Detector:
 				for effect in effects:
 					if effect is not None:
 						self.effects_to_timesteps[effect].add(i)
-						# self.effect_to_conditions[effect].add(condition)
-			# for condition in conditions:
-			# 	if condition is not None:
-			# 		self.conditions_to_timesteps[condition].add(i)
-		
-			# 	for effect in effects:
-			# 		if effect is not None:
-			# 			self.effects_to_timesteps[effect].add(i)
-			# 			self.effect_to_conditions[effect].add(condition)
-		
-		# condition_proposals = self.generate_condition_proposals()
 
 		return
 
@@ -228,10 +217,7 @@ class Detector:
 				self.effect_to_conditions[effect].add(condition_proposal)
 
 				curr_condition_timesteps = self.conditions_to_timesteps[condition_proposal]
-				# curr_condition_timesteps = self.get_condition_timesteps(condition_proposal)
-				# embed()
 
-				# proposed_rule = Rule(conditions=[Condition(condition[0], condition[1])], effect=Effect(effect))
 				proposed_rule = (condition_proposal, effect)
 				
 				# calculates (|E intersect C| / |C|)
@@ -248,36 +234,76 @@ class Detector:
 
 		return 
 
+	def rank_rules(self, prior_weight=.8):
+		for rule, val in self.cond_intersect_pct.items():
+			condition = rule[0]
+			self.composite_rank[rule] = val * prior_weight**len(condition)
+		self.filtered_composite_rank = dict(self.composite_rank)
+		return
 
-	# def learn_theory(self):
-	# 	self.bindings = []
-	# 	for effect in self.effects_set:
-	# 		max_cond_intersection_pct = 0
-	# 		max_effect_intersection_pct = 0
+	def greedy_effect_explainer(self, effect, candidates):
+		## Given the existing set of candidate explanations for an effect, returns the greedily next best explanation
+		best_score = max(candidates.keys())
+		best_candidate = candidates[best_score]
+		return best_candidate
 
-	# 		curr_effect_timesteps = self.effects_to_timesteps[effect]
 
-	# 		# loop through each effect-condition pairing
-	# 		for condition in self.conditions_set:
-	# 			curr_condition_timesteps = self.conditions_to_timesteps[condition]
+	def grow_explanation(self, effect):
 
-	# 			# embed()
-	# 			# proposed_rule = Rule(conditions=[Condition(condition[0], condition[1])], effect=Effect(effect))
-	# 			proposed_rule = (condition, effect)
-				
-	# 			# calculates (|E intersect C| / |C|)
-	# 			if len(curr_condition_timesteps)>0:
-	# 				self.cond_intersect_pct[proposed_rule] = float(len(curr_condition_timesteps.intersection(curr_effect_timesteps))) / len(curr_condition_timesteps)
+		candidates = dict([(self.composite_rank[k], k) for k in self.filtered_composite_rank.keys() if k[1].effect==effect])
+		best_explanation = self.greedy_effect_explainer(effect, candidates)
+		best_explanation_cause = best_explanation[0]
 
-	# 			# calculates (|E intersect C| / |E|)
-	# 			if len(curr_effect_timesteps)>0:
-	# 				self.effect_intersect_pct[proposed_rule] = float(len(curr_condition_timesteps.intersection(curr_effect_timesteps))) / len(curr_effect_timesteps)
+		## Filter all candidates that overlap too much with the best explanation
+		for pair in list(itertools.product([best_explanation_cause], [v for v in candidates.values()])):
+			best_explanation_cause_timesteps = self.conditions_to_timesteps[pair[0]]
+			comparison_cause_timesteps = self.conditions_to_timesteps[pair[1][0]]
 
-	# 			# check against threshold, append to bindings
-	# 			if self.cond_intersect_pct[proposed_rule] > INTERSECT_THRESHOLD:
-	# 				self.bindings.append(proposed_rule)
+			## Remove any rules whose explained timesteps overlap SET_OVERLAP_CUTOFF% with the new best explanation (i.e., remove redundancy)
+			if get_set_overlap_percentage(best_explanation_cause_timesteps, comparison_cause_timesteps) > SET_OVERLAP_CUTOFF:
+				self.filtered_composite_rank.pop(pair[1])
+		
+		return best_explanation
 
-	# 	return 
+
+	def get_percentage_of_timesteps_explained(self, effect, candidates):
+		total_timesteps = self.effects_to_timesteps[effect]
+
+		explained_timesteps = set()
+		for c in candidates:
+			explained_timesteps = explained_timesteps.union(self.conditions_to_timesteps[c[0]])
+
+		overlap = explained_timesteps.intersection(total_timesteps)
+
+		return 1.0 * len(overlap) / len(total_timesteps)
+
+
+	def provide_explanations_until_threshold(self, effect):
+
+		candidates_so_far = self.effect_to_explanations[effect]
+
+		percentage_of_timesteps_explained = self.get_percentage_of_timesteps_explained(effect, candidates_so_far)
+
+		# print "explaining", effect
+		# print "candidates", candidates_so_far
+		# print "percentage so far", percentage_of_timesteps_explained
+		while percentage_of_timesteps_explained < TIMESTEPS_EXPLAINED_BY_COMBINATION_OF_RULES_THRESHOLD:
+			best_explanation = self.grow_explanation(effect)
+			# print "about to add", best_explanation
+			# embed()
+			self.effect_to_explanations[effect].add(best_explanation)
+			candidates_so_far = self.effect_to_explanations[effect]
+			percentage_of_timesteps_explained = self.get_percentage_of_timesteps_explained(effect, candidates_so_far)
+			# print "percentage now", percentage_of_timesteps_explained
+			# print ""
+
+		return
+
+
+	def explain_effects(self):
+		for effect in self.effects_set:
+			self.provide_explanations_until_threshold(effect)
+		return
 
 	def print_history(self, states):
 		## Prep for formatting
@@ -354,21 +380,23 @@ states = generate_states(500)
 d = Detector()
 d.populate_dictionaries(states)
 d.learn_theory()
+d.rank_rules()
+d.explain_effects()
 
 ### Print what actually happened and what the detectors found
 d.print_history(states)
 
-# ## Print all rules and their P(E|C)
-print "Rules and their P(E|C):"
-for k,v in sorted(d.cond_intersect_pct.items()):
-	print k,v
-print ""
+# # ## Print all rules and their P(E|C)
+# print "Rules and their P(E|C):"
+# for k,v in sorted(d.cond_intersect_pct.items()):
+# 	print k,v
+# print ""
 
-### Print all rules and their P(C|E)
-print "Rules and their P(C|E):"
-for k,v in sorted(d.effect_intersect_pct.items()):
-	print k,v
-print ""
+# ### Print all rules and their P(C|E)
+# print "Rules and their P(C|E):"
+# for k,v in sorted(d.effect_intersect_pct.items()):
+# 	print k,v
+# print ""
 
 print "Rules and their P(E|C), sorted by E:"
 for effect in d.effects_set:
@@ -377,19 +405,30 @@ for effect in d.effects_set:
 		print item
 	print ""
 
-print "Rules and their P(C|E), sorted by E:"
+# print "Rules and their P(C|E), sorted by E:"
+# for effect in d.effects_set:
+# 	effect_keys = [k for k in d.effect_intersect_pct.keys() if effect in k]
+# 	for item in sorted([(k,d.effect_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
+# 		print item
+# 	print ""
+
 for effect in d.effects_set:
-	effect_keys = [k for k in d.effect_intersect_pct.keys() if effect in k]
-	for item in sorted([(k,d.effect_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
+	effect_keys = [k for k in d.composite_rank.keys() if effect in k]
+	for item in sorted([(k,d.composite_rank[k]) for k in effect_keys], key=lambda x:-x[1]):
 		print item
 	print ""
 
-print "Actual rules"
-for rule in rules:
-	print rule
+print "Our best rules"
+for effect in sorted(d.effect_to_explanations.keys(),reverse=True):
+	for rule in d.effect_to_explanations[effect]:
+		print rule
 print ""
 
-ke = [k for k in d.effect_to_conditions.keys() if k.effect=='kill_a'][0]
+
+print "Actual rules"
+for rule in sorted(rules, key=lambda x:x.effect.effect, reverse=True):
+	print rule
+print ""
 
 embed()
 
