@@ -8,7 +8,7 @@ INTERSECT_THRESHOLD = .5
 TIMESTEPS_EXPLAINED_BY_COMBINATION_OF_RULES_THRESHOLD = .9
 SET_OVERLAP_CUTOFF = .7 #
 
-classes_in_game = ['a','b', 'c']
+classes_in_game = ['a','b','c']
 avatar_states = [0,1,2]
 conditions = ['collision']
 effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
@@ -29,23 +29,26 @@ for c in conditions:
 class State:
 	def __init__(self):
 		self.assertions_about_state = defaultdict(lambda:0) ## Simple way of representing arbitrary things that may obtain in the state
-		self.rules = [] ## an entire rule has occurred in this state, meaning both the condition and the effect occurred.
+		self.rules = [] ## If any rule has occurred in this state, both the condition and the effect occurred.
 
 
 class Condition:
-	def __init__(self, condition=None, classes=None, assertion_about_state={}):
-		self.condition = condition
+	def __init__(self, predicate=None, classes=None, assertion_about_state={}):
+
+		## Conditions can either have predicates and classes (e.g., (collision a b) ), or can be truth statements about the game state.
+		
+		self.predicate = predicate
 		self.classes = tuple(sorted(classes)) if classes is not None else None
 		self.assertion_about_state = assertion_about_state
 
 	def __repr__(self):
-		if self.condition:
-			return str((self.condition, self.classes))
+		if self.predicate:
+			return str((self.predicate, self.classes))
 		else:
 			return str((self.assertion_about_state))
 
 	def __hash__(self):
-		return hash((self.condition, self.classes, tuple(sorted(self.assertion_about_state.items()))))
+		return hash((self.predicate, self.classes, tuple(sorted(self.assertion_about_state.items()))))
 
 	def __eq__(self, other):
 		return hash(self)==hash(other)
@@ -58,6 +61,8 @@ class Condition:
 				return True
 		else:
 			return False
+
+
 class Effect:
 	def __init__(self, effect):
 		self.effect = effect
@@ -71,13 +76,13 @@ class Effect:
 	def __eq__(self, other):
 		return hash(self)==hash(other)
 
+
 class Rule:
 	def __init__(self, conditions, effect, occurrence_rate=.2):
 		self.conditions = conditions
 		self.effect = effect
 		self.occurrence_rate = occurrence_rate
 
-		## Add assert about having only one condition be about classes
 	def __repr__(self):
 		return str((self.conditions, self.effect))
 
@@ -88,6 +93,9 @@ class Rule:
 		return hash(self)==hash(other)
 
 	def apply(self, state):
+		
+		## We use 'apply' when sampling rules in states. If state assertions are met in a given state, then a rule can be applied (meaning its effect 'occurs').
+
 		for condition in self.conditions:
 			if condition.assertion_about_state:
 				for assertion, val in condition.assertion_about_state.items():
@@ -101,7 +109,8 @@ class Rule:
 
 
 class Detector:
-	def __init__(self):
+	def __init__(self, rules):
+		self.rules = rules ## the rules the detector knows about
 		self.conditions_set = set()
 		self.effects_set = set()
 
@@ -118,48 +127,47 @@ class Detector:
 		self.composite_rank = defaultdict(lambda:0)
 		self.filtered_composite_rank = defaultdict(lambda:0)
 
+
 	def detect_rule(self, state, rule):
+		
+		## Checks whether any of the conditions and effects in a rule occurred in a state
+		## Produces both false negatives and false positives
 
 		condition = None
 		effect = None
 		if rule in state.rules:
+			## Detect rule if it's there, unless false negative
 			false_negative_rate = 0.
 			rule_condition, rule_classes = None, None
 			for cond in rule.conditions:
-				# if cond.classes is None:
-					# embed()
-				if cond.classes is not None and random.random() > condition_false_negative_rates[cond.condition]:
+				if cond.classes is not None and random.random() > condition_false_negative_rates[cond.predicate]:
 					condition = cond
-			# 	# false_negative_rate += condition_false_negative_rates[cond.condition]
-			# 	if cond.classes is not None:
-			# 		rule_condition = cond.condition
-			# 		rule_classes = cond.classes
-
-			# if random.random() > false_negative_rate:
-			# 	condition = Condition(rule_condition, rule_classes)
 
 			if random.random() > effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
 		else:
-			## False Positives
+			## Produce false nositives
 			for cond in conditions:
 				if random.random() < condition_false_positive_rates[cond]:
 					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
 					condition = Condition(cond, (classes_involved))
-			if random.random() < effect_false_positive_rates['killSprite']: ## todo: Right now you're using the same false-positive rate for all effects
+			if random.random() < effect_false_positive_rates['killSprite']: ## TODO: Right now you're using the same false-positive rate for all effects
 				effect = Effect(random.choice(effects))
 		return condition, effect
 
 	def detect_rules(self, state):
+		
+		## Detects occurrence of all conditions/effects we know about in a given game state
+
 		conditions_set, effects_set = set(), set()
-		for rule in rules:
+		for rule in self.rules:
 			c, e = self.detect_rule(state, rule)
 			if c is not None:
 				conditions_set.add(c)
 			if e is not None:
 				effects_set.add(e)
 
-		## Add things we 'know' about the state
+		## Add things we 'know' about the state (e.g., skip detectors for state assertions for now)
 		conditions_set.add(Condition(assertion_about_state={'avatar_state':state.assertions_about_state['avatar_state']}))
 
 		self.conditions_set = self.conditions_set.__or__(conditions_set)
@@ -167,44 +175,16 @@ class Detector:
 		return conditions_set, effects_set
 
 
-	def populate_dictionaries(self, states):
-
-		## Iterate through states and populate basic-level proposals
-		for i,state in enumerate(states):
-			conditions, effects = d.detect_rules(state)
-			self.timestep_to_conditions[i] = conditions
-			self.timestep_to_effects[i] = effects
-
-			condition_proposals = self.generate_condition_proposals(conditions)
-
-			for condition in condition_proposals:
-				if condition is not None:
-					self.conditions_to_timesteps[condition].add(i)
-		
-				for effect in effects:
-					if effect is not None:
-						self.effects_to_timesteps[effect].add(i)
-
+	def learn_theory(self):
+		self.calculate_likelihoods()
+		self.rank_rules()
+		self.explain_effects()
 		return
 
 
-### One function should make the proposals (i.e., the conjunctions of conditions), and another should evaluate them.
-	def get_condition_timesteps(self, conditions):
-		intersecting_timesteps = self.conditions_to_timesteps[conditions[0]]
-		if len(conditions)>1:
-			for condition in conditions:
-				intersecting_timesteps = intersecting_timesteps.intersection(self.conditions_to_timesteps[condition])
-		return intersecting_timesteps
+	def calculate_likelihoods(self):
+		# calculates p(E|C) and p(C|E) for all C -- even for complex ones
 
-	def generate_condition_proposals(self, conditions):
-		## For now, doing the simple/dumb thing
-		normal_proposals = [c for c in conditions if not c.assertion_about_state]
-		state_proposals = [c for c in conditions if c.assertion_about_state]
-
-		return list(itertools.product(normal_proposals, state_proposals))+[(p,) for p in normal_proposals]
-
-	def learn_theory(self):
-		self.bindings = []
 		for effect in self.effects_set:
 			max_cond_intersection_pct = 0
 			max_effect_intersection_pct = 0
@@ -227,28 +207,84 @@ class Detector:
 				# calculates (|E intersect C| / |E|)
 				if len(curr_effect_timesteps)>0:
 					self.effect_intersect_pct[proposed_rule] = float(len(curr_condition_timesteps.intersection(curr_effect_timesteps))) / len(curr_effect_timesteps)
-
-				# check against threshold, append to bindings
-				if self.cond_intersect_pct[proposed_rule] > INTERSECT_THRESHOLD:
-					self.bindings.append(proposed_rule)
-
 		return 
 
+
 	def rank_rules(self, prior_weight=.8):
+
+		## Rank rules by a combination of 'likelihood' and 'prior'
+
 		for rule, val in self.cond_intersect_pct.items():
 			condition = rule[0]
 			self.composite_rank[rule] = val * prior_weight**len(condition)
 		self.filtered_composite_rank = dict(self.composite_rank)
 		return
 
+
+	def explain_effects(self):
+		for effect in self.effects_set:
+			self.provide_explanations_until_threshold(effect)
+		return
+
+
+	def populate_dictionaries(self, states):
+
+		## Iterate through state history, generate condition and effect proposals, populate dictionaries that store various key mappings used for inference
+
+		for i,state in enumerate(states):
+			conditions, effects = d.detect_rules(state)
+			self.timestep_to_conditions[i] = conditions
+			self.timestep_to_effects[i] = effects
+
+			## Generate possibly complex condition proposals given the things we detected as occurring in the state
+			## TODO: this shouldn't be done here, as you're calling the function over and over on different states,
+			## and as you may not generate the correct proposal if a detector failed
+			condition_proposals = self.generate_condition_proposals(conditions)
+
+			for condition in condition_proposals:
+				if condition is not None:
+					self.conditions_to_timesteps[condition].add(i)
+		
+				for effect in effects:
+					if effect is not None:
+						self.effects_to_timesteps[effect].add(i)
+
+		return
+
+
+	def get_condition_timesteps(self, conditions):
+		
+		## Set overlap of timesteps at which all the conditions occurred
+
+		intersecting_timesteps = self.conditions_to_timesteps[conditions[0]]
+		if len(conditions)>1:
+			for condition in conditions:
+				intersecting_timesteps = intersecting_timesteps.intersection(self.conditions_to_timesteps[condition])
+		return intersecting_timesteps
+
+
+	def generate_condition_proposals(self, conditions):
+
+		## For now, doing the simple/dumb thing: proposals are conjuncts of (normal_condition, avatar_state), or just (normal_condition,)
+
+		normal_proposals = [c for c in conditions if not c.assertion_about_state]
+		state_proposals = [c for c in conditions if c.assertion_about_state]
+
+		return list(itertools.product(normal_proposals, state_proposals))+[(p,) for p in normal_proposals]
+
+
 	def greedy_effect_explainer(self, effect, candidates):
+
 		## Given the existing set of candidate explanations for an effect, returns the greedily next best explanation
+		
 		best_score = max(candidates.keys())
 		best_candidate = candidates[best_score]
 		return best_candidate
 
 
 	def grow_explanation(self, effect):
+
+		## Grab the greedily best explanation for the effect, and remove explanations that are sufficiently redundant with that from the set of available explanations for the next round
 
 		candidates = dict([(self.composite_rank[k], k) for k in self.filtered_composite_rank.keys() if k[1].effect==effect])
 		best_explanation = self.greedy_effect_explainer(effect, candidates)
@@ -267,6 +303,9 @@ class Detector:
 
 
 	def get_percentage_of_timesteps_explained(self, effect, candidates):
+
+		## How well do the candidate explanations explain the effect?
+		
 		total_timesteps = self.effects_to_timesteps[effect]
 
 		explained_timesteps = set()
@@ -279,6 +318,8 @@ class Detector:
 
 
 	def provide_explanations_until_threshold(self, effect):
+
+		## Keep (greedily) adding explanations until you're explaining the desired effect well enough
 
 		candidates_so_far = self.effect_to_explanations[effect]
 
@@ -299,11 +340,6 @@ class Detector:
 
 		return
 
-
-	def explain_effects(self):
-		for effect in self.effects_set:
-			self.provide_explanations_until_threshold(effect)
-		return
 
 	def print_history(self, states):
 		## Prep for formatting
@@ -339,23 +375,6 @@ class Detector:
 					embed()
 		print ""
 
-def get_set_overlap_percentage(set1,set2):
-	numerator = 1.0*len(set1&set2)
-	return (numerator/len(set1) + numerator/len(set2))/2
-
-r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
-
-r2 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
-
-r3 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('bounceForward'))
-
-r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
-
-r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
-
-rules = [r1, r2, r3, r4, r5]
-
-state = State()
 
 def generate_states(length):
 	states = []
@@ -371,17 +390,42 @@ def generate_states(length):
 		states.append(s)
 	return states
 
+
 def print_history(states):
 	for i,state in enumerate(states):
 		print i, state.rules
 
 
+def get_set_overlap_percentage(set1,set2):
+	numerator = 1.0*len(set1&set2)
+	return (numerator/len(set1) + numerator/len(set2))/2
+
+
+
+#######################
+#					  #
+#	   EXPERIMENT     #
+#					  #
+#######################
+
+
+
+r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
+
+r2 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
+
+r3 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('bounceForward'))
+
+r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
+
+r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
+
+rules = [r1, r2, r3, r4, r5]
+
 states = generate_states(500)
-d = Detector()
+d = Detector(rules)
 d.populate_dictionaries(states)
 d.learn_theory()
-d.rank_rules()
-d.explain_effects()
 
 ### Print what actually happened and what the detectors found
 d.print_history(states)
@@ -418,12 +462,11 @@ for effect in d.effects_set:
 		print item
 	print ""
 
-print "Our best rules"
+print "Best learned rules"
 for effect in sorted(d.effect_to_explanations.keys(),reverse=True):
 	for rule in d.effect_to_explanations[effect]:
 		print rule
 print ""
-
 
 print "Actual rules"
 for rule in sorted(rules, key=lambda x:x.effect.effect, reverse=True):
