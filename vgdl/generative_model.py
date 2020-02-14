@@ -1,7 +1,8 @@
 from collections import defaultdict
 from IPython import embed
-import random
 import itertools
+import numpy as np
+import random
 
 
 classes_in_game = ['a','b','c']
@@ -111,7 +112,6 @@ class Detector:
 		self.composite_rank = defaultdict(lambda:0)
 		self.filtered_composite_rank = defaultdict(lambda:0)
 
-		self.intersect_threshold = parameters['intersect_threshold']
 		self.timesteps_explained_by_combination_of_rules_threshold = parameters['timesteps_explained_by_combination_of_rules_threshold']
 		self.set_overlap_cutoff = parameters['set_overlap_cutoff']
 
@@ -217,7 +217,8 @@ class Detector:
 
 	def explain_effects(self):
 		for effect in self.effects_set:
-			self.provide_explanations_until_threshold(effect)
+			if self.effects_to_timesteps[effect]:
+				self.provide_explanations_until_threshold(effect)
 		return
 
 
@@ -429,7 +430,7 @@ class Detector:
 		print ""
 
 
-def generate_states(length):
+def generate_states(rules, length):
 	states = []
 	for i in range(length):
 		s = State()
@@ -455,7 +456,7 @@ def get_set_overlap_percentage(set1,set2):
 
 
 def run_experiment(rules, num_timesteps, parameters):
-	states = generate_states(num_timesteps)
+	states = generate_states(rules, num_timesteps)
 	d = Detector(rules, parameters)
 	d.populate_dictionaries(states)
 	d.learn_theory()
@@ -468,47 +469,12 @@ def run_experiment(rules, num_timesteps, parameters):
 	# embed()
 	return score
 
-## function that takes rules, num_timesteps, error_rates, thresholds, and returns rule overlap
-## function that calls that function N times
-## plotting functions -- this time in python?
-## function that iterates over some grid of parameters, gets data for all
-
-
-
-#######################
-#					  #
-#	   EXPERIMENT     #
-#					  #
-#######################
-
-
-
-r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
-
-r2 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
-
-r3 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('bounceForward'))
-
-r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
-
-r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
-
-rules = {r1, r2, r3, r4, r5}
-
-parameters = {
-	'intersect_threshold': .5,
-	'timesteps_explained_by_combination_of_rules_threshold' : .9,
-	'set_overlap_cutoff': .7,
-	'condition_false_negative_rates': .1,
-	'condition_false_positive_rates': .05,
-	'effect_false_negative_rates': 0.,
-	'effect_false_positive_rates': 0.
-}
-
-
-print run_experiment(rules, 500, parameters)
-print run_experiment(rules, 50, parameters)
-
+def run_experiments(rules, num_timesteps, parameters, n):
+	## Runs experiment n times, returns average score
+	scores = []
+	for i in range(n):
+		scores.append(run_experiment(rules, num_timesteps, parameters))
+	return np.mean(scores)
 
 
 
