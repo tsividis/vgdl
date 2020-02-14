@@ -4,27 +4,14 @@ import random
 import itertools
 
 
-INTERSECT_THRESHOLD = .5
-TIMESTEPS_EXPLAINED_BY_COMBINATION_OF_RULES_THRESHOLD = .9
-SET_OVERLAP_CUTOFF = .7 #
+
 
 classes_in_game = ['a','b','c']
 avatar_states = [0,1,2]
 conditions = ['collision']
 effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
 
-condition_false_negative_rates = defaultdict(lambda: .1)
-effect_false_negative_rates = defaultdict(lambda: 0)
-condition_false_positive_rates = defaultdict(lambda: .05)
-effect_false_positive_rates = defaultdict(lambda: 0)
 
-for p in effects:
-	effect_false_negative_rates[p] = .1
-	effect_false_positive_rates[p] = .05
-
-for c in conditions:
-	condition_false_negative_rates[c] = .1
-	condition_false_positive_rates[c] = .05
 
 class State:
 	def __init__(self):
@@ -109,7 +96,7 @@ class Rule:
 
 
 class Detector:
-	def __init__(self, rules):
+	def __init__(self, rules, parameters):
 		self.rules = rules ## the rules the detector knows about
 		self.conditions_set = set()
 		self.effects_set = set()
@@ -127,6 +114,15 @@ class Detector:
 		self.composite_rank = defaultdict(lambda:0)
 		self.filtered_composite_rank = defaultdict(lambda:0)
 
+		self.intersect_threshold = parameters['intersect_threshold']
+		self.timesteps_explained_by_combination_of_rules_threshold = parameters['timesteps_explained_by_combination_of_rules_threshold']
+		self.set_overlap_cutoff = parameters['set_overlap_cutoff']
+
+		self.condition_false_negative_rates = defaultdict(lambda: parameters['condition_false_negative_rates'])
+		self.effect_false_negative_rates = defaultdict(lambda: parameters['effect_false_negative_rates'])
+		self.condition_false_positive_rates = defaultdict(lambda: parameters['condition_false_positive_rates'])
+		self.effect_false_positive_rates = defaultdict(lambda: parameters['effect_false_positive_rates'])
+
 
 	def detect_rule(self, state, rule):
 		
@@ -140,18 +136,18 @@ class Detector:
 			false_negative_rate = 0.
 			rule_condition, rule_classes = None, None
 			for cond in rule.conditions:
-				if cond.classes is not None and random.random() > condition_false_negative_rates[cond.predicate]:
+				if cond.classes is not None and random.random() > self.condition_false_negative_rates[cond.predicate]:
 					condition = cond
 
-			if random.random() > effect_false_negative_rates[rule.effect]:
+			if random.random() > self.effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
 		else:
 			## Produce false nositives
 			for cond in conditions:
-				if random.random() < condition_false_positive_rates[cond]:
+				if random.random() < self.condition_false_positive_rates[cond]:
 					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
 					condition = Condition(cond, (classes_involved))
-			if random.random() < effect_false_positive_rates['killSprite']: ## TODO: Right now you're using the same false-positive rate for all effects
+			if random.random() < self.effect_false_positive_rates['killSprite']: ## TODO: Right now you're using the same false-positive rate for all effects
 				effect = Effect(random.choice(effects))
 		return condition, effect
 
@@ -296,7 +292,7 @@ class Detector:
 			comparison_cause_timesteps = self.conditions_to_timesteps[pair[1][0]]
 
 			## Remove any rules whose explained timesteps overlap SET_OVERLAP_CUTOFF% with the new best explanation (i.e., remove redundancy)
-			if get_set_overlap_percentage(best_explanation_cause_timesteps, comparison_cause_timesteps) > SET_OVERLAP_CUTOFF:
+			if get_set_overlap_percentage(best_explanation_cause_timesteps, comparison_cause_timesteps) > self.set_overlap_cutoff:
 				self.filtered_composite_rank.pop(pair[1])
 		
 		return best_explanation
@@ -328,7 +324,7 @@ class Detector:
 		# print "explaining", effect
 		# print "candidates", candidates_so_far
 		# print "percentage so far", percentage_of_timesteps_explained
-		while percentage_of_timesteps_explained < TIMESTEPS_EXPLAINED_BY_COMBINATION_OF_RULES_THRESHOLD:
+		while percentage_of_timesteps_explained < self.timesteps_explained_by_combination_of_rules_threshold:
 			best_explanation = self.grow_explanation(effect)
 			# print "about to add", best_explanation
 			# embed()
@@ -460,9 +456,20 @@ def get_set_overlap_percentage(set1,set2):
 	return (numerator/len(set1) + numerator/len(set2))/2
 
 
+parameters = {
+	'intersect_threshold': .5,
+	'timesteps_explained_by_combination_of_rules_threshold' : .9,
+	'set_overlap_cutoff': .7,
+	'condition_false_negative_rates': .1,
+	'condition_false_positive_rates': .05,
+	'effect_false_negative_rates': .1,
+	'effect_false_positive_rates': .05
+}
+
+
 def run_experiment(rules, num_timesteps):
 	states = generate_states(num_timesteps)
-	d = Detector(rules)
+	d = Detector(rules, parameters)
 	d.populate_dictionaries(states)
 	d.learn_theory()
 
@@ -499,8 +506,6 @@ r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a
 r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
 
 rules = {r1, r2, r3, r4, r5}
-
-
 
 
 print run_experiment(rules, 500)
