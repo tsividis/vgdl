@@ -4,13 +4,10 @@ import random
 import itertools
 
 
-
-
 classes_in_game = ['a','b','c']
 avatar_states = [0,1,2]
 conditions = ['collision']
 effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
-
 
 
 class State:
@@ -147,6 +144,7 @@ class Detector:
 				if random.random() < self.condition_false_positive_rates[cond]:
 					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
 					condition = Condition(cond, (classes_involved))
+			
 			if random.random() < self.effect_false_positive_rates['killSprite']: ## TODO: Right now you're using the same false-positive rate for all effects
 				effect = Effect(random.choice(effects))
 		return condition, effect
@@ -456,18 +454,7 @@ def get_set_overlap_percentage(set1,set2):
 	return (numerator/len(set1) + numerator/len(set2))/2
 
 
-parameters = {
-	'intersect_threshold': .5,
-	'timesteps_explained_by_combination_of_rules_threshold' : .9,
-	'set_overlap_cutoff': .7,
-	'condition_false_negative_rates': .1,
-	'condition_false_positive_rates': .05,
-	'effect_false_negative_rates': .1,
-	'effect_false_positive_rates': .05
-}
-
-
-def run_experiment(rules, num_timesteps):
+def run_experiment(rules, num_timesteps, parameters):
 	states = generate_states(num_timesteps)
 	d = Detector(rules, parameters)
 	d.populate_dictionaries(states)
@@ -478,6 +465,7 @@ def run_experiment(rules, num_timesteps):
 	# d.print_readout()
 
 	score = d.calculate_rule_learning_score()
+	# embed()
 	return score
 
 ## function that takes rules, num_timesteps, error_rates, thresholds, and returns rule overlap
@@ -507,10 +495,20 @@ r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a
 
 rules = {r1, r2, r3, r4, r5}
 
+parameters = {
+	'intersect_threshold': .5,
+	'timesteps_explained_by_combination_of_rules_threshold' : .9,
+	'set_overlap_cutoff': .7,
+	'condition_false_negative_rates': .1,
+	'condition_false_positive_rates': .05,
+	'effect_false_negative_rates': 0.,
+	'effect_false_positive_rates': 0.
+}
 
-print run_experiment(rules, 500)
-print run_experiment(rules, 50)
 
-embed()
+print run_experiment(rules, 500, parameters)
+print run_experiment(rules, 50, parameters)
+
+
 
 
