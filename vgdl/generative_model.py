@@ -232,7 +232,7 @@ class Detector:
 		## Iterate through state history, generate condition and effect proposals, populate dictionaries that store various key mappings used for inference
 
 		for i,state in enumerate(states):
-			conditions, effects = d.detect_rules(state)
+			conditions, effects = self.detect_rules(state)
 			self.timestep_to_conditions[i] = conditions
 			self.timestep_to_effects[i] = effects
 
@@ -340,6 +340,20 @@ class Detector:
 
 		return
 
+	def convert_explanation_to_rule_object(self, explanation):
+		conditions, effect = explanation
+		return Rule(conditions, effect)
+
+
+	def calculate_rule_learning_score(self):
+		rules = set()
+		for effect, explanations in self.effect_to_explanations.items():
+			for explanation in explanations:
+				rules.add(self.convert_explanation_to_rule_object(explanation))
+		
+		score = get_set_overlap_percentage(rules, self.rules)
+		return score
+
 
 	def print_history(self, states):
 		## Prep for formatting
@@ -376,6 +390,51 @@ class Detector:
 		print ""
 
 
+	def print_readout(self):
+		# # ## Print all rules and their P(E|C)
+		# print "Rules and their P(E|C):"
+		# for k,v in sorted(self.cond_intersect_pct.items()):
+		# 	print k,v
+		# print ""
+
+		# ### Print all rules and their P(C|E)
+		# print "Rules and their P(C|E):"
+		# for k,v in sorted(self.effect_intersect_pct.items()):
+		# 	print k,v
+		# print ""
+
+		print "Rules and their P(E|C), sorted by E:"
+		for effect in self.effects_set:
+			effect_keys = [k for k in self.cond_intersect_pct.keys() if effect in k]
+			for item in sorted([(k,self.cond_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
+				print item
+			print ""
+
+		# print "Rules and their P(C|E), sorted by E:"
+		# for effect in self.effects_set:
+		# 	effect_keys = [k for k in self.effect_intersect_pct.keys() if effect in k]
+		# 	for item in sorted([(k,self.effect_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
+		# 		print item
+		# 	print ""
+
+		for effect in self.effects_set:
+			effect_keys = [k for k in self.composite_rank.keys() if effect in k]
+			for item in sorted([(k,self.composite_rank[k]) for k in effect_keys], key=lambda x:-x[1]):
+				print item
+			print ""
+
+		print "Best learned rules"
+		for effect in sorted(self.effect_to_explanations.keys(),reverse=True):
+			for rule in self.effect_to_explanations[effect]:
+				print rule
+		print ""
+
+		print "Actual rules"
+		for rule in sorted(rules, key=lambda x:x.effect.effect, reverse=True):
+			print rule
+		print ""
+
+
 def generate_states(length):
 	states = []
 	for i in range(length):
@@ -401,6 +460,25 @@ def get_set_overlap_percentage(set1,set2):
 	return (numerator/len(set1) + numerator/len(set2))/2
 
 
+def run_experiment(rules, num_timesteps):
+	states = generate_states(num_timesteps)
+	d = Detector(rules)
+	d.populate_dictionaries(states)
+	d.learn_theory()
+
+	### Print what actually happened and what the detectors found
+	# d.print_history(states)
+	# d.print_readout()
+
+	score = d.calculate_rule_learning_score()
+	return score
+
+## function that takes rules, num_timesteps, error_rates, thresholds, and returns rule overlap
+## function that calls that function N times
+## plotting functions -- this time in python?
+## function that iterates over some grid of parameters, gets data for all
+
+
 
 #######################
 #					  #
@@ -420,58 +498,13 @@ r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a
 
 r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
 
-rules = [r1, r2, r3, r4, r5]
+rules = {r1, r2, r3, r4, r5}
 
-states = generate_states(500)
-d = Detector(rules)
-d.populate_dictionaries(states)
-d.learn_theory()
 
-### Print what actually happened and what the detectors found
-d.print_history(states)
 
-# # ## Print all rules and their P(E|C)
-# print "Rules and their P(E|C):"
-# for k,v in sorted(d.cond_intersect_pct.items()):
-# 	print k,v
-# print ""
 
-# ### Print all rules and their P(C|E)
-# print "Rules and their P(C|E):"
-# for k,v in sorted(d.effect_intersect_pct.items()):
-# 	print k,v
-# print ""
-
-print "Rules and their P(E|C), sorted by E:"
-for effect in d.effects_set:
-	effect_keys = [k for k in d.cond_intersect_pct.keys() if effect in k]
-	for item in sorted([(k,d.cond_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
-		print item
-	print ""
-
-# print "Rules and their P(C|E), sorted by E:"
-# for effect in d.effects_set:
-# 	effect_keys = [k for k in d.effect_intersect_pct.keys() if effect in k]
-# 	for item in sorted([(k,d.effect_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
-# 		print item
-# 	print ""
-
-for effect in d.effects_set:
-	effect_keys = [k for k in d.composite_rank.keys() if effect in k]
-	for item in sorted([(k,d.composite_rank[k]) for k in effect_keys], key=lambda x:-x[1]):
-		print item
-	print ""
-
-print "Best learned rules"
-for effect in sorted(d.effect_to_explanations.keys(),reverse=True):
-	for rule in d.effect_to_explanations[effect]:
-		print rule
-print ""
-
-print "Actual rules"
-for rule in sorted(rules, key=lambda x:x.effect.effect, reverse=True):
-	print rule
-print ""
+print run_experiment(rules, 500)
+print run_experiment(rules, 50)
 
 embed()
 
