@@ -166,7 +166,7 @@ class Agent:
         if self.playback_states: # theory induction from human replay
             self.rle._game.playback_states = self.playback_states
             assert self.rle._game.playback_index == 0
-            # important to set the state -- we getObjects() to initialize the theories in replayEpisode, and the IDs should match up e.g. for the events
+            # important to set the state -- we getObjects() to initialize the theories in replayEpisode, and the UUIDs of the objects should match up, e.g. for proper event handling
             self.rle._game.setFullState(self.rle._game.playback_states[0], cheap=False, deoffset=False, default_colors=True)
         return
 

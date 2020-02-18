@@ -99,7 +99,6 @@ class GridPhysics():
             else:
                 speed = float(sprite.speed)
 
-        print '!!! ---------------- activeMovement ', action
         if speed != 0 and action is not None:
             sprite._updatePos(action, speed * self.gridsize[0])
 

@@ -364,25 +364,27 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 #            self._game.playback_index += 1
 #        else:
 
-        # TODO actually load keystate directly
         emptyKeyState = [0]*323 #keyState when no keys are pressed
-        self._game.keystate = emptyKeyState
+        self._game.keystate = emptyKeyState # momchil: important to reset keystate
 
-        # momchil: hybrid -- just choose actions from replay
+        # momchil: action replay -- choose action from replay & let EMPA do the updates / event handling
+        # obvi only works for deterministic games
         if self._game.playback_states:
             state = self._game.playback_states[self._game.playback_index]
             keyPressType = state['keyPressType']
             action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
 
+            print keyPressType, ' -------------------------------- keyPressType '
+
+            # set the keystate from replay
+            self._game.keystate = state['keystate']
+
+            # sanity check that pressed key matches keystate (we need to return correct action I think)
             if keyPressType:
                 action = revActionDict[keyPressType] 
-                self._game.keystate[action] = True
-                #assert self._game.keystate[action], 'Replayed keystate differs from action based on keyPressType'
+                #self._game.keystate[action] = True # we used to set the keystate here; now we just sanity check
+                assert self._game.keystate[action], 'Replayed keystate differs from action based on keyPressType'
 
-            print keyPressType, ' -------------------------------- '
-            if self._game.time >= 5 and not len(state['effectList']) > 0 and not state['keyPressType'] and not state['ended']:
-                print 'w th f'
-                embed()
 
             self._game.playback_index += 1
 
@@ -448,10 +450,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     if sname == 'avatar':
                         o = s['objects'][sname]
                         print '============ avatar coords: ', o.keys()[0], '  action = ', action
-                    if sname == 'avatar' and self._game.playback_index == 7:
-                        print '-------avatar'
-                        embed()
-
+                    
                     if str(p) not in s['objects'][sname].keys():
                         print 'pos not found'
                         embed()
