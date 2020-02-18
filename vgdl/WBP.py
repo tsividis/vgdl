@@ -112,7 +112,7 @@ class WBP():
 		if self.hyperparameter_index in ['long-term'] and not movingTypesInGame:
 			self.position_score_multiplier = -1
 
-		## Ignore objects we don't want to track (i.e., object we know are guaranteed not to move, or objects that move but are too numerous to use IW1 without dramatically expanding the search space.)
+		## Ignore objects we don't want to track (i.e., objects we know are guaranteed not to move, or objects that move but are too numerous to use IW1 without dramatically expanding the search space.)
 		self.objectsToTrack = []
 		for k in rle._game.sprite_groups.keys():
 			if ((k in self.theory.classes.keys() and ('Resource' or 'Immovable') in str(self.theory.classes[k][0].vgdlType) and not \

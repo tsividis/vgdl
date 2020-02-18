@@ -282,7 +282,11 @@ class Detector:
 		## Grab the greedily best explanation for the effect, and remove explanations that are sufficiently redundant with that from the set of available explanations for the next round
 
 		candidates = dict([(self.composite_rank[k], k) for k in self.filtered_composite_rank.keys() if k[1].effect==effect])
-		best_explanation = self.greedy_effect_explainer(effect, candidates)
+		try:
+			best_explanation = self.greedy_effect_explainer(effect, candidates)
+		except:
+			print "greedy effect explainer failed"
+			embed()
 		best_explanation_cause = best_explanation[0]
 
 		## Filter all candidates that overlap too much with the best explanation
@@ -297,19 +301,44 @@ class Detector:
 		return best_explanation
 
 
-	def get_percentage_of_timesteps_explained(self, effect, candidates):
+	def get_percentage_of_desired_timesteps_explained(self, effect, candidates):
 
 		## How well do the candidate explanations explain the effect?
 		
 		total_timesteps = self.effects_to_timesteps[effect]
+		num_total_timesteps = len(total_timesteps)
+
+		effect_occurrence_percentage = num_total_timesteps / (1.0 * len(self.timestep_to_effects.keys()))
+
+		percentage_of_timesteps_we_should_explain = max(0.0, effect_occurrence_percentage - self.effect_false_positive_rates[effect])
+
+		num_all_timesteps = len(self.timestep_to_effects.keys())
+		num_timesteps_we_should_ignore = round(num_all_timesteps * self.effect_false_positive_rates[effect])
 
 		explained_timesteps = set()
 		for c in candidates:
 			explained_timesteps = explained_timesteps.union(self.conditions_to_timesteps[c[0]])
 
 		overlap = explained_timesteps.intersection(total_timesteps)
+		
+		num_timesteps_we_should_explain = max(num_total_timesteps-num_timesteps_we_should_ignore, 0)
 
-		return 1.0 * len(overlap) / len(total_timesteps)
+		# print "overlap", 1.0 * len(overlap)
+		# print "num_timesteps_we_should_explain", num_timesteps_we_should_explain
+		# print ""
+
+		if len(overlap)==0 and num_timesteps_we_should_explain==0:
+			print 1.
+		else:
+			print max(1., 1.0 * len(overlap) / num_timesteps_we_should_explain) #len(total_timesteps)
+
+		# embed()
+
+
+		if len(overlap)==0 and num_timesteps_we_should_explain==0:
+			return 1.
+		else:
+			return min(1., 1.0 * len(overlap) / num_timesteps_we_should_explain) #len(total_timesteps)
 
 
 	def provide_explanations_until_threshold(self, effect):
@@ -318,18 +347,22 @@ class Detector:
 
 		candidates_so_far = self.effect_to_explanations[effect]
 
-		percentage_of_timesteps_explained = self.get_percentage_of_timesteps_explained(effect, candidates_so_far)
+		percentage_of_timesteps_explained = self.get_percentage_of_desired_timesteps_explained(effect, candidates_so_far)
 
-		# print "explaining", effect
-		# print "candidates", candidates_so_far
-		# print "percentage so far", percentage_of_timesteps_explained
+		print "explaining", effect
+		print "candidates", candidates_so_far
+		print "percentage so far", percentage_of_timesteps_explained
+
+		# if effect.effect in ['kill_b', 'kill_c', 'pickUp', 'cloneSprite']:
+			# embed()
+
 		while percentage_of_timesteps_explained < self.timesteps_explained_by_combination_of_rules_threshold:
 			best_explanation = self.grow_explanation(effect)
 			# print "about to add", best_explanation
-			# embed()
+			# embed() 
 			self.effect_to_explanations[effect].add(best_explanation)
 			candidates_so_far = self.effect_to_explanations[effect]
-			percentage_of_timesteps_explained = self.get_percentage_of_timesteps_explained(effect, candidates_so_far)
+			percentage_of_timesteps_explained = self.get_percentage_of_desired_timesteps_explained(effect, candidates_so_far)
 			# print "percentage now", percentage_of_timesteps_explained
 			# print ""
 
@@ -346,7 +379,11 @@ class Detector:
 			for explanation in explanations:
 				rules.add(self.convert_explanation_to_rule_object(explanation))
 		
-		score = get_set_overlap_percentage(rules, self.rules)
+		try:
+			score = get_set_overlap_percentage(rules, self.rules)
+		except:
+			print "score overlap problem"
+			embed()
 		return score
 
 
@@ -405,12 +442,12 @@ class Detector:
 				print item
 			print ""
 
-		# print "Rules and their P(C|E), sorted by E:"
-		# for effect in self.effects_set:
-		# 	effect_keys = [k for k in self.effect_intersect_pct.keys() if effect in k]
-		# 	for item in sorted([(k,self.effect_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
-		# 		print item
-		# 	print ""
+		print "Rules and their P(C|E), sorted by E:"
+		for effect in self.effects_set:
+			effect_keys = [k for k in self.effect_intersect_pct.keys() if effect in k]
+			for item in sorted([(k,self.effect_intersect_pct[k]) for k in effect_keys], key=lambda x:-x[1]):
+				print item
+			print ""
 
 		for effect in self.effects_set:
 			effect_keys = [k for k in self.composite_rank.keys() if effect in k]
@@ -425,7 +462,7 @@ class Detector:
 		print ""
 
 		print "Actual rules"
-		for rule in sorted(rules, key=lambda x:x.effect.effect, reverse=True):
+		for rule in sorted(self.rules, key=lambda x:x.effect.effect, reverse=True):
 			print rule
 		print ""
 
@@ -467,14 +504,16 @@ def run_experiment(rules, num_timesteps, parameters):
 
 	score = d.calculate_rule_learning_score()
 	# embed()
-	return score
+	return score, d
 
 def run_experiments(rules, num_timesteps, parameters, n):
 	## Runs experiment n times, returns average score
-	scores = []
+	scores, models = [], []
 	for i in range(n):
-		scores.append(run_experiment(rules, num_timesteps, parameters))
-	return np.mean(scores)
+		score, model = run_experiment(rules, num_timesteps, parameters)
+		scores.append(score)
+		models.append(model)
+	return np.mean(scores), models
 
 
 
