@@ -913,10 +913,11 @@ class BasicGame(object):
                 res.extend([s for s in ss if s not in self.kill_list])
         return res
 
+    # momchil: beware these might screw up inference from replay
     ignoredattributes = ['stypes',
                              'name',
                              'lastmove',
-                             'color',
+                             #             'color', # momchil: this breaks replay videos and also theory induction from replay (see getObjects), b/c walls, etc.
                              'lastrect',
                              'resources',
                              'physicstype',
@@ -1025,7 +1026,7 @@ class BasicGame(object):
               }
         return fs
 
-    def setFullState(self, fs, as_string=True, cheap=True, deoffset=False):
+    def setFullState(self, fs, as_string=True, cheap=True, deoffset=False, default_colors=False):
         """ Reset the game to be exactly as defined in the fullstate dict. """
         tt = self.time
         self.reset()
@@ -1060,6 +1061,10 @@ class BasicGame(object):
                         for r, v in val.iteritems():
                             s.resources[r] = v
                     else:
+                        if a in ['colorName', 'color'] and default_colors:
+                            # for theory induction from replay (fMRI), we want to use the default colors, b/c inference relies on that to e.g. detect walls
+                            # TODO momchil seems unfair to humans -- see spriteInduction, step 1
+                            continue
                         s.__setattr__(a, val)
 
                 if s.ID in fs['kill_list_ID']:
@@ -1996,6 +2001,8 @@ class VGDLSprite(object):
         self.resources = defaultdict(int)
         self.rect.width = self.width*self.rect.width
         self.rect.height = self.height*self.rect.height
+
+
 
     def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """

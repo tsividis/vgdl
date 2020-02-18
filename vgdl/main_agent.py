@@ -162,8 +162,12 @@ class Agent:
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
         self.rle = self.rleCreateFunc()
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
-        if self.playback_states:
+
+        if self.playback_states: # theory induction from human replay
             self.rle._game.playback_states = self.playback_states
+            assert self.rle._game.playback_index == 0
+            # important to set the state -- we getObjects() to initialize the theories in replayEpisode, and the IDs should match up e.g. for the events
+            self.rle._game.setFullState(self.rle._game.playback_states[0], cheap=False, deoffset=False, default_colors=True)
         return
 
     def initializeRLEFromGame(self):
@@ -1363,7 +1367,8 @@ class Agent:
 
                 spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                rle.step((0,0))  # TODO momchil ensure this works with replay
+                rle.step((0,0))  # TODO momchil ensure this works with replay; probs not -- it assumes no action was taken, when in fact it might have been taken in replay
+
                 if self.make_movie or self.record_video_info:
                     statesEncountered.append(self.rle._game.getFullState(observe_state=True)) # momchil
                 if self.record_states:
@@ -1381,6 +1386,7 @@ class Agent:
                     except KeyError:
                         pass
                 rle._game.previousPositions = copy.deepcopy(rle._game.nextPositions)
+
                 spriteInduction(rle._game, step=3, bestSpriteTypeDict=bestSpriteTypeDict)
                 if hypothesis:
                     rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)

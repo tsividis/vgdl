@@ -348,7 +348,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 #            self._game.new_sprites = [] # momchil: taken care of? TODO no....
 #
 #            try:
-#                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=True)
+#                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=False, default_colors=True)
 #            except:
 #                print "agent playback is failing!"
 #                embed()
@@ -364,14 +364,20 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 #            self._game.playback_index += 1
 #        else:
 
+        # TODO actually load keystate directly
+        emptyKeyState = [0]*323 #keyState when no keys are pressed
+        self._game.keystate = emptyKeyState
+
         # momchil: hybrid -- just choose actions from replay
         if self._game.playback_states:
             state = self._game.playback_states[self._game.playback_index]
             keyPressType = state['keyPressType']
             action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
+
             if keyPressType:
                 action = revActionDict[keyPressType] 
                 self._game.keystate[action] = True
+                #assert self._game.keystate[action], 'Replayed keystate differs from action based on keyPressType'
 
             print keyPressType, ' -------------------------------- '
             if self._game.time >= 5 and not len(state['effectList']) > 0 and not state['keyPressType'] and not state['ended']:
@@ -429,6 +435,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             #    print 'wrong keystate'
             #    embed()
 
+
+            # state = replayed human state, s = current state from action replay
             for sname, sprites in state['objects'].iteritems():
 
                 assert sname in s['objects'].keys(), 'sname not found'
@@ -436,14 +444,21 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
                     # deoffset -- objects are offest in the actual human game, but not here
                     p = tuple(map(int, pos[1:-1].split(', ')))
-                    p = (p[0] - attrs['offset'][0], p[1] - attrs['offset'][1])
+                    #p = (p[0] - attrs['offset'][0], p[1] - attrs['offset'][1]) # TODO deoffset might be broken -- there's subtle mismatches when we use setFullState to initialize the game # THIS
+                    if sname == 'avatar':
+                        o = s['objects'][sname]
+                        print '============ avatar coords: ', o.keys()[0], '  action = ', action
+                    if sname == 'avatar' and self._game.playback_index == 7:
+                        print '-------avatar'
+                        embed()
+
                     if str(p) not in s['objects'][sname].keys():
                         print 'pos not found'
                         embed()
 
                     attrs_c = s['objects'][sname][str(p)] # current attrs
-                    attrs['x'] -= attrs['offset'][0]
-                    attrs['y'] -= attrs['offset'][1]
+                    #attrs['x'] -= attrs['offset'][0] # THIS
+                    #attrs['y'] -= attrs['offset'][1] # THIS
 
                     for attr, val in attrs.iteritems():
                         assert attr in attrs_c.keys(), 'attr not found'
@@ -452,7 +467,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         # symbol b/c none here
                         # colorName b/c randomized there
                         # ID and ID2 b/c generated anew
+                        # colorName is set to the default for the game
                         # TODO check lastdisplacement and deathage
+
                         if val != attrs_c[attr] and attr not in ['offset', 'lastdisplacement', 'deathage', 'symbol', 'colorName', 'ID', 'ID2']:
                             print 'wrong attr value'
                             embed()

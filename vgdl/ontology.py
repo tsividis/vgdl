@@ -98,6 +98,8 @@ class GridPhysics():
                 speed = 1.0
             else:
                 speed = float(sprite.speed)
+
+        print '!!! ---------------- activeMovement ', action
         if speed != 0 and action is not None:
             sprite._updatePos(action, speed * self.gridsize[0])
 
@@ -1836,6 +1838,7 @@ def distributionInitSetup(game, sprite, dynamic_type_lesion=[]):
     if 'DTIZDF' in objectColors:
         print "found DTIZDF"
         embed()
+
     game.spriteDistribution[sprite] = initializeDistribution(sprite_types, objectColors, dynamic_type_lesion) # Indexed by object ID
 
     if sprite not in game.all_objects.keys():
@@ -1959,7 +1962,7 @@ def sampleFromDistribution(game, curr_distribution, all_objects, spriteUpdateDic
             numDict[spriteUpdateDict[k]].append(k)
 
         try:
-            param_sum = {k:0. for k in bestSpriteTypeDict[obj_type].values()[0].keys()}
+            param_sum = {k:0. for k in bestSpriteTypeDict[obj_type].values()[0].keys()} 
         except IndexError:
             # bestSpriteTypeDict has yet to be populated for this object type
             for k, v in game.getObjects().items():
@@ -2131,6 +2134,7 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         objects = game.getObjects()
         for sprite in objects:
             ## color keys hard-coded for objects that occur in v. large number in our games: walls, water, etc. For these objects we just grab their type (They don't move) rather than updating all the hypotheses for each object token at each time step. Saving on compute.
+
             if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE']:
                 distributionInitSetup(game, sprite, dynamic_type_lesion)
     elif step==1:
@@ -2140,11 +2144,15 @@ def spriteInduction(game, step, bestSpriteTypeDict, oldSpriteSet=None, old_outco
         objects = game.getObjects()
         kill_list_keys = [s.ID for s in game.kill_list]
         spritestoupdate = 0
+
+        # momchil -- this is where game.spriteDistribution is set
         for sprite in objects:
+            assert objects[sprite]['sprite'].colorName == objects[sprite]['type']['color'], 'Color mismatch, likely b/c of color randomization, replay, and not saving state properly (e.g. skipping the color or colorName sprite attributes, etc.)'
             if objects[sprite]['sprite'].colorName not in ['DARKGRAY', 'MPUYEI', 'NUPHKK', 'SCJPNE'] and sprite not in game.spriteDistribution:
                 spritestoupdate+=1
                 game.all_objects[sprite] = objects[sprite]
                 distributionInitSetup(game, sprite, dynamic_type_lesion)
+
     elif step == 2:
         ## See the update options for each sprite type the sprite could be
         objects = game.getObjects()
