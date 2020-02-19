@@ -139,14 +139,12 @@ class Detector:
 			if random.random() > self.effect_false_negative_rates[rule.effect]:
 				effect = rule.effect
 		else:
-			## Produce false nositives
+			## Produce false positives for conditions
 			for cond in conditions:
 				if random.random() < self.condition_false_positive_rates[cond]:
 					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
 					condition = Condition(cond, (classes_involved))
 			
-			if random.random() < self.effect_false_positive_rates['killSprite']: ## TODO: Right now you're using the same false-positive rate for all effects
-				effect = Effect(random.choice(effects))
 		return condition, effect
 
 	def detect_rules(self, state):
@@ -161,12 +159,27 @@ class Detector:
 			if e is not None:
 				effects_set.add(e)
 
+		## detect false positives separately. TODO: separate conditions more explicitly in detect_rule().
+		for effect in effects:
+			e = self.detect_effect(effect)
+			if e is not None:
+				effects_set.add(e)
+
 		## Add things we 'know' about the state (e.g., skip detectors for state assertions for now)
 		conditions_set.add(Condition(assertion_about_state={'avatar_state':state.assertions_about_state['avatar_state']}))
 
 		self.conditions_set = self.conditions_set.__or__(conditions_set)
 		self.effects_set = self.effects_set.__or__(effects_set)
 		return conditions_set, effects_set
+
+
+	## just false positives
+	def detect_effect(self, effect_name):
+		if random.random() < self.effect_false_positive_rates[effect_name]:
+			effect = Effect(effect_name)
+		else:
+			effect = None
+		return effect
 
 
 	def learn_theory(self):
@@ -240,9 +253,9 @@ class Detector:
 				if condition is not None:
 					self.conditions_to_timesteps[condition].add(i)
 		
-				for effect in effects:
-					if effect is not None:
-						self.effects_to_timesteps[effect].add(i)
+			for effect in effects:
+				if effect is not None:
+					self.effects_to_timesteps[effect].add(i)
 
 		return
 
@@ -271,7 +284,9 @@ class Detector:
 	def greedy_effect_explainer(self, effect, candidates):
 
 		## Given the existing set of candidate explanations for an effect, returns the greedily next best explanation
-		
+		if not candidates:
+			return None
+
 		best_score = max(candidates.keys())
 		best_candidate = candidates[best_score]
 		return best_candidate
@@ -287,6 +302,8 @@ class Detector:
 		except:
 			print "greedy effect explainer failed"
 			embed()
+		if best_explanation is None:
+			return None
 		best_explanation_cause = best_explanation[0]
 
 		## Filter all candidates that overlap too much with the best explanation
@@ -310,7 +327,7 @@ class Detector:
 
 		effect_occurrence_percentage = num_total_timesteps / (1.0 * len(self.timestep_to_effects.keys()))
 
-		percentage_of_timesteps_we_should_explain = max(0.0, effect_occurrence_percentage - self.effect_false_positive_rates[effect])
+		# percentage_of_timesteps_we_should_explain = max(0.0, effect_occurrence_percentage - self.effect_false_positive_rates[effect])
 
 		num_all_timesteps = len(self.timestep_to_effects.keys())
 		num_timesteps_we_should_ignore = round(num_all_timesteps * self.effect_false_positive_rates[effect])
@@ -328,14 +345,6 @@ class Detector:
 		# print ""
 
 		if len(overlap)==0 and num_timesteps_we_should_explain==0:
-			print 1.
-		else:
-			print max(1., 1.0 * len(overlap) / num_timesteps_we_should_explain) #len(total_timesteps)
-
-		# embed()
-
-
-		if len(overlap)==0 and num_timesteps_we_should_explain==0:
 			return 1.
 		else:
 			return min(1., 1.0 * len(overlap) / num_timesteps_we_should_explain) #len(total_timesteps)
@@ -349,17 +358,19 @@ class Detector:
 
 		percentage_of_timesteps_explained = self.get_percentage_of_desired_timesteps_explained(effect, candidates_so_far)
 
-		print "explaining", effect
-		print "candidates", candidates_so_far
-		print "percentage so far", percentage_of_timesteps_explained
+		# print "explaining", effect
+		# print "candidates", candidates_so_far
+		# print "percentage so far", percentage_of_timesteps_explained
 
 		# if effect.effect in ['kill_b', 'kill_c', 'pickUp', 'cloneSprite']:
 			# embed()
-
+		# if effect.effect == 'kill_a':
+			# embed()
 		while percentage_of_timesteps_explained < self.timesteps_explained_by_combination_of_rules_threshold:
 			best_explanation = self.grow_explanation(effect)
+			if best_explanation is None:
+				return
 			# print "about to add", best_explanation
-			# embed() 
 			self.effect_to_explanations[effect].add(best_explanation)
 			candidates_so_far = self.effect_to_explanations[effect]
 			percentage_of_timesteps_explained = self.get_percentage_of_desired_timesteps_explained(effect, candidates_so_far)

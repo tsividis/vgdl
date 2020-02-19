@@ -31,12 +31,12 @@ r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a
 rules = {r1, r2, r3, r4, r5}
 
 parameters = {
-	'timesteps_explained_by_combination_of_rules_threshold' : .9,
+	'timesteps_explained_by_combination_of_rules_threshold' : .8,
 	'set_overlap_cutoff': .7,
 	'condition_false_negative_rates': 0.,
 	'condition_false_positive_rates': 0.,
-	'effect_false_negative_rates': 0.,
-	'effect_false_positive_rates': 0.1
+	'effect_false_negative_rates': 0.4,
+	'effect_false_positive_rates': 0.
 }
 
 
@@ -85,7 +85,6 @@ for params in itertools.product(*[condition_false_negative_ranges, condition_fal
 
 
 # score, models = run_experiments(rules, 500, parameters, 10)
-
 
 df = pd.DataFrame(data, 
                columns =['Param_name', 'Condition_vals', 'Effect_vals', 'Timesteps', 'Score']) 
