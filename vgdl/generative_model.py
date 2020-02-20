@@ -327,8 +327,6 @@ class Detector:
 
 		effect_occurrence_percentage = num_total_timesteps / (1.0 * len(self.timestep_to_effects.keys()))
 
-		# percentage_of_timesteps_we_should_explain = max(0.0, effect_occurrence_percentage - self.effect_false_positive_rates[effect])
-
 		num_all_timesteps = len(self.timestep_to_effects.keys())
 		num_timesteps_we_should_ignore = round(num_all_timesteps * self.effect_false_positive_rates[effect])
 
@@ -347,7 +345,7 @@ class Detector:
 		if len(overlap)==0 and num_timesteps_we_should_explain==0:
 			return 1.
 		else:
-			return min(1., 1.0 * len(overlap) / num_timesteps_we_should_explain) #len(total_timesteps)
+			return min(1., 1.0 * len(overlap) / num_timesteps_we_should_explain)
 
 
 	def provide_explanations_until_threshold(self, effect):
@@ -499,12 +497,15 @@ def print_history(states):
 
 
 def get_set_overlap_percentage(set1,set2):
+	if len(set1) == 0:
+		return 0.
 	numerator = 1.0*len(set1&set2)
-	return (numerator/len(set1) + numerator/len(set2))/2
+	return (numerator/len(set1) + numerator/len(set2)) / 2
 
 
 def run_experiment(rules, num_timesteps, parameters):
 	states = generate_states(rules, num_timesteps)
+	num_events = sum([len(s.rules) for s in states])
 	d = Detector(rules, parameters)
 	d.populate_dictionaries(states)
 	d.learn_theory()
@@ -515,16 +516,17 @@ def run_experiment(rules, num_timesteps, parameters):
 
 	score = d.calculate_rule_learning_score()
 	# embed()
-	return score, d
+	return score, num_events, d
 
 def run_experiments(rules, num_timesteps, parameters, n):
 	## Runs experiment n times, returns average score
-	scores, models = [], []
+	scores, events, models = [], [], []
 	for i in range(n):
-		score, model = run_experiment(rules, num_timesteps, parameters)
+		score, num_events, model = run_experiment(rules, num_timesteps, parameters)
 		scores.append(score)
+		events.append(num_events)
 		models.append(model)
-	return np.mean(scores), models
+	return np.mean(scores), np.mean(events), models
 
 
 

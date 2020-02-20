@@ -6,6 +6,15 @@ import os
 
 ## expose rule occurrence parameter, too.
 
+"""
+Status summary:
+Right now this is behaving reasonably. Given an expected failure rate,
+it tries to explain events that exceed that failure rate.
+As a result, this will sometimes provide more or fewer explanations than necessary and will not always find the correct ruleset.
+
+Additional tuning can be done, but it might be worth, at this point, thinking more about how to shape the planner policy so that it generates interactions that are under its control, rather than tuning this more.
+
+"""
 
 #######################
 #					  #
@@ -35,64 +44,70 @@ parameters = {
 	'set_overlap_cutoff': .7,
 	'condition_false_negative_rates': 0.,
 	'condition_false_positive_rates': 0.,
-	'effect_false_negative_rates': 0.4,
-	'effect_false_positive_rates': 0.
+	'effect_false_negative_rates': 0.0,
+	'effect_false_positive_rates': 0.2
 }
 
 
-condition_false_negative_ranges = np.array(range(0,1,1))/10.
-condition_false_positive_ranges = np.array(range(0,1,1))/10.
-effect_false_negative_ranges = np.array(range(0,3,1))/10.
-effect_false_positive_ranges = np.array(range(0,3,1))/10.
+# condition_false_negative_ranges = np.array(range(0,1,1))/10.
+# condition_false_positive_ranges = np.array(range(0,1,1))/10.
+# effect_false_negative_ranges = np.array(range(0,3,1))/10.
+# effect_false_positive_ranges = np.array(range(0,3,1))/10.
 
-data = []
-model_dict = defaultdict(lambda: [])
-for params in itertools.product(*[condition_false_negative_ranges, condition_false_positive_ranges, effect_false_negative_ranges, effect_false_positive_ranges]):
+# data = []
+# model_dict = defaultdict(lambda: [])
+# for params in itertools.product(*[condition_false_negative_ranges, condition_false_positive_ranges, effect_false_negative_ranges, effect_false_positive_ranges]):
 
 
-	parameters['condition_false_negative_rates'] = params[0]
-	parameters['condition_false_positive_rates'] = params[1]
-	parameters['effect_false_negative_rates'] = params[2]
-	parameters['effect_false_positive_rates'] = params[3]
+# 	parameters['condition_false_negative_rates'] = params[0]
+# 	parameters['condition_false_positive_rates'] = params[1]
+# 	parameters['effect_false_negative_rates'] = params[2]
+# 	parameters['effect_false_positive_rates'] = params[3]
 
-	condition_vals = str('cfn: {}, cfp: {}'.format(params[0], params[1])) 
-	effect_vals = str('efn: {}, efp: {}'.format(params[2], params[3])) 
-	param_name = condition_vals + ' ' + effect_vals
-	print param_name
+# 	condition_vals = str('cfn: {}, cfp: {}'.format(params[0], params[1])) 
+# 	effect_vals = str('efn: {}, efp: {}'.format(params[2], params[3])) 
+# 	param_name = condition_vals + ' ' + effect_vals
+# 	print param_name
 
-	for i in range(50,1000,50):
-		score, models = run_experiments(rules, i, parameters, 10)
-		data.append((param_name, condition_vals, effect_vals, i, score))
-		# data.append((param_name, i, score))
-		model_dict[param_name].append((score, models))
+# 	for i in range(50,1000,50):
+# 		score, models = run_experiments(rules, i, parameters, 10)
+# 		data.append((param_name, condition_vals, effect_vals, i, score))
+# 		# data.append((param_name, i, score))
+# 		model_dict[param_name].append((score, models))
 
 
 
 #########
-# data = []
-# model_dict = defaultdict(lambda: [])
-# condition_vals = str('cfp: {}, cfn: {}'.format(parameters['condition_false_positive_rates'], parameters['condition_false_negative_rates'])) 
-# effect_vals = str('efp: {}, efn: {}'.format(parameters['effect_false_positive_rates'], parameters['effect_false_negative_rates'])) 
-# param_name = condition_vals + ' ' + effect_vals
+data = []
+model_dict = defaultdict(lambda: [])
+condition_vals = str('cfp: {}, cfn: {}'.format(parameters['condition_false_positive_rates'], parameters['condition_false_negative_rates'])) 
+effect_vals = str('efp: {}, efn: {}'.format(parameters['effect_false_positive_rates'], parameters['effect_false_negative_rates'])) 
+param_name = condition_vals + ' ' + effect_vals
 
 # print param_name
 
-# for i in range(50,1000,50):
-# 	score, models = run_experiments(rules, i, parameters, 10)
-# 	data.append((param_name, condition_vals, effect_vals, i, score))
-# 	# data.append((param_name, i, score))
-# 	model_dict[param_name].append((score, models))
+for i, steps in enumerate(range(0,200,10)):
+	score, events, models = run_experiments(rules, steps, parameters, 10)
+	data.append((param_name, condition_vals, effect_vals, steps, score, events))
+	model_dict[param_name].append((score, events, models))
+
 
 
 # score, models = run_experiments(rules, 500, parameters, 10)
 
 df = pd.DataFrame(data, 
-               columns =['Param_name', 'Condition_vals', 'Effect_vals', 'Timesteps', 'Score']) 
+               columns =['Param_name', 'Condition_vals', 'Effect_vals', 'Timesteps', 'Score', 'Events']) 
 # df = pd.DataFrame(data, 
                # columns =['Param_name','Timesteps', 'Score']) 
 filled_markers = ('o', 'v', '^', '<', '>', '8', 's', 'p', '*', 'h', 'H', 'D', 'd', 'P', 'X')
 
-sns.set(style="whitegrid")
+
+### then you can run the same stuff on larger sets of rulesets
+### explore lots more parameters
+### or make the experiments more complex, etc
+
+
+sns.set_style("white")
 
 for effect_val in df.Effect_vals.unique():
 	subset = df[df['Effect_vals']==effect_val]
@@ -109,6 +124,8 @@ for effect_val in df.Effect_vals.unique():
 	                # hue_order=clarity_ranking,
 	                #sizes=(1, 8), linewidth=0,
 	                data=subset, ax=ax)
+	ax2 = ax.twinx()
+	df.plot(x="Timesteps", y="Events", ax=ax2, legend=False)
 	lgd = plt.legend(loc='upper center',bbox_to_anchor=(.5, -.2), borderaxespad=0.)
 
 	plt.savefig(dirname+'effect_vals: {}.png'.format(effect_val),bbox_extra_artists=(lgd,),bbox_inches='tight', dpi=500)
