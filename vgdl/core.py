@@ -780,7 +780,7 @@ class BasicGame(object):
 
         # all other colors are the same for each subject-game pair
         game_seed = int(hashlib.sha1(game_str).hexdigest(), 16) % (10 ** 8)
-        random.seed(subj_seed + game_seed)
+        random.seed(subj_seed + game_seed) # TODO better system
 
         random.shuffle(colors)
         for i in range(len(keys)):
@@ -1791,6 +1791,10 @@ class BasicGame(object):
                     for sC in self.getSprites(stype):
 
                         effect(sC, sC, self, **kwargs_use)
+
+                        print 'conditional criteria W T F'
+                        embed()
+                        assert False
 
 
             ## Update actual sprite positions.

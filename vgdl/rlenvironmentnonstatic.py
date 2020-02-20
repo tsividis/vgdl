@@ -419,7 +419,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
             else:
                 for s in self._game:
-                    if action == 0 and s == self._avatar:
+                    if action == 0 and s == self._avatar: # momchil is this necessary? differs from startGame logic
                             continue
                     if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
                             s.update(self._game)

@@ -169,6 +169,7 @@ class Agent:
             assert self.rle._game.playback_index == 0
             # important to set the state -- we getObjects() to initialize the theories in replayEpisode, and the UUIDs of the objects should match up, e.g. for proper event handling
             self.rle._game.setFullState(self.rle._game.playback_states[0], cheap=False, deoffset=False, default_colors=True)
+            #self.rle._game.playback_index += 1 # TODO momchil 
         return
 
     def initializeRLEFromGame(self):

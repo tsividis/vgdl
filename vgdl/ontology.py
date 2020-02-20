@@ -238,7 +238,7 @@ class Spreader(Flicker):
         Flicker.update(self, game)
         if self._age == 2:
             for u in BASEDIRS:
-                if random.random() < self.spreadprob:
+                if random.random() < self.spreadprob: # momchil: creates sprites, stochastic 
                     game._createSprite([self.name], (self.lastrect.left + u[0] * self.lastrect.size[0],
                                                      self.lastrect.top + u[1] * self.lastrect.size[1]))
 
@@ -272,7 +272,7 @@ class SpawnPoint(SpriteProducer):
             killSprite(self, None, game)
             return
 
-        if self.spawnCooldown < 11:
+        if self.spawnCooldown < 11:  # momchil: creates sprites, stochastic 
             if ((game.time+1) % self.spawnCooldown == 0 and random.random() < self.prob):
                 game._createSprite([self.stype], (self.rect.left, self.rect.top))
                 self.counter += 1
@@ -290,7 +290,7 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         self.lastmove -= 1
-        VGDLSprite.update(self, game, random_npc=True)
+        VGDLSprite.update(self, game, random_npc=True) # momchil: stochastic motion
         self.orientation = random.choice(BASEDIRS) #TODO: Make work with random direction
         self.physics.activeMovement(self, self.orientation)
         self.lastmove += 1
@@ -351,7 +351,7 @@ class Walker(Missile):
     """ Keep moving in the current horizontal direction. If stopped, pick one randomly. """
     airsteering = False
     is_stochastic = True
-    def update(self, game):
+    def update(self, game): # momchil: stochastic motion
         if self.airsteering or self.lastdirection[0] == 0:
             if self.orientation[0] > 0:
                 d = 1
@@ -365,7 +365,7 @@ class Walker(Missile):
 class WalkJumper(Walker):
     prob = 0.1
     strength = 10
-    def update(self, game):
+    def update(self, game): # momchil: stochastic motion
         if self.lastdirection[0] == 0:
             if self.prob < random.random():
                 self.physics.activeMovement(self, (0, -self.strength))
@@ -387,7 +387,7 @@ class ErraticMissile(Missile):
         self.prob = prob
         self.is_stochastic = (prob > 0 and prob < 1)
 
-    def update(self, game):
+    def update(self, game): # momchil: stochastic orientation
         Missile.update(self, game)
         if random.random() < self.prob:
             self.orientation = random.choice(BASEDIRS)
@@ -443,6 +443,7 @@ class Chaser(RandomNPC): ##
         options = []
         position_options = {}
 
+        # momchil: stochastic motion
         for target in self._closestTargets(game):
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
