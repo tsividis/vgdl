@@ -267,7 +267,7 @@ class VGDLParser(object):
 
                     play_start_time = time.time() 
                     dispFn = lambda score, win: displayScore(game['fake_name'], score, win)
-                    win, score, allStates, actions, events = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft)
+                    win, score, allStates, allKeystates, actions, events = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft)
                     play_end_time = time.time()
 
                     #print 'events size: ', get_size(events), ' b for ', len(events), ' states'
@@ -281,6 +281,7 @@ class VGDLParser(object):
                     then = time.time()
                     
                     zstates = VGDLParser.compress({'states': allStates}) # dummy dict
+                    zkeystates = VGDLParser.compress({'keystates': allKeystates}) # dummy dict
 
                     #print 'zstates size: ', get_size(zstates), ' b for ', len(allStates), ' states'
                     #print '  = ', get_size(zstates)/1000000/(play_end_time - play_start_time), ' MB/s'
@@ -303,6 +304,7 @@ class VGDLParser(object):
                         'win': win,
                         'score': score,
                         'zstates': bson.binary.Binary(zstates),
+                        'zkeystates': bson.binary.Binary(zkeystates),
                         'actions': actions,
                         'events': events
                     }
@@ -350,7 +352,7 @@ class VGDLParser(object):
             if playback_states:
                 g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, deoffset=True)
             else:
-                win, score, allStates, _, _ = g.startGame(headless, persist_movie)
+                win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
         return g
 
@@ -1617,7 +1619,8 @@ class BasicGame(object):
         self.spriteDistribution = {}
         self.movement_options = {}
         self.sprite_appearance_predictions = {}
-        allStates = [self.getFullState()]
+        allStates = [self.getFullState()] # important for replay
+        allKeystates = [None] # log keys pre-update & event handling (states are logged after)
 
         # for k,v in self.alt_sprite_constr.items():
         #     for subclass in v[2]:
@@ -1759,6 +1762,14 @@ class BasicGame(object):
                         print "Game lost. Score=%s" % self.score
 
                     # np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
+
+                    # important to get RNG state at the right spot for replay
+                    # TODO momchil dedupe / not exactly the same as in _performAction
+                    allKeystates.append({
+                        'keystate': self.keystate,
+                        'keyPressType': keyPressType,
+                        'RNG_state': random.getstate()
+                        })
                     
                     # clear collision events for state logging TODO momchil make sure it works
                     self._eventHandling()
@@ -1774,7 +1785,7 @@ class BasicGame(object):
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
                     print "ended in {} steps".format(self.time)
-                    return win, self.score, allStates, self.actions, finalEventList
+                    return win, self.score, allStates, allKeystates, self.actions, finalEventList
                     # pygame.quit()
                     # sys.exit()
                     # break
@@ -1792,10 +1803,16 @@ class BasicGame(object):
 
                         effect(sC, sC, self, **kwargs_use)
 
-                        print 'conditional criteria W T F'
+                        print 'conditional criteria W T F' # momchil TODO investigate -- why don't we do this in _performAction?
                         embed()
                         assert False
 
+            # important to get RNG state at the right spot for replay
+            allKeystates.append({
+                'keystate': self.keystate,
+                'keyPressType': keyPressType,
+                'RNG_state': random.getstate()
+                })
 
             ## Update actual sprite positions.
             for s in list(self):
@@ -1807,6 +1824,7 @@ class BasicGame(object):
             # handle collision effects
             self._eventHandling()
 
+            # important to log state at the right spot for replay
             allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
 
             # Termination #2 : Avatars have been killed
@@ -1872,7 +1890,7 @@ class BasicGame(object):
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
         #print len(self.actions), win, self.score
-        return win, self.score, allStates, self.actions, finalEventList
+        return win, self.score, allStates, allKeystates, self.actions, finalEventList
 
 
     def getPossibleActions(self):

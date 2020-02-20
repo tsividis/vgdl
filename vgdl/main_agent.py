@@ -35,6 +35,7 @@ class Agent:
         self.gameString = None
         self.levelString = None
         self.playback_states = None
+        self.playback_keystates = None
         self.record_fMRIRegressors = False
         self.hypothesesPosterior = None
         self.display_text = False
@@ -165,11 +166,13 @@ class Agent:
 
         if self.playback_states: # theory induction from human replay
             self.rle._game.playback_states = self.playback_states
-            self.rle._game.action_playback_only = False
+            self.rle._game.playback_keystates = self.playback_keystates
+            self.rle._game.action_playback_only = True
             assert self.rle._game.playback_index == 0
-            # important to set the state -- we getObjects() to initialize the theories in replayEpisode, and the UUIDs of the objects should match up, e.g. for proper event handling
+            assert len(self.rle._game.playback_states) == len(self.rle._game.playback_keystates)
+            # important to set the initial state now -- we getObjects() to initialize the theories in replayEpisode, and the UUIDs of the objects should match up, e.g. for proper event handling
             self.rle._game.setFullState(self.rle._game.playback_states[0], cheap=False, deoffset=False, default_colors=True)
-            #self.rle._game.playback_index += 1 # TODO momchil 
+            self.rle._game.playback_index += 1
         return
 
     def initializeRLEFromGame(self):
@@ -414,10 +417,11 @@ class Agent:
 
             if playback:
                 # fMRI playback from human play
-                (self.gameString, self.levelString, self.playback_states) = level_game
+                (self.gameString, self.levelString, self.playback_states, self.playback_keystates) = level_game
             else:
                 (self.gameString, self.levelString) = level_game
                 self.playback_states = None # TODO momchil undo
+                self.playback_keystates = None # TODO momchil undo
 
             if self.record_fMRIRegressors:
                 self.regressors = {
@@ -1183,7 +1187,7 @@ class Agent:
 
             if self.rle._game.playback_index == len(self.rle._game.playback_states):
                 # TODO momchil make ended = true instead or something
-                embed()
+                #embed()
                 break
 
 

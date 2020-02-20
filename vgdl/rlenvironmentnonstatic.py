@@ -345,22 +345,27 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # momchil fMRI replay shenanighans
         if self._game.playback_states:
-            # action replay -- choose action from replay & let EMPA do the updates / event handling
-            # obvi only works for deterministic games
-            #
+            # off-policy learning from human action/state replay
+            # 
 
             emptyKeyState = [0]*323 #keyState when no keys are pressed
             self._game.keystate = emptyKeyState # momchil: important to reset keystate
             state = self._game.playback_states[self._game.playback_index]
+            keystate = self._game.playback_keystates[self._game.playback_index]
 
             if self._game.action_playback_only:
-                keyPressType = state['keyPressType']
+                # action replay -- choose action from replay & let EMPA do the updates / event handling
+                #
+
+                assert keystate['keyPressType'] == state['keyPressType']
+                keyPressType = keystate['keyPressType']
                 action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
 
                 print keyPressType, ' -------------------------------- keyPressType '
 
                 # set the keystate from replay
-                self._game.keystate = state['keystate']
+                assert keystate['keystate'] == state['keystate']
+                self._game.keystate = keystate['keystate']
 
                 # sanity check that pressed key matches keystate (we need to return correct action I think)
                 if keyPressType:
@@ -369,14 +374,32 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     assert self._game.keystate[action], 'Replayed keystate differs from action based on keyPressType'
 
 
-                self._game.playback_index += 1
+                # set RNG state to what it was exactly at the same spot in startGame
+                x = keystate['RNG_state']
+                x = (x[0], tuple(x[1]), x[2])
+                random.setstate(x)
+
+                # sprite update & event handling
+                # momchil TODO dedupe w/ below potentially, also compare with startGame
+                self._game.new_sprites = [] 
+                # update sprites
+                if onlyavatar:
+                    if action != 0:
+                        self._avatar.update(self._game)
+
+                else:
+                    for s in self._game:
+                        if action == 0 and s == self._avatar: # momchil is this necessary? differs from startGame logic
+                                continue
+                        if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
+                                s.update(self._game)
+
+                events = self._game._eventHandling()
 
             else:
                 # full state replay -- replay both states and actions
                 #
 
-                # off-policy learning from human action/state replay
-                # 
                 self._game.new_sprites = [] # momchil: taken care of? TODO no....
     
                 try:
@@ -393,8 +416,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
    
                 # load events from replay
                 events = self._game.effectList
-   
-            # move to next state 
+  
+
+            # move to next state
             self._game.playback_index += 1
 
         else:
@@ -403,13 +427,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             #
             if action in possible_actions:
                 self._game.keystate[action] = True  #TODO momchil wtf is this
-
-
-
-        # update avatars & handle events if agent is playing, or if we're going action replay
-        # do NOT do it if we're doing full state replay
-        #
-        if not self._game.playback_states or self._game.action_playback_only:
 
             self._game.new_sprites = [] 
             # update sprites
@@ -434,22 +451,22 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             #self._game.setFullState(state, cheap=False, deoffset=False, default_colors=True)
             s = self._game.getFullState()
 
-            if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
+            if len(self._game.effectList) != state['effectListLen']:
                 print 'wrong effectListLen!'
                 embed()
-            if len(self._game.kill_list) != self._game.playback_states[self._game.playback_index - 1]['kill_listLen']: 
+            if len(self._game.kill_list) != state['kill_listLen']: 
                 print 'wrong kill_listLen!'
                 embed()
-            if len(self._game.collision_eff) != self._game.playback_states[self._game.playback_index - 1]['collision_effLen']: 
+            if len(self._game.collision_eff) != state['collision_effLen']: 
                 print 'wrong collision_eff!'
                 embed()
-            if len(self._game.sprite_groups) != self._game.playback_states[self._game.playback_index - 1]['sprite_groupsLen']: 
+            if len(self._game.sprite_groups) != state['sprite_groupsLen']: 
                 print 'wrong sprite_groupsLen!'
                 embed()
-            if len(self._game.effectListByColor) != len(self._game.playback_states[self._game.playback_index - 1]['effectListByColor']): 
+            if len(self._game.effectListByColor) != len(state['effectListByColor']): 
                 print 'wrong effectListByColor!'
                 embed()
-            if len(self._game.effectListByClass) != len(self._game.playback_states[self._game.playback_index - 1]['effectListByClass']): 
+            if len(self._game.effectListByClass) != len(state['effectListByClass']): 
                 print 'wrong effectListByClass!'
                 embed()
             # TODO momchil different; weird
@@ -617,7 +634,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._game.ended = ended
             self._game.win = won
             print 'ENDED'
-            embed()
+            #embed()
 
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination, 'action': action}
 
