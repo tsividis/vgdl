@@ -917,12 +917,12 @@ class BasicGame(object):
     ignoredattributes = ['stypes',
                              'name',
                              'lastmove',
-                             #             'color', # momchil: this breaks replay videos and also theory induction from replay (see getObjects), b/c walls, etc.
+                             #  'color', # momchil: we need color; otherwise, this breaks replay videos (wrong colors) and also theory induction from replay (see getObjects), b/c walls, etc.
                              'lastrect',
                              'resources',
                              'physicstype',
                              'physics',
-                             'rect',
+                             #  'rect', # momchil: we need rects; b/c there is a mismatch between sprite s.x, s.y and s.rect coordinates (see comment in getFullState), so we need to make sure rects are set on the other side
                              'alternate_keys',
                              'res_type',
                              'stype',
@@ -977,11 +977,13 @@ class BasicGame(object):
                 pos = (s.rect.left, s.rect.top)
 
                 if s.rect.left != s.x or s.rect.top != s.y:
-                    print 'mismatch!' #
-                    # momchil note: happens b/c we call VGDLSprite.update() (which sets .x = .rect.x etc) before moving the avatar
-                    # .rect is the updated coordinate
+                    # momchil note: happens b/c we call VGDLSprite.update() (which sets .x = .rect.x etc) before calling eventHandling (which moves the avatar)
+                    # .rect is the updated coordinate 
+                    # note that technically this should not be an issue, as long as things on the replay side happen in the corresponding order and we call setFullState at the right time
+                    #print 'mismatch!' 
                     #embed()
                     #assert False
+                    pass
 
                 attrs = {}
                 while pos in ss:
@@ -997,6 +999,7 @@ class BasicGame(object):
                         attrs[a] = val
                 if s.resources:
                     attrs['resources'] = dict(s.resources)
+                attrs['rect'] = {'pos': (s.rect.left, s.rect.top), 'size': s.rect.size}
 
         kill_list_ID = []
         for s in self.kill_list:
@@ -1044,8 +1047,9 @@ class BasicGame(object):
             for ID, attrs in ss.iteritems():
 
                 if deoffset:
-                    attrs['x'] -= attrs['offset'][0]
-                    attrs['y'] -= attrs['offset'][1]
+                    offset = attrs['offset']
+                    attrs['x'] -= offset[0]
+                    attrs['y'] -= offset[1]
                     attrs['offset'] = (0,0)
 
                 p = attrs['x'], attrs['y']
@@ -1060,6 +1064,15 @@ class BasicGame(object):
                     if a == 'resources':
                         for r, v in val.iteritems():
                             s.resources[r] = v
+                    elif a == 'rect':
+                        s.rect.left = val['pos'][0]
+                        s.rect.top = val['pos'][1]
+                        s.rect.size = tuple(val['size'])
+                        if deoffset:
+                            s.rect.left -= offset[0]
+                            s.rect.top -= offset[1]
+                        #s.__setattr__(a, pygame.Rect(val['pos'], val['size']))
+                        pass
                     else:
                         if a in ['colorName', 'color'] and default_colors:
                             # for theory induction from replay (fMRI), we want to use the default colors, b/c inference relies on that to e.g. detect walls
@@ -2009,6 +2022,7 @@ class VGDLSprite(object):
         #print("begin")
         self.x = self.rect.x
         self.y = self.rect.y
+
         self.lastrect = self.rect.copy()
         # no need to redraw if nothing was updated
         self.lastmove += 1

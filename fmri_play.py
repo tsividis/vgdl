@@ -6,7 +6,7 @@ import time
 
 # see db_api.py
 
-assert False, ' don''t -- it will mess up the current stuff in the db'
+#assert False, ' don''t -- it will mess up the current stuff in the db'
 
 import json
 import sys
@@ -186,6 +186,8 @@ def get_subj(subj_id):
 if __name__ == '__main__':
     subj_id = sys.argv[1]
     run_id = int(sys.argv[2])
+
+    assert subj_id > 10 # safeguard so we don't overwrite the precious subject 0
 
     subj = get_subj(subj_id)
 

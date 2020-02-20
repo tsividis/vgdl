@@ -342,76 +342,96 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         if self.visualize:
             self._game._clearAll(self.visualize)
 
-#        if self._game.playback_states:
-#            # off-policy learning from human action/state replay
-#            # 
-#            self._game.new_sprites = [] # momchil: taken care of? TODO no....
-#
-#            try:
-#                self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=False, default_colors=True)
-#            except:
-#                print "agent playback is failing!"
-#                embed()
-#
-#            keyPressType = self._game.playback_states[self._game.playback_index]['keyPressType']
-#            action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
-#            if keyPressType:
-#                action = revActionDict[keyPressType] 
-#                assert self._game.keystate[action] 
-#
-#            events = self._game.effectList
-#
-#            self._game.playback_index += 1
-#        else:
 
-        emptyKeyState = [0]*323 #keyState when no keys are pressed
-        self._game.keystate = emptyKeyState # momchil: important to reset keystate
-
-        # momchil: action replay -- choose action from replay & let EMPA do the updates / event handling
-        # obvi only works for deterministic games
+        # momchil fMRI replay shenanighans
         if self._game.playback_states:
+            # action replay -- choose action from replay & let EMPA do the updates / event handling
+            # obvi only works for deterministic games
+            #
+
+            emptyKeyState = [0]*323 #keyState when no keys are pressed
+            self._game.keystate = emptyKeyState # momchil: important to reset keystate
             state = self._game.playback_states[self._game.playback_index]
-            keyPressType = state['keyPressType']
-            action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
 
-            print keyPressType, ' -------------------------------- keyPressType '
+            if self._game.action_playback_only:
+                keyPressType = state['keyPressType']
+                action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
 
-            # set the keystate from replay
-            self._game.keystate = state['keystate']
+                print keyPressType, ' -------------------------------- keyPressType '
 
-            # sanity check that pressed key matches keystate (we need to return correct action I think)
-            if keyPressType:
-                action = revActionDict[keyPressType] 
-                #self._game.keystate[action] = True # we used to set the keystate here; now we just sanity check
-                assert self._game.keystate[action], 'Replayed keystate differs from action based on keyPressType'
+                # set the keystate from replay
+                self._game.keystate = state['keystate']
+
+                # sanity check that pressed key matches keystate (we need to return correct action I think)
+                if keyPressType:
+                    action = revActionDict[keyPressType] 
+                    #self._game.keystate[action] = True # we used to set the keystate here; now we just sanity check
+                    assert self._game.keystate[action], 'Replayed keystate differs from action based on keyPressType'
 
 
+                self._game.playback_index += 1
+
+            else:
+                # full state replay -- replay both states and actions
+                #
+
+                # off-policy learning from human action/state replay
+                # 
+                self._game.new_sprites = [] # momchil: taken care of? TODO no....
+    
+                try:
+                    self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=False, default_colors=True)
+                except:
+                    print "agent playback is failing!"
+                    embed()
+    
+                keyPressType = self._game.playback_states[self._game.playback_index]['keyPressType']
+                action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
+                if keyPressType:
+                    action = revActionDict[keyPressType] 
+                    assert self._game.keystate[action] 
+   
+                # load events from replay
+                events = self._game.effectList
+   
+            # move to next state 
             self._game.playback_index += 1
 
         else:
 
-            # default case: agent is playing
+            # no replay (default case): agent is playing
             #
             if action in possible_actions:
                 self._game.keystate[action] = True  #TODO momchil wtf is this
 
-        self._game.new_sprites = []
-        # update sprites
-        if onlyavatar:
-            if action != 0:
-                self._avatar.update(self._game)
 
-        else:
-            for s in self._game:
-                if action == 0 and s == self._avatar:
-                        continue
-                if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
-                        s.update(self._game)
 
-        events = self._game._eventHandling()
+        # update avatars & handle events if agent is playing, or if we're going action replay
+        # do NOT do it if we're doing full state replay
+        #
+        if not self._game.playback_states or self._game.action_playback_only:
+
+            self._game.new_sprites = [] 
+            # update sprites
+            if onlyavatar:
+                if action != 0:
+                    self._avatar.update(self._game)
+
+            else:
+                for s in self._game:
+                    if action == 0 and s == self._avatar:
+                            continue
+                    if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
+                            s.update(self._game)
+
+            events = self._game._eventHandling()
+
+
 
 
         if self._game.playback_states:
+            state = self._game.playback_states[self._game.playback_index - 1]
+            #self._game.setFullState(state, cheap=False, deoffset=False, default_colors=True)
             s = self._game.getFullState()
 
             if len(self._game.effectList) != self._game.playback_states[self._game.playback_index - 1]['effectListLen']:
@@ -452,7 +472,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         print '============ avatar coords: ', o.keys()[0], '  action = ', action
                     
                     if str(p) not in s['objects'][sname].keys():
-                        print 'pos not found'
+                        print 'pos not found -- b/c we used to restore the rect from x,y, which is wrong b/c sometimes they diverge -- see getFullState'
+                        continue
                         embed()
 
                     attrs_c = s['objects'][sname][str(p)] # current attrs
@@ -464,12 +485,18 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
                         # offset b/c it's (0,0) here
                         # symbol b/c none here
-                        # colorName b/c randomized there
-                        # ID and ID2 b/c generated anew
+                        # color & colorName b/c randomized there
                         # colorName is set to the default for the game
                         # TODO check lastdisplacement and deathage
 
-                        if val != attrs_c[attr] and attr not in ['offset', 'lastdisplacement', 'deathage', 'symbol', 'colorName', 'ID', 'ID2']:
+                        # (de)serialization & storage makes tuples into lists
+                        if isinstance(attrs_c[attr], tuple):
+                            val = tuple(val)
+                        if attr == 'rect':
+                            val['pos'] = tuple(val['pos'])
+                            val['size'] = tuple(val['size'])
+
+                        if val != attrs_c[attr] and attr not in ['offset', 'lastdisplacement', 'deathage', 'symbol', 'colorName', 'color']:
                             print 'wrong attr value'
                             embed()
                             time.sleep(1000)
