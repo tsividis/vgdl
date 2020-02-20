@@ -37,7 +37,9 @@ r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a
 
 r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
 
-rules = {r1, r2, r3, r4, r5}
+rulesets = {'set1': {r1, r2, r3, r4, r5},
+			'set2': {r3, r4}
+			}
 
 parameters = {
 	'timesteps_explained_by_combination_of_rules_threshold' : .8,
@@ -86,23 +88,24 @@ param_name = condition_vals + ' ' + effect_vals
 
 # print param_name
 
-for i, steps in enumerate(range(0,200,10)):
-	score, events, models = run_experiments(rules, steps, parameters, 10)
-	data.append((param_name, condition_vals, effect_vals, steps, score, events))
-	model_dict[param_name].append((score, events, models))
+for ruleset_name,ruleset in rulesets.items():
+	for i, steps in enumerate(range(0,500,20)):
+		score, events, models = run_experiments(ruleset, steps, parameters, 10)
+		data.append((ruleset_name, param_name, condition_vals, effect_vals, steps, score, events))
+		model_dict[param_name].append((score, events, models))
 
 
 
 # score, models = run_experiments(rules, 500, parameters, 10)
 
 df = pd.DataFrame(data, 
-               columns =['Param_name', 'Condition_vals', 'Effect_vals', 'Timesteps', 'Score', 'Events']) 
+               columns =['Ruleset', 'Param_name', 'Condition_vals', 'Effect_vals', 'Timesteps', 'Score', 'Events']) 
 # df = pd.DataFrame(data, 
                # columns =['Param_name','Timesteps', 'Score']) 
 filled_markers = ('o', 'v', '^', '<', '>', '8', 's', 'p', '*', 'h', 'H', 'D', 'd', 'P', 'X')
 
 
-### then you can run the same stuff on larger sets of rulesets
+### run the same stuff on larger sets of rulesets
 ### explore lots more parameters
 ### or make the experiments more complex, etc
 
@@ -110,25 +113,35 @@ filled_markers = ('o', 'v', '^', '<', '>', '8', 's', 'p', '*', 'h', 'H', 'D', 'd
 sns.set_style("white")
 
 for effect_val in df.Effect_vals.unique():
-	subset = df[df['Effect_vals']==effect_val]
+	effect_val_subset = df[df['Effect_vals']==effect_val]
+	for ruleset_name in effect_val_subset.Ruleset.unique():
+		subset = effect_val_subset[effect_val_subset['Ruleset']==ruleset_name]
+		f, ax = plt.subplots(figsize=(8, 6))
+		ax.set(ylim=(0, 1))
+		ax.set_title('{}, {}'.format(ruleset_name, effect_val))
 
-	f, ax = plt.subplots(figsize=(8, 6))
-	ax.set(ylim=(0, 1))
-	ax.set_title(effect_val)
+		sns.despine(f, left=True, bottom=True)
 
-	sns.despine(f, left=True, bottom=True)
+		sns.lineplot(x="Events", y="Score",
+		                hue="Condition_vals", #size="depth",
+		                palette="ch:r=-.2,d=.3_r",
+		                data=subset, ax=ax)
+		
+		## If you want to plot against timesteps
+		# ax2 = ax.twinx()
+		# df.plot(x="Timesteps", y="Events", ax=ax2, legend=False)
 
-	sns.lineplot(x="Timesteps", y="Score",
-	                hue="Condition_vals", #size="depth",
-	                palette="ch:r=-.2,d=.3_r",
-	                # hue_order=clarity_ranking,
-	                #sizes=(1, 8), linewidth=0,
-	                data=subset, ax=ax)
-	ax2 = ax.twinx()
-	df.plot(x="Timesteps", y="Events", ax=ax2, legend=False)
-	lgd = plt.legend(loc='upper center',bbox_to_anchor=(.5, -.2), borderaxespad=0.)
+		# sns.lineplot(x="Timesteps", y="Score",
+		#                 hue="Condition_vals", #size="depth",
+		#                 palette="ch:r=-.2,d=.3_r",
+		#                 data=subset, ax=ax)
+		# ax2 = ax.twinx()
+		# df.plot(x="Timesteps", y="Events", ax=ax2, legend=False)
 
-	plt.savefig(dirname+'effect_vals: {}.png'.format(effect_val),bbox_extra_artists=(lgd,),bbox_inches='tight', dpi=500)
+
+		lgd = plt.legend(loc='upper center',bbox_to_anchor=(.5, -.2), borderaxespad=0.)
+
+		plt.savefig(dirname+'ruleset: {}'.format(ruleset_name) + 'effect_vals: {}.png'.format(effect_val),bbox_extra_artists=(lgd,),bbox_inches='tight', dpi=500)
 
 embed()
 
