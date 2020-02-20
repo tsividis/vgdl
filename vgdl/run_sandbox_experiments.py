@@ -27,18 +27,29 @@ if not os.path.isdir(dirname):
 
 
 
-r1 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
+r1 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
 
-r2 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
+r2 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
 
-r3 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('bounceForward'))
+r3 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
 
-r4 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
+r4 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
 
-r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
+r5 = Rule(conditions=[Condition('collision', ('a', 'd'))], effect=Effect('pickUp'))
 
-rulesets = {'set1': {r1, r2, r3, r4, r5},
-			'set2': {r3, r4}
+r6 = Rule(conditions=[Condition('collision', ('b', 'c'))], effect=Effect('kill_c'))
+
+r7 = Rule(conditions=[Condition('collision', ('b', 'd'))], effect=Effect('kill_b'))
+
+r8 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('bounceForward'))
+
+
+
+
+
+rulesets = {#'set1': {r1, r2, r3, r4, r5},
+			#'set2': {r3, r4},
+			'set3': {r1, r2, r3, r4, r5, r6, r7, r8}
 			}
 
 parameters = {
