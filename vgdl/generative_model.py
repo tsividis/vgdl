@@ -5,7 +5,6 @@ import numpy as np
 import random
 
 
-classes_in_game = ['a','b','c']
 avatar_states = [0,1,2]
 conditions = ['collision']
 effects = ['kill_a', 'kill_b', 'kill_c', 'bounceForward', 'cloneSprite', 'pickUp', 'stepBack']
@@ -96,6 +95,8 @@ class Rule:
 class Detector:
 	def __init__(self, rules, parameters):
 		self.rules = rules ## the rules the detector knows about
+		self.classes_in_game = set()
+
 		self.conditions_set = set()
 		self.effects_set = set()
 
@@ -120,6 +121,12 @@ class Detector:
 		self.condition_false_positive_rates = defaultdict(lambda: parameters['condition_false_positive_rates'])
 		self.effect_false_positive_rates = defaultdict(lambda: parameters['effect_false_positive_rates'])
 
+		for rule in self.rules:
+			for condition in rule.conditions:
+				if condition.classes:
+					for c in condition.classes:
+						self.classes_in_game.add(c)
+		self.classes_in_game = list(self.classes_in_game)
 
 	def detect_rule(self, state, rule):
 		
@@ -142,7 +149,7 @@ class Detector:
 			## Produce false positives for conditions
 			for cond in conditions:
 				if random.random() < self.condition_false_positive_rates[cond]:
-					classes_involved = tuple(sorted([random.choice(classes_in_game), random.choice(classes_in_game)]))
+					classes_involved = tuple(sorted([random.choice(self.classes_in_game), random.choice(self.classes_in_game)]))
 					condition = Condition(cond, (classes_involved))
 			
 		return condition, effect

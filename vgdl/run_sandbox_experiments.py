@@ -29,27 +29,38 @@ if not os.path.isdir(dirname):
 
 r1 = Rule(conditions=[Condition('collision', ('a', 'a'))], effect=Effect('kill_a'))
 
-r2 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
+r2 = Rule(conditions=[Condition('collision', ('a', 'b'))], effect=Effect('kill_a'))
 
-r3 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
+r3 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':0})], effect=Effect('kill_a'))
 
-r4 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
+r4 = Rule(conditions=[Condition('collision', ('a','b')), Condition(assertion_about_state={'avatar_state':1})], effect=Effect('stepBack'))
 
-r5 = Rule(conditions=[Condition('collision', ('a', 'd'))], effect=Effect('pickUp'))
+r5 = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_a'))
 
-r6 = Rule(conditions=[Condition('collision', ('b', 'c'))], effect=Effect('kill_c'))
+r5b = Rule(conditions=[Condition('collision', ('a', 'c'))], effect=Effect('kill_c'))
 
-r7 = Rule(conditions=[Condition('collision', ('b', 'd'))], effect=Effect('kill_b'))
+r6 = Rule(conditions=[Condition('collision', ('a', 'd'))], effect=Effect('pickUp'))
 
-r8 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('bounceForward'))
+r7 = Rule(conditions=[Condition('collision', ('b', 'c'))], effect=Effect('kill_b'))
 
+r7b = Rule(conditions=[Condition('collision', ('b', 'c'))], effect=Effect('bounceForward'))
+
+r8 = Rule(conditions=[Condition('collision', ('b', 'd'))], effect=Effect('kill_b'))
+
+r9 = Rule(conditions=[Condition('collision', ('b', 'e'))], effect=Effect('kill_b'))
+
+r10 = Rule(conditions=[Condition('collision', ('c', 'd'))], effect=Effect('kill_c'))
+
+r11 = Rule(conditions=[Condition('collision', ('e', 'd'))], effect=Effect('bounceForward'))
 
 
 
 
 rulesets = {#'set1': {r1, r2, r3, r4, r5},
 			#'set2': {r3, r4},
-			'set3': {r1, r2, r3, r4, r5, r6, r7, r8}
+			# 'set3': {r1, r2, r3, r4, r5, r6, r7, r8}
+			'assemblyline': {r2, r7, r8, r9, r10, r11}
+			# 'cause_overlap': {r5, r5b, r7, r7b}
 			}
 
 parameters = {
@@ -57,7 +68,7 @@ parameters = {
 	'set_overlap_cutoff': .7,
 	'condition_false_negative_rates': 0.,
 	'condition_false_positive_rates': 0.,
-	'effect_false_negative_rates': 0.0,
+	'effect_false_negative_rates': 0.2,
 	'effect_false_positive_rates': 0.2
 }
 
