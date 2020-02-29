@@ -1397,11 +1397,24 @@ class Theory(object):
 		for tc in self.terminationSet:
 			tc.display()
 
-	def display(self):
-		print "_______"
+	def display(self, as_string=False):
+
+                if as_string:
+                    # from https://stackoverflow.com/questions/1218933/can-i-redirect-the-stdout-in-python-into-some-sort-of-string-buffer
+                    from cStringIO import StringIO # Python3 use: from io import StringIO
+                    import sys
+                    old_stdout = sys.stdout
+                    sys.stdout = mystdout = StringIO()
+                else:
+                    print "_______"
+
 		self.displayRules()
 		self.displayClasses()
 		self.displayTerminationSet()
+
+                if as_string:
+                    sys.stdout = old_stdout
+                    return mystdout.getvalue()
 		return
 
 	def __eq__(self, other):

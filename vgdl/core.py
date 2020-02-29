@@ -67,6 +67,30 @@ def waitForKeypress(clock, key):
 
         clock.tick(60)
 
+black = (0,0,0)
+white = (255,255,255)
+
+def dispText(text, fontsize, pos, screen, color=white, align='center'):
+    font = pygame.font.Font('freesansbold.ttf',fontsize)
+    textsurf = font.render(text, True, color)
+    rect = textsurf.get_rect()
+    rect.center = pos
+    if align == 'left':
+        rect.left = pos[0]
+    elif align == 'right':
+        rect.right = pos[0]
+    screen.blit(textsurf, rect)
+
+def dispTheory(theory, fontsize, pos, screen, color=white):
+    text = theory.display(as_string=True)
+    lines = text.split('\n')
+    lines = [l.strip() for l in lines if l.strip()]
+    for i in range(len(lines)):
+        p = (pos[0], pos[1] + fontsize*i)
+        if lines[i][-1] == ':':
+            lines[i] = '-------- ' + lines[i]
+        dispText(lines[i], fontsize, p, screen, color, align='left')
+
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
@@ -87,9 +111,6 @@ class VGDLParser(object):
         block_size = (30,30)
         height = len(alphabets)
         width = max([len(a) for a in alphabets])
-
-        black = (0,0,0)
-        white = (255,255,255)
 
         # init screen
         pygame.init()
@@ -125,9 +146,6 @@ class VGDLParser(object):
         # Play a given fMRI run for given subject
         #
 
-        black = (0,0,0)
-        white = (255,255,255)
-
         # init screen
         pygame.init()
         clock = pygame.time.Clock()
@@ -138,13 +156,6 @@ class VGDLParser(object):
         fMRI_bg = pygame.Surface(fMRI_screensize)
         fMRI_bg.fill(black)
         fMRI_screen.blit(fMRI_bg, (0, 0))
-
-        def dispText(text, fontsize, pos, color=white):
-            font = pygame.font.Font('freesansbold.ttf',fontsize)
-            textsurf = font.render(text, True, color)
-            rect = textsurf.get_rect()
-            rect.center = pos
-            fMRI_screen.blit(textsurf, rect)
 
         def pauseForDuration(duration):
             then = time.time()
@@ -160,14 +171,14 @@ class VGDLParser(object):
         def fullScreenText(text, duration, fontsize=80, color=white):
             fMRI_screen.blit(fMRI_bg, (0, 0))
             pos = (int(fMRI_screensize[0]/2), int(fMRI_screensize[1]/2))
-            dispText(text, fontsize, pos, color)
+            dispText(text, fontsize, pos, fMRI_screen, color)
             pauseForDuration(duration)
 
 
         def displayScore(name, score, win):
             fMRI_screen.blit(fMRI_bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[1],200)) # TODO super inefficient...
-            dispText(name, 40, (int(fMRI_screensize[0]/2), 40))
-            dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 100))
+            dispText(name, 40, (int(fMRI_screensize[0]/2), 40), fMRI_screen)
+            dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 100), fMRI_screen)
             if win is not None:
                 if win == True:
                     text = 'You WON!'
@@ -175,7 +186,7 @@ class VGDLParser(object):
                     text = 'You LOST...'
                 elif win == -1: # TODO const momchil
                     text = 'TIMEOUT'
-                dispText(text, 70, (int(fMRI_screensize[0]/2), 170))
+                dispText(text, 70, (int(fMRI_screensize[0]/2), 170), fMRI_screen)
 
 
         # from https://goshippo.com/blog/measure-real-size-any-python-object/
@@ -335,7 +346,7 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, theories=None, screensize=None):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -345,12 +356,14 @@ class VGDLParser(object):
         g.uiud = uuid.uuid4()
         if playback_states:
             g.playback_states = playback_states
+        if screensize is not None:
+            g.screensize = screensize
         if(headless):
             g.startGameExternalPlayer(headless, persist_movie, movie_dir)
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, deoffset=True)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, deoffset=True, theories=theories)
             else:
                 win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -1426,7 +1439,7 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, deoffset=True):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, deoffset=True, theories=None):
         """
         Main method to display a previously-run game.
         """
@@ -1508,6 +1521,8 @@ class BasicGame(object):
             
             #### in image-making mode ####
             self._drawAll()
+            if theories:
+                dispTheory(theories[self.playback_index], 10, (20,20), self.screen, color=black)
             pygame.display.update(VGDLSprite.dirtyrects)
             # self.message_display(gameName, fontsize=20, location='top_left')
             self.message_display(parameter_string, location='bottom_right')

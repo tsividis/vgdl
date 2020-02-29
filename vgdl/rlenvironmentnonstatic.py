@@ -454,7 +454,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
 
 
-        if self._game.playback_states:
+        if self._game.playback_states and self._game.playback_index < len(self._game.playback_states): # last state might differ b/c we don't update in startGame but we do update here; TODO momchil maybe make consistent
 
             state = self._game.playback_states[self._game.playback_index - 1]
             #self._game.setFullState(state, cheap=False, deoffset=False, default_colors=True) # for sanity checks
