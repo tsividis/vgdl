@@ -141,8 +141,6 @@ class StateObsHandlerNonStatic(object):
         if not self.uniqueAvatar:
             atype = state[-1]
             if self._avatar.name != atype:
-                print 'ntheou 1' # momchil
-                embed()
                 self._game.kill_list.append(self._avatar)
                 self._game._createSprite([atype], pos)
 
@@ -191,8 +189,6 @@ class StateObsHandlerNonStatic(object):
                 continue
             elif current:
                 #print 'die', skey, pos, matches
-                print 'ntheou 2' # momchil
-                embed()
                 self._game.kill_list.append(matches[0])
             elif target:
                 #print 'live', skey, pos, matches

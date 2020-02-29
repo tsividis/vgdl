@@ -388,7 +388,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
                 # sprite update & event handling
                 # momchil TODO dedupe w/ below potentially, also compare with startGame
-                # momchil TODO clearAll? but might break sprite induction
                 self._game.new_sprites = [] 
 
                 # update sprites
@@ -402,9 +401,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                                 continue
                         if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
                                 s.update(self._game)
-
-                print 'w00000000000t'
-                print self._game.effectList
 
                 events = self._game._eventHandling()
 
@@ -472,9 +468,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             print len(self._game.kill_list), ' {--------------} ',state['kill_listLen'] 
             # in startGame, we call _clearAll which empties kill_list and actually removes sprites from the game
             # here, we cannot clear kill_list b/c spriteInduction relies on it (I think) TODO 
-            #if len(self._game.kill_list) != state['kill_listLen']: 
-            #    print 'wrong kill_listLen!'
-            #    embed()
+            if len(self._game.kill_list) != state['kill_listLen']: 
+                print 'wrong kill_listLen!'
+                embed()
             if len(self._game.collision_eff) != state['collision_effLen']: 
                 print 'wrong collision_eff!'
                 embed()

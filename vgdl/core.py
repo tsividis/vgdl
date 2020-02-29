@@ -782,7 +782,7 @@ class BasicGame(object):
 
         # all other colors are the same for each subject-game pair
         game_seed = int(hashlib.sha1(game_str).hexdigest(), 16) % (10 ** 8)
-        random.seed(subj_seed + game_seed) # TODO better system
+        random.seed(subj_seed + game_seed) # TODO momchil better system
 
         random.shuffle(colors)
         for i in range(len(keys)):
@@ -830,7 +830,7 @@ class BasicGame(object):
 
             # momchil: make sure to use the same IDs during replay
             if hasattr(self, 'new_sprites_ID'):
-                if self.new_sprites_ID_idx < len(self.new_sprites_ID): # TODO rm
+                if self.new_sprites_ID_idx < len(self.new_sprites_ID):
                     s.ID = self.new_sprites_ID[self.new_sprites_ID_idx]
                     s.ID2 = s.ID # TODO momchil kosher? from _createSprite, but could it change after?
                     self.new_sprites_ID_idx += 1
@@ -1123,22 +1123,35 @@ class BasicGame(object):
         return fs_colorized
 
 
-
-    def _clearAll(self, onscreen=True):
-        #for s in set(self.kill_list):
-        #    self.all_killed.append(s)
-        #    if onscreen:
-        #        s._clear(self.screen, self.background, double=True)
-        #    self.sprite_groups[s.name].remove(s) # momchil: the issue is here... this removes sprites altogether, so it's ok to clear kill_list; not sure we're allowed to do that, since spriteInduction will break
+    def _fMRI_clearAll(self, onscreen=True):
+        # fMRI version of _clearAll
+        # we don't clear the kill_list (to be consistent w/ _performAction)
         if onscreen:
             for s in self:
                 s._clear(self.screen, self.background)
-        #self.kill_list = []
 
-    def _drawAll(self):
-        for s in self: # TODO momchil if s not in kill_list?
+    def _clearAll(self, onscreen=True):
+        for s in set(self.kill_list):
+            self.all_killed.append(s)
+            if onscreen:
+                s._clear(self.screen, self.background, double=True)
+            self.sprite_groups[s.name].remove(s)
+        if onscreen:
+            for s in self:
+                s._clear(self.screen, self.background)
+        self.kill_list = []
+
+    def _fMRI_drawAll(self):
+        # fMRI version of _drawAll
+        # we don't clear the kill_list (to be consistent w/ _performAction)
+        # so have to avoid drawing the dead sprites
+        for s in self:
             if s not in self.kill_list:
                 s._draw(self)
+
+    def _drawAll(self):
+        for s in self:
+            s._draw(self)
 
     def _updateCollisionDict(self, changedsprite):
         for key in changedsprite.stypes:
@@ -1227,8 +1240,6 @@ class BasicGame(object):
                         spriteLocationDict[(sprite1.rect.left, sprite1.rect.top)].append(sprite1)
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
-
-                        #print '                                      effect ', effect.__name__, sprite1, sprite2 
 
                         if (sprite1 == sprite2
                             or sprite1 in dead
@@ -1660,7 +1671,10 @@ class BasicGame(object):
             clock.tick(self.frame_rate)
             self.time += 1
 
-            self._clearAll()
+            if fMRI_timeout is not None: # TODO momchil have actual is_fMRI flag
+                self._fMRI_clearAll()
+            else:
+                self._clearAll()
             self.new_sprites = []
 
             # gather events
@@ -1795,7 +1809,11 @@ class BasicGame(object):
                     # TODO momchil dedupe / sanity
                     if displayScoreFn:
                         displayScoreFn(self.score, self.win)
-                    self._drawAll()
+
+                    if fMRI_timeout is not None: # TODO momchil have actual is_fMRI flag
+                        self._fMRI_drawAll()
+                    else:
+                        self._drawAll()
                     pygame.display.update(VGDLSprite.dirtyrects)
 
                     allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
@@ -1852,7 +1870,12 @@ class BasicGame(object):
             #### in manual game-play mode ####
             if displayScoreFn:
                 displayScoreFn(self.score, self.win)
-            self._drawAll()
+
+            if fMRI_timeout is not None: # TODO momchil have actual is_fMRI flag
+                self._fMRI_drawAll()
+            else:
+                self._drawAll()
+
             pygame.display.update(VGDLSprite.dirtyrects)
 
             #if(headless):
