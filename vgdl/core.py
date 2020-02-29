@@ -1125,19 +1125,20 @@ class BasicGame(object):
 
 
     def _clearAll(self, onscreen=True):
-        for s in set(self.kill_list):
-            self.all_killed.append(s)
-            if onscreen:
-                s._clear(self.screen, self.background, double=True)
-            self.sprite_groups[s.name].remove(s)
+        #for s in set(self.kill_list):
+        #    self.all_killed.append(s)
+        #    if onscreen:
+        #        s._clear(self.screen, self.background, double=True)
+        #    self.sprite_groups[s.name].remove(s) # momchil: the issue is here... this removes sprites altogether, so it's ok to clear kill_list; not sure we're allowed to do that, since spriteInduction will break
         if onscreen:
             for s in self:
                 s._clear(self.screen, self.background)
-        self.kill_list = []
+        #self.kill_list = []
 
     def _drawAll(self):
-        for s in self:
-            s._draw(self)
+        for s in self: # TODO momchil if s not in kill_list?
+            if s not in self.kill_list:
+                s._draw(self)
 
     def _updateCollisionDict(self, changedsprite):
         for key in changedsprite.stypes:
@@ -1226,6 +1227,9 @@ class BasicGame(object):
                         spriteLocationDict[(sprite1.rect.left, sprite1.rect.top)].append(sprite1)
                     for collision_index in sprite1.rect.collidelistall(sprite_list2):
                         sprite2 = sprite_list2[collision_index]
+
+                        #print '                                      effect ', effect.__name__, sprite1, sprite2 
+
                         if (sprite1 == sprite2
                             or sprite1 in dead
                             or sprite2 in dead
@@ -1286,8 +1290,6 @@ class BasicGame(object):
                                 new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
                         else:
-                            print 'sathoeusanoteu'
-                            embed()
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
             self.effectList += [new_effect for new_effect in new_effects if new_effect]

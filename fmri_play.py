@@ -153,7 +153,7 @@ def get_games(fakes, alphs):
 def gen_subj(subj_id):
     seed = random.randint(1, 100000000) # beware of bday paradox
     fakes = list(fake_names)
-    random.shuffle(fakes)
+    #random.shuffle(fakes) # TODO momchil undo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     alphs = list(alphabets)
     random.shuffle(alphs)
     for i in range(len(alphs)):

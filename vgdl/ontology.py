@@ -1149,7 +1149,7 @@ def nothing(sprite, partner, game):
 def killSprite(sprite, partner, game):
     """ Kill command """
     print 'nasotheu 7' # momchil
-    embed()
+    #embed()
     game.kill_list.append(sprite)
     # game.num_sprites -= 1
     sprite.deathage = game.time
@@ -1169,7 +1169,7 @@ def transformTo(sprite, partner, game, stype='wall'):
             newones[0].resources = sprite.resources
         sprite.deathage = game.time
         print 'nasotheu 5' # momchil
-        embed()
+        #embed()
         game.kill_list.append(sprite)
     args = {'stype':stype}
     return ("transformTo", sprite.ID, partner.ID, args)
