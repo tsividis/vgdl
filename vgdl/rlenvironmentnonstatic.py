@@ -367,6 +367,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 assert keystate['keystate'] == state['keystate']
                 self._game.keystate = keystate['keystate']
 
+                # set the new sprite IDs TODO do same for state replay
+                # this makes sure newly created sprites have the right UUIDs
+                # important for sprite induction I think (or maybe not; good to be
+                # consistent tho)
+                self._game.new_sprites_ID = state['new_sprites_ID']
+                self._game.new_sprites_ID_idx = 0
+
                 # sanity check that pressed key matches keystate (we need to return correct action I think)
                 if keyPressType:
                     action = revActionDict[keyPressType] 
@@ -381,7 +388,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
                 # sprite update & event handling
                 # momchil TODO dedupe w/ below potentially, also compare with startGame
+                self._game.kill_list = [] # in lieu of _clearAll, to be consistent w/ startGame (can't call clearAll b/c no screen)
                 self._game.new_sprites = [] 
+
                 # update sprites
                 if onlyavatar:
                     if action != 0:
@@ -393,6 +402,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                                 continue
                         if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
                                 s.update(self._game)
+
+                print 'w00000000000t'
+                print self._game.effectList
 
                 events = self._game._eventHandling()
 
@@ -447,13 +459,18 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
 
         if self._game.playback_states:
+
             state = self._game.playback_states[self._game.playback_index - 1]
-            #self._game.setFullState(state, cheap=False, deoffset=False, default_colors=True)
+            #self._game.setFullState(state, cheap=False, deoffset=False, default_colors=True) # for sanity checks
             s = self._game.getFullState()
 
+            print 'kill list: ', self._game.kill_list
+
+            '''
             if len(self._game.effectList) != state['effectListLen']:
                 print 'wrong effectListLen!'
                 embed()
+            print len(self._game.kill_list), ' {--------------} ',state['kill_listLen'] 
             if len(self._game.kill_list) != state['kill_listLen']: 
                 print 'wrong kill_listLen!'
                 embed()
@@ -469,16 +486,23 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             if len(self._game.effectListByClass) != len(state['effectListByClass']): 
                 print 'wrong effectListByClass!'
                 embed()
+            # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
+            if len(self._game.new_sprites) != state['new_spritesLen']:
+                print 'wrong new_spritesLen!'
+                embed()
             # TODO momchil different; weird
             #if self._game.keystate != state['keystate']:
             #    print 'wrong keystate'
             #    embed()
+            '''
 
 
             # state = replayed human state, s = current state from action replay
             for sname, sprites in state['objects'].iteritems():
 
                 assert sname in s['objects'].keys(), 'sname not found'
+                if len(state['objects'][sname]) != len(s['objects'][sname]):
+                    embed()
                 for pos, attrs in sprites.iteritems():
 
                     # deoffset -- objects are offest in the actual human game, but not here
@@ -518,10 +542,6 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                             embed()
                             time.sleep(1000)
 
-            # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
-            #if len(self._game.new_sprites) != self._game.playback_states[self._game.playback_index - 1]['new_spritesLen']:
-            #    print 'wrong new_spritesLen!'
-            #    embed()
 
         # momchil: save event, destroy self.game, re-init self.game (.reset, etc) from saved state => make sure still works
 

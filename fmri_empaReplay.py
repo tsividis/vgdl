@@ -115,13 +115,13 @@ if __name__ == '__main__':
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
 
-        # for faster replay
-        new_states = states[0:5] # TODO momchil undo
-        new_keystates = keystates[0:5]
-        for i,state in enumerate(states[5:]):
-           if len(state['effectList']) > 0 or state['keyPressType'] or state['ended']:
-                new_states.append(state)
-                new_keystates.append(keystates[i + 5])
+        # for faster replay; breaks chase
+        #new_states = states[0:5] # TODO momchil undo
+        #new_keystates = keystates[0:5]
+        #for i,state in enumerate(states[5:]):
+        #   if len(state['effectList']) > 0 or state['keyPressType'] or state['ended']:
+        #        new_states.append(state)
+        #        new_keystates.append(keystates[i + 5])
 
         #del new_states[6:-6]
         #new_states = states
@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
-        all_pairs[game['name']].append([play['game_str'], play['level_str'], new_states, new_keystates]) # TODO OOM? momchil rm new_states
+        all_pairs[game['name']].append([play['game_str'], play['level_str'], states, keystates]) # TODO OOM? momchil rm new_states
 
         #core.VGDLParser.fMRI_replayGame(play['game_str'], play['level_str'], new_states) working
         #core.VGDLParser.playGame(play['game_str'], play['level_str'], new_states, \

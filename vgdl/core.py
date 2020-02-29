@@ -827,6 +827,14 @@ class BasicGame(object):
                 continue
             s = sclass(pos=pos, size=(self.block_size, self.block_size), offset=offset, name=key, **args)
             s.stypes = stypes
+
+            # momchil: make sure to use the same IDs during replay
+            if hasattr(self, 'new_sprites_ID'):
+                if self.new_sprites_ID_idx < len(self.new_sprites_ID): # TODO rm
+                    s.ID = self.new_sprites_ID[self.new_sprites_ID_idx]
+                    s.ID2 = s.ID # TODO momchil kosher? from _createSprite, but could it change after?
+                    self.new_sprites_ID_idx += 1
+
             if key in self.sprite_groups:
                 self.sprite_groups[key].append(s)
             else:
@@ -1006,6 +1014,9 @@ class BasicGame(object):
         kill_list_ID = []
         for s in self.kill_list:
             kill_list_ID.append(s.ID)
+        new_sprites_ID = []
+        for s in self.new_sprites:
+            new_sprites_ID.append(s.ID)
 
         fs = {'score': self.score,
               'ended': self.ended,
@@ -1022,11 +1033,12 @@ class BasicGame(object):
               'effectListByColor': list(self.effectListByColor),
               'effectListByClass': list(self.effectListByClass),
               'kill_list_ID': kill_list_ID,
-              'effectListLen': len(self.effectList), # sanity
-              'new_spritesLen': len(self.new_sprites), # sanity
               'kill_listLen': len(self.kill_list),
+              'effectListLen': len(self.effectList), # sanity
               'collision_effLen': len(self.collision_eff),
               'sprite_groupsLen': len(self.sprite_groups),
+              'new_sprites_ID': new_sprites_ID,
+              'new_spritesLen': len(self.new_sprites), # sanity
             #  'new_sprites': self.new_sprites
               }
         return fs
@@ -1274,6 +1286,8 @@ class BasicGame(object):
                                 new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
                         else:
+                            print 'sathoeusanoteu'
+                            embed()
                             new_effects.append(effect(sprite1, sprite2, self, **kwargs))
 
             self.effectList += [new_effect for new_effect in new_effects if new_effect]
@@ -1343,7 +1357,9 @@ class BasicGame(object):
         # for e in self.effectListByColor:
             # print e
         # embed()
+
         return self.effectList
+
 
     def getSpriteClassAndColor(self, spriteID, all_objects):
         spriteClass, spriteColor = None, None

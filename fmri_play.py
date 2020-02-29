@@ -53,12 +53,14 @@ game_names = [
     "vgfmri3_chase",
     "vgfmri3_helper",
     "vgfmri3_sokoban",
+    "vgfmri3_aliens",
 ]
 
 fake_names = [
-    "The Sharp",
-    "anoshusao",
-    "w t f adwgggggg"
+    "Chase",
+    "Helper",
+    "Sokoban",
+    "Aliens"
 ]
 
 # unicode ranges for each game -- see https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm
@@ -96,7 +98,7 @@ prerun_interval = 1 # sec, how long for scanner to settle
 postrun_interval = 1 # sec, how long for HRF to settle
 nblocks = 1 # per run
 ninstances = 1 # per block
-duration = 20 # instance duration (sec)
+duration = 200 # instance duration (sec)
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
 
@@ -111,7 +113,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 2
+            g = 0
             block = {
                 'block_id': b,
                 'game_id': g,

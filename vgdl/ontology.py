@@ -225,6 +225,8 @@ class Flicker(VGDLSprite):
     def update(self, game):
         VGDLSprite.update(self, game)
         if self._age >= self.limit:
+            print 'nasotheu 8' # momchil
+            embed()
             game.kill_list.append(self)
             # killSprite(self, None, game)
         else:
@@ -963,6 +965,8 @@ class FrostbiteIgloo(SpawnPoint, Switch):
             SpawnPoint.update(self, game)
 
         if new_count < self.last_count:
+            print 'nasotheu 9' # momchil
+            embed()
             game.kill_list.append(self.last_sprites.pop())
             self.counter -= 1
             self.last_count = new_count
@@ -1144,6 +1148,8 @@ def nothing(sprite, partner, game):
 
 def killSprite(sprite, partner, game):
     """ Kill command """
+    print 'nasotheu 7' # momchil
+    embed()
     game.kill_list.append(sprite)
     # game.num_sprites -= 1
     sprite.deathage = game.time
@@ -1162,6 +1168,8 @@ def transformTo(sprite, partner, game, stype='wall'):
             newones[0].orientation = sprite.orientation
             newones[0].resources = sprite.resources
         sprite.deathage = game.time
+        print 'nasotheu 5' # momchil
+        embed()
         game.kill_list.append(sprite)
     args = {'stype':stype}
     return ("transformTo", sprite.ID, partner.ID, args)
@@ -1361,6 +1369,8 @@ def killIfFromAbove(sprite, partner, game):
     if (sprite.lastrect.top > partner.lastrect.top
         and partner.rect.top > partner.lastrect.top):
 
+        print 'nasotheu 6' # momchil
+        embed()
         game.kill_list.append(sprite)
         if not None in {sprite, partner}:
             return ('killIfFromAbove', sprite.ID, partner.ID)
