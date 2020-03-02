@@ -337,7 +337,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
-        revActionDict = {'space': K_SPACE, 'up': K_UP, 'down': K_DOWN, 'left': K_LEFT, 'right': K_RIGHT, 'none': 0}
+        revActionDict = {'spacebar': K_SPACE, 'up': K_UP, 'down': K_DOWN, 'left': K_LEFT, 'right': K_RIGHT, 'none': 0}
 
         if self.visualize:
             self._game._clearAll(self.visualize)
@@ -411,7 +411,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 self._game.new_sprites = [] # momchil: taken care of? TODO no....
     
                 try:
-                    self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, deoffset=False, default_colors=True)
+                    self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, default_colors=True)
                 except:
                     print "agent playback is failing!"
                     embed()
@@ -457,7 +457,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         if self._game.playback_states and self._game.playback_index < len(self._game.playback_states): # last state might differ b/c we don't update in startGame but we do update here; TODO momchil maybe make consistent
 
             state = self._game.playback_states[self._game.playback_index - 1]
-            #self._game.setFullState(state, cheap=False, deoffset=False, default_colors=True) # for sanity checks
+            #self._game.setFullState(state, cheap=False, default_colors=True) # for sanity checks
             s = self._game.getFullState()
 
             print 'kill list: ', self._game.kill_list
@@ -501,9 +501,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     embed()
                 for pos, attrs in sprites.iteritems():
 
-                    # deoffset -- objects are offest in the actual human game, but not here
                     p = tuple(map(int, pos[1:-1].split(', ')))
-                    #p = (p[0] - attrs['offset'][0], p[1] - attrs['offset'][1]) # TODO deoffset might be broken -- there's subtle mismatches when we use setFullState to initialize the game # THIS
                     if sname == 'avatar':
                         o = s['objects'][sname]
                         print '============ avatar coords: ', o.keys()[0], '  action = ', action
@@ -514,15 +512,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         embed()
 
                     attrs_c = s['objects'][sname][str(p)] # current attrs
-                    #attrs['x'] -= attrs['offset'][0] # THIS
-                    #attrs['y'] -= attrs['offset'][1] # THIS
 
                     for attr, val in attrs.iteritems():
                         assert attr in attrs_c.keys(), 'attr not found'
 
-                        # offset b/c it's (0,0) here
                         # symbol b/c none here
-                        # color & colorName b/c randomized there
+                        # color & colorName b/c randomized there but not here
                         # colorName is set to the default for the game
                         # TODO check lastdisplacement and deathage
 
@@ -533,7 +528,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                             val['pos'] = tuple(val['pos'])
                             val['size'] = tuple(val['size'])
 
-                        if val != attrs_c[attr] and attr not in ['offset', 'lastdisplacement', 'deathage', 'symbol', 'colorName', 'color']:
+                        if val != attrs_c[attr] and attr not in ['lastdisplacement', 'deathage', 'symbol', 'colorName', 'color']:
                             print 'wrong attr value'
                             embed()
                             time.sleep(1000)

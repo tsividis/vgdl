@@ -97,8 +97,8 @@ nruns = 3 # per subject
 prerun_interval = 1 # sec, how long for scanner to settle
 postrun_interval = 1 # sec, how long for HRF to settle
 nblocks = 1 # per run
-ninstances = 3 # per block
-duration = 20 # instance duration (sec)
+ninstances = 1 # per block
+duration = 30 # instance duration (sec)
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
 
@@ -113,7 +113,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 0
+            g = 3
             block = {
                 'block_id': b,
                 'game_id': g,

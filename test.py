@@ -168,10 +168,20 @@ BasicGame
 client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
 
+#game_name = 'vgfmri2_helper'
+game_name = 'vgfmri3_aliens'
+game = db.games.find_one({'name': game_name})
+
+desc = game['descs'][0]
+level = game['levels'][0] 
+
+
+'''
 exp_id = 'ry44FBXnr'
 #game_name = 'vgfmri2_sokoban' % TODO don't forget to change the game desc
 game_name = 'vgfmri2_helper'
 #game_name = 'vgfmri2_chase'
+
 
 #entries = db.states.find({'exp_id': exp_id, 'game_name': game_name, 'game_round': '2'})
 entries = db.states.find({'exp_id': exp_id, 'game_name': game_name})
@@ -195,8 +205,11 @@ game = helper_desc
 
 level = entry['game_level']['level']  # level
 game_name = entry['game_name']
+'''
 
-core.VGDLParser.playGame(game, level, states, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/"+game_name, padding=10)
+
+
+core.VGDLParser.playGame(desc, level, None, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/"+game_name, padding=10)
 
 
 

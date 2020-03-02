@@ -363,7 +363,7 @@ class VGDLParser(object):
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, deoffset=True, theories=theories)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, theories=theories)
             else:
                 win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -389,7 +389,7 @@ class VGDLParser(object):
         g.buildLevel(map_str, fMRI_screensize)
         g.uiud = uuid.uuid4()
         g.playback_states = playback_states
-        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen, deoffset=False)
+        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen)
 
 
     @staticmethod
@@ -774,7 +774,8 @@ class BasicGame(object):
         keys = []
         colors = []
         for key, (sclass, args, _) in self.sprite_constr.iteritems():
-            if 'color' in args:
+            # skip avatar and invisible sprites
+            if 'color' in args and key != 'avatar' and ('invisible' not in args.keys() or not args['invisible']):
                 keys.append(key)
                 colors.append(args['color'])
 
@@ -1056,7 +1057,7 @@ class BasicGame(object):
               }
         return fs
 
-    def setFullState(self, fs, as_string=True, cheap=True, deoffset=False, default_colors=False):
+    def setFullState(self, fs, as_string=True, cheap=True, default_colors=False):
         """ Reset the game to be exactly as defined in the fullstate dict. """
         tt = self.time
         self.reset()
@@ -1072,12 +1073,6 @@ class BasicGame(object):
         for key, ss in fs['objects'].iteritems():
             self.sprite_groups[key] = [] ## Added 4/31/17
             for ID, attrs in ss.iteritems():
-
-                if deoffset:
-                    offset = attrs['offset']
-                    attrs['x'] -= offset[0]
-                    attrs['y'] -= offset[1]
-                    attrs['offset'] = (0,0)
 
                 p = attrs['x'], attrs['y']
 
@@ -1095,9 +1090,6 @@ class BasicGame(object):
                         s.rect.left = val['pos'][0]
                         s.rect.top = val['pos'][1]
                         s.rect.size = tuple(val['size'])
-                        if deoffset:
-                            s.rect.left -= offset[0]
-                            s.rect.top -= offset[1]
                         #s.__setattr__(a, pygame.Rect(val['pos'], val['size']))
                         pass
                     else:
@@ -1439,7 +1431,7 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, deoffset=True, theories=None):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, theories=None):
         """
         Main method to display a previously-run game.
         """
@@ -1500,7 +1492,7 @@ class BasicGame(object):
 
             self._clearAll()
             try:
-                self.setFullState(self.playback_states[self.playback_index], deoffset=deoffset)
+                self.setFullState(self.playback_states[self.playback_index])
                 current_state = self.playback_states[self.playback_index]
             except:
                 print "playback is failing"
@@ -2049,11 +2041,10 @@ class VGDLSprite(object):
     def __init__(self, pos, size=(10,10), offset=(0,0), color=None, speed=None, cooldown=None, physicstype=None, img=None, symbol=None, **kwargs):
         from ontology import GridPhysics
 
-        pos = (pos[0] + offset[0], pos[1] + offset[1])  # TODO momchil don't do it; only use for plotting the rects (screws with replay with diff screen sizes)
         self.rect = pygame.Rect(pos, size)
         self.offset = offset
-        self.x = pos[0]
-        self.y = pos[1]
+        self.x = self.rect.x
+        self.y = self.rect.y
         self.img_path = img
         if img is not None:
             self.draw_arrow = False
@@ -2137,6 +2128,10 @@ class VGDLSprite(object):
         else:
             shrunk = self.rect
 
+        # account for offset
+        pos = (shrunk.left + self.offset[0], shrunk.top + self.offset[1])
+        shrunk = pygame.Rect(pos, shrunk.size)
+
         if self.img_path != None and '.png' not in self.img_path:
             self.img_path = self.img_path+'.png'
 
@@ -2157,7 +2152,7 @@ class VGDLSprite(object):
                 #print("No we didn't get image")
                 pygame.draw.rect(screen, self.color, shrunk)
             # pygame.draw.lines(screen, LIGHTGREEN, True, shrunk, 2)
-            r = self.rect.copy()
+            r = shrunk.copy()
         elif not self.is_static or self.symbol is not None:
             #rounded = roundedPoints(shrunk)
             #pygame.draw.polygon(screen, self.color, rounded)
@@ -2170,7 +2165,7 @@ class VGDLSprite(object):
                 #print("No we didn't get image")
                 pygame.draw.rect(screen, self.color, shrunk)
 
-            r = self.rect.copy()
+            r = shrunk.copy()
         else:
             if self.img_path != None:
                 #print("Yes we got image")
@@ -2191,7 +2186,7 @@ class VGDLSprite(object):
             # get font from https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm
             color = (255 - self.color[0], 255 - self.color[1], 255 - self.color[2])
 
-            rect = dispSymbol(self.symbol, int(self.rect.height * 0.7), color, self.rect.center, screen)
+            rect = dispSymbol(self.symbol, int(shrunk.height * 0.7), color, shrunk.center, screen)
             r = rect.copy() # TODO just rect?
             VGDLSprite.dirtyrects.append(r)
 
@@ -2216,9 +2211,13 @@ class VGDLSprite(object):
 
     def _clear(self, screen, background, double=False):
         rect = self.rect.copy() # fMRI hack: since we offset the sprites, we need to un-offset when referencing in the surface's coordinate frame
-        rect.left -= self.offset[0]
-        rect.top -= self.offset[1]
-        r = screen.blit(background, self.rect, rect)
+        rect.left += self.offset[0]
+        rect.top += self.offset[1]
+
+        # first rect says where to plot the background (relative to screen)
+        # second rect says which part of bg to plot there (so coords relative to bg)
+        r = screen.blit(background, rect, self.rect)
+
         VGDLSprite.dirtyrects.append(r)
         if double:
             r = screen.blit(background, self.lastrect, self.lastrect)
