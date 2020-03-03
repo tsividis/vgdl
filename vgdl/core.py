@@ -852,6 +852,7 @@ class BasicGame(object):
 
             if key in self.sprite_groups:
                 self.sprite_groups[key].append(s)
+                self.sprite_groups[key] = sorted(self.sprite_groups[key], key = lambda s: (s.rect.left, s.rect.top, s.stypes)) # momchil: sort so that it's consistent in __iter__ (i.e. list(game)) during replay in _performAction; otherwise we update the sprites in different order during replay and the determinism messes up; TODO use set(), though it's not called that often
             else:
                 self.sprite_groups[key] = [s]
             self.num_sprites += 1
@@ -1050,6 +1051,7 @@ class BasicGame(object):
               'sprite_groupsLen': len(self.sprite_groups),
               'new_sprites_ID': new_sprites_ID,
               'new_spritesLen': len(self.new_sprites), # sanity
+              'list': [str(s) for s in list(self)] # sanity
             #  'new_sprites': self.new_sprites
               }
         return fs

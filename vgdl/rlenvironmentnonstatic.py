@@ -391,16 +391,11 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 self._game.new_sprites = [] 
 
                 # update sprites
-                if onlyavatar:
-                    if action != 0:
-                        self._avatar.update(self._game)
-
-                else:
-                    for s in self._game:
-                        if action == 0 and s == self._avatar: # momchil is this necessary? differs from startGame logic
-                                continue
-                        if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
-                                s.update(self._game)
+                # same logic as in startGame
+                assert not onlyavatar
+                for s in list(self._game):
+                    if s not in self._game.kill_list: 
+                        s.update(self._game)
 
                 events = self._game._eventHandling()
 
@@ -462,6 +457,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
             print 'kill list: ', self._game.kill_list
 
+            '''
             if len(self._game.effectList) != state['effectListLen']:
                 print 'wrong effectListLen!'
                 embed()
@@ -491,7 +487,11 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             #if self._game.keystate != state['keystate']:
             #    print 'wrong keystate'
             #    embed()
+            '''
 
+            if s['list'] != state['list']:
+                print 'incorrect sprite list!'
+                embed()
 
             # state = replayed human state, s = current state from action replay
             for sname, sprites in state['objects'].iteritems():
@@ -507,8 +507,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         print '============ avatar coords: ', o.keys()[0], '  action = ', action
                     
                     if str(p) not in s['objects'][sname].keys():
-                        print 'pos not found -- b/c we used to restore the rect from x,y, which is wrong b/c sometimes they diverge -- see getFullState'
-                        continue
+                        print 'pos not found -- could be b/c we used to restore the rect from x,y, which is wrong b/c sometimes they diverge -- see getFullState'
                         embed()
 
                     attrs_c = s['objects'][sname][str(p)] # current attrs
