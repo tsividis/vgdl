@@ -1151,12 +1151,12 @@ def killSprite(sprite, partner, game):
         return ("killSprite", sprite.ID, partner.ID) # partner = agent, sprite = what's being killed
 
 def cloneSprite(sprite, partner, game):
-    newones = game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top), offset=self.offset)
+    newones = game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top), offset=sprite.offset)
 
     return ("cloneSprite", sprite.ID, partner.ID)
 
 def transformTo(sprite, partner, game, stype='wall'):
-    newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top), offset=self.offset)
+    newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top), offset=sprite.offset)
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
@@ -1407,7 +1407,7 @@ def changeScore(sprite, partner, game, value):
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
     if sprite.resources[resource] >= limit:
-        game._createSprite([stype], (sprite.rect.left, sprite.rect.top), offset=self.offset)
+        game._createSprite([stype], (sprite.rect.left, sprite.rect.top), offset=sprite.offset)
         # Note: returning the resource doesn't seem like something the agent should have access to, so we're not returning it.
         args = {'stype':stype}
         return ('spawnIfHasMore', sprite.ID, partner.ID, args) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one

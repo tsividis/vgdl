@@ -278,6 +278,7 @@ class VGDLParser(object):
 
                     play_start_time = time.time() 
                     dispFn = lambda score, win: displayScore(game['fake_name'], score, win)
+
                     win, score, allStates, allKeystates, actions, events = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft)
                     play_end_time = time.time()
 
@@ -919,15 +920,11 @@ class BasicGame(object):
             return len([s for s in self if key in s.stypes])-deleted
 
     def getSprites(self, key):
-        #if key in self.sprite_groups:
-        #    return [s for s in self.sprite_groups[key] if s not in self.kill_list]
-        #else:
-        #    return [s for s in self if key in s.stypes and s not in self.kill_list]
-        # momchil: we need the killed sprites for theory induction TODO
         if key in self.sprite_groups:
-            return [s for s in self.sprite_groups[key]]
+            return [s for s in self.sprite_groups[key] if s not in self.kill_list]
         else:
-            return [s for s in self if key in s.stypes]
+            return [s for s in self if key in s.stypes and s not in self.kill_list]
+        # momchil: we need the killed sprites for theory induction TODO ??
 
     def getAvatars(self):
         """ The currently alive avatar(s) """

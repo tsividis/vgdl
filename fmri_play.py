@@ -54,13 +54,15 @@ game_names = [
     "vgfmri3_helper",
     "vgfmri3_sokoban",
     "vgfmri3_aliens",
+    "vgfmri3_avoidgeorge"
 ]
 
 fake_names = [
     "Chase",
     "Helper",
     "Sokoban",
-    "Aliens"
+    "Aliens",
+    "Avoid George"
 ]
 
 # unicode ranges for each game -- see https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm
@@ -113,7 +115,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 3
+            g = 4
             block = {
                 'block_id': b,
                 'game_id': g,

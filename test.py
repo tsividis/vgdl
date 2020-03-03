@@ -169,7 +169,8 @@ client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
 
 #game_name = 'vgfmri2_helper'
-game_name = 'vgfmri3_aliens'
+#game_name = 'vgfmri3_aliens'
+game_name = 'vgfmri3_avoidgeorge'
 game = db.games.find_one({'name': game_name})
 
 desc = game['descs'][0]
