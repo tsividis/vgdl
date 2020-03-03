@@ -306,7 +306,10 @@ class OrientedSprite(VGDLSprite): ##
         VGDLSprite._draw(self, game)
         if self.draw_arrow:
             col = (self.color[0], 255 - self.color[1], self.color[2])
-            pygame.draw.polygon(game.screen, col, triPoints(self.rect, unitVector(self.orientation)))
+            rect = self.rect.copy()
+            rect.left = rect.left + self.offset[0]
+            rect.top = rect.top + self.offset[1]
+            pygame.draw.polygon(game.screen, col, triPoints(rect, unitVector(self.orientation)))
 
 
 class Conveyor(OrientedSprite):

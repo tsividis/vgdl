@@ -1867,10 +1867,6 @@ class BasicGame(object):
             # important to log state at the right spot for replay
             allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
 
-            # Termination #2 : Avatars have been killed
-            if len(self.getAvatars()) == 0:
-                break # TODO momchil
-
             #### in manual game-play mode ####
             if displayScoreFn:
                 displayScoreFn(self.score, self.win)
@@ -1890,6 +1886,11 @@ class BasicGame(object):
                 i+=1
 
             VGDLSprite.dirtyrects = []
+
+            # Termination #2 : Avatars have been killed
+            # do at the end so last screen persists
+            if len(self.getAvatars()) == 0:
+                break # TODO momchil
 
             # allStates.append(self.getFullState())
 
@@ -1931,6 +1932,9 @@ class BasicGame(object):
             print "Game lost. Score=%s" % self.score
             # np.save("temp_data.npy", [time.time()-t1, len(self.actions), self.win, self.score])
 
+        # TODO momchil dedupe / sanity
+        if displayScoreFn:
+            displayScoreFn(self.score, self.win)
 
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
