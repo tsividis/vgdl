@@ -170,7 +170,8 @@ db = client['heroku_7lzprs54']
 
 #game_name = 'vgfmri2_helper'
 #game_name = 'vgfmri3_aliens'
-game_name = 'vgfmri3_avoidgeorge'
+#game_name = 'vgfmri3_jaws'
+game_name = 'vgfmri3_survivezombies'
 game = db.games.find_one({'name': game_name})
 
 desc = game['descs'][0]

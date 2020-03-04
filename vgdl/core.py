@@ -2052,7 +2052,7 @@ class VGDLSprite(object):
         if img is not None:
             self.draw_arrow = False
         self.lastrect = self.rect.copy()
-        self.symbol = symbol
+        self.symbol = None #symbol TODO momchil undo
         self.physicstype = physicstype or self.physicstype or GridPhysics
         self.physics = self.physicstype()
         self.physics.gridsize = size
