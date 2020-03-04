@@ -533,12 +533,7 @@ class Agent:
         if make_movie:
             if self.record_fMRIRegressors:
                 assert len(curriculumRegressors) == 1 # TODO momchil b/c of theories
-                theories = self.regressors['theory']
-                # prepend, b/c no theory for first 2 observations
-                theories.insert(0, theories[0])
-                theories.insert(0, theories[0])
-                assert len(theories) == len(self.statesEncountered)
-                self.makeMovie(play_movie=play_movie, theories=theories)
+                self.makeMovie(play_movie=play_movie, regressors=self.regressors)
             else:
                 self.makeMovie(play_movie=play_movie)
 
@@ -628,12 +623,12 @@ class Agent:
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
 
-    def makeMovie(self, play_movie=False, theories=None):
+    def makeMovie(self, play_movie=False, regressors=None):
 
         fMRI_screensize = (1200, 900) # TODO dedupe momchil
 
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, theories=theories, screensize=fMRI_screensize)
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize)
 
         print "Creating Movie"
         # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
@@ -1414,7 +1409,7 @@ class Agent:
                     spriteKL = getKL(self.rle._game.spriteDistribution, spriteDistributionPrev)
                     self.regressors['spriteKL'].append((spriteKL, self.rle._game.time))
                     if hypothesis:
-                        self.regressors['theory'].append(copy.deepcopy(hypothesis))
+                        self.regressors['theory'].append((copy.deepcopy(hypothesis), self.rle._game.time))
         else:
             spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
@@ -1625,7 +1620,7 @@ class Agent:
             self.regressors['sprite_change_flag'].append((distributionsHaveChanged, self.rle._game.time))
             self.regressors['interaction_change_flag'].append((hypotheses[0].__dict__ != self.hypotheses[0].__dict__, self.rle._game.time))
             self.regressors['termination_change_flag'].append((set(hypotheses[0].terminationSet) != oldTerminationSet, self.rle._game.time))
-            self.regressors['theory'].append(copy.deepcopy(hypotheses[0]))
+            self.regressors['theory'].append((copy.deepcopy(hypotheses[0]), self.rle._game.time))
 
         return hypotheses, theory_change_flag, effects
 

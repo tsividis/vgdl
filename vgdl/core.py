@@ -29,6 +29,7 @@ from util import getObjectColor
 import json 
 import bson
 import zlib
+import bisect
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -85,12 +86,24 @@ def dispTheory(theory, fontsize, pos, screen, color=white):
     text = theory.display(as_string=True)
     lines = text.split('\n')
     lines = [l.strip() for l in lines if l.strip()]
+    x = pos[0]
+    y = pos[1]
     for i in range(len(lines)):
-        p = (pos[0], pos[1] + fontsize*i)
+        if 'generic: True' in lines[i]:
+            continue
         if lines[i][-1] == ':':
             lines[i] = '-------- ' + lines[i]
-        dispText(lines[i], fontsize, p, screen, color, align='left')
+        dispText(lines[i], fontsize, (x,y), screen, color, align='left')
+        y = y + fontsize
 
+def plotRegressor(regressor, max_time, pos, screen, color=white):
+    # regressor is a sequence of (value, time) tuples
+    times = [r[1] for r in regressor]
+    xs = range(1, max_time + 1)
+    ys = [float(regressor[times.index(x)][0]) * 10 if x in times else 0 for x in xs]
+    points = [(pos[0] + xs[i], pos[1] - ys[i]) for i in range(len(xs))]
+    points.insert(0, pos)
+    pygame.draw.lines(screen, color, False, points, 2) 
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
@@ -347,7 +360,7 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, theories=None, screensize=None):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -364,7 +377,7 @@ class VGDLParser(object):
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, theories=theories)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors)
             else:
                 win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -1430,7 +1443,7 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, theories=None):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, regressors=None):
         """
         Main method to display a previously-run game.
         """
@@ -1512,8 +1525,18 @@ class BasicGame(object):
             
             #### in image-making mode ####
             self._drawAll()
-            if theories:
-                dispTheory(theories[self.playback_index], 10, (20,20), self.screen, color=black)
+
+            # plotting fMRI regressors
+            if regressors:
+                # plot theory
+                times = [t[1] for t in regressors['theory']]
+                ix = bisect.bisect(times, self.time) - 1 # find latest theory inferred up to (and including) current time
+                if ix >= 0:
+                    dispTheory(regressors['theory'][ix][0], 10, (20,20), self.screen, color=black)
+
+                # plot theory_change_flag 
+                plotRegressor(regressors['theory_change_flag'], self.time, (300,50), self.screen, color=(0,245,0))
+                
             pygame.display.update(VGDLSprite.dirtyrects)
             # self.message_display(gameName, fontsize=20, location='top_left')
             self.message_display(parameter_string, location='bottom_right')
@@ -1877,6 +1900,10 @@ class BasicGame(object):
                 self._fMRI_drawAll()
             else:
                 self._drawAll()
+
+            # TODO momchil for testing only TODO rm
+            #regressor = [(1, 10), (3, 11), (4, 15), (2, 25), (5, 100)]
+            #plotRegressor(regressor, self.time, (200,50), self.screen, color=(0,245,0))
 
             pygame.display.update(VGDLSprite.dirtyrects)
 
