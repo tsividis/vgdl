@@ -107,14 +107,16 @@ def dispTheory(theory, fontsize, pos, screen, color=white):
         dispText(lines[i], fontsize, (x,y), screen, color, align='left')
         y = y + fontsize
 
-def plotRegressor(regressor, max_time, pos, screen, color=white):
+def plotRegressor(regressors, name, max_time, pos, screen, color=white):
     # regressor is a sequence of (value, time) tuples
-    times = [r[1] for r in regressor]
+    times = [r[1] for r in regressors[name]]
     xs = range(1, max_time + 1)
-    ys = [float(regressor[times.index(x)][0]) * 10 if x in times else 0 for x in xs]
+    ys = [float(regressors[name][times.index(x)][0]) * 10 if x in times else 0 for x in xs]
     points = [(pos[0] + xs[i], pos[1] - ys[i]) for i in range(len(xs))]
     points.insert(0, pos)
+    dispText(name, 8, (pos[0] - 50, pos[1] - 7), screen, color=color)
     pygame.draw.lines(screen, color, False, points, 2) 
+
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
@@ -238,8 +240,12 @@ class VGDLParser(object):
         fullScreenText('Waiting for scanner trigger...', 0, 50, (150, 150, 150))
         #waitForKeypress(clock, '=') TODO enable
 
-        run_start_time = time.time()
-        run['scan_start_time'] = run_start_time # the single most important timestamp
+        run_start_ts = time.time()
+        run_start_dt = datetime.now()
+        # note we don't insert run until very end
+        run['scan_start_ts'] = run_start_ts # the single most important timestamp
+        run['scan_start_dt'] = run_start_dt 
+
         run_time = 0 # estimated run time; used for correcting 
         drift = 0
 
@@ -325,6 +331,8 @@ class VGDLParser(object):
                         'game_str': game_str,
                         'level_str': level_str,
                         'start_time': play_start_time,
+                        'run_start_ts': run_start_ts, # log for every play, just to be safe (we insert run object at the very end, which might backfire if something goes wrong)
+                        'run_start_dt': run_start_dt,
                         'end_time': play_end_time,
                         'win': win,
                         'score': score,
@@ -345,7 +353,7 @@ class VGDLParser(object):
                 run['blocks'][b]['instances'][i]['end_time'] = time.time()
 
                 run_time += duration
-                actual_run_time = time.time() - run_start_time
+                actual_run_time = time.time() - run_start_ts
                 drift = actual_run_time - run_time # correct for temporal drift over time 
                 print 'running run time: ', run_time, actual_run_time, drift 
 
@@ -1140,6 +1148,24 @@ class BasicGame(object):
         return fs_colorized
 
 
+    def fMRI_plotStuff(self, regressors):
+        # plot regressors and stuff for fMRI analysis 
+
+        # plot theory
+        times = [t[1] for t in regressors['theory']]
+        ix = bisect.bisect(times, self.time) - 1 # find latest theory inferred up to (and including) current time
+        if ix >= 0:
+            dispTheory(regressors['theory'][ix][0], 10, (20,20+30), self.screen, color=black)
+
+        # plot theory_change_flag 
+        plotRegressor(regressors, 'theory_change_flag', self.time, (400,15+30), self.screen, color=(0,100,0))
+        plotRegressor(regressors, 'sprite_change_flag', self.time, (400,30+30), self.screen, color=(100,100,0))
+        plotRegressor(regressors, 'interaction_change_flag', self.time, (400,45+30), self.screen, color=(0,100,100))
+        plotRegressor(regressors, 'termination_change_flag', self.time, (400,60+30), self.screen, color=(100,0,100))
+        plotRegressor(regressors, 'sampleKL', self.time, (400,75+30), self.screen, color=(100,0,0))
+        plotRegressor(regressors, 'spriteKL', self.time, (400,90+30), self.screen, color=(0,0,100))
+
+
     def _fMRI_clearAll(self, onscreen=True):
         # fMRI version of _clearAll
         # we don't clear the kill_list (to be consistent w/ _performAction)
@@ -1528,14 +1554,7 @@ class BasicGame(object):
 
             # plotting fMRI regressors
             if regressors:
-                # plot theory
-                times = [t[1] for t in regressors['theory']]
-                ix = bisect.bisect(times, self.time) - 1 # find latest theory inferred up to (and including) current time
-                if ix >= 0:
-                    dispTheory(regressors['theory'][ix][0], 10, (20,20), self.screen, color=black)
-
-                # plot theory_change_flag 
-                plotRegressor(regressors['theory_change_flag'], self.time, (300,50), self.screen, color=(0,245,0))
+                self.fMRI_plotStuff(regressors)
                 
             pygame.display.update(VGDLSprite.dirtyrects)
             # self.message_display(gameName, fontsize=20, location='top_left')
@@ -1829,7 +1848,10 @@ class BasicGame(object):
                     allKeystates.append({
                         'keystate': self.keystate,
                         'keyPressType': keyPressType,
-                        'RNG_state': random.getstate()
+                        'RNG_state': random.getstate(),
+                        'dt': datetime.now(),
+                        'ts': time.time(),
+                        'gt': self.time
                         })
                     
                     # clear collision events for state logging TODO momchil make sure it works
@@ -1876,7 +1898,10 @@ class BasicGame(object):
             allKeystates.append({
                 'keystate': self.keystate,
                 'keyPressType': keyPressType,
-                'RNG_state': random.getstate()
+                'RNG_state': random.getstate(),
+                'dt': datetime.now(),
+                'ts': time.time(),
+                'gt': self.time # important to match up regressor game time with actual time
                 })
 
             ## Update actual sprite positions.

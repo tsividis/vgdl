@@ -10,7 +10,7 @@ import numpy as np
 from numpy import zeros
 import pygame
 from ontology import BASEDIRS
-from core import VGDLSprite, pauseForDuration, dispTheory, plotRegressor
+from core import VGDLSprite, pauseForDuration
 from stateobsnonstatic import StateObsHandlerNonStatic
 from collections import defaultdict
 import argparse
@@ -344,7 +344,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         if self.visualize:
             pygame.time.Clock().tick(self._game.frame_rate)
-            pauseForDuration(0.1)
+            pauseForDuration(0.1) 
             self._game._fMRI_clearAll(self.visualize)
 
 
@@ -355,7 +355,10 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
             emptyKeyState = [0]*323 #keyState when no keys are pressed
             self._game.keystate = emptyKeyState # momchil: important to reset keystate
+
+            # the full game state, for full state replay
             state = self._game.playback_states[self._game.playback_index]
+            # just the action and related stuff for action replay
             keystate = self._game.playback_keystates[self._game.playback_index]
 
             if self._game.action_playback_only:
@@ -462,14 +465,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
             # plotting fMRI regressors TODO momchil dedupe w/ startGame
             if regressors:
-                # plot theory
-                times = [t[1] for t in regressors['theory']]
-                ix = bisect.bisect(times, self._game.time) - 1 # find latest theory inferred up to (and including) current time
-                if ix >= 0:
-                    dispTheory(regressors['theory'][ix][0], 10, (20,20), self._game.screen, color=(0,0,0))
-
-                # plot theory_change_flag 
-                plotRegressor(regressors['theory_change_flag'], self._game.time, (300,50), self._game.screen, color=(0,245,0))
+                self._game.fMRI_plotStuff(regressors)
                 
 
 
@@ -616,13 +612,14 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
+
+        self._game.time+=1 # momchil: important to do it before updates in _performAction, consistent with StartGame (to make sure regressors & game times match up)
+        print 'time = ', self._game.time, '           game = ', self._game, '      self = ', self
+
         # t1 = time.time()
         events, action = self._performAction(action, regressors=regressors)
         # embed()
         # observation = self._getSensors()
-
-        self._game.time+=1
-        print 'time = ', self._game.time, '           game = ', self._game, '      self = ', self
 
         observation = self._getSensors() if return_obs else None
         if getTermination:
