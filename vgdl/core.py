@@ -45,6 +45,17 @@ emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 
 # fMRI helpers
 # TODO momchil put somewhere else
+def pauseForDuration(duration):
+    then = time.time()
+    while time.time() - then < duration:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+
+        pygame.display.update()
+
+        pygame.time.Clock().tick(60)
+
 def dispSymbol(symbol, size, color, center, screen):
     font = pygame.font.SysFont('SegoeUISymbol', size) # TODO init in constructor
     textsurf = font.render(symbol, True, color) 
@@ -169,17 +180,6 @@ class VGDLParser(object):
         fMRI_bg = pygame.Surface(fMRI_screensize)
         fMRI_bg.fill(black)
         fMRI_screen.blit(fMRI_bg, (0, 0))
-
-        def pauseForDuration(duration):
-            then = time.time()
-            while time.time() - then < duration:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        return
-
-                pygame.display.update()
-
-                clock.tick(60)
 
         def fullScreenText(text, duration, fontsize=80, color=white):
             fMRI_screen.blit(fMRI_bg, (0, 0))
@@ -683,7 +683,7 @@ class BasicGame(object):
         # self.block_size = max(2,int(800./max(self.width, self.height)))
         self.block_size = 30
         margin = 0 # TODO momchil where is it ; jk it's padding
-        self.screensize = (self.width*(self.block_size + margin), self.height*(self.block_size + margin)) # TODO undo
+        self.screensize = (self.width*(self.block_size + margin), self.height*(self.block_size + margin)) # TODO undo momchil TODO discrepancy when using fMRI_screensize
         if fMRI_screensize is not None:
             self.offset = (int((fMRI_screensize[0] - self.screensize[0])/2), int((fMRI_screensize[1] - self.screensize[1])/2))
         else:

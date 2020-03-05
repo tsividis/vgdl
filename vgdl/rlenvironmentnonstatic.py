@@ -10,7 +10,7 @@ import numpy as np
 from numpy import zeros
 import pygame
 from ontology import BASEDIRS
-from core import VGDLSprite
+from core import VGDLSprite, pauseForDuration, dispTheory, plotRegressor
 from stateobsnonstatic import StateObsHandlerNonStatic
 from collections import defaultdict
 import argparse
@@ -24,6 +24,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
 import time
 import cPickle
+import bisect
 # from line_profiler import LineProfiler
 
 OBSERVATION_LOCAL = 'local'
@@ -45,11 +46,12 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     # Recording events (in slightly redundant format state-action-nextstate)
     recordingEnabled = False
 
-    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, **kwargs):
+    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, screensize=None, actionset=BASEDIRS, **kwargs):
         game = _createVGDLGame( gameDef, levelDef )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
         self.visualize = visualize
+        self.screensize = screensize
         self._initstate = self.getState()
         #
         # Total output dimensions are:
@@ -216,7 +218,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     # Reset game data and optionally the state
     def _postInitReset(self, performStateResetTesting=False):
         if self.visualize:
-            self._game._initScreen(self._game.screensize, not self.visualize)
+            self._game._initScreen(self._game.screensize if self.screensize is None else self.screensize, not self.visualize)
 
         # Calling self.setState(self._initstate) hundreds of times causes massive slowdown.
         if performStateResetTesting:
@@ -228,6 +230,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.kill_list = []
         if self.visualize:
             pygame.display.flip()
+            self._game.frame_rate = 20
         if self.recordingEnabled:
             self._last_state = self.getState()
             self._allEvents = []
@@ -323,7 +326,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         res[i] = int(res[i]) | (2<<s)
         return res
 
-    def _performAction(self, action=[], onlyavatar=False):
+    def _performAction(self, action=[], onlyavatar=False, regressors=None):
 
         """ Action is an index for the actionset.  """
         # take action and compute consequences
@@ -340,7 +343,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         revActionDict = {'spacebar': K_SPACE, 'up': K_UP, 'down': K_DOWN, 'left': K_LEFT, 'right': K_RIGHT, 'none': 0}
 
         if self.visualize:
-            self._game._clearAll(self.visualize)
+            pygame.time.Clock().tick(self._game.frame_rate)
+            pauseForDuration(0.1)
+            self._game._fMRI_clearAll(self.visualize)
 
 
         # momchil fMRI replay shenanighans
@@ -448,7 +453,27 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
 
 
+        if self.visualize:
+            self._game.screen.blit(self._game.background, self._game.offset) # TODO momchil super inefficient
+            self._game._drawAll()
+            # TODO momchil somehow make sure only one RLE is visualizing at a time, b/c VGDLSprite is shared
+            pygame.display.update(VGDLSprite.dirtyrects)
+            VGDLSprite.dirtyrects = []
 
+            # plotting fMRI regressors TODO momchil dedupe w/ startGame
+            if regressors:
+                # plot theory
+                times = [t[1] for t in regressors['theory']]
+                ix = bisect.bisect(times, self._game.time) - 1 # find latest theory inferred up to (and including) current time
+                if ix >= 0:
+                    dispTheory(regressors['theory'][ix][0], 10, (20,20), self._game.screen, color=(0,0,0))
+
+                # plot theory_change_flag 
+                plotRegressor(regressors['theory_change_flag'], self._game.time, (300,50), self._game.screen, color=(0,245,0))
+                
+
+
+        # fMRI sanity check code
         if self._game.playback_states and self._game.playback_index < len(self._game.playback_states): # last state might differ b/c we don't update in startGame but we do update here; TODO momchil maybe make consistent
 
             state = self._game.playback_states[self._game.playback_index - 1]
@@ -586,13 +611,13 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         return output
     """
 
-    def step(self, action, return_obs=False, getTermination=False, getEffectList=False):
+    def step(self, action, return_obs=False, getTermination=False, getEffectList=False, regressors=None):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
         # t1 = time.time()
-        events, action = self._performAction(action)
+        events, action = self._performAction(action, regressors=regressors)
         # embed()
         # observation = self._getSensors()
 
@@ -875,9 +900,9 @@ def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
             observationType = obsType)
 
 
-def createRLInputGameFromStrings(game, level):
+def createRLInputGameFromStrings(game, level, visualize=False, screensize=None):
     return RLEnvironmentNonStatic(game, level, \
-            observationType = OBSERVATION_GLOBAL)
+            observationType = OBSERVATION_GLOBAL, visualize=visualize, screensize=screensize)
 
 
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
