@@ -1806,6 +1806,7 @@ class Game(object):
 				theory.spriteSet.append(s)
 		return theory
 
+        # momchil: where the money is
 	def runInduction(self, spriteSample, trace, maxNumTheories, verbose=False, existingTheories=False):
 		# spriteSample: a particular assignment of sprite types
 		## Builds a generic theory and then modifies it as it sees events it can learn from in 'trace', which is the sequence of events the agent has witnessed.

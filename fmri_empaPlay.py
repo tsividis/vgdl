@@ -113,12 +113,15 @@ if __name__ == '__main__':
         # pre-populate regressors object for each play with identifier info
         # extract the regressors later in Agent
         reg = {
-            '_play_mongo_id': play['_id'],
+            'play_key': play['_id'],
             'subj_id': play['subj_id'],
             'run_id': play['run_id'],
             'block_id': play['block_id'],
             'instance_id': play['instance_id'],
-            'play_id': play['play_id']
+            'play_id': play['play_id'],
+            'game_name': play['game_name'],
+            'level_id': play['level_id'],
+            'type': 'fmri_empaPlay'
         }
         all_regressors[game['name']].append(reg)
 
@@ -145,4 +148,6 @@ if __name__ == '__main__':
         for i in range(len(curriculumRegressors)): # for each play
             reg = regs[i]
             reg['regressors'] = curriculumRegressors[i]
+
+            assert False # so we don't actually insert stuff, when we should be using empaReplay
             db.regressors.insert(reg)

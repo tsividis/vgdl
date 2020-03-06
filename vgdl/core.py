@@ -285,6 +285,7 @@ class VGDLParser(object):
 
                 run['blocks'][b]['instances'][i]['start_time'] = instance_start_time 
 
+                play_keys = []
                 for p in range(100): # TODO const
                     print 'Subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (subj['subj_id'], run_id, b, i, p, game['name'], game['fake_name'], desc_id, level_id)
 
@@ -341,7 +342,8 @@ class VGDLParser(object):
                         'actions': actions,
                         'events': events
                     }
-                    db.plays.insert(play)
+                    key = db.plays.insert_one(play).inserted_id
+                    play_keys.append(key)
 
                     print 'saving took ', time.time() - then, ' s'
 
@@ -351,6 +353,7 @@ class VGDLParser(object):
                         break
 
                 run['blocks'][b]['instances'][i]['end_time'] = time.time()
+                run['blocks'][b]['instances'][i]['play_keys'] = play_keys # just in case
 
                 run_time += duration
                 actual_run_time = time.time() - run_start_ts
@@ -364,6 +367,7 @@ class VGDLParser(object):
         run['end_time'] = time.time()
 
         run['subj_id'] = subj['subj_id'] # important!
+        run['subj_key'] = subj['_id'] # just in case
         db.runs.insert(run)
 
 

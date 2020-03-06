@@ -350,7 +350,7 @@ class Agent:
     def calculateEntropy(self, theory, spriteDistribution):
         return None
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False, movie_names = []):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -520,6 +520,7 @@ class Agent:
                     os.remove(curriculumDir+'/'+episodeSaveFile)
                     print "finished an episode; removing episodeSaveFile"
 
+
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.param_ID))
 
@@ -532,12 +533,12 @@ class Agent:
             if self.record_fMRIRegressors:
                 curriculumRegressors.append(self.regressors)
 
-        if make_movie:
-            if self.record_fMRIRegressors:
-                assert len(curriculumRegressors) == 1 # TODO momchil b/c of theories
-                self.makeMovie(play_movie=play_movie, regressors=self.regressors)
-            else:
-                self.makeMovie(play_movie=play_movie)
+            if make_movie:
+                if self.record_fMRIRegressors:
+                    self.movieName = movie_names[n_level]
+                    self.makeMovie(play_movie=play_movie, regressors=self.regressors)
+                else:
+                    self.makeMovie(play_movie=play_movie)
 
         endtime = time.time()
 
@@ -630,6 +631,8 @@ class Agent:
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
             persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize)
 
+        # TODO momchil fix -- right now, this uses the wrong images; also playGame already creates a video 
+        '''
         print "Creating Movie"
         # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
         # movie_dir = "videos/"
@@ -654,6 +657,7 @@ class Agent:
         if play_movie:
             command = ('open', '-a', 'Quicktime Player', video_dirname)
             subprocess.Popen(command)
+        '''
 
         return
 
@@ -1167,6 +1171,11 @@ class Agent:
             hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                 run_induction = not flexible_goals)
             print 'HYPOTHESIS 4' # momchil
+            # TODO momchil figure out how to get multiple hypotheses
+            #print len(hypotheses)
+            #if len(hypotheses) > 1:
+            #    print 'snathoeusnoaheusn'
+            #    embed()
             hypotheses[0].display()
 
             self.rle._game.nextPositions = {}
@@ -1417,6 +1426,8 @@ class Agent:
                 rle._game.H = self.calculateEntropy(hypothesis, self.rle._game.spriteDistribution)
 
         return
+
+
 
     def executeStep(self, action, hypotheses, statesEncountered, compactStates, plannerNodes, run_induction=True):
 

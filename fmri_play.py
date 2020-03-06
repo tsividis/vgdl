@@ -131,7 +131,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 0
+            g = 0 # TODO 
             block = {
                 'block_id': b,
                 'game_id': g,

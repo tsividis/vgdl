@@ -82,10 +82,11 @@ db = client['heroku_7lzprs54']
 
 if __name__ == '__main__':
     subj_id = sys.argv[1]
-    run_id = int(sys.argv[2])
 
-    query = {'subj_id': subj_id, 'run_id': run_id}
+    query = {'subj_id': subj_id}
 
+    if len(sys.argv) > 2:
+        query['run_id'] = int(sys.argv[2])
     if len(sys.argv) > 3:
         query['block_id'] = int(sys.argv[3])
     if len(sys.argv) > 4:
@@ -93,9 +94,14 @@ if __name__ == '__main__':
     if len(sys.argv) > 5:
         query['play_id'] = int(sys.argv[5])
 
+    # TODO momchil make sure ordered
     plays = db.plays.find(query)
 
+    # TODO dedupe with fmri_empaPlay
+
     all_pairs = {}
+    all_regressors = {}
+    all_movie_names = {}
 
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
@@ -115,73 +121,53 @@ if __name__ == '__main__':
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
 
-        # for faster replay; breaks chase
-        #new_states = states[0:5] # TODO momchil undo
-        #new_keystates = keystates[0:5]
-        #for i,state in enumerate(states[5:]):
-        #   if len(state['effectList']) > 0 or state['keyPressType'] or state['ended']:
-        #        new_states.append(state)
-        #        new_keystates.append(keystates[i + 5])
-
-        #del new_states[6:-6]
-        #new_states = states
-
-        #embed()
-
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
-        all_pairs[game['name']].append([play['game_str'], play['level_str'], states, keystates]) # TODO OOM? momchil rm new_states
+            all_regressors[game['name']] = [] 
+            all_movie_names[game['name']] = [] 
+        all_pairs[game['name']].append((play['game_str'], play['level_str'], states, keystates)) # TODO momchil OOM? 
 
-        #core.VGDLParser.fMRI_replayGame(play['game_str'], play['level_str'], new_states) working
-        #core.VGDLParser.playGame(play['game_str'], play['level_str'], new_states, \
-        #    persist_movie=True, make_images=True, make_movie=True, movie_dir="videos", padding=10) 
+        # pre-populate regressors object for each play with identifier info
+        # extract the regressors later in Agent
+        reg = {
+            'play_key': play['_id'],
+            'subj_id': play['subj_id'],
+            'run_id': play['run_id'],
+            'block_id': play['block_id'],
+            'instance_id': play['instance_id'],
+            'play_id': play['play_id'],
+            'game_name': play['game_name'],
+            'level_id': play['level_id'],
+            'type': 'fmri_empaReplay'
+        }
+        all_regressors[game['name']].append(reg)
 
-        '''
-        game_str = play['game_str']
-        map_str = play['level_str']
-        g = core.VGDLParser().parseGame(game_str)
-        g.uiud = uuid.uuid4()
-        g.buildLevel(map_str)
-        g.playback_states = new_states
-        g.startPlaybackGame(headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir='videos', padding=10, gameName='', parameter_string='')
-        sys.exit(0)
-        ''' # don't work
-
-        '''
-        black = (0,0,0)
-        white = (255,255,255)
-
-        pygame.init()
-        clock = pygame.time.Clock()
-
-        fMRI_screensize = (1200,900)
-        fMRI_screen = pygame.display.set_mode(fMRI_screensize)
-
-        fMRI_bg = pygame.Surface(fMRI_screensize)
-        fMRI_bg.fill(black)
-        fMRI_screen.blit(fMRI_bg, (0, 0))
-        fMRI_screensize = (1200,900)
-
-        game_str = play['game_str']
-        map_str = play['level_str']
-        g = core.VGDLParser().parseGame(game_str)
-        g.uiud = uuid.uuid4()
-        g.buildLevel(map_str)
-        g.playback_states = new_states
-        g.startPlaybackGame(headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir='videos', padding=10, gameName='', parameter_string='', deoffset=True)
-        '''
-        #sys.exit(0)
-
+        movie_name = game['name'] + '_lev=' + str(play['level_id']) + '_' + str(play['play_id'])
+        all_movie_names[game['name']].append(movie_name)
 
     # for each game, play all instances as part of one curriculum
     # allows within-game transfer but no cross-game transfer
+    # TODO note this assumes we simulate the entire subject at once
     #
     for game_name, level_game_pairs in all_pairs.iteritems():
         print 'Playing game ', game_name, ': ', len(level_game_pairs), ' instances'
+
+        regs = all_regressors[game_name] 
+        assert len(regs) == len(level_game_pairs)
+
+        movie_names = all_movie_names[game_name]
+        assert len(movie_names) == len(level_game_pairs)
 
         # defaults from load_games.py 
         # python -m vgdl.load_games --game_name tiny_zelda
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
 
         agent.record_fMRIRegressors = True
-        agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, playback=True)
+        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, playback=True, movie_names=movie_names)
+        assert len(curriculumRegressors) == len(regs)
+
+        for i in range(len(curriculumRegressors)): # for each play
+            reg = regs[i]
+            reg['regressors'] = curriculumRegressors[i]
+            reg['regressors']['theory'] = [] # TODO momchil W T F FIXME ASAP
+            db.regressors.insert_one(reg)
