@@ -30,6 +30,7 @@ import json
 import bson
 import zlib
 import bisect
+import atexit
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -299,7 +300,7 @@ class VGDLParser(object):
                     play_start_time = time.time() 
                     dispFn = lambda score, win: displayScore(game['fake_name'], score, win)
 
-                    win, score, allStates, allKeystates, actions, events = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft)
+                    win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft)
                     play_end_time = time.time()
 
                     #print 'events size: ', get_size(events), ' b for ', len(events), ' states'
@@ -340,7 +341,10 @@ class VGDLParser(object):
                         'zstates': bson.binary.Binary(zstates),
                         'zkeystates': bson.binary.Binary(zkeystates),
                         'actions': actions,
-                        'events': events
+                        'events': events,
+                        'keyups': keyups,
+                        'keydowns': keydowns,
+                        'keyholds': keyholds
                     }
                     key = db.plays.insert_one(play).inserted_id
                     play_keys.append(key)
@@ -1719,6 +1723,33 @@ class BasicGame(object):
         # ('ENDOFSCREEN' if x[1]=='EOS' else colorDict[str(self.alt_sprite_constr[x[1]][1]['color'])]) ), reverse=True)
         # x[1] ), reverse=True)
 
+        # log key ups & downs for fMRI
+        # separete list for each key (e.g. 'space', etc.)
+        keyups = {}
+        keydowns = {}
+        keyholds = {} # boxcars starting at keydown and ending at keyup
+        for _, k in keyPresses.iteritems():
+            keyups[k] = []
+            keydowns[k] = []
+            keyholds[k] = []
+
+        # if subject kept holding key at the end, log it as if they released it
+        # for fMRI
+        def logLastKeyup():
+            for k in keydowns.keys():
+                if len(keyups[k]) < len(keydowns[k]):
+                    if len(keyups[k]) + 1 != len(keydowns[k]):
+                        print 'inconsistent keyups vs. keydowns'
+                        embed()
+                        assert False
+                    offset = time.time()
+                    keyups[k].append(offset)
+                    if len(keydowns[k]) == 0:
+                        # key was already being held at game start
+                        keydowns[k].append(t1)
+                    onset = keydowns[k][-1]
+                    keyholds[k].append((onset, offset - onset))
+
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
@@ -1734,6 +1765,22 @@ class BasicGame(object):
 
             # get action pressed
             self.keystate = pygame.key.get_pressed()
+
+            # log actual button presses & releases, for fMRI
+            for event in pygame.event.get():
+                if event.type == pygame.KEYUP:
+                    k = keyPresses[event.key]
+                    offset = time.time()
+                    keyups[k].append(offset)
+                    if len(keydowns[k]) == 0:
+                        # key was already being held at game start
+                        keydowns[k].append(t1)
+                    onset = keydowns[k][-1]
+                    keyholds[k].append((onset, offset - onset))
+
+                elif event.type == pygame.KEYDOWN:
+                    k = keyPresses[event.key]
+                    keydowns[k].append(time.time())
 
             keyPressType = None
 
@@ -1767,6 +1814,7 @@ class BasicGame(object):
                 #     self.keystate = tuple(self.keystate)
                 #     self.playback_index += 1
 
+                # TODO momchil this only takes into account one keypress per frame! and in fact it's the one with the lowest ASCII code I think
                 if lastKeyPress.index(1) in keyPresses.keys():
                     keyPressType = keyPresses[lastKeyPress.index(1)]
                     #print keyPressType
@@ -1855,7 +1903,9 @@ class BasicGame(object):
                         'RNG_state': random.getstate(),
                         'dt': datetime.now(),
                         'ts': time.time(),
-                        'gt': self.time
+                        'gt': self.time,
+                        'keyups': keyups,
+                        'keydowns': keydowns
                         })
                     
                     # clear collision events for state logging TODO momchil make sure it works
@@ -1876,7 +1926,8 @@ class BasicGame(object):
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
                     print "ended in {} steps".format(self.time)
-                    return win, self.score, allStates, allKeystates, self.actions, finalEventList
+                    logLastKeyup()
+                    return win, self.score, allStates, allKeystates, self.actions, finalEventList, keyups, keydowns, keyholds
                     # pygame.quit()
                     # sys.exit()
                     # break
@@ -1997,7 +2048,8 @@ class BasicGame(object):
         # pause a few frames for the player to see the final screen.
         pygame.time.wait(10)
         #print len(self.actions), win, self.score
-        return win, self.score, allStates, allKeystates, self.actions, finalEventList
+        logLastKeyup()
+        return win, self.score, allStates, allKeystates, self.actions, finalEventList, keyups, keydowns, keyholds
 
 
     def getPossibleActions(self):

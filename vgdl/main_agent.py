@@ -1377,6 +1377,9 @@ class Agent:
 
         return hypotheses
 
+    def logfMRIRegressor(self, name, val):
+        self.regressors[name].append((val, self.rle._game.time, self.rle._game.playback_ts))
+
     def observe(self, rle, obsSteps, bestSpriteTypeDict, statesEncountered, compactStates, display=False, hypothesis=None):
         if display and self.produce_printout:
             print "observing for {} steps".format(obsSteps)
@@ -1416,9 +1419,9 @@ class Agent:
 
                 if self.record_fMRIRegressors:
                     spriteKL = getKL(self.rle._game.spriteDistribution, spriteDistributionPrev)
-                    self.regressors['spriteKL'].append((spriteKL, self.rle._game.time))
+                    self.logfMRIRegressor('spriteKL', spriteKL)
                     if hypothesis:
-                        self.regressors['theory'].append((copy.deepcopy(hypothesis), self.rle._game.time))
+                        self.logfMRIRegressor('theory', copy.deepcopy(hypothesis))
         else:
             spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
@@ -1500,7 +1503,7 @@ class Agent:
 
             if self.record_fMRIRegressors:
                 spriteKL = getKL(self.rle._game.spriteDistribution, spriteDistributionPrev)
-                self.regressors['spriteKL'].append((spriteKL, self.rle._game.time))
+                self.logfMRIRegressor('spriteKL', spriteKL)
         else:
             distributionsHaveChanged = False
  
@@ -1600,7 +1603,7 @@ class Agent:
                     # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
                     # (need to exclude latest timesteps when computing likelihood though)
                     sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
-                    self.regressors['sampleKL'].append((sampleKL, self.rle._game.time))
+                    self.logfMRIRegressor('sampleKL', sampleKL)
 
                 # calculate posterior using new hypotheses for next timestep
                 self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
@@ -1627,11 +1630,11 @@ class Agent:
             hypotheses[0].display()
 
         if self.record_fMRIRegressors:
-            self.regressors['theory_change_flag'].append((theory_change_flag, self.rle._game.time))
-            self.regressors['sprite_change_flag'].append((distributionsHaveChanged, self.rle._game.time))
-            self.regressors['interaction_change_flag'].append((hypotheses[0].__dict__ != self.hypotheses[0].__dict__, self.rle._game.time))
-            self.regressors['termination_change_flag'].append((set(hypotheses[0].terminationSet) != oldTerminationSet, self.rle._game.time))
-            self.regressors['theory'].append((copy.deepcopy(hypotheses[0]), self.rle._game.time))
+            self.logfMRIRegressor('theory_change_flag', theory_change_flag)
+            self.logfMRIRegressor('sprite_change_flag', distributionsHaveChanged)
+            self.logfMRIRegressor('interaction_change_flag', hypotheses[0].__dict__ != self.hypotheses[0].__dict__)
+            self.logfMRIRegressor('termination_change_flag', set(hypotheses[0].terminationSet) != oldTerminationSet)
+            self.logfMRIRegressor('theory', copy.deepcopy(hypotheses[0]))
 
         return hypotheses, theory_change_flag, effects
 

@@ -361,6 +361,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             # just the action and related stuff for action replay
             keystate = self._game.playback_keystates[self._game.playback_index]
 
+            # when this action was actually taken by subject; important for fMRI regressor onsets
+            self._game.playback_ts = keystate['ts']
+
             if self._game.action_playback_only:
                 # action replay -- choose action from replay & let EMPA do the updates / event handling
                 #
