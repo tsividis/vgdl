@@ -156,7 +156,7 @@ prerun_interval = 1 # sec, how long for scanner to settle
 postrun_interval = 1 # sec, how long for HRF to settle
 nblocks = 3 # per run
 ninstances = 3 # per block
-duration = 55 # instance duration (sec)
+duration = 10 # instance duration (sec)
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
 

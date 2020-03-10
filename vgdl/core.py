@@ -295,6 +295,8 @@ class VGDLParser(object):
                     g.assignSymbols(alphabet)
                     g.buildLevel(level_str, fMRI_screensize)
 
+                    fMRI_screen.blit(fMRI_bg, (0, 0))
+
                     timeleft = instance_end_time - interplay_interval - time.time()
 
                     play_start_time = time.time() 
