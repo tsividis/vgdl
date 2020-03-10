@@ -31,6 +31,7 @@ import bson
 import zlib
 import bisect
 import atexit
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -41,7 +42,7 @@ disableContinuousKeyPress = False
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
                     (0,1): pygame.K_DOWN, (0,-1): pygame.K_UP}
 
-keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar', 0:'none'}
+keyPresses = {K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', K_SPACE: 'spacebar', 0:'none'}
 emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 
 # fMRI helpers
@@ -169,7 +170,7 @@ class VGDLParser(object):
         waitForKeypress(clock, ' ')
 
     @staticmethod
-    def fMRI_playRun(subj, run_id, db, seed):
+    def fMRI_playRun(subj, run_id, db, seed, remap_keys=None):
         # Play a given fMRI run for given subject
         #
 
@@ -302,7 +303,7 @@ class VGDLParser(object):
                     play_start_time = time.time() 
                     dispFn = lambda score, win: displayScore(game['fake_name'], score, win)
 
-                    win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft)
+                    win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft, fMRI_remap_keys=remap_keys)
                     play_end_time = time.time()
 
                     #print 'events size: ', get_size(events), ' b for ', len(events), ' states'
@@ -1652,7 +1653,7 @@ class BasicGame(object):
     #     return
 
 
-    def startGame(self, headless, persist_movie, make_images=False, make_movie=False, screen=None, displayScoreFn=None, fMRI_timeout=None):
+    def startGame(self, headless, persist_movie, make_images=False, make_movie=False, screen=None, displayScoreFn=None, fMRI_timeout=None, fMRI_remap_keys=None):
         """
         Main method to run game.
         """
@@ -1767,6 +1768,13 @@ class BasicGame(object):
 
             # get action pressed
             self.keystate = pygame.key.get_pressed()
+
+            # optionally remap keys
+            if fMRI_remap_keys:
+                keystate = list(self.keystate)
+                for fro, to in fMRI_remap_keys.iteritems():
+                    keystate[to] = self.keystate[fro]
+                self.keystate = tuple(keystate)
 
             # log actual button presses & releases, for fMRI
             for event in pygame.event.get():

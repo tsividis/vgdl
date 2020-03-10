@@ -15,6 +15,12 @@ from collections import defaultdict
 from vgdl import core
 from IPython import embed
 
+from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+
+
+keyboard_remap = {ord('h'): K_LEFT, ord('k'): K_DOWN, ord(','): K_RIGHT, ord('u'): K_UP}
+scanner_remap = {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('2'): K_RIGHT, ord('4'): K_UP, ord('5'): K_SPACE}
+
 # USAGE: python fmri_play.py [subj_id] [run_id]
 
 client = MongoClient('localhost', 27017)
@@ -151,12 +157,14 @@ assert(len(alphabets) == len(game_names))
 # each instance is the same level
 # instances have plays of the same level, repeated until timeout
 
+# TODO recalc timings
+
 nruns = 3 # per subject: 0 = practice, last one = post-training
 prerun_interval = 1 # sec, how long for scanner to settle
 postrun_interval = 1 # sec, how long for HRF to settle
 nblocks = 3 # per run
 ninstances = 3 # per block
-duration = 10 # instance duration (sec)
+duration = 10 # instance duration (sec) 
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
 
@@ -324,6 +332,15 @@ if __name__ == '__main__':
     run_length = prerun_interval + postrun_interval + nblocks * interblock_interval + nblocks * ninstances * duration
     print 'run length = ', run_length, 's = ', run_length/60.0, 'min = ', run_length/2.0, 'TRs'
 
+    if actual_fMRI_experiment:
+        if run_id == 0 or run_id == 7: # TODO hardcoded
+            remap_keys = keyboard_remap
+        else:
+            remap_keys = scanner_remap
+    else:
+        remap_keys = None 
+
+
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
-    VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'])
+    VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)
