@@ -159,14 +159,14 @@ assert(len(alphabets) == len(game_names))
 
 # TODO recalc timings
 
-nruns = 6 # per subject: 0 = practice, last one = post-training
-prerun_interval = 10 # sec, how long for scanner to settle
-postrun_interval = 10 # sec, how long for HRF to settle
-nblocks = 3 # per run
-ninstances = 3 # per block
-duration = 60 # instance duration (sec) 
-interplay_interval = 2 # sec, how long to hold last screen
-interblock_interval = 2 # sec, how long to show game name
+nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
+prerun_interval = 10 # = 10 sec, how long for scanner to settle
+postrun_interval = 10 # = 10 sec, how long for HRF to settle
+nblocks = 3 # = 3 per run
+ninstances = 3 # = 3 per block
+duration = 60 # = 60 instance duration (sec) 
+interplay_interval = 2 # = 2 sec, how long to hold last screen
+interblock_interval = 2 # = 2 sec, how long to show game name
 
 
 def gen_runs_for_actual_experiment(games):
@@ -343,4 +343,19 @@ if __name__ == '__main__':
 
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
-    VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)
+    wins, scores = VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)
+
+    print 'wins ', wins
+    print 'scores ', scores
+
+    i = random.randint(0, len(wins)-1)
+    print i
+   
+    if wins[i]:
+        money = 5 + scores[i]
+    else:
+        money = 0
+    print 'money for run', run_id, '= $', money
+
+    i = random.randint(1, 7)
+    print 'for bonus, pick run ', i

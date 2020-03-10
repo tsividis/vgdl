@@ -254,6 +254,9 @@ class VGDLParser(object):
         fullScreenText('+', run['prerun_interval'])
         run_time += run['prerun_interval']
 
+        wins = []
+        scores = []
+
         for b in range(len(blocks)):
             block = blocks[b]
             assert block['block_id'] == b
@@ -305,6 +308,9 @@ class VGDLParser(object):
 
                     win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft, fMRI_remap_keys=remap_keys)
                     play_end_time = time.time()
+
+                    wins.append(win)
+                    scores.append(score)
 
                     #print 'events size: ', get_size(events), ' b for ', len(events), ' states'
                     #print '  = ', get_size(events)/1000000/(play_end_time - play_start_time), ' MB/s'
@@ -376,6 +382,8 @@ class VGDLParser(object):
         run['subj_id'] = subj['subj_id'] # important!
         run['subj_key'] = subj['_id'] # just in case
         db.runs.insert(run)
+
+        return wins, scores
 
 
     @staticmethod
