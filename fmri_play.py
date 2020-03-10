@@ -159,12 +159,12 @@ assert(len(alphabets) == len(game_names))
 
 # TODO recalc timings
 
-nruns = 3 # per subject: 0 = practice, last one = post-training
-prerun_interval = 1 # sec, how long for scanner to settle
-postrun_interval = 1 # sec, how long for HRF to settle
+nruns = 6 # per subject: 0 = practice, last one = post-training
+prerun_interval = 10 # sec, how long for scanner to settle
+postrun_interval = 10 # sec, how long for HRF to settle
 nblocks = 3 # per run
 ninstances = 3 # per block
-duration = 10 # instance duration (sec) 
+duration = 60 # instance duration (sec) 
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
 
