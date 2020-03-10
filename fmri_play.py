@@ -20,6 +20,8 @@ from IPython import embed
 client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
 
+actual_fMRI_experiment = True
+
 
 # > db.games.find({'name': /vgfmri3.*/}, {'name': 1})
 #game_names = [
@@ -50,6 +52,7 @@ db = client['heroku_7lzprs54']
 #
 
 game_names = [
+    "vgfmri3_sokoban",
     "vgfmri3_chase",
     "vgfmri3_helper",
     "vgfmri3_bait",
@@ -80,6 +83,7 @@ game_names = [
 #]
 
 fake_names = [
+    "Archeplan",
     "Questtide",
     "Fuseville",
     "Prime Origin",
@@ -124,7 +128,7 @@ alphabets = [
     range(9552,9559) + range(9568,9580),
     range(9451,9471),
     range(8926,8951),
-#    range(8853,8875),
+    range(8853,8875),
 #    range(947,972),
 #    range(9015,9039),
 #    range(10675,10700),
@@ -147,14 +151,75 @@ assert(len(alphabets) == len(game_names))
 # each instance is the same level
 # instances have plays of the same level, repeated until timeout
 
-nruns = 3 # per subject
+nruns = 3 # per subject: 0 = practice, last one = post-training
 prerun_interval = 1 # sec, how long for scanner to settle
 postrun_interval = 1 # sec, how long for HRF to settle
-nblocks = 1 # per run
-ninstances = 1 # per block
-duration = 200 # instance duration (sec)
+nblocks = 3 # per run
+ninstances = 3 # per block
+duration = 55 # instance duration (sec)
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
+
+
+def gen_runs_for_actual_experiment(games):
+    run_game_ids  = []
+    run_game_ids.append([0]) # run 0 is practice, and is always sokoban
+
+    gs = range(1,7)
+    random.shuffle(gs)
+    run_game_ids.append(gs[0:3])
+    run_game_ids.append(gs[3:6])
+    
+    random.shuffle(gs)
+    run_game_ids.append(gs[0:3])
+    run_game_ids.append(gs[3:6])
+
+    random.shuffle(gs)
+    run_game_ids.append(gs[0:3])
+    run_game_ids.append(gs[3:6])
+
+    random.shuffle(gs) # last run is post-scan evaluation
+    run_game_ids.append(gs)
+
+    next_level_id = [0] * 7
+
+    runs = []
+    print run_game_ids
+    for r in range(len(run_game_ids)):
+        run = {
+            'run_id': r,
+            'prerun_interval': prerun_interval,
+            'postrun_interval': postrun_interval
+        }
+        blocks = []
+        for b in range(len(run_game_ids[r])):
+            g = run_game_ids[r][b] 
+            block = {
+                'block_id': b,
+                'game_id': g,
+                'game': games[g],
+                'interblock_interval': interblock_interval
+            }
+            instances = []
+            for i in range(ninstances):
+                instance = {
+                    'instance_id': i,
+                    'desc_id': 0,
+                    'level_id': next_level_id[g],
+                    'duration': duration,
+                    'interplay_interval': interplay_interval
+                }
+                next_level_id[g] += 1
+                instances.append(instance)
+
+            block['instances'] = instances
+            blocks.append(block)
+
+        run['blocks'] = blocks
+        runs.append(run)
+
+    return runs
+
 
 def gen_runs(games):
     runs = []
@@ -167,7 +232,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 5 # TODO 
+            g = 0 # TODO 
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -179,7 +244,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': 11, # TODO actual
+                    'level_id': 0, # TODO actual
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }
@@ -206,15 +271,24 @@ def get_games(fakes, alphs):
 
 def gen_subj(subj_id):
     seed = random.randint(1, 100000000) # beware of bday paradox
+
     fakes = list(fake_names)
-    #random.shuffle(fakes) # TODO momchil undo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if actual_fMRI_experiment:
+        random.shuffle(fakes)
+
     alphs = list(alphabets)
     random.shuffle(alphs)
     for i in range(len(alphs)):
         random.shuffle(alphs[i])
         print alphs[i]
+
     games = get_games(fakes, alphs)
-    runs = gen_runs(games)
+
+    if actual_fMRI_experiment:
+        runs = gen_runs_for_actual_experiment(games)
+    else:
+        runs = gen_runs(games)
+
     subj = {
         'subj_id': subj_id,
         'dt': datetime.now(),
