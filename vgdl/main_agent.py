@@ -28,7 +28,7 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,
 AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-fMRI_screensize = (1200, 900) # TODO dedupe momchil
+fMRI_screensize = (1200,900) # TODO dedupe momchil
 
 class Agent:
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=2, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):

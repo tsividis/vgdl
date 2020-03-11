@@ -37,6 +37,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 #     Constants
 # ---------------------------------------------------------------------
 
+fMRI_screensize = (800,580)
 
 disableContinuousKeyPress = False
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
@@ -136,7 +137,7 @@ class VGDLParser(object):
     def fMRI_showAlphabets(alphabets):
         # display all sprite symbols as a sanity check
         #
-        block_size = (30,30)
+        block_size = (20,20)
         height = len(alphabets)
         width = max([len(a) for a in alphabets])
 
@@ -144,7 +145,6 @@ class VGDLParser(object):
         pygame.init()
         clock = pygame.time.Clock()
 
-        fMRI_screensize = (1200,900)
         fMRI_screen = pygame.display.set_mode(fMRI_screensize)
 
         fMRI_bg = pygame.Surface(fMRI_screensize)
@@ -178,14 +178,13 @@ class VGDLParser(object):
         pygame.init()
         clock = pygame.time.Clock()
 
-        fMRI_screensize = (1200,900)
         fMRI_screen = pygame.display.set_mode(fMRI_screensize)
 
         fMRI_bg = pygame.Surface(fMRI_screensize)
         fMRI_bg.fill(black)
         fMRI_screen.blit(fMRI_bg, (0, 0))
 
-        def fullScreenText(text, duration, fontsize=80, color=white):
+        def fullScreenText(text, duration, fontsize=50, color=white):
             fMRI_screen.blit(fMRI_bg, (0, 0))
             pos = (int(fMRI_screensize[0]/2), int(fMRI_screensize[1]/2))
             dispText(text, fontsize, pos, fMRI_screen, color)
@@ -193,9 +192,9 @@ class VGDLParser(object):
 
 
         def displayScore(name, score, win):
-            fMRI_screen.blit(fMRI_bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[1],200)) # TODO super inefficient...
-            dispText(name, 40, (int(fMRI_screensize[0]/2), 40), fMRI_screen)
-            dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 100), fMRI_screen)
+            fMRI_screen.blit(fMRI_bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[1],120)) # TODO super inefficient...
+            dispText(name, 35, (int(fMRI_screensize[0]/2), 35), fMRI_screen)
+            dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 75), fMRI_screen)
             if win is not None:
                 if win == True:
                     text = 'You WON!'
@@ -203,7 +202,7 @@ class VGDLParser(object):
                     text = 'You LOST...'
                 elif win == -1: # TODO const momchil
                     text = 'TIMEOUT'
-                dispText(text, 70, (int(fMRI_screensize[0]/2), 170), fMRI_screen)
+                dispText(text, 45, (int(fMRI_screensize[0]/2), 510), fMRI_screen)
 
 
         # from https://goshippo.com/blog/measure-real-size-any-python-object/
@@ -236,11 +235,11 @@ class VGDLParser(object):
         run = subj['runs'][run_id]
         blocks = run['blocks']
 
-        fullScreenText('Please keep your head as still as possible', 0, 50)
-        #waitForKeypress(clock, ' ') TODO enable
+        fullScreenText('Please keep your head as still as possible', 0, 35)
+        waitForKeypress(clock, ' ') 
 
-        fullScreenText('Waiting for scanner trigger...', 0, 50, (150, 150, 150))
-        #waitForKeypress(clock, '=') TODO enable
+        fullScreenText('Waiting for scanner trigger...', 0, 35, (150, 150, 150))
+        waitForKeypress(clock, '=')
 
         run_start_ts = time.time()
         run_start_dt = datetime.now()
@@ -419,7 +418,6 @@ class VGDLParser(object):
         pygame.init()
         clock = pygame.time.Clock()
 
-        fMRI_screensize = (1200,900)
         fMRI_screen = pygame.display.set_mode(fMRI_screensize)
 
         fMRI_bg = pygame.Surface(fMRI_screensize)
@@ -708,7 +706,7 @@ class BasicGame(object):
         # assert self.height%2==0, "Level has odd-numbered height."
         # rescale pixels per block to adapt to the level
         # self.block_size = max(2,int(800./max(self.width, self.height)))
-        self.block_size = 30
+        self.block_size = 20 # TODO dedupe
         margin = 0 # TODO momchil where is it ; jk it's padding
         self.screensize = (self.width*(self.block_size + margin), self.height*(self.block_size + margin)) # TODO undo momchil TODO discrepancy when using fMRI_screensize
         if fMRI_screensize is not None:
@@ -1815,7 +1813,7 @@ class BasicGame(object):
 
                 if self.keystate != emptyKeyState: # key pressed
                         continuousKeyPressCount += 1
-                        if continuousKeyPressCount == 1 or (continuousKeyPressCount > 1 and time.time() - lastKeyPressActualTime > 0.1):
+                        if continuousKeyPressCount == 1 or (continuousKeyPressCount > 1 and time.time() - lastKeyPressActualTime > 0.15):
                             lastKeyPressActualTime = time.time()
                         else:
                             self.keystate = emptyKeyState
@@ -1894,6 +1892,7 @@ class BasicGame(object):
                 if self.ended:
                     if timed_out:
                         self.win = -1 # TODO momchil const
+                        win = None
                         #self.score += 0 # do not penalize for fMRI timeouts
                     elif win:
                         #self.score += 1

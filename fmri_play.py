@@ -19,7 +19,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 
 keyboard_remap = {ord('h'): K_LEFT, ord('k'): K_DOWN, ord(','): K_RIGHT, ord('u'): K_UP}
-scanner_remap = {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('2'): K_RIGHT, ord('4'): K_UP, ord('5'): K_SPACE}
+scanner_remap = {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('4'): K_RIGHT, ord('2'): K_UP, ord('0'): K_SPACE}
 
 # USAGE: python fmri_play.py [subj_id] [run_id]
 
@@ -252,7 +252,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': 0, # TODO actual
+                    'level_id': 2, # TODO actual
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }
@@ -348,11 +348,22 @@ if __name__ == '__main__':
     print 'wins ', wins
     print 'scores ', scores
 
-    i = random.randint(0, len(wins)-1)
+    w = []
+    s = []
+    for i in range(len(wins)):
+        if wins[i] is not None: # exclude timeouts
+            w.append(wins[i])
+            s.append(scores[i])
+
+    print 'no timeouts'
+    print 'w ', w
+    print 's ', s
+
+    i = random.randint(0, len(w)-1)
     print i
    
-    if wins[i]:
-        money = 5 + scores[i]
+    if w[i]:
+        money = 5 + s[i]
     else:
         money = 0
     print 'money for run', run_id, '= $', money
