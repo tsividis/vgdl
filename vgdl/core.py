@@ -1780,12 +1780,21 @@ class BasicGame(object):
                 keystate = list(self.keystate)
                 for fro, to in fMRI_remap_keys.iteritems():
                     keystate[to] = self.keystate[fro]
+                    keystate[fro] = 0 # TODO momchil is this safe???
+                keystate[ord('=')] = 0 # TODO is this safe???
                 self.keystate = tuple(keystate)
 
             # log actual button presses & releases, for fMRI
             for event in pygame.event.get():
-                if event.type == pygame.KEYUP and event.key in keyPresses.keys():
-                    k = keyPresses[event.key]
+                if event.type != pygame.KEYUP and event.type != pygame.KEYDOWN:
+                    continue
+                key = event.key
+
+                if fMRI_remap_keys and key in fMRI_remap_keys.keys():
+                    key = fMRI_remap_keys[key]
+
+                if event.type == pygame.KEYUP and key in keyPresses.keys():
+                    k = keyPresses[key]
                     offset = time.time()
                     keyups[k].append(offset)
                     if len(keydowns[k]) == 0:
@@ -1794,8 +1803,8 @@ class BasicGame(object):
                     onset = keydowns[k][-1]
                     keyholds[k].append((onset, offset - onset))
 
-                elif event.type == pygame.KEYDOWN and event.key in keyPresses.keys():
-                    k = keyPresses[event.key]
+                elif event.type == pygame.KEYDOWN and key in keyPresses.keys():
+                    k = keyPresses[key]
                     keydowns[k].append(time.time())
 
             keyPressType = None
@@ -1833,7 +1842,6 @@ class BasicGame(object):
                 # TODO momchil this only takes into account one keypress per frame! and in fact it's the one with the lowest ASCII code I think
                 if lastKeyPress.index(1) in keyPresses.keys():
                     keyPressType = keyPresses[lastKeyPress.index(1)]
-                    #print keyPressType
 
 
 
@@ -1860,7 +1868,7 @@ class BasicGame(object):
                 keyPressType = keyPressPrev
 
             if keyPressType is not None:
-                self.actions.append((keyPressType, time.time()))
+                self.actions.append((keyPressType, time.time())) 
             collision_objects = set()
 
             event = None
