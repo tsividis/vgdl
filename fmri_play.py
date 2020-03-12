@@ -52,32 +52,68 @@ db = client['heroku_7lzprs54']
 game_names = [
     "vgfmri3_chase",
     "vgfmri3_helper",
-    "vgfmri3_sokoban",
-    "vgfmri3_aliens",
-    "vgfmri3_avoidgeorge",
     "vgfmri3_bait",
-    "vgfmri3_butterflies",
-    "vgfmri3_jaws",
     "vgfmri3_lemmings",
     "vgfmri3_plaqueAttack",
-    "vgfmri3_survivezombies",
     "vgfmri3_zelda"
+#    "vgfmri3_aliens",
+#    "vgfmri3_sokoban",
+#    "vgfmri3_avoidgeorge",
+#    "vgfmri3_butterflies",
+#    "vgfmri3_jaws",
+#    "vgfmri3_zelda"
 ]
 
+#real_names = [
+#    "Chase",
+#    "Helper",
+#    "Sokoban",
+#    "Aliens",
+#    "Avoid George",
+#    "Bait",
+#    "Butterflies",
+#    "Jaws",
+#    "Lemmings",
+#    "Plaque Attack",
+#    "Zombies",
+#    "Zelda"
+#]
+
 fake_names = [
-    "Chase",
-    "Helper",
-    "Sokoban",
-    "Aliens",
-    "Avoid George",
-    "Bait",
-    "Butterflies",
-    "Jaws",
-    "Lemmings",
-    "Plaque Attack",
-    "Zombies",
-    "Zelda"
+    "Questtide",
+    "Fuseville",
+    "Prime Origin",
+    "Dreams of Origins",
+    "Giants of Solitude",
+    "Deception Eagle"
 ]
+#Defeat of Logic
+#Dreamside
+#Defflight
+#Archeblast
+#Sacred Kingdom
+#Immortal Reaver
+#Embers and Hazard
+#Archeplan
+#Defmania
+#Blasterland
+#Ebon Sect
+#Alterblaze
+#Fuseville
+#Master Spyre
+#Scarletspace
+#Aeon and Whispers
+#Everkin
+#Questtide
+#Chronoline
+#Prime Origin
+#Dreams of Origins
+#Giants of Solitude
+#Deception Eagle
+#Survival and Tomorrow
+#Ghosttale
+#Lightdroid
+#Datastar
 
 # unicode ranges for each game -- see https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm
 # and https://en.wikipedia.org/wiki/Geometric_Shapes
@@ -88,12 +124,12 @@ alphabets = [
     range(9552,9559) + range(9568,9580),
     range(9451,9471),
     range(8926,8951),
-    range(8853,8875),
-    range(947,972),
-    range(9015,9039),
-    range(10675,10700),
-    range(10675,10700), # TODO new!
-    range(10675,10700), # TODO new!
+#    range(8853,8875),
+#    range(947,972),
+#    range(9015,9039),
+#    range(10675,10700),
+#    range(10675,10700), # TODO new!
+#    range(10675,10700), # TODO new!
 ]
 #alphabets = [
 #    [947, 947, 969, 968, 969, 968],
@@ -103,7 +139,7 @@ alphabets = [
 
 
 assert(len(game_names) == len(fake_names))
-#assert(len(alphabets) == len(game_names))
+assert(len(alphabets) == len(game_names))
 
 # run has blocks
 # each block is the same game, diff levels
@@ -116,7 +152,7 @@ prerun_interval = 1 # sec, how long for scanner to settle
 postrun_interval = 1 # sec, how long for HRF to settle
 nblocks = 1 # per run
 ninstances = 1 # per block
-duration = 20 # instance duration (sec)
+duration = 200 # instance duration (sec)
 interplay_interval = 2 # sec, how long to hold last screen
 interblock_interval = 2 # sec, how long to show game name
 
@@ -131,7 +167,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 0 # TODO 
+            g = 5 # TODO 
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -143,7 +179,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': i, # TODO actual
+                    'level_id': 11, # TODO actual
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }

@@ -1768,7 +1768,7 @@ class BasicGame(object):
 
             # log actual button presses & releases, for fMRI
             for event in pygame.event.get():
-                if event.type == pygame.KEYUP:
+                if event.type == pygame.KEYUP and event.key in keyPresses.keys():
                     k = keyPresses[event.key]
                     offset = time.time()
                     keyups[k].append(offset)
@@ -1778,7 +1778,7 @@ class BasicGame(object):
                     onset = keydowns[k][-1]
                     keyholds[k].append((onset, offset - onset))
 
-                elif event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN and event.key in keyPresses.keys():
                     k = keyPresses[event.key]
                     keydowns[k].append(time.time())
 
@@ -2160,7 +2160,7 @@ class VGDLSprite(object):
         if img is not None:
             self.draw_arrow = False
         self.lastrect = self.rect.copy()
-        self.symbol = None #symbol TODO momchil undo
+        self.symbol = symbol #TODO momchil 
         self.physicstype = physicstype or self.physicstype or GridPhysics
         self.physics = self.physicstype()
         self.physics.gridsize = size
