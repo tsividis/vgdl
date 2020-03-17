@@ -25,6 +25,10 @@ See README.md, though it's a bit incomplete. Here is how I got the code working 
 
 The [PyGame](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) guide might also be helpful.
 
+On NCF cluster, install conda using `module load` (see [CBS FAQ](http://cbs.fas.harvard.edu/science/core-facilities/neuroimaging/information-investigators/faq) and `module avail ncf`) and activate env with:
+
+    source activate pedro
+
 
 Mongo DB setup
 ------
@@ -36,6 +40,8 @@ Here is how I installed it on my Mac:
     pip install pymongo
     pip install fmri_requirements.txt
     brew install mongodb-community@4.2
+
+On NCF cluster, install using `module load`
 
 Start Mongo server with:
 
@@ -68,11 +74,23 @@ Should see `plays`, `subjects`, `regressors`, `runs`. Might have to clear them u
 
 Don't touch the `games` collection!
 
+Depending on how old the dump is, might have to also do:
+
+    db.plays.createIndex({ start_time: 1 })
+
+
 To edit games, use the [jsVGDL](https://github.com/yl3506/heroku_vgdl) repo (ask Yichen for access) -- 
 - Make sure in `app.js`, we are connecting to the local Mongo server (look for `mongoose.connect` around line 142, should connect to localhost)
 - follow readme.txt to start NodeJS server
 - go to `http://127.0.0.1:3000/admin` (p: cocosciiscool) to edit games
 - as sanity check, maybe stop mongo server and make sure it stops working (so we don't accidentally end up editing live games for the online experiment)
+
+
+On NCF cluster, start it on an interactive node (make sure to create appropriate directory with `mongod.conf`, which should also be configured properly -- see `mongod-ncf.conf` in this repo):
+
+    mongod --config /ncf/gershman/Lab/scripts/VGDL/mongodb/mongod.conf --fork 
+
+Type `hostname` in command line to figure out hostname and use it to connect to it from other nodes and jobs.
 
 
 fMRI Human Play
