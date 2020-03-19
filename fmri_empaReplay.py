@@ -2,11 +2,13 @@ from pymongo import MongoClient
 import pprint
 import random
 from datetime import datetime
+import time
 
 import json
 import sys
 import uuid
 import csv
+import socket
 from collections import defaultdict
 from vgdl import core
 from IPython import embed
@@ -14,7 +16,8 @@ from vgdl.main_agent import Agent
 
 import pygame
 
-# USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
+# USAGE: python fmri_empaReplay.py [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*]
+#        python fmri_empaReplay.py [subj_id] [game_name]
 # * - optional
 # copied from fmri_empaPlay.py
 
@@ -77,8 +80,22 @@ hyperparameter_sets = [
      }
 ]
 
-client = MongoClient('localhost', 27017)
+if 'omchil' in socket.gethostname():
+    # local 
+    client = MongoClient('localhost', 27017)
+else:
+    # cluster
+    client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+
 db = client['heroku_7lzprs54']
+
+def is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+    assert False
 
 if __name__ == '__main__':
     subj_id = sys.argv[1]
@@ -86,7 +103,11 @@ if __name__ == '__main__':
     query = {'subj_id': subj_id}
 
     if len(sys.argv) > 2:
-        query['run_id'] = int(sys.argv[2])
+        if is_int(sys.argv[2]):
+            query['run_id'] = int(sys.argv[2])
+        else:
+            assert len(sys.argv) == 3
+            query['game_name'] = sys.argv[2]
     if len(sys.argv) > 3:
         query['block_id'] = int(sys.argv[3])
     if len(sys.argv) > 4:
@@ -94,8 +115,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 5:
         query['play_id'] = int(sys.argv[5])
 
-    # TODO momchil make sure ordered
-    plays = db.plays.find(query)
+    plays = db.plays.find(query).sort('start_time')
 
     # TODO dedupe with fmri_empaPlay
 
@@ -110,6 +130,7 @@ if __name__ == '__main__':
         level_str = game['levels'][play['level_id']]
         assert game_str == play['game_str']
         assert level_str == play['level_str']
+        assert game['name'] == play['game_name']
 
         print 'EMPA playing subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
@@ -149,6 +170,7 @@ if __name__ == '__main__':
     # allows within-game transfer but no cross-game transfer
     # TODO note this assumes we simulate the entire subject at once
     #
+
     for game_name, level_game_pairs in all_pairs.iteritems():
         print 'Playing game ', game_name, ': ', len(level_game_pairs), ' instances'
 
@@ -163,11 +185,13 @@ if __name__ == '__main__':
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
 
         agent.record_fMRIRegressors = True
-        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, playback=True, movie_names=movie_names)
+        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, playback=True, movie_names=movie_names)
         assert len(curriculumRegressors) == len(regs)
 
         for i in range(len(curriculumRegressors)): # for each play
             reg = regs[i]
             reg['regressors'] = curriculumRegressors[i]
             reg['regressors']['theory'] = [] # TODO momchil W T F FIXME ASAP
+            reg['dt'] = datetime.now()
+            reg['ts'] = time.time()
             db.regressors.insert_one(reg)

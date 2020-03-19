@@ -1,0 +1,16 @@
+----------------
+--- Wed Mar 18 21:33:12 EDT 2020: Running fmri_empaReplay for subjects 1 in parallel
+----------------
+fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_vgfmri3_chase_.out --
+----------------
+--- Wed Mar 18 21:33:41 EDT 2020: Running fmri_empaReplay for subjects 1 in parallel
+----------------
+fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_vgfmri3_chase_48704092.out -- Submitted batch job 48704092
+----------------
+--- Wed Mar 18 21:34:16 EDT 2020: Running fmri_empaReplay for subjects 1 in parallel
+----------------
+fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_vgfmri3_chase_48704155.out -- Submitted batch job 48704155
+----------------
+--- Wed Mar 18 21:49:51 EDT 2020: Running fmri_empaReplay for subjects 1 in parallel
+----------------
+fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_vgfmri3_chase_48706437.out -- Submitted batch job 48706437

@@ -5,6 +5,7 @@ from datetime import datetime
 
 import json
 import sys
+import socket
 import csv
 from collections import defaultdict
 from vgdl import core
@@ -13,7 +14,13 @@ from IPython import embed
 # USAGE: python fmri_replay.py [subj_id] [run_id] [block_id*] [instance_id*] [play_id*]
 # * - optional
 
-client = MongoClient('localhost', 27017)
+if 'omchil' in socket.gethostname():
+    # local 
+    client = MongoClient('localhost', 27017)
+else:
+    # cluster
+    client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+
 db = client['heroku_7lzprs54']
 
 if __name__ == '__main__':
