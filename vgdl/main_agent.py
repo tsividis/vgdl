@@ -392,12 +392,11 @@ class Agent:
             os.makedirs(curriculumDir)
 
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
-        embed()
 
         loadedState = False
         loaded_n_level=0
         # embed()
-        if not playback and curriculumSaveFile in os.listdir(curriculumDir):
+        if curriculumSaveFile in os.listdir(curriculumDir):
             try:
                 print "found saved curriculum state"
                 loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
@@ -408,6 +407,13 @@ class Agent:
             except:
                 os.remove(curriculumDir+'/'+episodeSaveFile)
                 print "failed to load curriculum state. deleting corrupted file and starting from scratch"
+
+        if playback:
+            # momchil for playback, we give a completely new set of levels b/c we split up the inference into batches,
+            # so we have to break the load state logic a bit
+            # TODO not great
+            loaded_n_level = 0
+            loadedState = False
 
         j=0
         flexible_goals = False
@@ -463,6 +469,7 @@ class Agent:
             else:
                 first_time_playing_level = False
             quit_level = False
+
             while not win and not quit_level:# and i<15:
                 self.n_level = n_level
                 self.within_level_iteration = i
@@ -492,8 +499,7 @@ class Agent:
                 fullStateEpisodes[n_level] = allStatesEncountered
 
 
-                if not playback:
-                    self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
+                self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
 
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
@@ -519,7 +525,7 @@ class Agent:
                     if self.produce_printout:
                         print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
 
-                if not playback and self.saveMidEpisode:
+                if self.saveMidEpisode:
                     # ## if the episode ends, delete the mid-episode file we were saving.
                     episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
                     os.remove(curriculumDir+'/'+episodeSaveFile)

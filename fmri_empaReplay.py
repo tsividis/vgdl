@@ -18,6 +18,7 @@ import pygame
 
 # USAGE: python fmri_empaReplay.py [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*]
 #        python fmri_empaReplay.py [subj_id] [game_name]
+#        python fmri_empaReplay.py [subj_id] [run_id] [game_name]
 # * - optional
 # copied from fmri_empaPlay.py
 
@@ -109,7 +110,11 @@ if __name__ == '__main__':
             assert len(sys.argv) == 3
             query['game_name'] = sys.argv[2]
     if len(sys.argv) > 3:
-        query['block_id'] = int(sys.argv[3])
+        if is_int(sys.argv[3]):
+            query['block_id'] = int(sys.argv[3])
+        else:
+            assert len(sys.argv) == 4
+            query['game_name'] = sys.argv[3]
     if len(sys.argv) > 4:
         query['instance_id'] = int(sys.argv[4])
     if len(sys.argv) > 5:
