@@ -162,7 +162,7 @@ class Agent:
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
-        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=True, screensize=fMRI_screensize)
+        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=False, screensize=fMRI_screensize)
         self.rle = self.rleCreateFunc()
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 
@@ -394,7 +394,7 @@ class Agent:
         loadedState = False
         loaded_n_level=0
         # embed()
-        if curriculumSaveFile in os.listdir(curriculumDir):
+        if not playback and curriculumSaveFile in os.listdir(curriculumDir):
             try:
                 print "found saved curriculum state"
                 loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
@@ -488,7 +488,8 @@ class Agent:
                 fullStateEpisodes[n_level] = allStatesEncountered
 
 
-                self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
+                if not playback:
+                    self.saveCurriculumState(curriculumDir+'/'+curriculumSaveFile, episodeCompactStates)
 
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.record_states:
@@ -514,7 +515,7 @@ class Agent:
                     if self.produce_printout:
                         print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.total_game_steps, MAX_STEPS)
 
-                if self.saveMidEpisode:
+                if not playback and self.saveMidEpisode:
                     # ## if the episode ends, delete the mid-episode file we were saving.
                     episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
                     os.remove(curriculumDir+'/'+episodeSaveFile)

@@ -22,7 +22,7 @@ for subj in ${subjects[*]}; do
 
         # send the job to NCF
         #
-        sbatch_output=`sbatch -p ncf --mem 50000 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
+        sbatch_output=`sbatch -p ncf --mem 100000 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output
