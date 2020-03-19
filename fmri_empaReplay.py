@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
         # defaults from load_games.py 
         # python -m vgdl.load_games --game_name tiny_zelda
-        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
+        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='subj={}'.format(subj_id))
 
         agent.record_fMRIRegressors = True
         curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, playback=True, movie_names=movie_names)

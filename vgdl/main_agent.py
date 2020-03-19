@@ -390,7 +390,10 @@ class Agent:
         curriculumDir = 'savedCurricula'
         if curriculumDir not in os.listdir('.'):
             os.makedirs(curriculumDir)
+
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        embed()
+
         loadedState = False
         loaded_n_level=0
         # embed()
@@ -438,7 +441,8 @@ class Agent:
                     'interaction_change_flag': [],
                     'termination_change_flag': [],
                     'theoryDist': [],
-                    'theory': []
+                    'theory': [],
+                    'theory_str': []
                 }
 
             self.max_nodes = self.starting_max_nodes
@@ -1423,6 +1427,7 @@ class Agent:
                     self.logfMRIRegressor('spriteKL', spriteKL)
                     if hypothesis:
                         self.logfMRIRegressor('theory', copy.deepcopy(hypothesis))
+                        self.logfMRIRegressor('theory_str', hypothesis.display(as_string=True))
         else:
             spriteInduction(rle._game, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
             spriteInduction(rle._game, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
@@ -1636,6 +1641,7 @@ class Agent:
             self.logfMRIRegressor('interaction_change_flag', hypotheses[0].__dict__ != self.hypotheses[0].__dict__)
             self.logfMRIRegressor('termination_change_flag', set(hypotheses[0].terminationSet) != oldTerminationSet)
             self.logfMRIRegressor('theory', copy.deepcopy(hypotheses[0]))
+            self.logfMRIRegressor('theory_str', hypotheses[0].display(as_string=True))
 
         return hypotheses, theory_change_flag, effects
 
