@@ -211,3 +211,5 @@ if __name__ == '__main__':
             reg['dt'] = datetime.now()
             reg['ts'] = time.time()
             db.regressors.insert_one(reg)
+
+    print 'Completed!'

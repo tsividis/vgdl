@@ -240,7 +240,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 4 # TODO 
+            g = 0 # TODO 
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -252,7 +252,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': 0, # TODO actual
+                    'level_id': 2, # TODO actual
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }

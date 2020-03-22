@@ -38,3 +38,17 @@ fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_v
 --- Fri Mar 20 09:05:28 EDT 2020: Running fmri_empaReplay for subjects 1 in parallel
 ----------------
 fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_vgfmri3_chase_49034821.out -- Submitted batch job 49034821
+----------------
+--- Fri Mar 20 15:50:54 EDT 2020: Running fmri_empaReplay for subjects 1 in parallel
+----------------
+fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_vgfmri3_chase_49093200.out -- Submitted batch job 49093200
+----------------
+--- Sat Mar 21 10:32:57 EDT 2020: Running fmri_empaReplay for subjects 1 in parallel
+----------------
+fmri_empaReplay.sh for subject 1, game vgfmri3_sokoban: output/fmri_empaReplay_1_vgfmri3_sokoban_49196161.out -- Submitted batch job 49196161
+fmri_empaReplay.sh for subject 1, game vgfmri3_chase: output/fmri_empaReplay_1_vgfmri3_chase_49196165.out -- Submitted batch job 49196165
+fmri_empaReplay.sh for subject 1, game vgfmri3_helper: output/fmri_empaReplay_1_vgfmri3_helper_49196166.out -- Submitted batch job 49196166
+fmri_empaReplay.sh for subject 1, game vgfmri3_bait: output/fmri_empaReplay_1_vgfmri3_bait_49196167.out -- Submitted batch job 49196167
+fmri_empaReplay.sh for subject 1, game vgfmri3_lemmings: output/fmri_empaReplay_1_vgfmri3_lemmings_49196168.out -- Submitted batch job 49196168
+fmri_empaReplay.sh for subject 1, game vgfmri3_plaqueAttack: output/fmri_empaReplay_1_vgfmri3_plaqueAttack_49196169.out -- Submitted batch job 49196169
+fmri_empaReplay.sh for subject 1, game vgfmri3_zelda: output/fmri_empaReplay_1_vgfmri3_zelda_49196170.out -- Submitted batch job 49196170
