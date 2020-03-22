@@ -175,9 +175,21 @@ This will be used to generate independent variables for the fMRI analysis. The i
 
 It is important for EMPA to learn using the same state-action sequence as the humans -- otherwise, it might experience a totally different sequence of events and hence infer a totally different sequence of theories. Even if the asymptotic theory might be the same as that inferred by the human, the intermediate theories (which we will be using to analyze the brain data) will not.
 
-TODO
 
-Currently, this is broken.
+On the cluster: need to hack the `uuid` library. Run `source activate pedro` (assuming you've already created it as described above) and run in `ipython`:
+
+    import uuid
+    print uuid.__file__
+
+Then open the file (the .py, not .pyc file) and somewhere after line 487 add:
+
+    # momchil: b/c we had ppl play on Mac, there is a mismatch between this and the cluster
+    # on the Mac, when new sprites are created (e.g. on lemmings), _uuid_generate_time = None (see above)
+    # and uuid1() uses random to generate the UUIDs;
+    # on the cluster, _uuid_generate_time is not None, so we don't call random
+    # this results in a mismatch between action replay on the cluster vs. the Mac, which expects the exact same
+    # sequence of calls to random during sprite updates
+    _uuid_generate_time = None # TODO momchil hack
 
 
 Tips
