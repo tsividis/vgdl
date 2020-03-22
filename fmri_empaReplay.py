@@ -116,11 +116,22 @@ if __name__ == '__main__':
             assert len(sys.argv) == 4
             query['game_name'] = sys.argv[3]
     if len(sys.argv) > 4:
-        query['instance_id'] = int(sys.argv[4])
+        if is_int(sys.argv[4]):
+            query['instance_id'] = int(sys.argv[4])
+        else:
+            assert len(sys.argv) == 5
+            query['game_name'] = sys.argv[4]
     if len(sys.argv) > 5:
-        query['play_id'] = int(sys.argv[5])
+        if is_int(sys.argv[5]):
+            query['play_id'] = int(sys.argv[5])
+        else:
+            assert len(sys.argv) == 6
+            query['game_name'] = sys.argv[5]
 
     plays = db.plays.find(query).sort('start_time')
+
+    print 'Running fmri_empaReplay with query:'
+    print query
 
     # TODO dedupe with fmri_empaPlay
 

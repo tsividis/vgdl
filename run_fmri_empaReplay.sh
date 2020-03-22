@@ -10,11 +10,16 @@ source activate pedro
 # TODO string coupling with main_agent.py 
 rm savedCurricula/curriculum_${2}_*_subj=${1}*
 
-# run separately for each run, otherwise we OOM
-python fmri_empaReplay.py ${1} 1 ${2}
-python fmri_empaReplay.py ${1} 2 ${2}
-python fmri_empaReplay.py ${1} 3 ${2}
-python fmri_empaReplay.py ${1} 4 ${2}
-python fmri_empaReplay.py ${1} 5 ${2}
-python fmri_empaReplay.py ${1} 6 ${2}
+# run separately for each run, block, and instance, otherwise we OOM (notice most of them will be empty for given game)
+for run in {1..6}
+do
+    for block in {0..2}
+    do
+        for instance in {0..2}
+        do
+            python fmri_empaReplay.py ${1} ${run} ${block} ${instance} ${2}
+        done
+    done
+done
+
 
