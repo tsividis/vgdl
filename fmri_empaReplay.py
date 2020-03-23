@@ -162,7 +162,12 @@ if __name__ == '__main__':
             all_pairs[game['name']] = [] 
             all_regressors[game['name']] = [] 
             all_movie_names[game['name']] = [] 
-        all_pairs[game['name']].append((play['game_str'], play['level_str'], states, keystates)) # TODO momchil OOM? 
+
+        video_name = 's={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        print 'video_name = ', video_name
+
+        # this is the money that gets passed to playCurriculum
+        all_pairs[game['name']].append((play['game_str'], play['level_str'], states, keystates, video_name)) # TODO momchil OOM? 
 
         # pre-populate regressors object for each play with identifier info
         # extract the regressors later in Agent
@@ -201,7 +206,7 @@ if __name__ == '__main__':
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='subj={}'.format(subj_id))
 
         agent.record_fMRIRegressors = True
-        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, playback=True, movie_names=movie_names)
+        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, playback=True, movie_names=movie_names)
         assert len(curriculumRegressors) == len(regs)
 
         for i in range(len(curriculumRegressors)): # for each play

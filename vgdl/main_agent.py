@@ -359,6 +359,7 @@ class Agent:
         episodes = []
         allEffectsEncountered = []
         self.make_movie = make_movie
+        self.video_name = None
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
@@ -428,7 +429,7 @@ class Agent:
 
             if playback:
                 # fMRI playback from human play
-                (self.gameString, self.levelString, self.playback_states, self.playback_keystates) = level_game
+                (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name) = level_game
             else:
                 (self.gameString, self.levelString) = level_game
                 self.playback_states = None # TODO momchil undo
@@ -487,7 +488,7 @@ class Agent:
 
                 if self.make_movie:
                     self.statesEncountered = statesEncountered
-                    self.makeImages()
+                    #self.makeImages() # TODO momchil why is this necessary when we call makeMovie which does the same thing? also this doesn't really work it seems
                 
                 if self.record_video_info:
                     allStatesEncountered.extend(statesEncountered)
@@ -635,12 +636,12 @@ class Agent:
         game_name_to_print_to_video = self.gameFilename
 
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10, video_name=self.video_name)
 
     def makeMovie(self, play_movie=False, regressors=None):
 
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize)
+            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
 
         # TODO momchil fix -- right now, this uses the wrong images; also playGame already creates a video 
         '''

@@ -386,7 +386,7 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -403,7 +403,7 @@ class VGDLParser(object):
             #g.startGame(headless,persist_movie)
         else:
             if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors)
+                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name)
             else:
                 win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -1486,7 +1486,7 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, regressors=None):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, regressors=None, video_name=None):
         """
         Main method to display a previously-run game.
         """
@@ -1610,7 +1610,10 @@ class BasicGame(object):
             self.playback_index += 1
 
         if(persist_movie):
-            self.video_file = "./videos/" +  str(self.uiud) + ".mp4"
+            if video_name:
+                self.video_file = "./videos/" + video_name + "_" + str(self.uiud) + ".mp4"
+            else:
+                self.video_file = "./videos/" +  str(self.uiud) + ".mp4"
             #call = ["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ]
             call = ["ffmpeg -r 30 -f image2  -i ", tmpl, " -vcodec libx264 -crf 25  -pix_fmt yuv420p ", self.video_file]
             call = ' '.join(call) 
