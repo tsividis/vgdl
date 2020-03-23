@@ -157,7 +157,7 @@ assert(len(alphabets) == len(game_names))
 # each instance is the same level
 # instances have plays of the same level, repeated until timeout
 
-# TODO recalc timings
+# total TRs = 283 TRs = 566 seconds
 
 nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
 prerun_interval = 10 # = 10 sec, how long for scanner to settle

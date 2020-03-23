@@ -191,8 +191,11 @@ if __name__ == '__main__':
     # allows within-game transfer but no cross-game transfer
     # TODO note this assumes we simulate the entire subject at once
     #
+    didSomething = False
 
     for game_name, level_game_pairs in all_pairs.iteritems():
+        didSomething = True
+
         print 'Playing game ', game_name, ': ', len(level_game_pairs), ' instances'
 
         regs = all_regressors[game_name] 
@@ -217,4 +220,7 @@ if __name__ == '__main__':
             reg['ts'] = time.time()
             db.regressors.insert_one(reg)
 
-    print 'Completed!'
+    if didSomething:
+        print 'Completed!'
+    else:
+        print 'Nothing to do...'
