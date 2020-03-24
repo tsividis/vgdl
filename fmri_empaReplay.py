@@ -152,6 +152,7 @@ if __name__ == '__main__':
 
         print 'EMPA playing subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
+        # get states
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
