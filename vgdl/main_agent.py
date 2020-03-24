@@ -162,7 +162,7 @@ class Agent:
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
-        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=True, screensize=fMRI_screensize)
+        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=False, screensize=fMRI_screensize)
         self.rle = self.rleCreateFunc()
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 
@@ -173,6 +173,7 @@ class Agent:
             assert self.rle._game.playback_index == 0
             assert len(self.rle._game.playback_states) == len(self.rle._game.playback_keystates)
             # important to set the initial state now -- we getObjects() to initialize the theories in replayEpisode, and the UUIDs of the objects should match up, e.g. for proper event handling
+            # important to use default colors -- EMPA relies on colors for stuff, e.g. to detect walls; kinda hacky but let's do that for now
             self.rle._game.setFullState(self.rle._game.playback_states[0], cheap=False, default_colors=True)
             self.rle._game.playback_index += 1
         return

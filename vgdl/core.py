@@ -386,7 +386,7 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None, default_colors=False):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -404,7 +404,7 @@ class VGDLParser(object):
        # else:
         # TODO momchil fMRI playback on cluster (to create movie) needs to be headless
         if playback_states:
-            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name)
+            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors)
         else:
             win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -1489,7 +1489,7 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, regressors=None, video_name=None):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False):
         """
         Main method to display a previously-run game.
         """
@@ -1550,7 +1550,7 @@ class BasicGame(object):
 
             self._clearAll()
             try:
-                self.setFullState(self.playback_states[self.playback_index])
+                self.setFullState(self.playback_states[self.playback_index], default_colors=default_colors)
                 current_state = self.playback_states[self.playback_index]
             except:
                 print "playback is failing"

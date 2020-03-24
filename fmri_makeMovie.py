@@ -13,6 +13,7 @@ from collections import defaultdict
 from vgdl import core
 from IPython import embed
 from vgdl.main_agent import Agent
+import cPickle, cloudpickle
 
 import pygame
 
@@ -103,6 +104,10 @@ if __name__ == '__main__':
         assert db.regressors.count(q) == 1, 'Too many regressors!'
         reg = db.regressors.find_one(q)
 
+        # load theories from disk
+        with open(reg['regressors']['theory_filename'], 'r') as f:
+            reg['regressors']['theory'] = cloudpickle.load(f)
+
         # get states
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
@@ -116,7 +121,8 @@ if __name__ == '__main__':
         print 'video_name = ', video_name
 
         # in lieu of makeMovie() from main_agent.py
+        # use default colors (not the ones the subject saw) b/c that's what EMPA sees
         core.VGDLParser.playGame(play['game_str'], play['level_str'], states, \
-            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+game['name'], padding=10, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name)
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+game['name'], padding=10, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True)
 
 

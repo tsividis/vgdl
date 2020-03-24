@@ -8,11 +8,13 @@ import json
 import sys
 import uuid
 import csv
+import os
 import socket
 from collections import defaultdict
 from vgdl import core
 from IPython import embed
 from vgdl.main_agent import Agent
+import cPickle, cloudpickle
 
 import pygame
 
@@ -80,6 +82,13 @@ hyperparameter_sets = [
      'novelty_second_alpha': 10,
      }
 ]
+
+
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
+
 
 if 'omchil' in socket.gethostname():
     # local 
@@ -217,10 +226,27 @@ if __name__ == '__main__':
 
         for i in range(len(curriculumRegressors)): # for each play
             reg = regs[i]
+
+            # prepare regressors for insert into Mongo
             reg['regressors'] = curriculumRegressors[i]
-            reg['regressors']['theory'] = [] # TODO momchil W T F FIXME ASAP
             reg['dt'] = datetime.now()
             reg['ts'] = time.time()
+
+            # special care for theory which does not serialize into BSON for Mongo
+            # use cloudpickle instead & save on disk TODO find better option
+
+            theoriesDir = 'theories'
+            if theoriesDir not in os.listdir('.'):
+                os.makedirs(theoriesDir)
+
+            filename = os.path.join(theoriesDir, 'theory_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+            with open(filename, 'wb') as f:
+                cloudpickle.dump(reg['regressors']['theory'], f)
+
+            reg['regressors']['theory_filename'] = filename # remove from regressor object
+            reg['regressors']['theory'] = [] # remove from regressor object
+
+
             db.regressors.insert_one(reg)
 
     if didSomething:
