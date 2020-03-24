@@ -88,6 +88,7 @@ else:
     # cluster
     client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
 
+
 db = client['heroku_7lzprs54']
 
 def is_int(s):
@@ -127,6 +128,8 @@ if __name__ == '__main__':
         else:
             assert len(sys.argv) == 6
             query['game_name'] = sys.argv[5]
+    if len(sys.argv) > 6:
+        query['game_name'] = sys.argv[6]
 
     plays = db.plays.find(query).sort('start_time')
 
