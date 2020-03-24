@@ -88,7 +88,6 @@ else:
     # cluster
     client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
 
-
 db = client['heroku_7lzprs54']
 
 def is_int(s):

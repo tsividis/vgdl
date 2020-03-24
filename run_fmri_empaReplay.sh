@@ -20,7 +20,7 @@ do
             echo ==== run_fmri_empaReplay: subj ${1}, run $run, block $block, instance $instance, game ${2}
 
             # get # of plays with given run, block, instance
-            out=`mongo heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${2}'})"`
+            out=`mongo --host holy7c22306.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${2}'})"`
 
             echo mongo out -- $out
 
@@ -35,8 +35,10 @@ do
 
             for (( play=0; play<$nplays; play++ ))
             do
-                echo ==== run_fmri_empaReplay: subj ${1}, run $run, block $block, instance $instance, play $play, game ${2}
-                python fmri_empaReplay.py ${1} ${run} ${block} ${instance} ${play} ${2}
+                echo ---- run_fmri_empaReplay: subj ${1}, run $run, block $block, instance $instance, play $play, game ${2}
+                cmd="python fmri_empaReplay.py ${1} ${run} ${block} ${instance} ${play} ${2}"
+                echo ${cmd}
+                out=`${cmd}`
             done
         done
     done

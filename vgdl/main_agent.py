@@ -162,7 +162,7 @@ class Agent:
     def initializeEnvironment(self):
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
-        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=False, screensize=fMRI_screensize)
+        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=True, screensize=fMRI_screensize)
         self.rle = self.rleCreateFunc()
         self.rle._game.spriteUpdateDict = self.spriteUpdateDict
 
@@ -641,7 +641,7 @@ class Agent:
     def makeMovie(self, play_movie=False, regressors=None):
 
         VGDLParser.playGame(self.gameString, self.levelString, self.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
 
         # TODO momchil fix -- right now, this uses the wrong images; also playGame already creates a video 
         '''

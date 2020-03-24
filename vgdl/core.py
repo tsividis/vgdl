@@ -398,14 +398,15 @@ class VGDLParser(object):
             g.playback_states = playback_states
         if screensize is not None:
             g.screensize = screensize
-        if(headless):
-            g.startGameExternalPlayer(headless, persist_movie, movie_dir)
-            #g.startGame(headless,persist_movie)
+       # if(headless):
+       #     g.startGameExternalPlayer(headless, persist_movie, movie_dir)
+       #     #g.startGame(headless,persist_movie)
+       # else:
+        # TODO momchil fMRI playback on cluster (to create movie) needs to be headless
+        if playback_states:
+            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name)
         else:
-            if playback_states:
-                g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name)
-            else:
-                win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
+            win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
         return g
 
@@ -922,8 +923,10 @@ class BasicGame(object):
         if(headless):
             assert screen is None
             os.environ["SDL_VIDEODRIVER"] = "dummy"
+            pygame.init() # momchil still need to init pygame, e.g. to make fonts work TODO why not before?
             pygame.display.init()
-            self.screen = pygame.display.set_mode((1,1))
+            #self.screen = pygame.display.set_mode((1,1)) # momchil: use size, o/w video gen breaks
+            self.screen = pygame.display.set_mode(size)
             self.background = pygame.Surface(size)
         else:
             from ontology import LIGHTGRAY
@@ -2085,7 +2088,7 @@ class BasicGame(object):
 
     def startGameExternalPlayer(self, headless, persist_movie, movie_dir):
         print "in startgameexternalplayer"
-        embed()
+        #embed()
         self._initScreen(self.screensize, headless)
         pygame.display.flip()
         self.reset()
