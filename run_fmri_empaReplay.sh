@@ -38,7 +38,7 @@ do
                 echo ---- run_fmri_empaReplay: subj ${1}, run $run, block $block, instance $instance, play $play, game ${2}
                 cmd="python fmri_empaReplay.py ${1} ${run} ${block} ${instance} ${play} ${2}"
                 echo ${cmd}
-                out=`${cmd}`
+                eval ${cmd}
             done
         done
     done

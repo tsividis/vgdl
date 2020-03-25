@@ -924,8 +924,8 @@ class Agent:
                     action = 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
-                    print 'HYPOTHESIS' # momchil
-                    hypotheses[0].display()
+                    #print 'HYPOTHESIS' # momchil
+                    #hypotheses[0].display()
 
                     quitting = True
                     if self.total_game_steps+steps > MAX_STEPS:
@@ -960,8 +960,8 @@ class Agent:
                     plannerNodes = p.total_nodes_opened if i==0 else 0
                     hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                         run_induction = not flexible_goals)
-                    print 'HYPOTHESIS 2' # momchil
-                    hypotheses[0].display()
+                    #print 'HYPOTHESIS 2' # momchil
+                    #hypotheses[0].display()
 
                     ## For an incomplete ablation
                     if self.total_game_steps+steps > MAX_STEPS:
@@ -1183,13 +1183,13 @@ class Agent:
             plannerNodes = 0
             hypotheses, theory_change_flag, effects = self.executeStep(action, self.hypotheses, statesEncountered, compactStates, plannerNodes,
                 run_induction = not flexible_goals)
-            print 'HYPOTHESIS 4' # momchil
+            #print 'HYPOTHESIS 4' # momchil
             # TODO momchil figure out how to get multiple hypotheses
             #print len(hypotheses)
             #if len(hypotheses) > 1:
             #    print 'snathoeusnoaheusn'
             #    embed()
-            hypotheses[0].display()
+            #hypotheses[0].display()
 
             self.rle._game.nextPositions = {}
             for k, v in self.rle._game.all_objects.iteritems():

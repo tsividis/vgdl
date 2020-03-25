@@ -221,7 +221,7 @@ if __name__ == '__main__':
         agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='subj={}'.format(subj_id))
 
         agent.record_fMRIRegressors = True
-        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, playback=True, movie_names=movie_names)
+        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, playback=True, movie_names=movie_names)
         assert len(curriculumRegressors) == len(regs)
 
         for i in range(len(curriculumRegressors)): # for each play
