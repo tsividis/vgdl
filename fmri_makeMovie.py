@@ -1,3 +1,5 @@
+# create movie after fmri_empaReplay has been run, to show regressors & theory plotted on top of actual game play
+
 from pymongo import MongoClient
 import pprint
 import random

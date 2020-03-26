@@ -1720,7 +1720,7 @@ class BasicGame(object):
         self.movement_options = {}
         self.sprite_appearance_predictions = {}
         allStates = [self.getFullState()] # important for replay
-        allKeystates = [None] # log keys pre-update & event handling (states are logged after)
+        allKeystates = [None] # log keys pre-update & event handling (states are logged after); this is the dummy keystate corresponding to the initial stote
 
         # for k,v in self.alt_sprite_constr.items():
         #     for subclass in v[2]:

@@ -79,6 +79,7 @@ Don't touch the `games` collection!
 Depending on how old the dump is, might have to also do:
 
     db.plays.createIndex({ start_time: 1 })
+    db.createCollection('plays_post')
 
 
 To edit games, use the [jsVGDL](https://github.com/yl3506/heroku_vgdl) repo (ask Yichen for access) -- 
@@ -197,6 +198,14 @@ Then open the file (the .py, not .pyc file) and somewhere after line 487 add:
     # this results in a mismatch between action replay on the cluster vs. the Mac, which expects the exact same
     # sequence of calls to random during sprite updates
     _uuid_generate_time = None # TODO momchil hack
+
+
+Other scripts
+----
+
+`fmri_makeMovie.py` 
+
+`fmri_playsPostproc.py`
 
 
 Tips
