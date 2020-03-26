@@ -38,6 +38,20 @@ db = client['heroku_7lzprs54']
 
 fMRI_screensize = (800,580) # TODO dedupe momchil
 
+def print_keystates(keystates):
+    ts0 = keystates[1]['ts']
+    for t in range(len(keystates)):
+        if t == 0:
+            continue
+        keystate = keystates[t]['keystate']
+        kk = []
+        for key in range(len(keystate)):
+            if keystate[key]:
+                kk.append(key)
+        print str(t) + ' -- ' + str(keystates[t]['ts'] - ts0) + ': ' + str(kk)
+
+
+
 def is_int(s):
     try:
         int(s)
@@ -148,14 +162,69 @@ if __name__ == '__main__':
             keydowns[k] = []
             keyholds[k] = []
 
+        # compute keypresses first
+        # b/c of fMRI continuoun pressing shenanighans, those are the ones that actally resulted in movement, so confounded with visual
+        # highly advised not to use
+        #
         for t in range(len(keystates)): # for each state / pygame frame
             if keystates[t] is None:
                 assert t == 0  # first one is blank
                 continue
 
             keystate = keystates[t]['keystate']
-            last_keystate = keystates[t - 1]['keystate'] if t - 1 > 0 else None
-            next_keystate = keystates[t + 1]['keystate'] if t + 1 < len(keystates) else None
+            for key in range(len(keystate)): # for each key (potentially pressed) TODO only iterate over relevant keys
+                if key not in keyNames.keys():
+                    continue
+                k = keyNames[key] # assumes fMRI_remap was used; see startGame() in core.py
+
+                # update keypresses
+                if keystate[key]:
+                    keypresses[k].append(keystates[t]['ts'])
+
+
+        #print '---------- BEFORE:'
+        #print_keystates(keystates)
+
+    
+        # now, extend every key press into the next 0.15 s frames...
+        # b/c fMRI continuous key press chicanery in startGame(), we end up with gaps in the logged keys
+        # i.e. there are lots of frames when a key was being held but nothing was logged, so we can't reconstruct keyholds properly...
+        # only an issue for subject 1 really
+        for t in reversed(range(len(keystates))): # for each state / pygame frame
+            if keystates[t] is None:
+                assert t == 0  # first one is blank
+                continue
+
+            keystate = keystates[t]['keystate']
+            for key in range(len(keystate)): # for each key (potentially pressed) TODO only iterate over relevant keys
+                if key not in keyNames.keys():
+                    continue
+
+                if not keystate[key]:
+                    tp = t - 1
+                    while tp > 0 and keystates[t]['ts'] - keystates[tp]['ts'] <= 0.15:
+                        if keystates[tp]['keystate'][key]:
+                            keystates[t]['keystate'][key] = True
+                            break
+                        tp -= 1
+
+
+        #print '\n\n\n\n ----------- AFTER:'
+        #print_keystates(keystates)
+
+
+        # compute keyholds based on the repeated keypresses
+        # makes it more accurate (see GLM 1)
+        # all of this is b/c we screwed up subj #1 ...
+        #
+        for t in range(len(keystates)): # for each state / pygame frame
+            if keystates[t] is None:
+                assert t == 0  # first one is blank
+                continue
+
+            keystate = keystates[t]['keystate']
+            last_keystate = keystates[t - 1]['keystate'] if t - 1 > 0 else None 
+
             for key in range(len(keystate)): # for each key (potentially pressed) TODO only iterate over relevant keys
                 if key not in keyNames.keys():
                     continue
@@ -168,7 +237,7 @@ if __name__ == '__main__':
                 if keystate[key] and (last_keystate is None or not last_keystate[key]):
                     # key just got pressed
                     # timestamp between frames, unless it's the first frame
-                    ts = keystates[t]['ts'] if last_keystate is None else (keystates[t]['ts'] + keystates[t - 1]['ts']) / 2.0
+                    ts = keystates[t]['ts'] if t - 1 == 0 else (keystates[t]['ts'] + keystates[t - 1]['ts']) / 2.0
                     keydowns[k].append(ts)
 
                 if not keystate[key] and last_keystate is not None and last_keystate[key]:

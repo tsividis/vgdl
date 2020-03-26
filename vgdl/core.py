@@ -1779,6 +1779,7 @@ class BasicGame(object):
             pygame.event.pump()
 
             # get action pressed
+            # TODO momchil don't use this -- you could skip key presses between calls -- see docs https://www.pygame.org/docs/ref/key.html
             self.keystate = pygame.key.get_pressed()
 
             # optionally remap keys
@@ -1824,6 +1825,7 @@ class BasicGame(object):
                     lastKeyPressTime = self.time
 
             # momchil: slow down initial key press for fMRI
+            # subsequent presses too
             if not disableContinuousKeyPress and not self.playback_states: # allow key hold
 
                 if self.keystate != emptyKeyState: # key pressed
@@ -1848,7 +1850,6 @@ class BasicGame(object):
                 # TODO momchil this only takes into account one keypress per frame! and in fact it's the one with the lowest ASCII code I think
                 if lastKeyPress.index(1) in keyPresses.keys():
                     keyPressType = keyPresses[lastKeyPress.index(1)]
-
 
 
             # # load/save handling
