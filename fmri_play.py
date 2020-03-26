@@ -340,6 +340,7 @@ if __name__ == '__main__':
     else:
         remap_keys = None 
 
+
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
     wins, scores = VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)

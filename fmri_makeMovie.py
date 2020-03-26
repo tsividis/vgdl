@@ -23,8 +23,8 @@ import pygame
 # * - optional
 # copied from fmri_empaReplay.py
 
-if 'omchil' in socket.gethostname():
-    # local 
+if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
+    # local on my Mac, or on a login / VDI node
     client = MongoClient('localhost', 27017)
 else:
     # cluster
@@ -102,7 +102,10 @@ if __name__ == '__main__':
         print q
         print db.regressors.count(q)
         assert db.regressors.count(q) == 1, 'Too many regressors!'
-        reg = db.regressors.find_one(q)
+        regs = db.regressors.find(q).sort('ts', -1)
+        reg = None
+        for reg in regs:
+            break # just take the latest one
 
         # load theories from disk
         with open(reg['regressors']['theory_filename'], 'r') as f:
