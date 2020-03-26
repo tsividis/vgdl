@@ -94,6 +94,11 @@ On NCF cluster, start it on an interactive node (make sure to create appropriate
 
 Type `hostname` in command line to figure out hostname and use it to connect to it from other nodes and jobs.
 
+Btw seems like the `ncf` and `ncf_interact` nodes are on a different network from the `ncflogin` and `ncfood` (VDI) nodes, so you probs need to run a separate mongo instance there, e.g. to generate the videos:
+
+    mongod --config /ncf/gershman/Lab/scripts/VGDL/mongodb_2/mongod_2.conf --fork 
+
+Then `mongodump` from a `ncf_interact` node and then `mongorestore` on the VDI node.
 
 fMRI Human Play
 -----

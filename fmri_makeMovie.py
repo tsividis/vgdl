@@ -117,7 +117,7 @@ if __name__ == '__main__':
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
 
-        video_name = 's={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'real_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
 
         # in lieu of makeMovie() from main_agent.py
