@@ -16,6 +16,8 @@ from vgdl import core
 from IPython import embed
 from vgdl.main_agent import Agent
 import cPickle, cloudpickle
+import os
+import glob
 
 import pygame
 
@@ -103,7 +105,7 @@ if __name__ == '__main__':
         q = {'play_key': play['_id']}
         print q
         print db.regressors.count(q)
-        assert db.regressors.count(q) == 1, 'Too many regressors!'
+        assert db.regressors.count(q) == 1, 'Too many regressors!' 
         regs = db.regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
@@ -124,6 +126,12 @@ if __name__ == '__main__':
 
         video_name = 'real_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
+
+        ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
+        if len(ls) > 0:
+            print '....found video files with prefix; skipping this one'
+            print ls
+            continue
 
         # in lieu of makeMovie() from main_agent.py
         # use default colors (not the ones the subject saw) b/c that's what EMPA sees

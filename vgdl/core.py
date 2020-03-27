@@ -115,6 +115,7 @@ def plotRegressor(regressors, name, max_time, pos, screen, color=white):
     times = [r[1] for r in regressors[name]]
     xs = range(1, max_time + 1)
     ys = [float(regressors[name][times.index(x)][0]) * 10 if x in times else 0 for x in xs]
+    ys = list(np.nan_to_num(ys))
     points = [(pos[0] + xs[i], pos[1] - ys[i]) for i in range(len(xs))]
     points.insert(0, pos)
     dispText(name, 8, (pos[0] - 50, pos[1] - 7), screen, color=color)
