@@ -13,6 +13,7 @@ import csv
 import socket
 from collections import defaultdict
 from vgdl import core
+from vgdl.core import VGDLParser
 from vgdl.core import keyPresses as keyNames
 from IPython import embed
 from vgdl.main_agent import Agent
@@ -116,7 +117,7 @@ def playsPostproc(subj_id):
         q = {'play_key': play['_id']}
         print q
         print db.plays_post.count(q)
-        #assert db.plays_post.count(q) == 0, 'Too many regressors!'
+        assert db.plays_post.count(q) == 0, 'Too many regressors!'
         if db.plays_post.count(q) > 0:
             print '..........skipping: already computed'
             assert db.plays_post.count(q) == 1, 'Too many regressors!'
@@ -145,11 +146,135 @@ def playsPostproc(subj_id):
             'type': 'fmri_playsPostproc'
         }
 
+        # 
+        # extract visual & sprite stuff recorded in the states 
+        #
+
+        # level size
+        lines = [l for l in play['level_str'] if len(l) > 0] # from VGDLGame.buildLevel()
+        width = len(lines[0])
+        height = len(lines)
+        play_post['grid_size'] = width * height
+
+        g = VGDLParser().parseGame(play['game_str'])
+
+        # other visual regressors
+        timestamps = []
+        new_sprites = []
+        killed_sprites = []
+        sprites = []
+        non_walls = []
+        avatar_moved = []
+        moved = []
+        movable = []
+        collisions = []
+        effects = []
+        sprite_groups = []
+        changed = []
+
+        sprite_poss = [] # sprite positions in each state, as UUID => x, y
+        grids = [] # grid squares in each state, as (x,y) => UUID
+        for t in range(len(states)):
+            state = states[t]
+            timestamps.append(state['ts'])
+            new_sprites.append(state['new_spritesLen'])
+            if t > 0 and states[t]['kill_listLen'] != states[t - 1]['kill_listLen']:
+                # b/c in fMRI mode we keep tally of all killed sprites, need to take delta here -- see _clearAll in core.py (which does not get called in fMRI mode, to be consistent with _performAction())
+                assert states[t]['kill_listLen'] > states[t - 1]['kill_listLen']
+                killed_sprites.append(states[t]['kill_listLen'] - states[t - 1]['kill_listLen'])
+            else:
+                killed_sprites.append(0)
+            sprites.append(len(state['list']))
+            collisions.append(state['collision_effLen'])
+            effects.append(state['effectListLen'])
+            sprite_groups.append(state['sprite_groupsLen'])
+
+            # extract stuff from sprites themselves
+            #
+
+            nw = 0 # non wall count
+            mv = 0 # moved sprites count
+            amv = 0 # avatar moved?
+            mb = 0 # movable sprites
+
+            sprite_pos = {} # UUID => (x,y)
+            # see setFullState() in core.py
+            #print ' ------------------------ ', t
+            for key, ss in state['objects'].iteritems():
+                # key = sprite group, e.g. 'wall'
+                if key != 'wall':
+                    nw += len(ss)
+                for pos, attrs in ss.iteritems():
+                    # pos is str, e.g. '(140, 40)'
+                    sprite_pos[attrs['ID']] = (attrs['x'], attrs['y'])
+
+                    # see if sprite is movable
+                    sclass = g.sprite_constr[key][0]
+                    if not sclass.is_static:
+                        mb += 1
+
+                    # see if sprite moved from last frame
+                    if t > 0 and attrs['ID'] in sprite_poss[t - 1] and sprite_poss[t - 1][attrs['ID']] != sprite_pos[attrs['ID']]:
+                        #print key, ' moved from ', sprite_poss[t - 1][attrs['ID']], ' to ', sprite_pos[attrs['ID']]
+                        mv += 1
+                        if key == 'avatar':
+                            amv = 1
+            sprite_poss.append(sprite_pos)
+
+            non_walls.append(nw)
+            moved.append(mv)
+            avatar_moved.append(amv)
+            movable.append(mb)
+
+            # extract stuff that depends on sprite drawing order
+            #
+
+            ch = 0 # changed grid squares
+
+            grid = {}
+            for key in g.sprite_order: # iterate over sprites in order in which they are drawn (see _drawAll() and __iter__() in BasicGame)
+                if key not in state['objects']:
+                    # abstract type
+                    continue
+                for pos, attrs in state['objects'][key].iteritems():
+                    grid[pos] = attrs['ID']
+            grids.append(grid)
+
+            if t > 0: # in first frame, don't count any changes; let that be absorbed by play start regressor, who knows what else is going on; also this will dominate => not good (same for new sprites)
+                # count squares that are now occupied by different sprites
+                for pos, ID in grid.iteritems():
+                    # see if topmost sprite in pos changed from last frame
+                    if pos not in grids[t - 1] or grids[t - 1][pos] != grid[pos]:
+                        ch += 1
+                # don't forget squares that are no longer occupied by sprites!
+                for pos, ID in grids[t - 1].iteritems():
+                    if pos not in grid:
+                        ch += 1
+                    
+            changed.append(ch)
+
+        new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
+
+        play_post['timestamps'] = timestamps
+        play_post['new_sprites'] = new_sprites
+        play_post['killed_sprites'] = killed_sprites
+        play_post['sprites'] = sprites
+        play_post['collisions'] = collisions
+        play_post['effects'] = effects
+        play_post['sprite_groups'] = sprite_groups
+        play_post['non_walls'] = non_walls 
+        play_post['avatar_moved'] = avatar_moved 
+        play_post['moved'] = moved
+        play_post['movable'] = movable 
+        play_post['changed'] = changed 
+
+        #
         # extract keypresses similar to keyholds, etc already recorded in plays (see startGame() in core.py)
         # also extract duplicates of keyholds, etc based on key presses
         # the purpose is to:
         # 1) sanity check key presses against keydowns, etc. recorded during game play (they're different pygame events)
         # 2) generate keyholds boxcars for subj #1 when we still didn't have proper keyhold logging
+        #
 
         keypresses = {}
         keyups = {}
@@ -272,6 +397,6 @@ def playsPostproc(subj_id):
 if __name__ == '__main__':
     subj_id = sys.argv[1]
 
-    playsPostproc(subj_id)
-    #for s in range(4,9):
-    #    playsPostproc(str(s))
+    #playsPostproc(subj_id)
+    for s in range(1,9):
+        playsPostproc(str(s))
