@@ -60,9 +60,8 @@ def is_int(s):
         return False
     assert False
 
-if __name__ == '__main__':
-    subj_id = sys.argv[1]
 
+def playsPostproc(subj_id):
     query = {'subj_id': subj_id}
 
     if len(sys.argv) > 2:
@@ -267,3 +266,12 @@ if __name__ == '__main__':
 
         db.plays_post.insert_one(play_post)
 
+
+
+
+if __name__ == '__main__':
+    subj_id = sys.argv[1]
+
+    playsPostproc(subj_id)
+    #for s in range(4,9):
+    #    playsPostproc(str(s))
