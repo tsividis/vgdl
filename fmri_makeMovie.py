@@ -105,7 +105,7 @@ if __name__ == '__main__':
         q = {'play_key': play['_id']}
         print q
         print db.regressors.count(q)
-        assert db.regressors.count(q) == 1, 'Too many regressors!' 
+        #assert db.regressors.count(q) == 1, 'Too many regressors!' 
         regs = db.regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
