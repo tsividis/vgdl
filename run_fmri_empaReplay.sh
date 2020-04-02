@@ -8,7 +8,7 @@ echo running empa replay for subj ${1}, game ${2}
 source activate pedro
 
 # TODO string coupling with main_agent.py 
-rm savedCurricula/curriculum_${2}_*_subj=${1}*
+#rm savedCurricula/curriculum_${2}_*_subj=${1}*
 
 # run separately for each run, block, and instance, otherwise we OOM (notice most of them will be empty for given game)
 for run in {1..6}
