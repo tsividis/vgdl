@@ -232,7 +232,9 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
     return total_time
 
 # embed()
-play_trainset(hyperparameter_sets, hyperparameter_index, args)
+
+print "This file needs to be modified before it can run. Look at load_games.py for the right structure."
+# play_trainset(hyperparameter_sets, hyperparameter_index, args)
 
 
 
