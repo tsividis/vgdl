@@ -125,3 +125,87 @@ fmri_empaReplay.sh for subject 2, game vgfmri3_bait: output/fmri_empaReplay_2_vg
 fmri_empaReplay.sh for subject 2, game vgfmri3_lemmings: output/fmri_empaReplay_2_vgfmri3_lemmings_49899260.out -- Submitted batch job 49899260
 fmri_empaReplay.sh for subject 2, game vgfmri3_plaqueAttack: output/fmri_empaReplay_2_vgfmri3_plaqueAttack_49899261.out -- Submitted batch job 49899261
 fmri_empaReplay.sh for subject 2, game vgfmri3_zelda: output/fmri_empaReplay_2_vgfmri3_zelda_49899262.out -- Submitted batch job 49899262
+----------------
+--- Fri Mar 27 20:17:22 EDT 2020: Running fmri_empaReplay for subjects 3 4 5 6 7 8 in parallel <-------- mongo died; fucked everything
+----------------
+fmri_empaReplay.sh for subject 3, game vgfmri3_chase: output/fmri_empaReplay_3_vgfmri3_chase_49972923.out -- Submitted batch job 49972923
+fmri_empaReplay.sh for subject 3, game vgfmri3_helper: output/fmri_empaReplay_3_vgfmri3_helper_49972925.out -- Submitted batch job 49972925
+fmri_empaReplay.sh for subject 3, game vgfmri3_bait: output/fmri_empaReplay_3_vgfmri3_bait_49972926.out -- Submitted batch job 49972926
+fmri_empaReplay.sh for subject 3, game vgfmri3_lemmings: output/fmri_empaReplay_3_vgfmri3_lemmings_49972927.out -- Submitted batch job 49972927
+fmri_empaReplay.sh for subject 3, game vgfmri3_plaqueAttack: output/fmri_empaReplay_3_vgfmri3_plaqueAttack_49972929.out -- Submitted batch job 49972929
+fmri_empaReplay.sh for subject 3, game vgfmri3_zelda: output/fmri_empaReplay_3_vgfmri3_zelda_49972930.out -- Submitted batch job 49972930
+fmri_empaReplay.sh for subject 4, game vgfmri3_chase: output/fmri_empaReplay_4_vgfmri3_chase_49972931.out -- Submitted batch job 49972931
+fmri_empaReplay.sh for subject 4, game vgfmri3_helper: output/fmri_empaReplay_4_vgfmri3_helper_49972932.out -- Submitted batch job 49972932
+fmri_empaReplay.sh for subject 4, game vgfmri3_bait: output/fmri_empaReplay_4_vgfmri3_bait_49972933.out -- Submitted batch job 49972933
+fmri_empaReplay.sh for subject 4, game vgfmri3_lemmings: output/fmri_empaReplay_4_vgfmri3_lemmings_49972934.out -- Submitted batch job 49972934
+fmri_empaReplay.sh for subject 4, game vgfmri3_plaqueAttack: output/fmri_empaReplay_4_vgfmri3_plaqueAttack_49972935.out -- Submitted batch job 49972935
+fmri_empaReplay.sh for subject 4, game vgfmri3_zelda: output/fmri_empaReplay_4_vgfmri3_zelda_49972936.out -- Submitted batch job 49972936
+fmri_empaReplay.sh for subject 5, game vgfmri3_chase: output/fmri_empaReplay_5_vgfmri3_chase_49972937.out -- Submitted batch job 49972937
+fmri_empaReplay.sh for subject 5, game vgfmri3_helper: output/fmri_empaReplay_5_vgfmri3_helper_49972938.out -- Submitted batch job 49972938
+fmri_empaReplay.sh for subject 5, game vgfmri3_bait: output/fmri_empaReplay_5_vgfmri3_bait_49972939.out -- Submitted batch job 49972939
+fmri_empaReplay.sh for subject 5, game vgfmri3_lemmings: output/fmri_empaReplay_5_vgfmri3_lemmings_49972940.out -- Submitted batch job 49972940
+fmri_empaReplay.sh for subject 5, game vgfmri3_plaqueAttack: output/fmri_empaReplay_5_vgfmri3_plaqueAttack_49972941.out -- Submitted batch job 49972941
+fmri_empaReplay.sh for subject 5, game vgfmri3_zelda: output/fmri_empaReplay_5_vgfmri3_zelda_49972942.out -- Submitted batch job 49972942
+fmri_empaReplay.sh for subject 6, game vgfmri3_chase: output/fmri_empaReplay_6_vgfmri3_chase_49972943.out -- Submitted batch job 49972943
+fmri_empaReplay.sh for subject 6, game vgfmri3_helper: output/fmri_empaReplay_6_vgfmri3_helper_49972944.out -- Submitted batch job 49972944
+fmri_empaReplay.sh for subject 6, game vgfmri3_bait: output/fmri_empaReplay_6_vgfmri3_bait_49972945.out -- Submitted batch job 49972945
+fmri_empaReplay.sh for subject 6, game vgfmri3_lemmings: output/fmri_empaReplay_6_vgfmri3_lemmings_49972946.out -- Submitted batch job 49972946
+fmri_empaReplay.sh for subject 6, game vgfmri3_plaqueAttack: output/fmri_empaReplay_6_vgfmri3_plaqueAttack_49972947.out -- Submitted batch job 49972947
+fmri_empaReplay.sh for subject 6, game vgfmri3_zelda: output/fmri_empaReplay_6_vgfmri3_zelda_49972948.out -- Submitted batch job 49972948
+fmri_empaReplay.sh for subject 7, game vgfmri3_chase: output/fmri_empaReplay_7_vgfmri3_chase_49972949.out -- Submitted batch job 49972949
+fmri_empaReplay.sh for subject 7, game vgfmri3_helper: output/fmri_empaReplay_7_vgfmri3_helper_49972950.out -- Submitted batch job 49972950
+fmri_empaReplay.sh for subject 7, game vgfmri3_bait: output/fmri_empaReplay_7_vgfmri3_bait_49972951.out -- Submitted batch job 49972951
+fmri_empaReplay.sh for subject 7, game vgfmri3_lemmings: output/fmri_empaReplay_7_vgfmri3_lemmings_49972952.out -- Submitted batch job 49972952
+fmri_empaReplay.sh for subject 7, game vgfmri3_plaqueAttack: output/fmri_empaReplay_7_vgfmri3_plaqueAttack_49972953.out -- Submitted batch job 49972953
+fmri_empaReplay.sh for subject 7, game vgfmri3_zelda: output/fmri_empaReplay_7_vgfmri3_zelda_49972954.out -- Submitted batch job 49972954
+fmri_empaReplay.sh for subject 8, game vgfmri3_chase: output/fmri_empaReplay_8_vgfmri3_chase_49972955.out -- Submitted batch job 49972955
+fmri_empaReplay.sh for subject 8, game vgfmri3_helper: output/fmri_empaReplay_8_vgfmri3_helper_49972956.out -- Submitted batch job 49972956
+fmri_empaReplay.sh for subject 8, game vgfmri3_bait: output/fmri_empaReplay_8_vgfmri3_bait_49972957.out -- Submitted batch job 49972957
+fmri_empaReplay.sh for subject 8, game vgfmri3_lemmings: output/fmri_empaReplay_8_vgfmri3_lemmings_49972958.out -- Submitted batch job 49972958
+fmri_empaReplay.sh for subject 8, game vgfmri3_plaqueAttack: output/fmri_empaReplay_8_vgfmri3_plaqueAttack_49972959.out -- Submitted batch job 49972959
+fmri_empaReplay.sh for subject 8, game vgfmri3_zelda: output/fmri_empaReplay_8_vgfmri3_zelda_49972960.out -- Submitted batch job 49972960
+----------------
+--- Mon Mar 30 11:13:20 EDT 2020: Running fmri_empaReplay for subjects 3 in parallel
+----------------
+fmri_empaReplay.sh for subject 3, game vgfmri3_chase: output/fmri_empaReplay_3_vgfmri3_chase_50235712.out -- Submitted batch job 50235712
+fmri_empaReplay.sh for subject 3, game vgfmri3_helper: output/fmri_empaReplay_3_vgfmri3_helper_50235717.out -- Submitted batch job 50235717
+fmri_empaReplay.sh for subject 3, game vgfmri3_bait: output/fmri_empaReplay_3_vgfmri3_bait_50235721.out -- Submitted batch job 50235721
+fmri_empaReplay.sh for subject 3, game vgfmri3_lemmings: output/fmri_empaReplay_3_vgfmri3_lemmings_50235725.out -- Submitted batch job 50235725
+fmri_empaReplay.sh for subject 3, game vgfmri3_plaqueAttack: output/fmri_empaReplay_3_vgfmri3_plaqueAttack_50235733.out -- Submitted batch job 50235733
+fmri_empaReplay.sh for subject 3, game vgfmri3_zelda: output/fmri_empaReplay_3_vgfmri3_zelda_50235736.out -- Submitted batch job 50235736
+----------------
+--- Mon Mar 30 11:57:09 EDT 2020: Running fmri_empaReplay for subjects 4 5 6 in parallel
+----------------
+fmri_empaReplay.sh for subject 4, game vgfmri3_chase: output/fmri_empaReplay_4_vgfmri3_chase_50242620.out -- Submitted batch job 50242620
+fmri_empaReplay.sh for subject 4, game vgfmri3_helper: output/fmri_empaReplay_4_vgfmri3_helper_50242621.out -- Submitted batch job 50242621
+fmri_empaReplay.sh for subject 4, game vgfmri3_bait: output/fmri_empaReplay_4_vgfmri3_bait_50242632.out -- Submitted batch job 50242632
+fmri_empaReplay.sh for subject 4, game vgfmri3_lemmings: output/fmri_empaReplay_4_vgfmri3_lemmings_50242633.out -- Submitted batch job 50242633
+fmri_empaReplay.sh for subject 4, game vgfmri3_plaqueAttack: output/fmri_empaReplay_4_vgfmri3_plaqueAttack_50242642.out -- Submitted batch job 50242642
+fmri_empaReplay.sh for subject 4, game vgfmri3_zelda: output/fmri_empaReplay_4_vgfmri3_zelda_50242662.out -- Submitted batch job 50242662
+fmri_empaReplay.sh for subject 5, game vgfmri3_chase: output/fmri_empaReplay_5_vgfmri3_chase_50242677.out -- Submitted batch job 50242677
+fmri_empaReplay.sh for subject 5, game vgfmri3_helper: output/fmri_empaReplay_5_vgfmri3_helper_50242717.out -- Submitted batch job 50242717
+fmri_empaReplay.sh for subject 5, game vgfmri3_bait: output/fmri_empaReplay_5_vgfmri3_bait_50242718.out -- Submitted batch job 50242718
+fmri_empaReplay.sh for subject 5, game vgfmri3_lemmings: output/fmri_empaReplay_5_vgfmri3_lemmings_50242727.out -- Submitted batch job 50242727
+fmri_empaReplay.sh for subject 5, game vgfmri3_plaqueAttack: output/fmri_empaReplay_5_vgfmri3_plaqueAttack_50242728.out -- Submitted batch job 50242728
+fmri_empaReplay.sh for subject 5, game vgfmri3_zelda: output/fmri_empaReplay_5_vgfmri3_zelda_50242729.out -- Submitted batch job 50242729
+fmri_empaReplay.sh for subject 6, game vgfmri3_chase: output/fmri_empaReplay_6_vgfmri3_chase_50242730.out -- Submitted batch job 50242730
+fmri_empaReplay.sh for subject 6, game vgfmri3_helper: output/fmri_empaReplay_6_vgfmri3_helper_50242732.out -- Submitted batch job 50242732
+fmri_empaReplay.sh for subject 6, game vgfmri3_bait: output/fmri_empaReplay_6_vgfmri3_bait_50242734.out -- Submitted batch job 50242734
+fmri_empaReplay.sh for subject 6, game vgfmri3_lemmings: output/fmri_empaReplay_6_vgfmri3_lemmings_50242736.out -- Submitted batch job 50242736
+fmri_empaReplay.sh for subject 6, game vgfmri3_plaqueAttack: output/fmri_empaReplay_6_vgfmri3_plaqueAttack_50242737.out -- Submitted batch job 50242737
+fmri_empaReplay.sh for subject 6, game vgfmri3_zelda: output/fmri_empaReplay_6_vgfmri3_zelda_50242738.out -- Submitted batch job 50242738
+----------------
+--- Mon Mar 30 22:50:28 EDT 2020: Running fmri_empaReplay for subjects 7 8 in parallel
+----------------
+fmri_empaReplay.sh for subject 7, game vgfmri3_chase: output/fmri_empaReplay_7_vgfmri3_chase_50346801.out -- Submitted batch job 50346801
+fmri_empaReplay.sh for subject 7, game vgfmri3_helper: output/fmri_empaReplay_7_vgfmri3_helper_50346802.out -- Submitted batch job 50346802
+fmri_empaReplay.sh for subject 7, game vgfmri3_bait: output/fmri_empaReplay_7_vgfmri3_bait_50346803.out -- Submitted batch job 50346803
+fmri_empaReplay.sh for subject 7, game vgfmri3_lemmings: output/fmri_empaReplay_7_vgfmri3_lemmings_50346804.out -- Submitted batch job 50346804
+fmri_empaReplay.sh for subject 7, game vgfmri3_plaqueAttack: output/fmri_empaReplay_7_vgfmri3_plaqueAttack_50346805.out -- Submitted batch job 50346805
+fmri_empaReplay.sh for subject 7, game vgfmri3_zelda: output/fmri_empaReplay_7_vgfmri3_zelda_50346806.out -- Submitted batch job 50346806
+fmri_empaReplay.sh for subject 8, game vgfmri3_chase: output/fmri_empaReplay_8_vgfmri3_chase_50346807.out -- Submitted batch job 50346807
+fmri_empaReplay.sh for subject 8, game vgfmri3_helper: output/fmri_empaReplay_8_vgfmri3_helper_50346808.out -- Submitted batch job 50346808
+fmri_empaReplay.sh for subject 8, game vgfmri3_bait: output/fmri_empaReplay_8_vgfmri3_bait_50346809.out -- Submitted batch job 50346809
+fmri_empaReplay.sh for subject 8, game vgfmri3_lemmings: output/fmri_empaReplay_8_vgfmri3_lemmings_50346810.out -- Submitted batch job 50346810
+fmri_empaReplay.sh for subject 8, game vgfmri3_plaqueAttack: output/fmri_empaReplay_8_vgfmri3_plaqueAttack_50346811.out -- Submitted batch job 50346811
+fmri_empaReplay.sh for subject 8, game vgfmri3_zelda: output/fmri_empaReplay_8_vgfmri3_zelda_50346812.out -- Submitted batch job 50346812

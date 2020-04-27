@@ -111,6 +111,15 @@ if __name__ == '__main__':
         for reg in regs:
             break # just take the latest one
 
+        video_name = 'real_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        print 'video_name = ', video_name
+
+        ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
+        if len(ls) > 0:
+            print '....found video files with prefix; skipping this one'
+            print ls
+            continue
+
         # load theories from disk
         with open(reg['regressors']['theory_filename'], 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
@@ -123,15 +132,6 @@ if __name__ == '__main__':
         zkeystates = play['zkeystates']
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
-
-        video_name = 'real_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
-        print 'video_name = ', video_name
-
-        ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
-        if len(ls) > 0:
-            print '....found video files with prefix; skipping this one'
-            print ls
-            continue
 
         # in lieu of makeMovie() from main_agent.py
         # use default colors (not the ones the subject saw) b/c that's what EMPA sees
