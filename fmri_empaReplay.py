@@ -205,6 +205,9 @@ if __name__ == '__main__':
     #
     didSomething = False
 
+    start = time.time()
+    print 'time start: ', datetime.now()
+
     for game_name, level_game_pairs in all_pairs.iteritems():
         didSomething = True
 
@@ -253,3 +256,7 @@ if __name__ == '__main__':
         print 'Completed!'
     else:
         print 'Nothing to do...'
+
+    end = time.time()
+    print 'time end: ', datetime.now()
+    print 'time elapsed: ', (end - start), ' s'

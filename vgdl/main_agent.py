@@ -1414,7 +1414,7 @@ class Agent:
                 if self.produce_printout:
                     print "score: {}, timestep: {}".format(rle._game.score, rle._game.time)
                     print rle.show(color='blue')
-                print "action", self.total_game_steps+rle._game.time
+                #print "action", self.total_game_steps+rle._game.time
                 rle._game.nextPositions = {}
                 for k, v in rle._game.all_objects.iteritems():
                     rle._game.nextPositions[k] = (int(rle._game.all_objects[k]['sprite'].rect.x), int(rle._game.all_objects[k]['sprite'].rect.y))
@@ -1472,8 +1472,8 @@ class Agent:
             # off-policy training from human replay
             #
             action = res['action']
-        print 'action ============================ ', action
-        pprint(res)
+        #print 'action ============================ ', action
+        #pprint(res)
 
         try:
             agentState = copy.deepcopy(self.rle._game.getAvatars()[0].resources)

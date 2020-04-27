@@ -99,7 +99,7 @@ On NCF cluster, start it on an interactive node (make sure to create appropriate
 
     mongod --config /ncf/gershman/Lab/scripts/VGDL/mongodb/mongod.conf --fork 
 
-Type `hostname` in command line to figure out hostname and use it to connect to it from other nodes and jobs.
+Test with `ps aux | grep mongo`. Type `hostname` in command line to figure out hostname and use it to connect to it from other nodes and jobs.
 
 Btw seems like the `ncf` and `ncf_interact` nodes are on a different network from the `ncflogin` and `ncfood` (VDI) nodes, so you probs need to run a separate mongo instance there, e.g. to generate the videos:
 

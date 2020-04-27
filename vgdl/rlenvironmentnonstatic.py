@@ -372,7 +372,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 keyPressType = keystate['keyPressType']
                 action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
 
-                print keyPressType, ' -------------------------------- keyPressType '
+                #print keyPressType, ' -------------------------------- keyPressType '
 
                 # set the keystate from replay
                 assert keystate['keystate'] == state['keystate']
@@ -479,7 +479,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             #self._game.setFullState(state, cheap=False, default_colors=True) # for sanity checks
             s = self._game.getFullState()
 
-            print 'kill list: ', self._game.kill_list
+            #print 'kill list: ', self._game.kill_list
 
             '''
             if len(self._game.effectList) != state['effectListLen']:
@@ -528,7 +528,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     p = tuple(map(int, pos[1:-1].split(', ')))
                     if sname == 'avatar':
                         o = s['objects'][sname]
-                        print '============ avatar coords: ', o.keys()[0], '  action = ', action
+                        #print '============ avatar coords: ', o.keys()[0], '  action = ', action
                     
                     if str(p) not in s['objects'][sname].keys():
                         print 'pos not found -- could be b/c we used to restore the rect from x,y, which is wrong b/c sometimes they diverge -- see getFullState'
@@ -617,7 +617,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         pre_step_score = self._game.score
 
         self._game.time+=1 # momchil: important to do it before updates in _performAction, consistent with StartGame (to make sure regressors & game times match up)
-        print 'time = ', self._game.time, '           game = ', self._game, '      self = ', self
+        #print 'time = ', self._game.time, '           game = ', self._game, '      self = ', self
 
         # t1 = time.time()
         events, action = self._performAction(action, regressors=regressors)
