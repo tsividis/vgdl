@@ -400,12 +400,14 @@ class Agent:
         # embed()
         if curriculumSaveFile in os.listdir(curriculumDir):
             try:
-                print "found saved curriculum state"
-                loadedState = self.loadState(curriculumDir+'/'+curriculumSaveFile)
+                filename = curriculumDir+'/'+curriculumSaveFile
+                then = time.time()
+                print "found saved curriculum state: ", (os.stat(filename).st_size / 1024.0 / 1024.0 / 1024.0), ' GB'
+                loadedState = self.loadState(filename)
                 loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
                 self = loadedState['agent'] ## load saved agent
                 ##self.filename will get overloaded here.
-                print "loaded curriculum state"
+                print "loaded curriculum state; took ", (time.time() - then), "s"
             except:
                 os.remove(curriculumDir+'/'+episodeSaveFile)
                 print "failed to load curriculum state. deleting corrupted file and starting from scratch"
@@ -435,6 +437,11 @@ class Agent:
                 (self.gameString, self.levelString) = level_game
                 self.playback_states = None # TODO momchil undo
                 self.playback_keystates = None # TODO momchil undo
+
+            print '---------- game'
+            print self.gameString
+            print '---------- level'
+            print self.levelString
 
             if self.record_fMRIRegressors:
                 self.regressors = {
@@ -1535,7 +1542,7 @@ class Agent:
             print "score: {}, game step: {}".format(self.rle._game.score, self.rle._game.time)
 
         # t1 = time.time()
-        print "action", self.total_game_steps+self.rle._game.time
+        #print "action", self.total_game_steps+self.rle._game.time
         if self.produce_printout:
             print ""
             print keyPresses[action]

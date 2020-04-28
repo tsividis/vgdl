@@ -45,14 +45,8 @@ Here is how I installed it on my Mac:
 
 On NCF cluster, install using `module load`
 
-Start Mongo server with (see e.g. [this](https://serverfault.com/questions/591812/how-to-set-ulimits-for-mongod)):
+Start Mongo server (don't mess with [ulimits](https://serverfault.com/questions/591812/how-to-set-ulimits-for-mongod)):
 
-    ulimit -f unlimited
-    ulimit -t unlimited
-    ulimit -v unlimited
-    ulimit -n 64000
-    ulimit -m unlimited
-    ulimit -u unlimited
     mongod --config /usr/local/etc/mongod.conf --fork
 
 Then test by connecting:

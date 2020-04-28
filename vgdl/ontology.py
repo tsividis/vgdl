@@ -571,8 +571,9 @@ class MovingAvatar(VGDLSprite, Avatar):
             elif game.keystate[K_DOWN]:  res += [DOWN]
 
             if len(game.playback_states) > 0 and (game.keystate[K_RIGHT] or game.keystate[K_LEFT] or game.keystate[K_UP] or game.keystate[K_DOWN]):
-                print 'key!'
+                #print 'key!'
                 #embed()
+                pass
         return res
 
     def update(self, game):
