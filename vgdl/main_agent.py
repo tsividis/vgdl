@@ -1317,11 +1317,27 @@ class Agent:
     def saveCurriculumState(self, filename, episodeCompactStates):
         if 'pedro' in os.getcwd():
             return
+
+        #momchil: don't save these b/c they take too much space, and
+        # we don't really need them cross-games / levels 
+        if self.record_fMRIRegressors: # TODO momchil using as proxy for fMRI mode
+            finalTimeStepList = self.finalTimeStepList
+            finalEventList = self.finalEventList
+            regressors = self.regressors
+            self.finalTimeStepList = []
+            self.finalEventList = []
+            self.regressors = []
+
         savedState = {'agent':self,
                       'episodeCompactStates': episodeCompactStates}
        
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
+
+        if self.record_fMRIRegressors: # TODO momchil using as proxy for fMRI mode
+            self.finalTimeStepList = finalTimeStepList
+            self.finalEventList = finalEventList
+            self.regressors = regressors
         # f.close()
 
     def saveEpisodeState(self, filename, effectsEncountered, statesEncountered, compactStates, annealing):
