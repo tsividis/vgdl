@@ -232,7 +232,7 @@ class Spreader(Flicker):
             for u in BASEDIRS:
                 if random.random() < self.spreadprob:
                     game._createSprite([self.name], (self.lastrect.left + u[0] * self.lastrect.size[0],
-                                                     self.lastrect.top + u[1] * self.lastrect.size[1]))
+                                                     self.lastrect.top + u[1] * self.lastrect.size[1]), offset=self.offset)
 
 class SpriteProducer(VGDLSprite):
     """ Superclass for all sprites that may produce other sprites, of type 'stype'. """
@@ -266,11 +266,11 @@ class SpawnPoint(SpriteProducer):
 
         if self.spawnCooldown < 11:
             if ((game.time+1) % self.spawnCooldown == 0 and random.random() < self.prob):
-                game._createSprite([self.stype], (self.rect.left, self.rect.top))
+                game._createSprite([self.stype], (self.rect.left, self.rect.top), offset=self.offset)
                 self.counter += 1
         else:
              if ((game.time+1) % self.spawnCooldown == 3 and random.random() < self.prob):
-                game._createSprite([self.stype], (self.rect.left, self.rect.top))
+                game._createSprite([self.stype], (self.rect.left, self.rect.top), offset=self.offset)
                 self.counter += 1
         self.lastmove += 1
 
@@ -298,7 +298,10 @@ class OrientedSprite(VGDLSprite): ##
         VGDLSprite._draw(self, game)
         if self.draw_arrow:
             col = (self.color[0], 255 - self.color[1], self.color[2])
-            pygame.draw.polygon(game.screen, col, triPoints(self.rect, unitVector(self.orientation)))
+            rect = self.rect.copy()
+            rect.left = rect.left + self.offset[0]
+            rect.top = rect.top + self.offset[1]
+            pygame.draw.polygon(game.screen, col, triPoints(rect, unitVector(self.orientation)))
 
 
 class Conveyor(OrientedSprite):
@@ -557,6 +560,11 @@ class MovingAvatar(VGDLSprite, Avatar):
             elif game.keystate[K_LEFT]:  res += [LEFT]
             if   game.keystate[K_UP]:    res += [UP]
             elif game.keystate[K_DOWN]:  res += [DOWN]
+            
+            if len(game.playback_states) > 0 and (game.keystate[K_RIGHT] or game.keystate[K_LEFT] or game.keystate[K_UP] or game.keystate[K_DOWN]):
+                #print 'key!'
+                #embed()
+                pass
         return res
 
     def update(self, game):
@@ -616,7 +624,7 @@ class FlakAvatar(HorizontalAvatar, SpriteProducer):
     def _shoot(self, game):
         from pygame.locals import K_SPACE
         if self.stype and game.keystate[K_SPACE]:
-            spawn = game._createSprite([self.stype], (self.rect.left, self.rect.top))
+            spawn = game._createSprite([self.stype], (self.rect.left, self.rect.top), offset=self.offset)
 
 
 class OrientedAvatar(OrientedSprite, MovingAvatar):
@@ -722,7 +730,7 @@ class ShootAvatar(OrientedAvatar, SpriteProducer):
 
             u = unitVector(self.orientation)
             newones = game._createSprite([self.stype], (self.lastrect.left + u[0] * self.lastrect.size[0],
-                                                       self.lastrect.top + u[1] * self.lastrect.size[1]))
+                                                       self.lastrect.top + u[1] * self.lastrect.size[1]), offset=self.offset)
             if len(newones) > 0  and isinstance(newones[0], OrientedSprite):
                 newones[0].orientation = unitVector(self.orientation)
             self._reduceAmmo()
@@ -1135,12 +1143,12 @@ def killSprite(sprite, partner, game):
         return ("killSprite", sprite.ID, partner.ID) # partner = agent, sprite = what's being killed
 
 def cloneSprite(sprite, partner, game):
-    newones = game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
+    newones = game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top), offset=sprite.offset)
 
     return ("cloneSprite", sprite.ID, partner.ID)
 
 def transformTo(sprite, partner, game, stype='wall'):
-    newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
+    newones = game._createSprite([stype], (sprite.rect.left, sprite.rect.top), offset=sprite.offset)
     if len(newones) > 0:
         if isinstance(sprite, OrientedSprite) and isinstance(newones[0], OrientedSprite):
             newones[0].orientation = sprite.orientation
@@ -1391,7 +1399,7 @@ def changeScore(sprite, partner, game, value):
 def spawnIfHasMore(sprite, partner, game, resource, stype, limit=1):
     """ If 'sprite' has more than a limit of the resource type given, it spawns a sprite of 'stype'. """
     if sprite.resources[resource] >= limit:
-        game._createSprite([stype], (sprite.rect.left, sprite.rect.top))
+        game._createSprite([stype], (sprite.rect.left, sprite.rect.top), offset=sprite.offset)
         # Note: returning the resource doesn't seem like something the agent should have access to, so we're not returning it.
         args = {'stype':stype}
         return ('spawnIfHasMore', sprite.ID, partner.ID, args) ### NOTE - there is no default 'spawn' function we could return instead, but we should then make one

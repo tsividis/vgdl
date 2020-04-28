@@ -10,7 +10,7 @@ import numpy as np
 from numpy import zeros
 import pygame
 from ontology import BASEDIRS
-from core import VGDLSprite
+from core import VGDLSprite, pauseForDuration
 from stateobsnonstatic import StateObsHandlerNonStatic
 from collections import defaultdict
 import argparse
@@ -24,6 +24,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
 import time
 import cPickle
+import bisect
 
 
 OBSERVATION_LOCAL = 'local'
@@ -45,7 +46,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     # Recording events (in slightly redundant format state-action-nextstate)
     recordingEnabled = False
 
-    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, actionset=BASEDIRS, **kwargs):
+    def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, screensize=None, actionset=BASEDIRS, **kwargs):
         game = _createVGDLGame( gameDef, levelDef )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
@@ -82,7 +83,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self.game_name = None
         self.width = self._game.width
         self.height = self._game.height
-        self.screensize = self._game.screensize
+        self.screensize = self._game.screensize if screensize is None else screensize
 
     # Get definition of the observation data expected
     def observationSpec(self):
@@ -218,7 +219,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     # Reset game data and optionally the state
     def _postInitReset(self, performStateResetTesting=False):
         if self.visualize:
-            self._game._initScreen(self._game.screensize, not self.visualize)
+            self._game._initScreen(self.screensize, not self.visualize)
 
         # Calling self.setState(self._initstate) hundreds of times causes massive slowdown.
         if performStateResetTesting:
@@ -230,6 +231,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         self._game.kill_list = []
         if self.visualize:
             pygame.display.flip()
+            self._game.frame_rate = 20
         if self.recordingEnabled:
             self._last_state = self.getState()
             self._allEvents = []
@@ -440,7 +442,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         return res
 
-    def _performAction(self, action=[], onlyavatar=False):
+    def _performAction(self, action=[], onlyavatar=False, regressors=None):
 
         """ Action is an index for the actionset.  """
         # take action and compute consequences
@@ -454,28 +456,224 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
         # self._avatar._readMultiActions = lambda *x: [self._actionset[action]] # old
         possible_actions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT]
+        revActionDict = {'spacebar': K_SPACE, 'up': K_UP, 'down': K_DOWN, 'left': K_LEFT, 'right': K_RIGHT, 'none': 0}
 
-        if action in possible_actions:
-            self._game.keystate[action] = True
+        if self.visualize:
+            pygame.time.Clock().tick(self._game.frame_rate)
+            pauseForDuration(0.1) 
+            self._game._fMRI_clearAll(self.visualize)
+
+
+        # momchil fMRI replay shenanighans
+        if self._game.playback_states:
+            # off-policy learning from human action/state replay
+            # 
+
+            emptyKeyState = [0]*323 #keyState when no keys are pressed
+            self._game.keystate = emptyKeyState # momchil: important to reset keystate
+
+            # the full game state, for full state replay
+            state = self._game.playback_states[self._game.playback_index]
+            # just the action and related stuff for action replay
+            keystate = self._game.playback_keystates[self._game.playback_index]
+
+            # when this action was actually taken by subject; important for fMRI regressor onsets
+            self._game.playback_ts = keystate['ts']
+
+            if self._game.action_playback_only:
+                # action replay -- choose action from replay & let EMPA do the updates / event handling
+                #
+
+                assert keystate['keyPressType'] == state['keyPressType']
+                keyPressType = keystate['keyPressType']
+                action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
+
+                #print keyPressType, ' -------------------------------- keyPressType '
+
+                # set the keystate from replay
+                assert keystate['keystate'] == state['keystate']
+                self._game.keystate = keystate['keystate']
+
+                # set the new sprite IDs TODO do same for state replay
+                # this makes sure newly created sprites have the right UUIDs
+                # important for sprite induction I think (or maybe not; good to be
+                # consistent tho)
+                self._game.new_sprites_ID = state['new_sprites_ID']
+                self._game.new_sprites_ID_idx = 0
+
+                # sanity check that pressed key matches keystate (we need to return correct action I think)
+                if keyPressType:
+                    action = revActionDict[keyPressType] 
+                    #self._game.keystate[action] = True # we used to set the keystate here; now we just sanity check
+                    assert self._game.keystate[action], 'Replayed keystate differs from action based on keyPressType'
+
+
+                # set RNG state to what it was exactly at the same spot in startGame
+                x = keystate['RNG_state']
+                x = (x[0], tuple(x[1]), x[2])
+                random.setstate(x)
+
+                # sprite update & event handling
+                # momchil TODO dedupe w/ below potentially, also compare with startGame
+                self._game.new_sprites = [] 
+
+                # update sprites
+                # same logic as in startGame
+                assert not onlyavatar
+                for s in list(self._game):
+                    if s not in self._game.kill_list: 
+                        s.update(self._game)
+
+                events = self._game._eventHandling()
+
+            else:
+                # full state replay -- replay both states and actions
+                #
+
+                self._game.new_sprites = [] # momchil: taken care of? TODO no....
+    
+                try:
+                    self._game.setFullState(self._game.playback_states[self._game.playback_index], cheap=False, default_colors=True)
+                except:
+                    print "agent playback is failing!"
+                    embed()
+    
+                keyPressType = self._game.playback_states[self._game.playback_index]['keyPressType']
+                action = (0,0) # by default, nothing momchil TODO: action == 'space' case (see step())
+                if keyPressType:
+                    action = revActionDict[keyPressType] 
+                    assert self._game.keystate[action] 
+   
+                # load events from replay
+                events = self._game.effectList
+  
+
+            # move to next state
+            self._game.playback_index += 1
+
+        else:
+
+            # no replay (default case): agent is playing
+            #
+            if action in possible_actions:
+                self._game.keystate[action] = True  #TODO momchil wtf is this
+
+            self._game.new_sprites = [] 
+            # update sprites
+            if onlyavatar:
+                if action != 0:
+                    self._avatar.update(self._game)
+
+            else:
+                for s in self._game:
+                    if action == 0 and s == self._avatar: # momchil is this necessary? differs from startGame logic
+                            continue
+                    if s not in self._game.kill_list: # shit -- the killed ones don't get updated here... TODO momchil 
+                            s.update(self._game)
+
+            events = self._game._eventHandling()
+
 
 
         if self.visualize:
-            self._game._clearAll(self.visualize)
+            self._game.screen.blit(self._game.background, self._game.offset) # TODO momchil super inefficient
+            self._game._drawAll()
+            # TODO momchil somehow make sure only one RLE is visualizing at a time, b/c VGDLSprite is shared
+            pygame.display.update(VGDLSprite.dirtyrects)
+            VGDLSprite.dirtyrects = []
 
-        self._game.new_sprites = []
-        # update sprites
-        if onlyavatar:
-            if action != 0:
-                self._avatar.update(self._game)
+            # plotting fMRI regressors TODO momchil dedupe w/ startGame
+            if regressors:
+                self._game.fMRI_plotStuff(regressors)
+                
 
-        else:
-            for s in self._game:
-                if action == 0 and s == self._avatar:
-                        continue
-                if s not in self._game.kill_list:
-                        s.update(self._game)
 
-        events = self._game._eventHandling()
+        # fMRI sanity check code
+        if self._game.playback_states and self._game.playback_index < len(self._game.playback_states): # last state might differ b/c we don't update in startGame but we do update here; TODO momchil maybe make consistent
+
+            state = self._game.playback_states[self._game.playback_index - 1]
+            #self._game.setFullState(state, cheap=False, default_colors=True) # for sanity checks
+            s = self._game.getFullState()
+
+            #print 'kill list: ', self._game.kill_list
+
+            '''
+            if len(self._game.effectList) != state['effectListLen']:
+                print 'wrong effectListLen!'
+                embed()
+            print len(self._game.kill_list), ' {--------------} ',state['kill_listLen'] 
+            # in startGame, we call _clearAll which empties kill_list and actually removes sprites from the game
+            # here, we cannot clear kill_list b/c spriteInduction relies on it (I think) TODO 
+            if len(self._game.kill_list) != state['kill_listLen']: 
+                print 'wrong kill_listLen!'
+                embed()
+            if len(self._game.collision_eff) != state['collision_effLen']: 
+                print 'wrong collision_eff!'
+                embed()
+            if len(self._game.sprite_groups) != state['sprite_groupsLen']: 
+                print 'wrong sprite_groupsLen!'
+                embed()
+            if len(self._game.effectListByColor) != len(state['effectListByColor']): 
+                print 'wrong effectListByColor!'
+                embed()
+            if len(self._game.effectListByClass) != len(state['effectListByClass']): 
+                print 'wrong effectListByClass!'
+                embed()
+            # momchil: seems like we pre-define them in BasicGame based on desc/level so can't compare TODO confirm
+            if len(self._game.new_sprites) != state['new_spritesLen']:
+                print 'wrong new_spritesLen!'
+                embed()
+            # TODO momchil different; weird
+            #if self._game.keystate != state['keystate']:
+            #    print 'wrong keystate'
+            #    embed()
+            '''
+
+            if s['list'] != state['list']:
+                print 'incorrect sprite list!'
+                embed()
+
+            # state = replayed human state, s = current state from action replay
+            for sname, sprites in state['objects'].iteritems():
+
+                assert sname in s['objects'].keys(), 'sname not found'
+                if len(state['objects'][sname]) != len(s['objects'][sname]):
+                    embed()
+                for pos, attrs in sprites.iteritems():
+
+                    p = tuple(map(int, pos[1:-1].split(', ')))
+                    if sname == 'avatar':
+                        o = s['objects'][sname]
+                        #print '============ avatar coords: ', o.keys()[0], '  action = ', action
+                    
+                    if str(p) not in s['objects'][sname].keys():
+                        print 'pos not found -- could be b/c we used to restore the rect from x,y, which is wrong b/c sometimes they diverge -- see getFullState'
+                        embed()
+
+                    attrs_c = s['objects'][sname][str(p)] # current attrs
+
+                    for attr, val in attrs.iteritems():
+                        assert attr in attrs_c.keys(), 'attr not found'
+
+                        # symbol b/c none here
+                        # color & colorName b/c randomized there but not here
+                        # colorName is set to the default for the game
+                        # TODO check lastdisplacement and deathage
+
+                        # (de)serialization & storage makes tuples into lists
+                        if isinstance(attrs_c[attr], tuple):
+                            val = tuple(val)
+                        if attr == 'rect':
+                            val['pos'] = tuple(val['pos'])
+                            val['size'] = tuple(val['size'])
+
+                        if val != attrs_c[attr] and attr not in ['lastdisplacement', 'deathage', 'symbol', 'colorName', 'color']:
+                            print 'wrong attr value'
+                            embed()
+                            time.sleep(1000)
+
+
+        # momchil: save event, destroy self.game, re-init self.game (.reset, etc) from saved state => make sure still works
 
         ## get events (e.g., (stepBack obj1ID, obj2ID))
 
@@ -501,15 +699,19 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     self._gravepoints[(k, self._rect2pos(sprite.rect))] = True
         # print "after adding gravepoints"
         # embed()
-        return events
+        return events, action
 
-    def step(self, action, return_obs=False, getTermination=False, getEffectList=False):
+    def step(self, action, return_obs=False, getTermination=False, getEffectList=False, regressors=None):
         if action == ('space'):
             self._game.keystate[32] = True
             action = (0,0)
         pre_step_score = self._game.score
-        events = self._performAction(action)
-        self._game.time+=1
+
+        self._game.time+=1 # momchil: important to do it before updates in _performAction, consistent with StartGame (to make sure regressors & game times match up)
+        #print 'time = ', self._game.time, '           game = ', self._game, '      self = ', self
+
+        events, action = self._performAction(action, regressors=regressors)
+
         observation = self._getSensors() if return_obs else None
         if getTermination:
             (ended, won, termination) = self._isDone(getTermination=True)
@@ -532,6 +734,16 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             reward = dScore
         for k in self._game.keystate:
             self._game.keystate[k] = False
+
+
+        # momchil: TODO rm ?
+        if self._game.playback_states and self._game.playback_index == len(self._game.playback_states):
+            ended = True
+            won = True
+            self._game.ended = ended
+            self._game.win = won
+            print 'ENDED'
+            #embed()
 
         return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
 
@@ -629,9 +841,9 @@ def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
     return RLEnvironmentNonStatic(game_file.game, game_file.level, \
             observationType = obsType)
 
-def createRLInputGameFromStrings(game, level):
+def createRLInputGameFromStrings(game, level, visualize=False, screensize=None):
     return RLEnvironmentNonStatic(game, level, \
-            observationType = OBSERVATION_GLOBAL)
+            observationType = OBSERVATION_GLOBAL, visualize=visualize, screensize=screensize)
 
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLMaze( obsType )

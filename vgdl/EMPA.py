@@ -6,7 +6,7 @@ import random
 import time
 import copy
 from collections import defaultdict
-from core import colorDict, VGDLParser, sys
+from core import colorDict, VGDLParser, sys, fMRI_screensize
 from datetime import datetime
 from math import log
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
@@ -15,16 +15,18 @@ from util import *
 from ontology import *
 from hyperparameters import hyperparameter_sets, metacontroller_sets
 from agent_utils import translate_events, findNearestSprite, getSpritesByColor
-from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict, getPosterior
 from metacontroller import Metacontroller
-from dynamic_type_inference import dynamicTypeDistribution_VGDL1
+from dynamic_type_inference import dynamicTypeDistribution_VGDL1, getKL
 import WBP
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from bookkeeping import Bookkeeping
+from pprint import pprint
 
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
+
 
 class Agent:
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):
@@ -32,7 +34,9 @@ class Agent:
         self.gameFilename = gameFilename
         self.gameString = None
         self.levelString = None
-        self.display_text = False
+        self.record_fMRIRegressors = False
+        self.hypothesesPosterior = None
+        self.display_text = True
         self.display_states = False
         self.record_states = True
         self.record_video_info = True
@@ -228,6 +232,9 @@ class Agent:
 
         return
 
+    def logfMRIRegressor(self, name, val):
+        self.bookkeeping.regressors[name].append((val, self.environment._game.time, self.environment._game.playback_ts))
+
     def initializeVrle(self, hypothesis):
         ## Returns simulatable world in agent's head given 'hypothesis', including object goal
         # t1 = time.time()
@@ -400,6 +407,25 @@ class Agent:
         self.solution = []
         self.steps_in_solution = 0
 
+        if self.record_fMRIRegressors:
+            self.bookkeeping.regressors = {
+                'spriteKL': [],
+                'interactionKL': [],
+                'terminationKL': [],
+                'sampleKL': [],
+                'MAPloglik': [],
+                'MAPlogpost': [],
+                'theory_change_flag': [],
+                'sprite_change_flag': [],
+                'interaction_change_flag': [],
+                'termination_change_flag': [],
+                'theoryDist': [],
+                'theory': [],
+                'theory_str': []
+            }
+
+
+
     def planAsNeeded(self):
 
         """ 
@@ -508,12 +534,18 @@ class Agent:
 
         if self.environment.getTime() == 0:
             self.beginningOfEpisodeManagement()
+            print 'initial theory'
+            self.hypotheses[0].display()
 
         # print "phase 1: {}".format(time.time()-t1)
         # t1 = time.time()
 
+        if self.record_fMRIRegressors:
+            spriteDistributionPrev = self.distribution.distribution.copy()
 
-        self.bookkeeping.saveEpisodeState(self)
+        if not self.record_fMRIRegressors:
+            # momchil: don't save every time, to speed things up
+            self.bookkeeping.saveEpisodeState(self)
 
         hypotheses = self.hypotheses
 
@@ -569,6 +601,12 @@ class Agent:
         # t1 = time.time()
 
         distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+
+        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+            # don't log stuff from before any observations
+            # convention is: timestamp = stuff right after frame
+            spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev)
+            self.logfMRIRegressor('spriteKL', spriteKL)
         
         # print "phase 4: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -668,10 +706,26 @@ class Agent:
             game_object = Game(spriteInductionResult=sample)
             
             terminationCondition = {'ended': False, 'win':False, 'time':self.environment.getTime()}
-            trace = (self.finalTimeStepList, terminationCondition)
+            trace = (self.finalTimeStepList, terminationCondition) 
 
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
             verbose=False, existingTheories=hypotheses))
+
+            if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+                # don't log stuff from before any observations
+                # convention is: timestamp = stuff right after frame
+
+                # calculate postarior of old hypotheses
+                P = getPosterior(self.hypotheses, self.finalTimeStepList)
+                if self.hypothesesPosterior: # posterior on prev timestep
+                    # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
+                    # (need to exclude latest timesteps when computing likelihood though)
+                    sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
+                    self.logfMRIRegressor('sampleKL', sampleKL)
+
+                # calculate posterior using new hypotheses for next timestep
+                self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
+
 
             # print "inference phase 2: {}".format(time.time()-t1)
             # t1 = time.time()
@@ -695,7 +749,22 @@ class Agent:
 
         if theory_change_flag and not distributionsHaveChanged and self.display_text:
             print "changed theory:"
-            # hypotheses[0].display()
+            hypotheses[0].display()
+ 
+        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+            # don't log stuff from before any observations
+            # convention is: timestamp = stuff right after frame
+
+            self.logfMRIRegressor('theory_change_flag', theory_change_flag)
+            self.logfMRIRegressor('sprite_change_flag', distributionsHaveChanged)
+            self.logfMRIRegressor('interaction_change_flag', hypotheses[0].__dict__ != self.hypotheses[0].__dict__)
+            self.logfMRIRegressor('termination_change_flag', set(hypotheses[0].terminationSet) != oldTerminationSet)
+            self.logfMRIRegressor('theory', copy.deepcopy(hypotheses[0]))
+            self.logfMRIRegressor('theory_str', hypotheses[0].display(as_string=True))
+
+            if theory_change_flag:
+                print "new theory:"
+                hypotheses[0].display()
 
         # print "phase 8: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -735,12 +804,17 @@ class Agent:
         # print "phase 11: {}".format(time.time()-t1)
         # t1 = time.time()
 
-        self.action = self.planAsNeeded()
+        if self.record_fMRIRegressors:
+            # we replay the human actions
+            # TODO make sure we won't need the action anywhere here, e.g. for inference and whatnot
+            self.action = None 
+        else:
+            self.action = self.planAsNeeded()
 
         # print "phase 12: {}".format(time.time()-t1)
         # t1 = time.time()
 
-        print "quitting:", self.quitting
+        print "action, quitting:", self.action, self.quitting
         return self.action, self.quitting
 
     def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, predicted_states, i):
@@ -842,11 +916,15 @@ class Agent:
             print "observing for {} steps".format(obsSteps)
         if obsSteps>0:
             for i in range(obsSteps):
+
+                if self.record_fMRIRegressors:
+                    spriteDistributionPrev = self.distribution.distribution.copy()
+
                 self.distribution.spriteInduction(environment._game, self.memory, step=1, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 # self.distribution.spriteInduction(environment._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
-                environment.step((0,0))
+                environment.step((0,0)) # TODO momchil ensure this works with replay; probs not -- it assumes no action was taken, when in fact it might have been taken in replay
                 if self.make_movie or self.record_video_info:
-                    self.bookkeeping.statesEncountered.append(self.environment.getFullState(observe_state=True))
+                    self.bookkeeping.statesEncountered.append(self.environment.getFullState(observe_state=True)) # momchil
                 if self.record_states:
                     self.bookkeeping.compactStates.append(self.compactify(self.environment))
                 if self.produce_printout:
@@ -863,8 +941,14 @@ class Agent:
                         pass
                 self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
                 self.distribution.spriteInduction(environment._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
+
+                if self.record_fMRIRegressors:
+                    spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev)
+                    self.logfMRIRegressor('spriteKL', spriteKL)
         else:
             self.distribution.spriteInduction(environment._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
+        print 'momchil: observe() -- does this even happen anymore?'
+        embed()
         return
 
     def makeHeatmap(self, statesEncountered, filename):

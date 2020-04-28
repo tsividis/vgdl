@@ -245,6 +245,21 @@ class ruleCluster(object):
 def printInteractionSet(interactionSet):
 		print [i.display() for i in interactionSet]
 
+# calculate posterior of set of hypotheses
+#
+def getPosterior(hypotheses, timesteps):
+    posts = [0] * len(hypotheses)
+
+    logliks = [sum([h.likelihood(ts) for ts in timesteps]) for h in hypotheses]
+    liks = np.exp(logliks)
+
+    priors = [h.prior() for h in hypotheses]
+
+    posts = np.multiply(liks, priors)
+    posts = np.divide(posts, sum(posts))
+
+    return posts.tolist()
+
 class Theory(object):
 	"""
 	A VGDL description of a game. Corresponds to a 'model' in the TBRL write-up.
@@ -297,6 +312,21 @@ class Theory(object):
 		if self.classes['avatar'][0].args and 'stype' in self.classes['avatar'][0].args:
 			legalActions.append(K_SPACE)
 		return legalActions
+
+        def prior(self):
+                ## not used.
+                def phi(numClasses, numRules, lamda):
+                        #TODO: Refine this to take into account the minimum necessary size of the ruleset.
+                        return lamda*numClasses + (1-lamda)*numRules
+
+                #Mode is p(r-1) / (1-p). For now we pick p=.5, r=5 to reflect that phi=4 is modal.
+                def negBin(k, r, p):
+                        return scipy.misc.comb(k+r-1, k) * p**k * (1-p)**r
+
+                numClasses, numRules = len(self.classes.keys()), len(self.interactionSet)
+                k = phi(numClasses, numRules, .5)
+
+                return negBin(k,5,.5)
 
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
 		"""
@@ -1119,11 +1149,24 @@ class Theory(object):
 		for tc in self.terminationSet:
 			tc.display()
 
-	def display(self):
-		print "_______"
-		self.displayRules()
-		self.displayClasses()
-		self.displayTerminationSet()
+	def display(self, as_string=False):
+
+                if as_string:
+                    # from https://stackoverflow.com/questions/1218933/can-i-redirect-the-stdout-in-python-into-some-sort-of-string-buffer
+                    from cStringIO import StringIO # Python3 use: from io import StringIO
+                    import sys
+                    old_stdout = sys.stdout
+                    sys.stdout = mystdout = StringIO()
+                else:
+                    print "_______"
+
+ 		self.displayRules()
+ 		self.displayClasses()
+ 		self.displayTerminationSet()
+
+                if as_string:
+                    sys.stdout = old_stdout
+                    return mystdout.getvalue()
 		return
 
 	def __eq__(self, other):
