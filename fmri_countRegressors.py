@@ -68,5 +68,5 @@ if __name__ == '__main__':
             q = {'play_key': play['_id']}
             cnt = db.regressors.count(q)
             if cnt != 1:
-                print '         wrong # of regressors for ', play['run_id'], play['block_id'], play['instance_id'], play['play_id']
+                print '         wrong # of regressors for ', play['run_id'], play['block_id'], play['instance_id'], play['play_id'], ' = ', cnt
                 regs = db.regressors.find(q).sort('ts', -1)

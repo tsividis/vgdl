@@ -203,9 +203,9 @@ Then open the file (the .py, not .pyc file) and somewhere after line 487 add:
 Other scripts
 ----
 
-`fmri_makeMovie.py` 
+`fmri_makeMovie.py` -- create movies with EMPA replay after running fmri_empaReplay; run it in an browser [interactive session](https://ncfoodnode02.rc.fas.harvard.edu/pun/sys/dashboard/batch_connect/sessions) (need VPN), on a Cannon Compute node (need memory -- 50 G)
 
-`fmri_playsPostproc.py`
+`fmri_playsPostproc.py` -- generate nuisance regressors for GLMs
 
 
 Tips
@@ -216,4 +216,6 @@ To see where you `embed()`ed, do:
     import sys, traceback
     traceback.print_stack()
 
+Python time profiling: [cProfile](https://stackoverflow.com/questions/582336/how-can-you-profile-a-python-script), e.g. `python -m cProfile -s cumtime fmri_empaReplay.py 1 0 0 0 0 > chase_profile.txt`
 
+Python memory profiling: [memory-profiler](https://pypi.org/project/memory-profiler/), or `get_size` in `utils.py`
