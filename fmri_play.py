@@ -1,8 +1,14 @@
+# the main entry point for the fMRI experiment
+# starts given session (run) for given subject
+#
 from pymongo import MongoClient
 import pprint
 import random
 from datetime import datetime
 import time
+
+# USAGE: python fmri_play.py [subj_id] [run_id]
+# * - optional
 
 # see db_api.py
 
@@ -164,7 +170,7 @@ prerun_interval = 10 # = 10 sec, how long for scanner to settle
 postrun_interval = 10 # = 10 sec, how long for HRF to settle
 nblocks = 3 # = 3 per run
 ninstances = 3 # = 3 per block
-duration = 60 # = 60 instance duration (sec) 
+duration = 60 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
 interplay_interval = 2 # = 2 sec, how long to hold last screen
 interblock_interval = 2 # = 2 sec, how long to show game name
 
