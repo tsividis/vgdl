@@ -313,6 +313,21 @@ class Theory(object):
 			legalActions.append(K_SPACE)
 		return legalActions
 
+        def prior(self):
+                ## not used.
+                def phi(numClasses, numRules, lamda):
+                        #TODO: Refine this to take into account the minimum necessary size of the ruleset.
+                        return lamda*numClasses + (1-lamda)*numRules
+
+                #Mode is p(r-1) / (1-p). For now we pick p=.5, r=5 to reflect that phi=4 is modal.
+                def negBin(k, r, p):
+                        return scipy.misc.comb(k+r-1, k) * p**k * (1-p)**r
+
+                numClasses, numRules = len(self.classes.keys()), len(self.interactionSet)
+                k = phi(numClasses, numRules, .5)
+
+                return negBin(k,5,.5)
+
 	def explainTimeStep(self, timestep, fullTimestep, timesteps, currTheories=False, override=False):
 		"""
 		Recursive function. Explains first event in a timestep, then calls itself to explain the next events contingent on current explanations.

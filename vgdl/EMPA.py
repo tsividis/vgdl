@@ -36,7 +36,7 @@ class Agent:
         self.levelString = None
         self.record_fMRIRegressors = False
         self.hypothesesPosterior = None
-        self.display_text = False
+        self.display_text = True
         self.display_states = False
         self.record_states = True
         self.record_video_info = True
@@ -534,6 +534,8 @@ class Agent:
 
         if self.environment.getTime() == 0:
             self.beginningOfEpisodeManagement()
+            print 'initial theory'
+            self.hypotheses[0].display()
 
         # print "phase 1: {}".format(time.time()-t1)
         # t1 = time.time()

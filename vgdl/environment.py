@@ -294,16 +294,15 @@ class Environment:
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.agent.param_ID))
 
+        if self.record_fMRIRegressors:
+            curriculumRegressors.append(self.agent.bookkeeping.regressors)
+
         if make_movie:
             if self.record_fMRIRegressors:
-                curriculumRegressors.append(self.agent.bookkeeping.regressors)
-
-            if make_movie:
-                if self.record_fMRIRegressors:
-                    self.movieName = movie_names[n_level]
-                    self.makeMovie(play_movie=play_movie, regressors=self.agent.bookkeeping.regressors)
-                else:
-                    self.makeMovie(play_movie=play_movie)
+                self.movieName = movie_names[n_level]
+                self.makeMovie(play_movie=play_movie, regressors=self.agent.bookkeeping.regressors)
+            else:
+                self.makeMovie(play_movie=play_movie)
 
         endtime = time.time()
         print "Game took {} seconds".format(endtime-starttime)
@@ -342,10 +341,17 @@ class Environment:
 
             ### TODO: environment step should overload rle and produce a blue printout.
             if self.record_fMRIRegressors:
+                # fMRI replay
+                # notice that the _game "knows" it's replaying (from initializeEnvironment), so it handles stuff inside
+                # TODO maybe be more explicit here about replay vs play
                 # pass regressors for optional visualization
                 self.environment.step(action, regressors=self.agent.bookkeeping.regressors)
+                if self.environment._game.playback_index == len(self.environment._game.playback_states):
+                    # TODO momchil better alternative?
+                    break
             else:
                 self.environment.step(action)
+
             if self.produce_printout:
                 print ""
                 print actionDict[action]
