@@ -25,27 +25,43 @@ class Bookkeeping:
         if self.curriculumDir not in os.listdir('.'):
             os.makedirs(self.curriculumDir)
 
-    def saveCurriculumState(self, agent, episodeCompactStates):
+    def saveCurriculumState(self, agent, episodeCompactStates, is_fMRI):
         if 'pedro' in os.getcwd():
             return
+
+        #momchil: don't save these b/c they take too much space, and
+        # we don't really need them cross-games / levels, b/c we do those in separate batches
+        # JK WE DO! TODO discuss w / team -- people surely remember stuff that happened in last play, but probably not stuff across blocks...
+        if is_fMRI:
+            finalTimeStepList = agent.finalTimeStepList
+            finalEventList = agent.finalEventList
+            agent.finalTimeStepList = []
+            agent.finalEventList = []
+
         filename = self.curriculumDir+'/'+self.curriculumSaveFile
         savedState = {'agent':agent,
                       'episodeCompactStates': episodeCompactStates}
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
 
+        if is_fMRI:
+            agent.finalTimeStepList = finalTimeStepList
+            agent.finalEventList = finalEventList
+
     def loadCurriculumState(self, filename):
         ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
         print "Curriculum directory:", self.curriculumDir
         print "Filename:", filename
         if filename in os.listdir(self.curriculumDir):
+            path = self.curriculumDir+'/'+filename
             try:
-                print "found saved curriculum state"
-                loadedState = self.loadState(self.curriculumDir+'/'+filename)
-                print "loaded curriculum state"
+                then = time.time()
+                print "found saved curriculum state: ", (os.stat(path).st_size / 1024.0 / 1024.0 / 1024.0), ' GB'
+                loadedState = self.loadState(path)
+                print "loaded curriculum state; took ", (time.time() - then), "s"
                 return loadedState
             except:
-                os.remove(self.curriculumDir+'/'+filename)
+                os.remove(path)
                 print "failed to load curriculum state. deleting corrupted file and starting from scratch"
                 return None
 

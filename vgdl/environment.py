@@ -30,6 +30,7 @@ class Environment:
         self.produce_printout = produce_printout
         self.movieName = movieName
         self.agent = agent
+        self.record_fMRIRegressors = agent.record_fMRIRegressors
         self.agent.record_video_info = True
         self.agent.write_video_info = True
 
@@ -49,8 +50,19 @@ class Environment:
 
         if self.gameString==None or self.levelString==None:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
-        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString)
+        self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=False, screensize=fMRI_screensize)
         self.environment = self.rleCreateFunc()
+
+        if self.playback_states: # fMRI theory induction from human replay
+            self.environment._game.playback_states = self.playback_states
+            self.environment._game.playback_keystates = self.playback_keystates
+            self.environment._game.action_playback_only = True
+            assert self.environment._game.playback_index == 0
+            assert len(self.environment._game.playback_states) == len(self.environment._game.playback_keystates)
+            # important to set the initial state now -- we getObjects() to initialize the theories in replayEpisode, and the UUIDs of the objects should match up, e.g. for proper event handling
+            # important to use default colors -- EMPA relies on colors for stuff, e.g. to detect walls; kinda hacky but let's do that for now
+            self.environment._game.setFullState(self.environment._game.playback_states[0], cheap=False, default_colors=True)
+            self.environment._game.playback_index += 1
         return
 
     def initializeRLEFromGame(self):
@@ -103,12 +115,15 @@ class Environment:
         params_to_print_to_video = ''
         game_name_to_print_to_video = self.gameFilename
         VGDLParser.playGame(self.gameString, self.levelString, self.agent.bookkeeping.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10)
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10, video_name=self.video_name)
 
-    def makeMovie(self, play_movie=False):
+    def makeMovie(self, play_movie=False, regressors=None):
 
         VGDLParser.playGame(self.gameString, self.levelString, self.agent.bookkeeping.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10)
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
+ 
+        # TODO momchil fix -- right now, this uses the wrong images; also playGame already creates a video 
+        '''
  
         print "Creating Movie"
         # movie_dir = "videos/{}/{}".format(self.param_ID, self.gameFilename)
@@ -136,10 +151,11 @@ class Environment:
         if play_movie:
             command = ('open', '-a', 'Quicktime Player', video_dirname)
             subprocess.Popen(command)
+        '''
 
         return
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False, movie_names = []):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -149,27 +165,52 @@ class Environment:
         allEffectsEncountered = []
 
         self.make_movie = make_movie
+        self.video_name = None
+
         if self.make_movie:
             if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
                 shutil.rmtree("images/tmp/"+self.gameFilename)
             os.makedirs("images/tmp/"+self.gameFilename)
+
+        if self.record_fMRIRegressors:
+            curriculumRegressors = []
 
         loaded_n_level=0
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.agent.param_ID+'_'+self.task_ID
         loadedState = self.agent.bookkeeping.loadCurriculumState(curriculumSaveFile)
         if loadedState is not None:
             self.agent = loadedState['agent']
-            loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration
-            # print "loaded a game"
+
+            # momchil: for fMRI playback, we give a completely new set of levels every time (b/c we split up the inference into batches on the cluster, b/c of memory issues w/ having all states in memory), and we start curriculum from "level 0" every time
+            # so we want loaded_n_level to start from 0 (but still reuse the hypotheses from the previous batch)
+            # to be safe, we also remove the loadedState (after getting agent from it) so we don't accidentally let other bookkeeping stuff get loaded later in the code silently
+            if playback:
+                loadedState = None
+            else:
+                loaded_n_level, within_level_iteration = loadedState['agent'].n_level, loadedState['agent'].within_level_iteration            # print "loaded a game"
             # embed()
+
         j=0
         fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
 
             if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
+                assert not playback # should never happen in fMRI playback
                 continue
 
-            (self.gameString, self.levelString) = level_game
+            if playback:
+                # fMRI playback from human play
+                (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name) = level_game
+            else:
+                (self.gameString, self.levelString) = level_game
+                self.playback_states = None # TODO momchil undo
+                self.playback_keystates = None # TODO momchil undo
+
+            print '---------- game'
+            print self.gameString
+            print '---------- level'
+            print self.levelString
+
             self.agent.max_nodes = self.agent.starting_max_nodes
             self.agent.stored_max_nodes = self.agent.max_nodes
             win = False
@@ -190,6 +231,7 @@ class Environment:
                 self.agent.n_level = n_level
                 self.within_level_iteration = i
                 self.agent.within_level_iteration = i
+
                 gameObject, win, score, steps, forfeit_level = self.playEpisode(gameObject, win)
                 
                 ## TODO: clean up below stuff, too.
@@ -204,7 +246,8 @@ class Environment:
 
                 if self.make_movie:
                     # self.statesEncountered = statesEncountered
-                    self.makeImages()
+                    #self.makeImages() # TODO momchil why is this necessary when we call makeMovie which does the same thing? also this doesn't really work it seems
+                    pass
                 
                 if self.agent.record_video_info:
                     allStatesEncountered.extend(statesEncountered)
@@ -216,7 +259,7 @@ class Environment:
 
                 # print "about to save state"
                 # embed()
-                self.agent.bookkeeping.saveCurriculumState(self.agent, episodeCompactStates)
+                self.agent.bookkeeping.saveCurriculumState(self.agent, episodeCompactStates, self.record_fMRIRegressors)
                 # print "saved state"
                 # embed()
                 ## will write all previous episodes to the file at the end of each episode.
@@ -251,10 +294,21 @@ class Environment:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.agent.param_ID))
 
         if make_movie:
-            self.makeMovie(play_movie=play_movie)
+            if self.record_fMRIRegressors:
+                curriculumRegressors.append(self.agent.bookkeeping.regressors)
+
+            if make_movie:
+                if self.record_fMRIRegressors:
+                    self.movieName = movie_names[n_level]
+                    self.makeMovie(play_movie=play_movie, regressors=self.agent.bookkeeping.regressors)
+                else:
+                    self.makeMovie(play_movie=play_movie)
 
         endtime = time.time()
         print "Game took {} seconds".format(endtime-starttime)
+
+        if self.record_fMRIRegressors:
+            return curriculumRegressors
 
     def playEpisode(self, gameObject, win=False):
 
@@ -286,7 +340,11 @@ class Environment:
 
 
             ### TODO: environment step should overload rle and produce a blue printout.
-            self.environment.step(action)
+            if self.record_fMRIRegressors
+                # pass regressors for optional visualization
+                self.environment.step(action, regressors=self.agent.bookkeeping.regressors)
+            else:
+                self.environment.step(action)
             if self.produce_printout:
                 print ""
                 print actionDict[action]
@@ -304,6 +362,8 @@ class Environment:
             display('loss')
 
         return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level
+
+
 
 def display(message):
     if message=='Quitting':
