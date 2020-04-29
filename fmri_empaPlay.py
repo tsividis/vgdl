@@ -9,70 +9,13 @@ import csv
 from collections import defaultdict
 from vgdl import core
 from IPython import embed
-from vgdl.main_agent import Agent
+from vgdl.EMPA import Agent
+from vgdl.environment import Environment
+from vgdl.hyperparameters import hyperparameter_sets
 
 # USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
 # * - optional
 # copied from fmri_replay.py
-
-# from load_games.py TODO dedupe
-hyperparameter_sets = [
-    {'idx'           : 0,
-     'short_horizon' : False,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 1,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10.,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 2,
-     'short_horizon' : False,
-     'first_order_horizon': False,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1,
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 3,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': 10, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 50,
-     },
-    {'idx'           : 4,
-     'short_horizon' : True,
-     'first_order_horizon': True,
-     'sprite_first_alpha': 10000,
-     'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1, #normally .1
-     'multisprite_first_alpha': 10000,
-     'multisprite_second_alpha': 100,
-     'novelty_first_alpha': 5000,
-     'novelty_second_alpha': 10,
-     }
-]
 
 client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
@@ -138,16 +81,9 @@ if __name__ == '__main__':
 
         # defaults from load_games.py 
         # python -m vgdl.load_games --game_name tiny_zelda
-        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=3, metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
+        task_ID = '0'
+        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
 
-        agent.record_fMRIRegressors = True
         # TODO momchil CAREFUL with saved curricula! might reload old agent; figure out how to deal with it
-        curriculumRegressors = agent.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False)
-        assert(len(curriculumRegressors) == len(regs))
-
-        for i in range(len(curriculumRegressors)): # for each play
-            reg = regs[i]
-            reg['regressors'] = curriculumRegressors[i]
-
-            assert False # so we don't actually insert stuff, when we should be using empaReplay
-            db.regressors.insert(reg)
+        environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=True)
+        environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False)

@@ -13,7 +13,7 @@ import csv
 import socket
 from collections import defaultdict
 from vgdl import core
-from vgdl.core import VGDLParser
+from vgdl.core import VGDLParser, fMRI_screensize
 from vgdl.core import keyPresses as keyNames
 from IPython import embed
 from vgdl.main_agent import Agent
@@ -36,8 +36,6 @@ else:
 
 
 db = client['heroku_7lzprs54']
-
-fMRI_screensize = (800,580) # TODO dedupe momchil
 
 def print_keystates(keystates):
     ts0 = keystates[1]['ts']

@@ -35,8 +35,6 @@ else:
 
 db = client['heroku_7lzprs54']
 
-fMRI_screensize = (800,580) # TODO dedupe momchil
-
 def is_int(s):
     try:
         int(s)

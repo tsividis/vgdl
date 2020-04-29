@@ -6,7 +6,7 @@ import random
 import time
 import copy
 from collections import defaultdict
-from core import colorDict, VGDLParser, sys
+from core import colorDict, VGDLParser, sys, fMRI_screensize
 from datetime import datetime
 from math import log
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
@@ -17,17 +17,16 @@ from hyperparameters import hyperparameter_sets, metacontroller_sets
 from agent_utils import translate_events, findNearestSprite, getSpritesByColor
 from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict, getPosterior
 from metacontroller import Metacontroller
-from dynamic_type_inference import dynamicTypeDistribution_VGDL1
+from dynamic_type_inference import dynamicTypeDistribution_VGDL1, getKL
 import WBP
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from bookkeeping import Bookkeeping
-+from pprint import pprint
+from pprint import pprint
 
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
-fMRI_screensize = (800,580) # TODO dedupe momchil
 
 class Agent:
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):
@@ -599,7 +598,9 @@ class Agent:
 
         distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
-        if self.record_fMRIRegressors:
+        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+            # don't log stuff from before any observations
+            # convention is: timestamp = stuff right after frame
             spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev)
             self.logfMRIRegressor('spriteKL', spriteKL)
         
@@ -706,7 +707,10 @@ class Agent:
             hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
             verbose=False, existingTheories=hypotheses))
 
-            if self.record_fMRIRegressors:
+            if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+                # don't log stuff from before any observations
+                # convention is: timestamp = stuff right after frame
+
                 # calculate postarior of old hypotheses
                 P = getPosterior(self.hypotheses, self.finalTimeStepList)
                 if self.hypothesesPosterior: # posterior on prev timestep
@@ -743,7 +747,10 @@ class Agent:
             print "changed theory:"
             hypotheses[0].display()
  
-        if self.record_fMRIRegressors:
+        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+            # don't log stuff from before any observations
+            # convention is: timestamp = stuff right after frame
+
             self.logfMRIRegressor('theory_change_flag', theory_change_flag)
             self.logfMRIRegressor('sprite_change_flag', distributionsHaveChanged)
             self.logfMRIRegressor('interaction_change_flag', hypotheses[0].__dict__ != self.hypotheses[0].__dict__)

@@ -2,6 +2,7 @@ from bookkeeping import Bookkeeping
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+from core import fMRI_screensize
 import cPickle, cloudpickle
 from datetime import datetime
 import os, subprocess, shutil
@@ -340,7 +341,7 @@ class Environment:
 
 
             ### TODO: environment step should overload rle and produce a blue printout.
-            if self.record_fMRIRegressors
+            if self.record_fMRIRegressors:
                 # pass regressors for optional visualization
                 self.environment.step(action, regressors=self.agent.bookkeeping.regressors)
             else:
