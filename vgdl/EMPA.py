@@ -16,6 +16,7 @@ from ontology import *
 from hyperparameters import hyperparameter_sets, metacontroller_sets
 from agent_utils import translate_events, findNearestSprite, getSpritesByColor
 from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict, getPosterior
+from theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule
 from metacontroller import Metacontroller
 from dynamic_type_inference import dynamicTypeDistribution_VGDL1, getKL
 import WBP
@@ -417,8 +418,14 @@ class Agent:
                 'termination_change_flag': [],
                 #'sprite_distr': [], # momchil: too big -- risks OOM / running out of disk space; shelve for now
                 'theory': [],
-                'theory_str': []
+                'theory_str': [],
+                'heuristicVal': [],
+                'heuristicSubvals': [],
+                'subgoal_total_counts': [],
+                'subgoal_reward': [],
+                'subgoal_counts_progress': []
             }
+            self.prevPlanner = None
 
 
 
@@ -760,6 +767,57 @@ class Agent:
             self.logfMRIRegressor('theory', copy.deepcopy(hypotheses[0]))
             #self.logfMRIRegressor('sprite_distr', copy.deepcopy(self.distribution.distribution)) # momchil: too big -- risks OOM / running out of disk space; shelve for now
             self.logfMRIRegressor('theory_str', hypotheses[0].display(as_string=True))
+
+            # get intrinsic rewards using fake planner TODO momchil test for perf, might be very slow, especially copying the RLE and whatnot
+            # TODO put in function
+            # from planAsNeeded and BFS
+            self.theoryRLEs = self.VrleInitPhase()
+            self.metacontroller.setMaxNodes()
+            self.steps_in_solution = 0
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
+            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
+                return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
+                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
+            node = WBP.Node(p.rle, p, [], None)
+            heuristicVal, heuristicSubvals = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
+            self.logfMRIRegressor('heuristicVal', heuristicVal) # R_GG
+            self.logfMRIRegressor('heuristicSubvals', heuristicSubvals) # R_GG broken down by sprite type
+
+            # manually calculate subgoal reward TODO momchil check with Pedro -- why doesn't it get calculated explicitly in WBP?
+            # from Eq 7 in draft and check_node_for_subgoal_progress
+            subgoal_total_counts = 0
+            subgoal_reward = 0
+            subgoal_counts_progress = 0
+            for term in self.hypotheses[0].terminationSet:
+                add = 0
+
+                if isinstance(term, SpriteCounterRule):
+                    stype = term.termination.stype
+                    n_stypes = len([0 for sprite in node.rle.findObjectsInRLE(stype)])
+                    subgoal_total_counts += n_stypes
+                    add = float(n_stypes - term.termination.limit) / n_stypes ** 2
+                    if self.prevPlanner and stype in self.prevPlanner.starting_stype_n.keys():
+                        subgoal_counts_progress += self.prevPlanner.starting_stype_n[stype] - n_stypes
+
+                elif isinstance(term, MultiSpriteCounterRule):
+                    stypes = term.termination.stypes
+                    n_stypes = sum([len(node.rle.findObjectsInRLE(stype)) for stype in stypes if node.rle.findObjectsInRLE(stype)])
+                    subgoal_total_counts += n_stypes
+                    add = float(n_stypes - term.termination.limit) / n_stypes ** 2
+                    if self.prevPlanner and tuple(stypes) in self.prevPlanner.starting_stype_n.keys():
+                        subgoal_counts_progress += self.prevPlanner.starting_stype_n[tuple(stypes)] - n_stypes
+
+                if term.termination.win:
+                    subgoal_reward += add
+                else:
+                    subgoal_reward -= add
+
+            self.prevPlanner = p # so we can compute progress towards subgoal on next step (note we only use the starting_stype_n so it's fine to not deepcopy)
+
+            self.logfMRIRegressor('subgoal_total_counts', subgoal_total_counts) # sum of N's
+            self.logfMRIRegressor('subgoal_reward', subgoal_reward) # R_SG
+            self.logfMRIRegressor('subgoal_counts_progress', subgoal_counts_progress) # delta of N's I think
+            print subgoal_total_counts, subgoal_reward, subgoal_counts_progress
 
             if theory_change_flag:
                 print "new theory:"

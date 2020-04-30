@@ -516,7 +516,7 @@ class Node():
 
 			thingWeShot = vrle.find_projectile_if_new(thingWeShoot)
 
-			prevHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
+			prevHeuristicVal, _ = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
 			
 			rolloutArray = []
 			i=0
@@ -530,7 +530,7 @@ class Node():
 				if self.WBP.display:
 					print vrle.show(indent=True, color='cyan')
 				
-				currHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
+				currHeuristicVal, _ = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
 
 				heuristicVal = currHeuristicVal-prevHeuristicVal
 				rolloutArray.append(heuristicVal)
@@ -912,22 +912,29 @@ class Node():
 		theory = self.WBP.theory
 		heuristicVal = 0
 		avatarNoveltyVals = []
+                spritecounter_val_tot = 0
+                multispritecounter_val_tot = 0
+                timeout_val_tot = 0
+                noveltytermination_val_tot = 0
 		for term in theory.terminationSet:
 			if isinstance(term, SpriteCounterRule):
 				spritecounter_val = self.spritecounter_val(theory, term, term.termination.stype, rle,
 					first_alpha=sprite_first_alpha, second_alpha=sprite_second_alpha,
 					negative_mult=sprite_negative_mult)
 				heuristicVal += spritecounter_val
+                                spritecounter_val_tot += spritecounter_val
 
 			elif isinstance(term, MultiSpriteCounterRule):
 				multispritecounter_val = self.multispritecounter_val(theory, term, rle,
 						first_alpha=multisprite_first_alpha, second_alpha=multisprite_second_alpha)
 				heuristicVal += multispritecounter_val
+                                multispritecounter_val_tot += multispritecounter_val
 
 			elif isinstance(term, TimeoutRule):
 				timeout_val = time_alpha * \
 					self.timeout_val(theory, term, rle)
 				heuristicVal += timeout_val
+                                timeout_val_tot += timeout_val
 
 			elif isinstance(term, NoveltyRule):
 				noveltytermination_val, ranking = self.noveltytermination_val(
@@ -938,18 +945,20 @@ class Node():
 						ranking])
 				else:
 					heuristicVal += noveltytermination_val
+                                        noveltytermination_val_tot += noveltytermination_val
 
 		if avatarNoveltyVals:
 			heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
+                        noveltytermination_val_tot += min(avatarNoveltyVals, key= lambda x: x[1])[0]
 		
 		self.heuristicVal = heuristicVal
 
-		return heuristicVal
+		return heuristicVal, (spritecounter_val_tot, multispritecounter_val_tot, timeout_val_tot, noveltytermination_val_tot)
 
 	def calculate_intrinsic_reward(self):
 
 		## Calculate theory-driven heuristic reward
-		self.heuristicVal = self.calculate_theory_driven_heuristics(**self.WBP.hyperparameters)
+		self.heuristicVal, _ = self.calculate_theory_driven_heuristics(**self.WBP.hyperparameters)
 		
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
