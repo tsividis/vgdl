@@ -410,16 +410,12 @@ class Agent:
         if self.record_fMRIRegressors:
             self.bookkeeping.regressors = {
                 'spriteKL': [],
-                'interactionKL': [],
-                'terminationKL': [],
                 'sampleKL': [],
-                'MAPloglik': [],
-                'MAPlogpost': [],
                 'theory_change_flag': [],
                 'sprite_change_flag': [],
                 'interaction_change_flag': [],
                 'termination_change_flag': [],
-                'theoryDist': [],
+                #'sprite_distr': [], # momchil: too big -- risks OOM / running out of disk space; shelve for now
                 'theory': [],
                 'theory_str': []
             }
@@ -755,11 +751,14 @@ class Agent:
             # don't log stuff from before any observations
             # convention is: timestamp = stuff right after frame
 
+            interactionSetEqual = all(any(i1==i2 for i2 in hypotheses[0].interactionSet) for i1 in self.hypotheses[0].interactionSet) # from Theory.__eq__()
+
             self.logfMRIRegressor('theory_change_flag', theory_change_flag)
             self.logfMRIRegressor('sprite_change_flag', distributionsHaveChanged)
-            self.logfMRIRegressor('interaction_change_flag', hypotheses[0].__dict__ != self.hypotheses[0].__dict__)
+            self.logfMRIRegressor('interaction_change_flag', not interactionSetEqual)
             self.logfMRIRegressor('termination_change_flag', set(hypotheses[0].terminationSet) != oldTerminationSet)
             self.logfMRIRegressor('theory', copy.deepcopy(hypotheses[0]))
+            #self.logfMRIRegressor('sprite_distr', copy.deepcopy(self.distribution.distribution)) # momchil: too big -- risks OOM / running out of disk space; shelve for now
             self.logfMRIRegressor('theory_str', hypotheses[0].display(as_string=True))
 
             if theory_change_flag:

@@ -199,11 +199,19 @@ if __name__ == '__main__':
             filename = os.path.join(theoriesDir, 'theory_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
             with open(filename, 'wb') as f:
                 cloudpickle.dump(reg['regressors']['theory'], f)
-
-            reg['regressors']['theory_filename'] = filename # remove from regressor object
+            reg['regressors']['theory_filename'] = filename
             reg['regressors']['theory'] = [] # remove from regressor object
 
+            # same deal with sprite distribution
+            # TODO too big -- risks running out of disk space; shelve for now
+            #
+            #filename = os.path.join(theoriesDir, 'sprite_distr_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+            #with open(filename, 'wb') as f:
+            #    cloudpickle.dump(reg['regressors']['sprite_distr'], f)
+            #reg['regressors']['sprite_distr_filename'] = filename
+            #reg['regressors']['sprite_distr'] = [] # remove from regressor object
 
+            # insert regressor into mongo
             db.regressors.insert_one(reg)
 
     if didSomething:
