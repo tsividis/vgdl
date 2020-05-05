@@ -1175,8 +1175,8 @@ class BasicGame(object):
         plotRegressor(regressors, 'sprite_change_flag', self.time, (400,30+30), self.screen, color=(100,100,0))
         plotRegressor(regressors, 'interaction_change_flag', self.time, (400,45+30), self.screen, color=(0,100,100))
         plotRegressor(regressors, 'termination_change_flag', self.time, (400,60+30), self.screen, color=(100,0,100))
-        plotRegressor(regressors, 'sampleKL', self.time, (400,75+30), self.screen, color=(100,0,0))
-        plotRegressor(regressors, 'spriteKL', self.time, (400,90+30), self.screen, color=(0,0,100))
+        #plotRegressor(regressors, 'sampleKL', self.time, (400,75+30), self.screen, color=(100,0,0)) same
+        #plotRegressor(regressors, 'spriteKL', self.time, (400,90+30), self.screen, color=(0,0,100)) we don't log it anymore
 
 
     def _fMRI_clearAll(self, onscreen=True):

@@ -419,13 +419,11 @@ class Agent:
                 #'sprite_distr': [], # momchil: too big -- risks OOM / running out of disk space; shelve for now
                 'theory': [],
                 'theory_str': [],
-                'heuristicVal': [],
-                'heuristicSubvals': [],
-                'subgoal_total_counts': [],
-                'subgoal_reward': [],
-                'subgoal_counts_progress': []
+                'R_GG': [],
+                'R_GGs': [],
+                'R_SG': [],
+                'R_SGs': []
             }
-            self.prevPlanner = None
 
 
 
@@ -608,8 +606,9 @@ class Agent:
         if self.record_fMRIRegressors and self.environment.getTime() > 0: 
             # don't log stuff from before any observations
             # convention is: timestamp = stuff right after frame
-            spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev)
-            self.logfMRIRegressor('spriteKL', spriteKL)
+            #spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) momchil: don't do it; super slow for plaqueAttack
+            #self.logfMRIRegressor('spriteKL', spriteKL)
+            pass
         
         # print "phase 4: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -723,8 +722,9 @@ class Agent:
                 if self.hypothesesPosterior: # posterior on prev timestep
                     # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
                     # (need to exclude latest timesteps when computing likelihood though)
-                    sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
-                    self.logfMRIRegressor('sampleKL', sampleKL)
+                    #sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior) # also errors out for bait sometimes and screws up the whole thing
+                    #self.logfMRIRegressor('sampleKL', sampleKL)
+                    pass
 
                 # calculate posterior using new hypotheses for next timestep
                 self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
@@ -779,45 +779,27 @@ class Agent:
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
             node = WBP.Node(p.rle, p, [], None)
-            heuristicVal, heuristicSubvals = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
-            self.logfMRIRegressor('heuristicVal', heuristicVal) # R_GG
-            self.logfMRIRegressor('heuristicSubvals', heuristicSubvals) # R_GG broken down by sprite type
 
-            # manually calculate subgoal reward TODO momchil check with Pedro -- why doesn't it get calculated explicitly in WBP?
-            # from Eq 7 in draft and check_node_for_subgoal_progress
-            subgoal_total_counts = 0
-            subgoal_reward = 0
-            subgoal_counts_progress = 0
-            for term in self.hypotheses[0].terminationSet:
-                add = 0
+            rh = p.rolloutHyperparameters # copy
 
-                if isinstance(term, SpriteCounterRule):
-                    stype = term.termination.stype
-                    n_stypes = len([0 for sprite in node.rle.findObjectsInRLE(stype)])
-                    subgoal_total_counts += n_stypes
-                    add = float(n_stypes - term.termination.limit) / n_stypes ** 2
-                    if self.prevPlanner and stype in self.prevPlanner.starting_stype_n.keys():
-                        subgoal_counts_progress += self.prevPlanner.starting_stype_n[stype] - n_stypes
+            # zero out second_alpha's (coefficient for R_GG) to get R_SG
+            p.rolloutHyperparameters['sprite_second_alpha'] = 0;
+            p.rolloutHyperparameters['multisprite_second_alpha'] = 0;
+            p.rolloutHyperparameters['novelty_second_alpha'] = 0;
+            R_GG, R_GGs = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
+            self.logfMRIRegressor('R_GG', R_GG) # goal gradient 
+            self.logfMRIRegressor('R_GGs', R_GGs) # broken down by sprite type
 
-                elif isinstance(term, MultiSpriteCounterRule):
-                    stypes = term.termination.stypes
-                    n_stypes = sum([len(node.rle.findObjectsInRLE(stype)) for stype in stypes if node.rle.findObjectsInRLE(stype)])
-                    subgoal_total_counts += n_stypes
-                    add = float(n_stypes - term.termination.limit) / n_stypes ** 2
-                    if self.prevPlanner and tuple(stypes) in self.prevPlanner.starting_stype_n.keys():
-                        subgoal_counts_progress += self.prevPlanner.starting_stype_n[tuple(stypes)] - n_stypes
+            # zero out first_alpha's (coefficient for R_SG) to get R_GG
+            p.rolloutHyperparameters = rh
+            p.rolloutHyperparameters['sprite_first_alpha'] = 0;
+            p.rolloutHyperparameters['multisprite_first_alpha'] = 0;
+            p.rolloutHyperparameters['novelty_first_alpha'] = 0;
+            R_SG, R_SGs = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
+            self.logfMRIRegressor('R_SG', R_SG) # subgoals 
+            self.logfMRIRegressor('R_SGs', R_SGs) # broken down by sprite type
 
-                if term.termination.win:
-                    subgoal_reward += add
-                else:
-                    subgoal_reward -= add
-
-            self.prevPlanner = p # so we can compute progress towards subgoal on next step (note we only use the starting_stype_n so it's fine to not deepcopy)
-
-            self.logfMRIRegressor('subgoal_total_counts', subgoal_total_counts) # sum of N's
-            self.logfMRIRegressor('subgoal_reward', subgoal_reward) # R_SG
-            self.logfMRIRegressor('subgoal_counts_progress', subgoal_counts_progress) # delta of N's I think
-            print subgoal_total_counts, subgoal_reward, subgoal_counts_progress
+            print R_GG, R_GGs, R_SG, R_SGs
 
             if theory_change_flag:
                 print "new theory:"
@@ -1000,8 +982,9 @@ class Agent:
                 self.distribution.spriteInduction(environment._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
 
                 if self.record_fMRIRegressors:
-                    spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev)
-                    self.logfMRIRegressor('spriteKL', spriteKL)
+                    #spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) momchil: don't do it; super slow for plaqueAttack
+                    #self.logfMRIRegressor('spriteKL', spriteKL)
+                    pass
         else:
             self.distribution.spriteInduction(environment._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
         print 'momchil: observe() -- does this even happen anymore?'
