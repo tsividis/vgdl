@@ -422,7 +422,8 @@ class Agent:
                 'R_GG': [],
                 'R_GGs': [],
                 'R_SG': [],
-                'R_SGs': []
+                'R_SGs': [],
+                'replan_flag': []
             }
 
 
@@ -767,6 +768,11 @@ class Agent:
             self.logfMRIRegressor('theory', copy.deepcopy(hypotheses[0]))
             #self.logfMRIRegressor('sprite_distr', copy.deepcopy(self.distribution.distribution)) # momchil: too big -- risks OOM / running out of disk space; shelve for now
             self.logfMRIRegressor('theory_str', hypotheses[0].display(as_string=True))
+
+            replan_flag = self.metacontroller.isReplanningNecessary() or self.environment.getTime() == 1
+            self.logfMRIRegressor('replan_flag', replan_flag)
+
+            print 'replan = ', replan_flag
 
             # get intrinsic rewards using fake planner TODO momchil test for perf, might be very slow, especially copying the RLE and whatnot
             # TODO put in function
