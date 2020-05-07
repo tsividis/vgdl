@@ -387,6 +387,7 @@ class Agent:
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
+            assert not self.record_fMRIRegressors
             self, self.bookkeeping.effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.
@@ -423,7 +424,13 @@ class Agent:
                 'R_GGs': [],
                 'R_SG': [],
                 'R_SGs': [],
-                'replan_flag': []
+                'replan_flag': [],
+                'likelihood': [],
+                'sum_lik': [], # sum of lik as used in theory inference TODO momchil: how does this make sense? we're summing not multiplying probabilities??
+                'n_ts': [], # size of finalTimeStepList
+                'num_effects': [], # redundant with effectListByColor logged in states, for sanity check
+                'newEffects_flag': [],
+                'newTimeStep': [] # basically finalTimeStepList
             }
 
 
@@ -634,7 +641,7 @@ class Agent:
         ## 'action', here refers to the previously-taken action,
         ## that led to the current state, current effects, current agentState
         event = {'agentState': self.agentState, 'agentAction': self.action, 'effectList': effects, \
-            'gameState': None, 'rle': self.environment}
+                'gameState': None, 'rle': self.environment} # momchil: rle makes the dumped savedCurricula state huge; compress somehow
 
         newEffects = False
 
@@ -672,6 +679,7 @@ class Agent:
             self.finalEventList.append(event)
             newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
             self.finalTimeStepList.append(newTimeStep)
+            self.logfMRIRegressor('newTimeStep', newTimeStep)
             for e in effects:
                 compactEvent = (e[0], e[1], e[2])
                 if compactEvent not in self.finalEffectList:
@@ -719,16 +727,20 @@ class Agent:
                 # convention is: timestamp = stuff right after frame
 
                 # calculate postarior of old hypotheses
+                # momchil: don't do; errors out for bait sometimes and screws up the whole thing, also doesn't really make sense
+                '''
                 P = getPosterior(self.hypotheses, self.finalTimeStepList)
                 if self.hypothesesPosterior: # posterior on prev timestep
                     # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
                     # (need to exclude latest timesteps when computing likelihood though)
-                    #sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior) # also errors out for bait sometimes and screws up the whole thing
-                    #self.logfMRIRegressor('sampleKL', sampleKL)
+                    sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
+                    self.logfMRIRegressor('sampleKL', sampleKL)
                     pass
 
                 # calculate posterior using new hypotheses for next timestep
                 self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
+                '''
+                pass
 
 
             # print "inference phase 2: {}".format(time.time()-t1)
@@ -769,10 +781,21 @@ class Agent:
             #self.logfMRIRegressor('sprite_distr', copy.deepcopy(self.distribution.distribution)) # momchil: too big -- risks OOM / running out of disk space; shelve for now
             self.logfMRIRegressor('theory_str', hypotheses[0].display(as_string=True))
 
-            replan_flag = self.metacontroller.isReplanningNecessary() or self.environment.getTime() == 1
+            replan_flag = self.checkForDangerOrAvatarMisLocation(self.environment, self.hypotheses[0], self.predicted_states, self.steps_in_solution) or self.environment.getTime() == 1
             self.logfMRIRegressor('replan_flag', replan_flag)
+   
+            if len(self.finalTimeStepList) > 0:
+                likelihood = hypotheses[0].likelihood(self.finalTimeStepList[-1])
+                sum_lik = sum([hypotheses[0].likelihood(ts) for ts in self.finalTimeStepList]) 
+            else:
+                likelihood = float("nan")
+                sum_lik = float("nan")
+            self.logfMRIRegressor('likelihood', likelihood)
+            self.logfMRIRegressor('sum_lik', sum_lik)
+            self.logfMRIRegressor('n_ts', len(self.finalTimeStepList))
+            self.logfMRIRegressor('num_effects', len(effects))
+            self.logfMRIRegressor('newEffects_flag', newEffects)
 
-            print 'replan = ', replan_flag
 
             # get intrinsic rewards using fake planner TODO momchil test for perf, might be very slow, especially copying the RLE and whatnot
             # TODO put in function

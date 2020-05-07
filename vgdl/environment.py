@@ -220,8 +220,9 @@ class Environment:
             
             i=0
             if loadedState:
+                assert not self.record_fMRIRegressors
                 i=loadedState['agent'].within_level_iteration
-                episodeCompactStates = loadedState['episodeCompactStates']
+                episodeCompactStates = loadedState['episodeCompactStates'] # momchil: why do we reload this for every level? not an issue for fMRI b/c we clear loadedState, but still...
             levelEffectsEncountered = []
             allStatesEncountered = []
             allCompactStates = []
@@ -262,7 +263,8 @@ class Environment:
                 # print "about to save state"
                 # embed()
 
-                self.agent.bookkeeping.saveCurriculumState(self.agent, episodeCompactStates, self.record_fMRIRegressors)
+                if not self.record_fMRIRegressors: # we save it later in fMRI mode -- see below
+                    self.agent.bookkeeping.saveCurriculumState(self.agent, episodeCompactStates, self.record_fMRIRegressors)
                 # print "saved state"
                 # embed()
                 ## will write all previous episodes to the file at the end of each episode.
@@ -294,12 +296,19 @@ class Environment:
                 self.agent.bookkeeping.deleteEpisodeFile()
 
                 if self.record_fMRIRegressors:
-                    # momchil: we only do 1 iteration for fMRI (b/c it's just replay)
+                    # momchil: we only do 1 iteration for fMRI (b/c it's just replay; we can't "retry")
                     # TODO better way?
                     break
 
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.agent.param_ID))
+
+        # fMRI momchil: save state only after successfully completing all levels given
+        # it is easier if we match the granularity at which we load/save curriculum, in case of errors during replay
+        # e.g. if we replay each block as one set of levels, and if some part of replay fails, we want to restart the whole block,
+        # but we won't be able to if curriculum states were being saved along the way; we have to start from the state as it was at the beginning
+        if self.record_fMRIRegressors:
+            self.agent.bookkeeping.saveCurriculumState(self.agent, {}, self.record_fMRIRegressors)
 
         if self.record_fMRIRegressors:
             curriculumRegressors.append(self.agent.bookkeeping.regressors)

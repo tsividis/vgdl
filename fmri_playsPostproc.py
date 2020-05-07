@@ -254,17 +254,17 @@ def playsPostproc(subj_id):
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
 
         play_post['timestamps'] = timestamps
-        play_post['new_sprites'] = new_sprites
-        play_post['killed_sprites'] = killed_sprites
-        play_post['sprites'] = sprites
-        play_post['collisions'] = collisions
-        play_post['effects'] = effects
-        play_post['sprite_groups'] = sprite_groups
-        play_post['non_walls'] = non_walls 
-        play_post['avatar_moved'] = avatar_moved 
-        play_post['moved'] = moved
-        play_post['movable'] = movable 
-        play_post['changed'] = changed 
+        play_post['new_sprites'] = new_sprites # num new sprites
+        play_post['killed_sprites'] = killed_sprites # num killed sprites
+        play_post['sprites'] = sprites # num sprites
+        play_post['collisions'] = collisions # num collisions
+        play_post['effects'] = effects # num effects
+        play_post['sprite_groups'] = sprite_groups # num sprite categories
+        play_post['non_walls'] = non_walls # num non-wall sprites
+        play_post['avatar_moved'] = avatar_moved  # did the avatar move?
+        play_post['moved'] = moved # num sprites that just moved
+        play_post['movable'] = movable  # num of sprites that can mave (i.e. are not static)
+        play_post['changed'] = changed  # num changed grid squares
 
         #
         # extract keypresses similar to keyholds, etc already recorded in plays (see startGame() in core.py)

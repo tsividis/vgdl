@@ -48,7 +48,7 @@ class TimeStep:
 		self.events = events
 		self.t = False # Number timestep
 		self.gameState = gameState
-		self.rle = rle
+                self.rle = rle # momchil: do we use this? makes saving/loading timesteps tough (OOM), esp. across plays
 
 	def display(self):
 		print (self.agentAction, self.agentState, self.events, self.gameState)
@@ -248,9 +248,10 @@ def printInteractionSet(interactionSet):
 # calculate posterior of set of hypotheses
 #
 def getPosterior(hypotheses, timesteps):
+    assert False, "doesn't make sense for the all-or-none likelihood (0 or 1)"
     posts = [0] * len(hypotheses)
 
-    logliks = [sum([h.likelihood(ts) for ts in timesteps]) for h in hypotheses]
+    logliks = [sum([np.log(h.likelihood(ts)) for ts in timesteps]) for h in hypotheses]
     liks = np.exp(logliks)
 
     priors = [h.prior() for h in hypotheses]

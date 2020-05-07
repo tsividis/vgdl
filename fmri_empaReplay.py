@@ -195,12 +195,22 @@ if __name__ == '__main__':
             theoriesDir = 'theories'
             if theoriesDir not in os.listdir('.'):
                 os.makedirs(theoriesDir)
-
+    
+            # serialize theory sequence
             filename = os.path.join(theoriesDir, 'theory_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
             with open(filename, 'wb') as f:
                 cloudpickle.dump(reg['regressors']['theory'], f)
             reg['regressors']['theory_filename'] = filename
             reg['regressors']['theory'] = [] # remove from regressor object
+
+            # serialize time steps (used to calculate likelihood) 
+            for j in range(len(reg['regressors']['newTimeStep'])):
+                reg['regressors']['newTimeStep'][j][0].rle = None # delete RLE's before saving; they're huge and we don't need them for computing likelihoods
+            filename = os.path.join(theoriesDir, 'newTimeStep_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+            with open(filename, 'wb') as f:
+                cloudpickle.dump(reg['regressors']['newTimeStep'], f)
+            reg['regressors']['newTimeStep_filename'] = filename
+            reg['regressors']['newTimeStep'] = [] # remove from regressor object
 
             # same deal with sprite distribution
             # TODO too big -- risks running out of disk space; shelve for now
