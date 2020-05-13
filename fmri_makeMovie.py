@@ -123,6 +123,17 @@ if __name__ == '__main__':
         with open(reg['regressors']['theory_filename'], 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
 
+        # hack to fix interaction_change_flag TODO undo once we re-run it
+        for i in range(1, len(reg['regressors']['interaction_change_flag'])):
+            prev_theory = reg['regressors']['theory'][i-1][0]
+            curr_theory = reg['regressors']['theory'][i][0]
+            interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
+
+            if reg['regressors']['interaction_change_flag'][i][0]:
+                print 'w000000t interaction_change_flag!'
+                embed()
+            reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
+
         # get states
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)

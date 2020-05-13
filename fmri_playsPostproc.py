@@ -121,6 +121,16 @@ def playsPostproc(subj_id):
             assert db.plays_post.count(q) == 1, 'Too many regressors!'
             continue
 
+        # get regressors
+        q = {'play_key': play['_id']}
+        print q
+        print db.regressors.count(q)
+        assert db.regressors.count(q) == 1, 'Too many regressors!' 
+        regs = db.regressors.find(q).sort('ts', -1)
+        reg = None
+        for reg in regs:
+            break # just take the latest one
+
         # get states
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
@@ -129,6 +139,10 @@ def playsPostproc(subj_id):
         zkeystates = play['zkeystates']
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
+
+        # load theories from disk
+        with open(reg['regressors']['theory_filename'], 'r') as f:
+            reg['regressors']['theory'] = cloudpickle.load(f)
 
         # create object to hold play postprocessing data
         # similar to regressors (see fmri_empaReplay.py)
@@ -143,6 +157,16 @@ def playsPostproc(subj_id):
             'level_id': play['level_id'],
             'type': 'fmri_playsPostproc'
         }
+
+        # hack to fix interaction_change_flag TODO undo once we re-run it
+        for i in range(1, len(reg['regressors']['interaction_change_flag'])):
+            prev_theory = reg['regressors']['theory'][i-1][0]
+            curr_theory = reg['regressors']['theory'][i][0]
+            interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
+
+            reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
+        interaction_change_flag = reg['regressors']['interaction_change_flag']
+        play_post['interaction_change_flag'] = interaction_change_flag
 
         # 
         # extract visual & sprite stuff recorded in the states 
