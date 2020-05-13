@@ -52,8 +52,11 @@ do
                 echo tot_plays vs nregs -- $tot_plays vs. $nregs
                 if [ "$tot_plays" -ne "$nregs" ]
                 then
-                    echo NOT EQUAL: aborting script
-                    exit 1
+                    #echo NOT EQUAL: aborting script
+                    #exit 1
+                    echo NOT EQUAL: skipping 
+                    ((tot_plays=tot_plays+1))
+                    continue
                 fi
 
 
