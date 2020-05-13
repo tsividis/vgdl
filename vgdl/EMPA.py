@@ -771,7 +771,7 @@ class Agent:
             # don't log stuff from before any observations
             # convention is: timestamp = stuff right after frame
 
-            interactionSetEqual = all(any(i1==i2 for i2 in hypotheses[0].interactionSet) for i1 in self.hypotheses[0].interactionSet) # from Theory.__eq__()
+            interactionSetEqual = all(any(i1==i2 for i2 in self.hypotheses[0].interactionSet) for i1 in hypotheses[0].interactionSet) # from Theory.__eq__(); # order is important here!
 
             self.logfMRIRegressor('theory_change_flag', theory_change_flag)
             self.logfMRIRegressor('sprite_change_flag', distributionsHaveChanged)
