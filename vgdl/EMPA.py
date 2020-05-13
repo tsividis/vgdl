@@ -240,7 +240,7 @@ class Agent:
         ## Returns simulatable world in agent's head given 'hypothesis', including object goal
         # t1 = time.time()
         gameString, levelString, symbolDict = writeTheoryToTxt(self.environment, hypothesis, self.symbolDict,\
-                 "./theory_files/{}.py".format(self.gameFilename))
+                "./theory_files/{}_{}.py_auto".format(self.gameFilename, self.task_ID)) # momchil: include task_ID so parallel subjects don't overwrite each other (same as episode filename), also extension not .py so as not to overwrite accidentally during scp 
         # print "writeTheory: {}".format(time.time()-t1)
         # t1 = time.time()
         Vrle = createMindEnv(gameString, levelString, output=False)

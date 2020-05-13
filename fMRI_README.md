@@ -208,7 +208,7 @@ Other scripts
 `fmri_playsPostproc.py` -- generate nuisance regressors for GLMs
 
 
-Tips
+Tips & Gotchas
 -----
 
 To see where you `embed()`ed, do:
@@ -219,3 +219,7 @@ To see where you `embed()`ed, do:
 Python time profiling: [cProfile](https://stackoverflow.com/questions/582336/how-can-you-profile-a-python-script), e.g. `python -m cProfile -s cumtime fmri_empaReplay.py 1 0 0 0 0 > chase_profile.txt`
 
 Python memory profiling: [memory-profiler](https://pypi.org/project/memory-profiler/), or `get_size` in `utils.py`
+
+Careful not to overwrite local scp\*.sh files when copying from NCF
+
+Careful not to overwrite remote theory_files when copying to NCF
