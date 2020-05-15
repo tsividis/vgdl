@@ -108,7 +108,7 @@ class WBP():
 
 		self.killer_types = [inter.slot2 for inter in self.theory.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
 
-		self.position_score_multiplier = -10
+		self.position_score_multiplier = -100 #-500
 		if self.hyperparameter_index in ['long-term'] and not movingTypesInGame:
 			self.position_score_multiplier = -1
 
@@ -249,10 +249,9 @@ class WBP():
 		if not self.lesion:
 			
 			## Normal case: Always use novelty to filter. 
-			acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
-			
+			# acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
 			## Sort max to min for pop()
-			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
+			bestNodes = sorted(QReward, key=lambda n: (-n.intrinsic_reward, n.novelty))
 
 		elif 'IW' in self.lesion:
 			
@@ -416,16 +415,16 @@ class WBP():
 			node = node.parent
 		return printable_predicted_states[::-1], predicted_states[::-1]
 
-	def BFS(self):
+	def BFS(self, root_node):
 		QReward = []
 
-		start = Node(self.rle, self, [], None)
+		# start = Node(self.rle, self, [], None)
+		start = root_node
 
 		QReward.append(start)
 		self.total_nodes_selected = 0
 
 		print "planning..."
-		
 		while len(QReward)>0 and self.total_nodes_selected < self.max_nodes:
 
 			if self.total_nodes_selected > 0 and self.total_nodes_selected%100 == 0 and self.display:
@@ -437,6 +436,7 @@ class WBP():
 			## If we're out of novel nodes, we should tell the metacontroller we'd like to quit.
 			## It then will quit if this happens a couple times.
 			if current in [None, 'pickMaxNode']:
+				print("OUT OF NOVEL NODES. OH NO", current)
 				self.quitting = True
 				self.return_non_win_plan(start, QReward)
 				return
@@ -452,6 +452,7 @@ class WBP():
 			## Node expansion
 			for a in current_actions:
 				child = Node(self.rle, self, current.actionSeq+[a], current)
+				# print(child.actionSeq, child.intrinsic_reward)
 				child = self.check_node_for_subgoal_progress(child)
 
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
@@ -485,7 +486,66 @@ class WBP():
 
 		return
 
+	def TDUpdate(self, win_state, lr=1, discount=0.9):
+		win_state.value = win_state.intrinsic_reward
+		curr_state = win_state
+		for i, a in enumerate(win_state.actionSeq):
+			if curr_state.parent.value is None:
+				curr_state.parent.value = 0
+			curr_state.parent.value += lr * (curr_state.intrinsic_reward + discount * curr_state.value - curr_state.parent.value)
+			curr_state = curr_state.parent
+		return curr_state.value
 
+	def updateValueUsingBFS(self, root_node):
+		print("checking child", root_node.actionSeq)
+		self.winning_states = []
+		if root_node.win == True:
+			root_node.value = root_node.intrinsic_reward
+			return root_node.value
+		self.BFS(root_node)
+		if self.winning_states:
+			val = self.TDUpdate(self.winning_states[0])
+			return val
+
+	def planUsingTDSearch(self):
+		# Note: need to update state above root node also?
+		self.root_node = Node(self.rle, self, [], None)
+		# print "FACTS ABOUT ROOT NODE"
+		# print(root_node.rle._isDone(), root_node.win, root_node.terminal, root_node.children, root_node.actionSeq, root_node.intrinsic_reward)
+		solution = []
+
+		while True:
+			current_actions = self.trim_futile_actions(self.root_node)
+			# print("CURRENT_ACTIONS", current_actions)
+
+			if self.root_node.children == []: # remember to add children during BFS
+				for a in current_actions:
+					child = Node(self.rle, self, self.root_node.actionSeq + [a], self.root_node)
+					# print(child.rle._isDone(), child.win, child.terminal, child.children, child.actionSeq, child.intrinsic_reward)				
+					self.root_node.children.append(child)
+
+			for i, (a,child) in enumerate(zip(current_actions, self.root_node.children)):
+				if child.value is not None:
+					continue
+				child.value = self.updateValueUsingBFS(child)
+				print(child.value, child.intrinsic_reward)
+				self.root_node.children[i] = child
+			
+			a = current_actions[np.argmax([child.value for child in self.root_node.children])]
+			solution.append(a)
+			print("current solution: ", solution)
+			self.root_node = self.root_node.children[np.argmax([child.value for child in self.root_node.children])]
+			self.root_node = self.check_node_for_subgoal_progress(self.root_node)
+			print("if terminal", self.root_node.terminal)
+			print
+			if self.root_node.terminal:
+				self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(self.root_node)
+				self.solution = solution
+				self.quitting = False
+				print(self.solution, self.predicted_states)
+				print
+				return
+			
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -497,8 +557,9 @@ class Node():
 		self.candidates = set()
 		self.novelty = None
 		self.reward = None
+		self.value = None
 		self.intrinsic_reward = 0
-		self.children = None
+		self.children = []
 		self.reconstructed=False
 		if self.parent is not None:
 			self.rolloutArray = parent.rolloutArray[1:]
@@ -950,9 +1011,11 @@ class Node():
 
 		## Calculate theory-driven heuristic reward
 		self.heuristicVal = self.calculate_theory_driven_heuristics(**self.WBP.hyperparameters)
-		
+		# print(self.heuristicVal, self.position_score(self.WBP.position_score_multiplier), self.rle._game.score)
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
+		if self.win:
+			self.intrinsic_reward += 200
 		return
 
 	def position_score(self, factor=1.):

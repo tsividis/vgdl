@@ -449,7 +449,8 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            p.BFS()
+            p.planUsingTDSearch()
+            # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)
             # t1 = time.time()
@@ -476,6 +477,7 @@ class Agent:
             if self.solution:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
                 for i,g in enumerate(self.printable_predicted_states[1:]):
+                    print(self.solution[i])
                     print actionDict[self.solution[i]]
                     print colored(g, 'green')
                 print "==============================================================="
