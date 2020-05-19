@@ -25,6 +25,21 @@ import pygame
 # * - optional
 # copied from fmri_makeMovie.py
 
+# from core.py
+def dispTheory(theory):
+    text = theory.display(as_string=True)
+    lines = text.split('\n')
+    lines = [l.strip() for l in lines if l.strip()]
+    l = []
+    for i in range(len(lines)):
+        if 'generic: True' in lines[i]:
+            continue
+        if lines[i][-1] == ':':
+            lines[i] = '-------- ' + lines[i]
+        l.append(lines[i])
+    text = '\n'.join(l)
+    return text
+
 if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
     client = MongoClient('localhost', 27017)
@@ -50,8 +65,12 @@ if __name__ == '__main__':
 
     query = {'subj_id': subj_id, 'run_id': {'$lt': 7}}
 
+    ff = open('fmri_countRegressors.txt', 'w')
+
     for game in games:
         query['game_name'] = game
+
+        ff.write('\n\n\n\n --------------------------------------- ' + game + ' ----------------------- \n\n\n\n')
 
         nplays = db.plays.count(query)
         nregs = db.regressors.count(query)
@@ -67,4 +86,17 @@ if __name__ == '__main__':
             cnt = db.regressors.count(q)
             if cnt != 1:
                 print '         wrong # of regressors for ', play['run_id'], play['block_id'], play['instance_id'], play['play_id'], ' = ', cnt
-                regs = db.regressors.find(q).sort('ts', -1)
+
+            '''
+            reg = db.regressors.find_one(q)
+
+            # load theories from disk
+            with open(reg['regressors']['theory_filename'], 'r') as f:
+                reg['regressors']['theory'] = cloudpickle.load(f)
+
+            s = dispTheory(reg['regressors']['theory'][0][0])
+            ff.write(s)
+            ff.write('\n\n ------ new play: ------- ' + str(play['_id']))
+            print '\n\n ------ new play: ------- ' + str(play['_id'])
+            print s
+            '''
