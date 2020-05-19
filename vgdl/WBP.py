@@ -488,6 +488,7 @@ class WBP():
 
 	def TDUpdate(self, win_state, lr=1, discount=0.9):
 		win_state.value = win_state.intrinsic_reward
+		print("WINNING STATE VALUE", win_state.value)
 		curr_state = win_state
 		for i, a in enumerate(win_state.actionSeq):
 			if curr_state.parent.value is None:
@@ -507,15 +508,20 @@ class WBP():
 			val = self.TDUpdate(self.winning_states[0])
 			return val
 
-	def planUsingTDSearch(self):
+	def planUsingTDSearch(self, total_steps, value_array, reward_array, collect_depth):
 		# Note: need to update state above root node also?
 		self.root_node = Node(self.rle, self, [], None)
+		j = total_steps
 		# print "FACTS ABOUT ROOT NODE"
 		# print(root_node.rle._isDone(), root_node.win, root_node.terminal, root_node.children, root_node.actionSeq, root_node.intrinsic_reward)
 		solution = []
 
 		while True:
 			current_actions = self.trim_futile_actions(self.root_node)
+			if value_array is None or reward_array is None:
+				value_array = np.zeros((len(current_actions), collect_depth))
+				reward_array = np.zeros((len(current_actions), collect_depth))
+
 			# print("CURRENT_ACTIONS", current_actions)
 
 			if self.root_node.children == []: # remember to add children during BFS
@@ -528,11 +534,19 @@ class WBP():
 				if child.value is not None:
 					continue
 				child.value = self.updateValueUsingBFS(child)
+				if j < collect_depth:
+					value_array[i, j] = child.value
+					reward_array[i, j] = child.intrinsic_reward
 				print(child.value, child.intrinsic_reward)
 				self.root_node.children[i] = child
 			
 			a = current_actions[np.argmax([child.value for child in self.root_node.children])]
 			solution.append(a)
+			j += 1
+			# print "VALUE ARRAY"
+			# print(value_array)
+			# print "REWARD ARRAY"
+			# print(reward_array)
 			print("current solution: ", solution)
 			self.root_node = self.root_node.children[np.argmax([child.value for child in self.root_node.children])]
 			self.root_node = self.check_node_for_subgoal_progress(self.root_node)
@@ -544,7 +558,7 @@ class WBP():
 				self.quitting = False
 				print(self.solution, self.predicted_states)
 				print
-				return
+				return value_array, reward_array
 			
 
 class Node():

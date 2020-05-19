@@ -144,6 +144,8 @@ class Agent:
         self.metacontroller = Metacontroller(self)
 
         self.total_planner_steps = 0
+        self.value_array = None
+        self.reward_array = None
         self.levels_won = 0
 
         ## used for time-stamping data related to this particular run of the model.
@@ -449,7 +451,7 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            p.planUsingTDSearch()
+            self.value_array, self.reward_array = p.planUsingTDSearch(self.total_planner_steps, self.value_array, self.reward_array, 50)
             # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)
@@ -484,8 +486,8 @@ class Agent:
 
 
             ### BOOKKEEPING ###
-            self.total_planner_steps += p.total_nodes_opened
-            self.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
+            self.total_planner_steps += len(self.solution)
+            self.planner_nodes_opened_on_most_recent_step = len(self.solution)
 
         if self.metacontroller.quitting:
             print "Metacontroller suggests quitting:", self.metacontroller.quitting

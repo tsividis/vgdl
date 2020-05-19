@@ -6,6 +6,7 @@ import cPickle, cloudpickle
 from datetime import datetime
 import os, subprocess, shutil
 import time
+import numpy as np
 from IPython import embed
 
 """
@@ -294,8 +295,9 @@ class Environment:
             episodeSteps += 1
 
             ended, win = self.environment._isDone()
-            
 
+        np.savetxt("expt_ee_collected_values_{}.csv".format(self.n_level), self.agent.value_array, delimiter=',')
+        np.savetxt("expt_ee_collected_rewards_{}.csv".format(self.n_level), self.agent.reward_array, delimiter=',')
         score = self.environment.getScore()
             
         if win:
