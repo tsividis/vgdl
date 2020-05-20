@@ -296,8 +296,8 @@ class Environment:
 
             ended, win = self.environment._isDone()
 
-        np.savetxt("expt_ee_collected_values_{}.csv".format(self.n_level), self.agent.value_array, delimiter=',')
-        np.savetxt("expt_ee_collected_rewards_{}.csv".format(self.n_level), self.agent.reward_array, delimiter=',')
+        # np.savetxt("expt_ee_collected_values_{}.csv".format(self.n_level), self.agent.value_array, delimiter=',')
+        # np.savetxt("expt_ee_collected_rewards_{}.csv".format(self.n_level), self.agent.reward_array, delimiter=',')
         score = self.environment.getScore()
             
         if win:

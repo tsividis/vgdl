@@ -451,7 +451,7 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            self.value_array, self.reward_array = p.planUsingTDSearch(self.total_planner_steps, self.value_array, self.reward_array, 50)
+            p.planUsingTDSearch()
             # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)
@@ -462,7 +462,7 @@ class Agent:
             #     self.predicted_states = p.predicted_states
             #     if self.solution and self.display_text:
             #         print "got solution"
-            # else:
+            # else:self.total_planner_steps, self.value_array, self.reward_array, 50self.total_planner_steps, self.value_array, self.reward_array, 50
             #     self.solution = []
 
             self.solution = p.solution
@@ -479,7 +479,6 @@ class Agent:
             if self.solution:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
                 for i,g in enumerate(self.printable_predicted_states[1:]):
-                    print(self.solution[i])
                     print actionDict[self.solution[i]]
                     print colored(g, 'green')
                 print "==============================================================="

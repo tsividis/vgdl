@@ -108,7 +108,7 @@ class WBP():
 
 		self.killer_types = [inter.slot2 for inter in self.theory.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
 
-		self.position_score_multiplier = -100 #-500
+		self.position_score_multiplier = -500 #-500
 		if self.hyperparameter_index in ['long-term'] and not movingTypesInGame:
 			self.position_score_multiplier = -1
 
@@ -415,11 +415,11 @@ class WBP():
 			node = node.parent
 		return printable_predicted_states[::-1], predicted_states[::-1]
 
-	def BFS(self, root_node):
+	def BFS(self, start_node):
 		QReward = []
 
 		# start = Node(self.rle, self, [], None)
-		start = root_node
+		start = start_node
 
 		QReward.append(start)
 		self.total_nodes_selected = 0
@@ -450,11 +450,14 @@ class WBP():
 			self.total_nodes_opened += len(current_actions)
 
 			## Node expansion
-			for a in current_actions:
-				child = Node(self.rle, self, current.actionSeq+[a], current)
-				# print(child.actionSeq, child.intrinsic_reward)
+			for a_i,a in enumerate(current_actions):
+				if len(current.children) < len(current_actions):
+					child = Node(self.rle, self, current.actionSeq+[a], current)
+					current.children.append(child)
+				else:
+					assert len(current.children) == len(current_actions)
+					child = current.children[a_i]
 				child = self.check_node_for_subgoal_progress(child)
-
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
 					self.winning_states.append(child)
@@ -465,101 +468,79 @@ class WBP():
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				self.bestNode = bestNodes[0]
-				self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(self.bestNode)
-				self.solution = self.bestNode.actionSeq
+				# self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(self.bestNode)
+				# self.solution = self.bestNode.actionSeq
 				if self.display:
 					print "found winning states"
-				return
+				return self.bestNode
 
 		self.solution = []
 
-		if self.stall_mode:
-			print "returning best non-win-plan"
-			self.return_best_non_win_plan(QReward)
-			return
+		# if self.stall_mode:
+		print "returning best non-win-plan"
+		self.return_best_non_win_plan(QReward)
+		return self.bestNode
 
 		## Above segment can be changed to this:
 		# if self.stall_mode:
 		# 	print "returning best non-win-plan"
 		# 	self.return_non_win_plan(start, QReward)
 		# 	return
+		# print "HEY MAN"
+		# return
+		
+	def TDTillRoot(self, win_node, lr=1, discount=0.9):
+		win_node.value = win_node.intrinsic_reward
+		current_node = win_node
 
-		return
+		while current_node.parent is not None:
+			if current_node.parent.value is None:
+				current_node.parent.value = 0
+			current_node.parent.value += lr * (current_node.intrinsic_reward + discount * current_node.value - current_node.parent.value)
+			current_node = current_node.parent
 
-	def TDUpdate(self, win_state, lr=1, discount=0.9):
-		win_state.value = win_state.intrinsic_reward
-		print("WINNING STATE VALUE", win_state.value)
-		curr_state = win_state
-		for i, a in enumerate(win_state.actionSeq):
-			if curr_state.parent.value is None:
-				curr_state.parent.value = 0
-			curr_state.parent.value += lr * (curr_state.intrinsic_reward + discount * curr_state.value - curr_state.parent.value)
-			curr_state = curr_state.parent
-		return curr_state.value
-
-	def updateValueUsingBFS(self, root_node):
-		print("checking child", root_node.actionSeq)
-		self.winning_states = []
-		if root_node.win == True:
-			root_node.value = root_node.intrinsic_reward
-			return root_node.value
-		self.BFS(root_node)
-		if self.winning_states:
-			val = self.TDUpdate(self.winning_states[0])
-			return val
-
-	def planUsingTDSearch(self, total_steps, value_array, reward_array, collect_depth):
-		# Note: need to update state above root node also?
-		self.root_node = Node(self.rle, self, [], None)
-		j = total_steps
-		# print "FACTS ABOUT ROOT NODE"
-		# print(root_node.rle._isDone(), root_node.win, root_node.terminal, root_node.children, root_node.actionSeq, root_node.intrinsic_reward)
+	def getValueSolution(self):
+		print "SOLUTION"
+		current_node = self.root_node
 		solution = []
+		while current_node.win != True:
+			current_actions = self.trim_futile_actions(current_node)
+			a_i = np.argmax([child.value for child in current_node.children])
+			action = current_actions[a_i]
+			solution.append(action)
+			print(action)
+			current_node = current_node.children[a_i]
+		return solution, current_node
+
+	def planUsingTDSearch(self):
+		self.root_node = Node(self.rle, self, [], None)
+		current_node = self.root_node
 
 		while True:
-			current_actions = self.trim_futile_actions(self.root_node)
-			if value_array is None or reward_array is None:
-				value_array = np.zeros((len(current_actions), collect_depth))
-				reward_array = np.zeros((len(current_actions), collect_depth))
-
-			# print("CURRENT_ACTIONS", current_actions)
-
-			if self.root_node.children == []: # remember to add children during BFS
-				for a in current_actions:
-					child = Node(self.rle, self, self.root_node.actionSeq + [a], self.root_node)
-					# print(child.rle._isDone(), child.win, child.terminal, child.children, child.actionSeq, child.intrinsic_reward)				
-					self.root_node.children.append(child)
-
-			for i, (a,child) in enumerate(zip(current_actions, self.root_node.children)):
-				if child.value is not None:
-					continue
-				child.value = self.updateValueUsingBFS(child)
-				if j < collect_depth:
-					value_array[i, j] = child.value
-					reward_array[i, j] = child.intrinsic_reward
-				print(child.value, child.intrinsic_reward)
-				self.root_node.children[i] = child
-			
-			a = current_actions[np.argmax([child.value for child in self.root_node.children])]
-			solution.append(a)
-			j += 1
-			# print "VALUE ARRAY"
-			# print(value_array)
-			# print "REWARD ARRAY"
-			# print(reward_array)
-			print("current solution: ", solution)
-			self.root_node = self.root_node.children[np.argmax([child.value for child in self.root_node.children])]
-			self.root_node = self.check_node_for_subgoal_progress(self.root_node)
-			print("if terminal", self.root_node.terminal)
-			print
-			if self.root_node.terminal:
-				self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(self.root_node)
-				self.solution = solution
+			current_actions = self.trim_futile_actions(current_node)
+			for a_i, a in enumerate(current_actions):
+				if len(current_node.children) < len(current_actions):
+					child = Node(self.rle, self, current_node.actionSeq + [a], current_node)
+					current_node.children.append(child)
+				else:
+					assert len(current_node.children) == len(current_actions)
+					child = current_node.children[a_i]
+				self.winning_states = []
+				win_node = self.BFS(child)
+				print("WIN STATE AT", len(win_node.actionSeq) - len(child.actionSeq))
+				self.TDTillRoot(win_node)
+				print("VALUE AND REWARD", child.value, child.intrinsic_reward)
+				current_node.children[a_i] = child
+			print("ACTION", current_actions[np.argmax([child.intrinsic_reward for child in current_node.children])])
+			current_node = current_node.children[np.argmax([child.intrinsic_reward for child in current_node.children])]
+			print("SOLN TILL NOW", current_node.actionSeq)
+			if current_node.terminal:
+				print("TERMINAL")
+				self.solution, last_node = self.getValueSolution()
+				self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(last_node)
 				self.quitting = False
-				print(self.solution, self.predicted_states)
-				print
-				return value_array, reward_array
-			
+				return
+			print
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
@@ -1029,7 +1010,7 @@ class Node():
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 		if self.win:
-			self.intrinsic_reward += 200
+			self.intrinsic_reward += 1000
 		return
 
 	def position_score(self, factor=1.):
