@@ -160,7 +160,8 @@ def playsPostproc(subj_id):
         }
 
         # hack to fix interaction_change_flag TODO undo once we re-run it
-        for i in range(1, len(reg['regressors']['interaction_change_flag'])):
+        assert len(reg['regressors']['interaction_change_flag']) == len(reg['regressors']['theory'])
+        for i in range(1, len(reg['regressors']['theory'])):
             prev_theory = reg['regressors']['theory'][i-1][0]
             curr_theory = reg['regressors']['theory'][i][0]
             interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
@@ -168,6 +169,44 @@ def playsPostproc(subj_id):
             reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
         interaction_change_flag = reg['regressors']['interaction_change_flag']
         play_post['interaction_change_flag'] = interaction_change_flag
+
+        #
+        # extract theory-based regressors
+        #
+
+        S_len = []
+        I_len = []
+        T_len = []
+        Igen_len = []
+        Tnov_len = []
+        Ip_len = []
+        for i in range(len(reg['regressors']['theory'])):
+            theory = reg['regressors']['theory'][i][0]
+            S_len.append(len(theory.spriteSet))
+            I_len.append(len([r for r in theory.interactionSet if not r.generic]))
+            T_len.append(len([t for t in theory.terminationSet if t.ruleType not in ['NoveltyRule']]))
+            Ip_len.append(len([r for r in theory.interactionSet if not r.generic and r.interaction not in ['nothing']]))
+            Igen_len.append(len([r for r in theory.interactionSet if r.generic]))
+            Tnov_len.append(len([t for t in theory.terminationSet if t.ruleType in ['NoveltyRule']]))
+        dS_len = [0] + [x2 - x1 for x1, x2 in zip(S_len[:-1], S_len[1:i])]
+        dI_len = [0] + [x2 - x1 for x1, x2 in zip(I_len[:-1], I_len[1:i])]
+        dT_len = [0] + [x2 - x1 for x1, x2 in zip(T_len[:-1], T_len[1:i])]
+        dIgen_len = [0] + [x2 - x1 for x1, x2 in zip(Igen_len[:-1], Igen_len[1:i])]
+        dTnov_len = [0] + [x2 - x1 for x1, x2 in zip(Tnov_len[:-1], Tnov_len[1:i])]
+        dIp_len = [0] + [x2 - x1 for x1, x2 in zip(Ip_len[:-1], Ip_len[1:i])]
+
+        play_post['S_len'] = S_len # size of sprite set 
+        play_post['I_len'] = I_len # size of interaction set (non-generics)
+        play_post['T_len'] = T_len # size of termination set (non-novelty rules)
+        play_post['Igen_len'] = Igen_len # size of interaction set (generics)
+        play_post['Tnov_len'] = Tnov_len # size of termination set (novelty rules)
+        play_post['Ip_len'] = Ip_len # size of interaction set (non-generics and non-nothing)
+        play_post['dS_len'] = dS_len # deltas
+        play_post['dI_len'] = dI_len 
+        play_post['dT_len'] = dT_len 
+        play_post['dIgen_len'] = dIgen_len 
+        play_post['dTnov_len'] = dTnov_len 
+        play_post['dIp_len'] = dIp_len 
 
         # 
         # extract visual & sprite stuff recorded in the states 
@@ -413,7 +452,8 @@ def playsPostproc(subj_id):
         play_post['keydowns'] = keydowns
 
         db.plays_post.insert_one(play_post)
-
+        
+    print 'done!'
     plays.close()
 
 
@@ -421,6 +461,6 @@ def playsPostproc(subj_id):
 if __name__ == '__main__':
     subj_id = sys.argv[1]
 
-    #playsPostproc(subj_id)
-    for s in range(1,9):
-        playsPostproc(str(s))
+    playsPostproc(subj_id)
+    #for s in range(1,9):
+    #    playsPostproc(str(s))
