@@ -34,6 +34,9 @@ class Environment:
         self.agent.record_video_info = True
         self.agent.write_video_info = True
 
+        self.value_array = []
+        self.reward_array = []
+
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
         
@@ -284,7 +287,9 @@ class Environment:
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
             action, quitting = self.agent.step(None)
-
+            print("SHAPES", len(self.agent.value_array), len(self.agent.reward_array))
+            print("VALUE ARRAYS", self.agent.value_array)
+            print("REWARD ARRAY", self.agent.reward_array)
 
             ### TODO: environment step should overload rle and produce a blue printout.
             self.environment.step(action)
@@ -296,10 +301,13 @@ class Environment:
 
             ended, win = self.environment._isDone()
 
-        # np.savetxt("expt_ee_collected_values_{}.csv".format(self.n_level), self.agent.value_array, delimiter=',')
-        # np.savetxt("expt_ee_collected_rewards_{}.csv".format(self.n_level), self.agent.reward_array, delimiter=',')
         score = self.environment.getScore()
-            
+        self.agent.reward_array = np.array(self.agent.reward_array).T
+        self.agent.value_array = np.array(self.agent.value_array).T
+
+        print(self.agent.value_array.shape, self.agent.reward_array.shape)
+        np.savetxt('win_fast_values.csv', self.agent.value_array, delimiter=',')
+        np.savetxt('win_fast_rewards.csv', self.agent.reward_array, delimiter=',')
         if win:
             display('win')
         else:

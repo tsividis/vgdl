@@ -17,7 +17,8 @@ class Metacontroller:
         if self.agent.steps_in_solution%self.agent.regrounding==0 and self.agent.environment.getTime()>0:
             if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.environment, self.agent.hypotheses[0], self.agent.predicted_states, self.agent.steps_in_solution):
                 re_plan = True
-                self.agent.total_planner_steps -= len(self.agent.solution)
+                self.agent.value_array.pop()
+                self.agent.reward_array.pop()
                 print "regrounding"
 
         if self.agent.steps_in_solution >= len(self.agent.solution):

@@ -147,6 +147,8 @@ class Agent:
         self.value_array = None
         self.reward_array = None
         self.levels_won = 0
+        self.value_array = []
+        self.reward_array = []
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
@@ -451,7 +453,7 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            p.planUsingTDSearch()
+            self.plan_value_array, self.plan_reward_array = p.planUsingTDSearch()
             # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)
@@ -485,7 +487,6 @@ class Agent:
 
 
             ### BOOKKEEPING ###
-            self.total_planner_steps += len(self.solution)
             self.planner_nodes_opened_on_most_recent_step = len(self.solution)
 
         if self.metacontroller.quitting:
@@ -497,6 +498,8 @@ class Agent:
         if not ended:
             if not self.quitting:
                 action = self.solution[self.steps_in_solution]
+                self.value_array.append(self.plan_value_array[self.steps_in_solution])
+                self.reward_array.append(self.plan_reward_array[self.steps_in_solution])
                 self.steps_in_solution += 1
         else:
             action = 0

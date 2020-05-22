@@ -489,28 +489,53 @@ class WBP():
 		# print "HEY MAN"
 		# return
 		
-	def TDTillRoot(self, win_node, lr=1, discount=0.9):
+	def TDTillRoot(self, win_node, child, lr=1, discount=0.9):
 		win_node.value = win_node.intrinsic_reward
 		current_node = win_node
+		child_value = child.value
 
 		while current_node.parent is not None:
 			if current_node.parent.value is None:
 				current_node.parent.value = 0
 			current_node.parent.value += lr * (current_node.intrinsic_reward + discount * current_node.value - current_node.parent.value)
+			if current_node.actionSeq == child.actionSeq:
+				child_value = current_node.value
 			current_node = current_node.parent
+
+		return child_value
 
 	def getValueSolution(self):
 		print "SOLUTION"
-		current_node = self.root_node
+		self.current_node = self.root_node
 		solution = []
-		while current_node.win != True:
-			current_actions = self.trim_futile_actions(current_node)
-			a_i = np.argmax([child.value for child in current_node.children])
+		value_array = []
+		reward_array = []
+		while self.current_node.win != True:
+			current_actions = self.trim_futile_actions(self.current_node)
+			# print('BEFORE CHILDREN', [child.value for child in self.current_node.children])
+			if None in [child.value for child in self.current_node.children]:
+				print("TRUE")
+				for a_i, (a, child) in enumerate(zip(current_actions, self.current_node.children)):
+					if child.value is None:
+						print("None at", a_i)
+						self.winning_states = []
+						win_node = self.BFS(child)
+						child.value = self.TDTillRoot(win_node, child, discount=0.2)
+						self.current_node.children[a_i] = child
+				return self.getValueSolution()
+
+			child_values = [child.value for child in self.current_node.children]
+			
+			value_array.append(np.array(child_values).T)
+			reward_array.append(np.array([child.intrinsic_reward for child in self.current_node.children]).T)
+			a_i = np.argmax(child_values)
 			action = current_actions[a_i]
 			solution.append(action)
-			print(action)
-			current_node = current_node.children[a_i]
-		return solution, current_node
+			print('VALUES',child_values)
+			print("SOLUTION TILL NOW", solution)
+			self.current_node = self.current_node.children[a_i]
+		print("FINAL SOLUTION", solution)
+		return solution, self.current_node, np.array(value_array), np.array(reward_array)
 
 	def planUsingTDSearch(self):
 		self.root_node = Node(self.rle, self, [], None)
@@ -528,18 +553,21 @@ class WBP():
 				self.winning_states = []
 				win_node = self.BFS(child)
 				print("WIN STATE AT", len(win_node.actionSeq) - len(child.actionSeq))
-				self.TDTillRoot(win_node)
+				child.value = self.TDTillRoot(win_node, child)
+				
 				print("VALUE AND REWARD", child.value, child.intrinsic_reward)
 				current_node.children[a_i] = child
+
 			print("ACTION", current_actions[np.argmax([child.intrinsic_reward for child in current_node.children])])
 			current_node = current_node.children[np.argmax([child.intrinsic_reward for child in current_node.children])]
 			print("SOLN TILL NOW", current_node.actionSeq)
 			if current_node.terminal:
 				print("TERMINAL")
-				self.solution, last_node = self.getValueSolution()
+				self.current_node = None
+				self.solution, last_node, value_array, reward_array = self.getValueSolution()
 				self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(last_node)
 				self.quitting = False
-				return
+				return value_array, reward_array
 			print
 
 class Node():
