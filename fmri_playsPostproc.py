@@ -90,7 +90,7 @@ def playsPostproc(subj_id):
     if len(sys.argv) > 6:
         query['game_name'] = sys.argv[6]
 
-    plays = db.plays.find(query).sort('start_time')
+    plays = db.plays.find(query, no_cursor_timeout=True).sort('start_time')
 
     print 'Running fmri_playsPostproc.py with query:'
     print query
@@ -115,17 +115,18 @@ def playsPostproc(subj_id):
         q = {'play_key': play['_id']}
         print q
         print db.plays_post.count(q)
-        assert db.plays_post.count(q) == 0, 'Too many regressors!'
         if db.plays_post.count(q) > 0:
             print '..........skipping: already computed'
-            assert db.plays_post.count(q) == 1, 'Too many regressors!'
             continue
 
         # get regressors
         q = {'play_key': play['_id']}
         print q
         print db.regressors.count(q)
-        assert db.regressors.count(q) == 1, 'Too many regressors!' 
+        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.regressors.count(q) == 0:
+            print 'skipping (e.g. Sokoban)'
+            continue
         regs = db.regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
@@ -413,6 +414,7 @@ def playsPostproc(subj_id):
 
         db.plays_post.insert_one(play_post)
 
+    plays.close()
 
 
 
