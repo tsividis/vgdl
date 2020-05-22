@@ -520,6 +520,7 @@ class WBP():
 						print("None at", a_i)
 						self.winning_states = []
 						win_node = self.BFS(child)
+						print("BFS DEPTH", len(win_node.actionSeq), self.total_nodes_selected)
 						child.value = self.TDTillRoot(win_node, child, discount=0.2)
 						self.current_node.children[a_i] = child
 				return self.getValueSolution()
@@ -534,6 +535,8 @@ class WBP():
 			print('VALUES',child_values)
 			print("SOLUTION TILL NOW", solution)
 			self.current_node = self.current_node.children[a_i]
+			if len(solution) >= 15:
+				break
 		print("FINAL SOLUTION", solution)
 		return solution, self.current_node, np.array(value_array), np.array(reward_array)
 

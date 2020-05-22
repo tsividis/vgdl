@@ -266,6 +266,8 @@ class Environment:
         self.initializeEnvironment()
         self.agent.environment = self.environment
         self.agent.make_movie = self.make_movie
+        self.agent.value_array = []
+        self.agent.reward_array = []
         
         print "Playing level {}".format(self.n_level + 1)
 
