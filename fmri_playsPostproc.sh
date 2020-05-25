@@ -4,7 +4,7 @@
 
 mkdir output
 
-subjects=( 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 1  )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
 echo ---------------- >> jobs.txt
@@ -19,7 +19,7 @@ for subj in ${subjects[*]}; do
 
         # send the job to NCF
         #
-        sbatch_output=`sbatch -p ncf --mem 10000 -t 1-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="python fmri_playsPostproc.py ${subj}"`
+        sbatch_output=`sbatch -p ncf --mem 10001 -t 1-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python fmri_playsPostproc.py ${subj}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output

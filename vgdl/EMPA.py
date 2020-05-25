@@ -387,7 +387,7 @@ class Agent:
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
-            assert not self.record_fMRIRegressors
+            assert not self.record_fMRIRegressors, 'should never be here in fMRI mode'
             self, self.bookkeeping.effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
         ## Do beginning-of-episode Avatar resource-management.

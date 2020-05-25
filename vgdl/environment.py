@@ -202,7 +202,7 @@ class Environment:
 
             if playback:
                 # fMRI playback from human play
-                (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name) = level_game
+                (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList) = level_game
             else:
                 (self.gameString, self.levelString) = level_game
                 self.playback_states = None # TODO momchil undo
@@ -213,6 +213,12 @@ class Environment:
             print '---------- level'
             print self.levelString
 
+            if reset_finalTimeStepList:
+                print 'resetting finalTimeStepList'
+                self.agent.finalTimeStepList = []
+                self.agent.finalEventList = []
+
+
             self.agent.max_nodes = self.agent.starting_max_nodes
             self.agent.stored_max_nodes = self.agent.max_nodes
             win = False
@@ -220,7 +226,7 @@ class Environment:
             
             i=0
             if loadedState:
-                assert not self.record_fMRIRegressors
+                assert not self.record_fMRIRegressors, 'should never be here in fMRI mode'
                 i=loadedState['agent'].within_level_iteration
                 episodeCompactStates = loadedState['episodeCompactStates'] # momchil: why do we reload this for every level? not an issue for fMRI b/c we clear loadedState, but still...
             levelEffectsEncountered = []

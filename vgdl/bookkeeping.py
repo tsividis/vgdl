@@ -32,11 +32,11 @@ class Bookkeeping:
         #momchil: don't save these b/c they take too much space, and
         # we don't really need them cross-games / levels, b/c we do those in separate batches
         # JK WE DO! TODO discuss w / team -- people surely remember stuff that happened in last play, but probably not stuff across blocks...
-        if is_fMRI:
-            finalTimeStepList = agent.finalTimeStepList
-            finalEventList = agent.finalEventList
-            agent.finalTimeStepList = []
-            agent.finalEventList = []
+        #if is_fMRI:
+        #    finalTimeStepList = agent.finalTimeStepList
+        #    finalEventList = agent.finalEventList
+        #    agent.finalTimeStepList = []
+        #    agent.finalEventList = []
 
         filename = self.curriculumDir+'/'+self.curriculumSaveFile
         savedState = {'agent':agent,
@@ -44,9 +44,9 @@ class Bookkeeping:
         with open(filename, 'wb') as f:
             cloudpickle.dump(savedState, f)
 
-        if is_fMRI:
-            agent.finalTimeStepList = finalTimeStepList
-            agent.finalEventList = finalEventList
+        #if is_fMRI:
+        #    agent.finalTimeStepList = finalTimeStepList
+        #    agent.finalEventList = finalEventList
 
     def loadCurriculumState(self, filename):
         ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.
