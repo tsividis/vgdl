@@ -78,7 +78,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 6:
         query['game_name'] = sys.argv[6]
 
-    plays = db.plays.find(query).sort('start_time')
+    plays = db.plays.find(query, no_cursor_timeout=True).sort('start_time')
 
     print 'Running fmri_makeMovie with query:'
     print query
@@ -129,9 +129,9 @@ if __name__ == '__main__':
             curr_theory = reg['regressors']['theory'][i][0]
             interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
 
-            if reg['regressors']['interaction_change_flag'][i][0]:
-                print 'w000000t interaction_change_flag!'
-                embed()
+            #if reg['regressors']['interaction_change_flag'][i][0]:
+                #print 'w000000t interaction_change_flag!'
+                #embed()
             reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
 
         # get states
@@ -149,3 +149,5 @@ if __name__ == '__main__':
             headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+game['name'], padding=10, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True)
 
 
+    print 'done!'
+    plays.close()

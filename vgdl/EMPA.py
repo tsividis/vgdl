@@ -772,14 +772,22 @@ class Agent:
             # convention is: timestamp = stuff right after frame
 
             interactionSetEqual = all(any(i1==i2 for i2 in self.hypotheses[0].interactionSet) for i1 in hypotheses[0].interactionSet) # from Theory.__eq__(); # order is important here!
+            interaction_change_flag = not interactionSetEqual
+            termination_change_flag = set(hypotheses[0].terminationSet) != oldTerminationSet
 
             self.logfMRIRegressor('theory_change_flag', theory_change_flag)
             self.logfMRIRegressor('sprite_change_flag', distributionsHaveChanged)
-            self.logfMRIRegressor('interaction_change_flag', not interactionSetEqual)
-            self.logfMRIRegressor('termination_change_flag', set(hypotheses[0].terminationSet) != oldTerminationSet)
+            self.logfMRIRegressor('interaction_change_flag', interaction_change_flag)
+            self.logfMRIRegressor('termination_change_flag', termination_change_flag)
             self.logfMRIRegressor('theory', copy.deepcopy(hypotheses[0]))
             #self.logfMRIRegressor('sprite_distr', copy.deepcopy(self.distribution.distribution)) # momchil: too big -- risks OOM / running out of disk space; shelve for now
             self.logfMRIRegressor('theory_str', hypotheses[0].display(as_string=True))
+        
+            # sanity checks
+            if interaction_change_flag and not theory_change_flag:
+                print 'ASSERT FAIL: interactions changed but theory didnt!'
+            if termination_change_flag and not theory_change_flag:
+                print 'ASSERT FAIL: terminations changed but theory didnt!'
 
             replan_flag = self.checkForDangerOrAvatarMisLocation(self.environment, self.hypotheses[0], self.predicted_states, self.steps_in_solution) or self.environment.getTime() == 1
             self.logfMRIRegressor('replan_flag', replan_flag)
@@ -817,7 +825,7 @@ class Agent:
             p.rolloutHyperparameters['novelty_second_alpha'] = 0;
             R_GG, R_GGs = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
             self.logfMRIRegressor('R_GG', R_GG) # goal gradient 
-            self.logfMRIRegressor('R_GGs', R_GGs) # broken down by sprite type
+            self.logfMRIRegressor('R_GGs', R_GGs) # broken down by type
 
             # zero out first_alpha's (coefficient for R_SG) to get R_GG
             p.rolloutHyperparameters = rh
@@ -826,7 +834,7 @@ class Agent:
             p.rolloutHyperparameters['novelty_first_alpha'] = 0;
             R_SG, R_SGs = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
             self.logfMRIRegressor('R_SG', R_SG) # subgoals 
-            self.logfMRIRegressor('R_SGs', R_SGs) # broken down by sprite type
+            self.logfMRIRegressor('R_SGs', R_SGs) # broken down by type
 
             print R_GG, R_GGs, R_SG, R_SGs
 

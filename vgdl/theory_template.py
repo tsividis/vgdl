@@ -96,6 +96,9 @@ class Precondition(object):
 			return self.text == other.text
 		except AttributeError:
 			return False
+                    
+	def __hash__(self):
+		return self.text.__hash__()
 
 	def __ne__(self, other):
 		return not self.__eq__(other)

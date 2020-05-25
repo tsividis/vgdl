@@ -167,6 +167,10 @@ def playsPostproc(subj_id):
             interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
 
             reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
+
+            if reg['regressors']['interaction_change_flag'][i][0] and not reg['regressors']['theory_change_flag'][i][0]:
+                print 'ASSERT FAIL: interactions changed but theory didnt!'
+                #embed()
         interaction_change_flag = reg['regressors']['interaction_change_flag']
         play_post['interaction_change_flag'] = interaction_change_flag
 
@@ -188,12 +192,12 @@ def playsPostproc(subj_id):
             Ip_len.append(len([r for r in theory.interactionSet if not r.generic and r.interaction not in ['nothing']]))
             Igen_len.append(len([r for r in theory.interactionSet if r.generic]))
             Tnov_len.append(len([t for t in theory.terminationSet if t.ruleType in ['NoveltyRule']]))
-        dS_len = [0] + [x2 - x1 for x1, x2 in zip(S_len[:-1], S_len[1:i])]
-        dI_len = [0] + [x2 - x1 for x1, x2 in zip(I_len[:-1], I_len[1:i])]
-        dT_len = [0] + [x2 - x1 for x1, x2 in zip(T_len[:-1], T_len[1:i])]
-        dIgen_len = [0] + [x2 - x1 for x1, x2 in zip(Igen_len[:-1], Igen_len[1:i])]
-        dTnov_len = [0] + [x2 - x1 for x1, x2 in zip(Tnov_len[:-1], Tnov_len[1:i])]
-        dIp_len = [0] + [x2 - x1 for x1, x2 in zip(Ip_len[:-1], Ip_len[1:i])]
+        dS_len = [0] + [x2 - x1 for x1, x2 in zip(S_len[:-1], S_len[1:])]
+        dI_len = [0] + [x2 - x1 for x1, x2 in zip(I_len[:-1], I_len[1:])]
+        dT_len = [0] + [x2 - x1 for x1, x2 in zip(T_len[:-1], T_len[1:])]
+        dIgen_len = [0] + [x2 - x1 for x1, x2 in zip(Igen_len[:-1], Igen_len[1:])]
+        dTnov_len = [0] + [x2 - x1 for x1, x2 in zip(Tnov_len[:-1], Tnov_len[1:])]
+        dIp_len = [0] + [x2 - x1 for x1, x2 in zip(Ip_len[:-1], Ip_len[1:])]
 
         play_post['S_len'] = S_len # size of sprite set 
         play_post['I_len'] = I_len # size of interaction set (non-generics)
