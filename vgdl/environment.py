@@ -8,11 +8,14 @@ import os, subprocess, shutil
 import time
 import numpy as np
 from IPython import embed
+import random
 
 """
 Environment class for running VGDL experiments
 """
 
+np.random.seed(42)
+random.seed(42)
 
 MAX_STEPS = 10000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
@@ -280,6 +283,7 @@ class Environment:
         quitting = False
         episodeSteps = 0
         ## Main episode loop
+        episode_start_time = time.time()
         while not quitting:
 
             ### ENVIRONMENT ###
@@ -289,9 +293,9 @@ class Environment:
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
             action, quitting = self.agent.step(None)
-            print("SHAPES", len(self.agent.value_array), len(self.agent.reward_array))
-            print("VALUE ARRAYS", self.agent.value_array)
-            print("REWARD ARRAY", self.agent.reward_array)
+            # print("SHAPES", len(self.agent.value_array), len(self.agent.reward_array))
+            # print("VALUE ARRAYS", self.agent.value_array)
+            # print("REWARD ARRAY", self.agent.reward_array)
 
             ### TODO: environment step should overload rle and produce a blue printout.
             self.environment.step(action)
@@ -303,17 +307,19 @@ class Environment:
 
             ended, win = self.environment._isDone()
 
+        episode_end_time = time.time()
         score = self.environment.getScore()
         self.agent.reward_array = np.array(self.agent.reward_array).T
         self.agent.value_array = np.array(self.agent.value_array).T
 
         print(self.agent.value_array.shape, self.agent.reward_array.shape)
-        np.savetxt('win_fast_values.csv', self.agent.value_array, delimiter=',')
-        np.savetxt('win_fast_rewards.csv', self.agent.reward_array, delimiter=',')
+        np.savetxt('win_fast_lvl{}_values.csv'.format(self.n_level), self.agent.value_array, delimiter=',')
+        np.savetxt('win_fast_lvl{}_rewards.csv'.format(self.n_level), self.agent.reward_array, delimiter=',')
         if win:
             display('win')
         else:
             display('loss')
+        print('Level completed in:', episode_end_time - episode_start_time)
 
         return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level
 

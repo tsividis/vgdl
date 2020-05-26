@@ -4,8 +4,11 @@ import numpy as np
 
 # sns.set()
 
-values = np.genfromtxt('win_fast_values.csv', delimiter=',')
-rewards = np.genfromtxt('win_fast_rewards.csv', delimiter=',')
+game = 'win_fast'
+lvl = 1
+
+values = np.genfromtxt('{}_lvl{}_values.csv'.format(game,lvl), delimiter=',')
+rewards = np.genfromtxt('{}_lvl{}_rewards.csv'.format(game,lvl), delimiter=',')
 
 value_mean, value_std = np.mean(values,axis=0), np.std(values,axis=0)
 reward_mean, reward_std = np.mean(rewards,axis=0), np.std(rewards,axis=0)
@@ -24,7 +27,7 @@ ax2.set_ylabel('action index')
 fig1.subplots_adjust(right=0.8)
 cbar_ax = fig1.add_axes([0.85, 0.15, 0.05, 0.7])
 fig1.colorbar(c1, cax=cbar_ax)
-plt.suptitle('win_fast: normalized color plot for action values vs depth from start')
+plt.suptitle('{} level {}: normalized color plot for action values vs depth from start'.format(game, lvl))
 plt.legend()  
 plt.show()                                                      
 

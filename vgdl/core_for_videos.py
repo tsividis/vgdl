@@ -12,6 +12,7 @@ from colors import *
 import os, shutil
 import datetime
 import uuid
+import random
 import subprocess
 import glob
 #import ipdb
@@ -25,6 +26,9 @@ import time
 import os
 import uuid
 from util import get_object_color
+
+random.seed(42)
+np.random.seed(42)
 
 # ---------------------------------------------------------------------
 #     Constants

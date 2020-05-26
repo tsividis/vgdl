@@ -4,6 +4,8 @@ import itertools
 import numpy as np
 import random
 
+random.seed(42)
+np.random.seed(42)
 
 avatar_states = [0,1,2]
 conditions = ['collision']

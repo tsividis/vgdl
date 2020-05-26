@@ -4,6 +4,7 @@ import numpy as np
 import pygame
 import random
 import time
+import psutil
 from collections import defaultdict
 from hyperparameters import hyperparameter_sets
 from IPython import embed
@@ -13,6 +14,9 @@ from rlenvironmentnonstatic import *
 from theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, \
 NoveltyRule, generateTheoryFromGame
 from util import *
+
+random.seed(42)
+np.random.seed(42)
 
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
@@ -425,7 +429,7 @@ class WBP():
 		self.total_nodes_selected = 0
 
 		print "planning..."
-		while len(QReward)>0 and self.total_nodes_selected < self.max_nodes:
+		while len(QReward)>0 and self.total_nodes_selected < 200: #self.max_nodes:
 
 			if self.total_nodes_selected > 0 and self.total_nodes_selected%100 == 0 and self.display:
 				print "searching node {}".format(i)
@@ -468,6 +472,7 @@ class WBP():
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				self.bestNode = bestNodes[0]
+				print('TOTAL NODES SELECTED', self.total_nodes_selected)
 				# self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(self.bestNode)
 				# self.solution = self.bestNode.actionSeq
 				if self.display:
@@ -520,7 +525,6 @@ class WBP():
 						print("None at", a_i)
 						self.winning_states = []
 						win_node = self.BFS(child)
-						print("BFS DEPTH", len(win_node.actionSeq), self.total_nodes_selected)
 						child.value = self.TDTillRoot(win_node, child, discount=0.2)
 						self.current_node.children[a_i] = child
 				return self.getValueSolution()
@@ -532,15 +536,16 @@ class WBP():
 			a_i = np.argmax(child_values)
 			action = current_actions[a_i]
 			solution.append(action)
-			print('VALUES',child_values)
 			print("SOLUTION TILL NOW", solution)
+			print("RAM USAGE", self.process.memory_info().rss)
 			self.current_node = self.current_node.children[a_i]
-			if len(solution) >= 15:
-				break
+			# if len(solution) >= 10:
+			# 	break
 		print("FINAL SOLUTION", solution)
 		return solution, self.current_node, np.array(value_array), np.array(reward_array)
 
 	def planUsingTDSearch(self):
+		self.process = psutil.Process(os.getpid())
 		self.root_node = Node(self.rle, self, [], None)
 		current_node = self.root_node
 

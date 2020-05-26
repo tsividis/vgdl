@@ -6,6 +6,8 @@ import os
 import random
 from IPython import embed
 
+random.seed(42)
+
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'
 CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'

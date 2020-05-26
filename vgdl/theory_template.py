@@ -11,6 +11,10 @@ import time, math
 from util import factorize, assign_symbols_to_objects
 from rlenvironmentnonstatic import createMindEnv
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+import random 
+
+random.seed(42)
+np.random.seed(42)
 
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'

@@ -1,6 +1,10 @@
 import random
+import numpy as np
 from IPython import embed
 import WBP
+
+random.seed(42)
+np.random.seed(42)
 
 class Metacontroller:
     def __init__(self, agent):

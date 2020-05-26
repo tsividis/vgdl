@@ -24,7 +24,12 @@ from IPython import embed
 import time
 import os
 import uuid
+import random
+import numpy as np
 from util import get_object_color
+
+random.seed(42)
+np.random.seed(42)
 
 # ---------------------------------------------------------------------
 #     Constants
