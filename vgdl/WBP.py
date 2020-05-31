@@ -273,7 +273,7 @@ class WBP():
 
 			if current.terminal and not current.win:
 				print "rewardSelection picked a loss node!!"
-				embed()
+				# embed()
 
 			return current
 
@@ -421,15 +421,16 @@ class WBP():
 
 	def BFS(self, start_node):
 		QReward = []
+		self.winning_states = []
 
-		# start = Node(self.rle, self, [], None)
 		start = start_node
 
 		QReward.append(start)
 		self.total_nodes_selected = 0
 
 		print "planning..."
-		while len(QReward)>0 and self.total_nodes_selected < 200: #self.max_nodes:
+		
+		while len(QReward)>0 and self.total_nodes_selected < 50:# self.max_nodes:
 
 			if self.total_nodes_selected > 0 and self.total_nodes_selected%100 == 0 and self.display:
 				print "searching node {}".format(i)
@@ -440,7 +441,6 @@ class WBP():
 			## If we're out of novel nodes, we should tell the metacontroller we'd like to quit.
 			## It then will quit if this happens a couple times.
 			if current in [None, 'pickMaxNode']:
-				print("OUT OF NOVEL NODES. OH NO", current)
 				self.quitting = True
 				self.return_non_win_plan(start, QReward)
 				return
@@ -481,7 +481,6 @@ class WBP():
 
 		self.solution = []
 
-		# if self.stall_mode:
 		print "returning best non-win-plan"
 		self.return_best_non_win_plan(QReward)
 		return self.bestNode
@@ -491,8 +490,9 @@ class WBP():
 		# 	print "returning best non-win-plan"
 		# 	self.return_non_win_plan(start, QReward)
 		# 	return
-		# print "HEY MAN"
-		# return
+
+		# return self.bestNode
+
 		
 	def TDTillRoot(self, win_node, child, lr=1, discount=0.9):
 		win_node.value = win_node.intrinsic_reward
@@ -515,16 +515,21 @@ class WBP():
 		solution = []
 		value_array = []
 		reward_array = []
-		while self.current_node.win != True:
+		while self.current_node.terminal == False:
 			current_actions = self.trim_futile_actions(self.current_node)
 			# print('BEFORE CHILDREN', [child.value for child in self.current_node.children])
 			if None in [child.value for child in self.current_node.children]:
 				print("TRUE")
 				for a_i, (a, child) in enumerate(zip(current_actions, self.current_node.children)):
 					if child.value is None:
+						if child.terminal and not child.win:
+							child.value = -np.inf
+							self.current_node.children[a_i] = child
+							break
 						print("None at", a_i)
 						self.winning_states = []
 						win_node = self.BFS(child)
+						# print("WIN SEQ", win_node.actionSeq)
 						child.value = self.TDTillRoot(win_node, child, discount=0.2)
 						self.current_node.children[a_i] = child
 				return self.getValueSolution()
@@ -539,8 +544,9 @@ class WBP():
 			print("SOLUTION TILL NOW", solution)
 			print("RAM USAGE", self.process.memory_info().rss)
 			self.current_node = self.current_node.children[a_i]
-			# if len(solution) >= 10:
-			# 	break
+			print
+			if len(solution) >= 20:
+			    break
 		print("FINAL SOLUTION", solution)
 		return solution, self.current_node, np.array(value_array), np.array(reward_array)
 
@@ -569,14 +575,60 @@ class WBP():
 			print("ACTION", current_actions[np.argmax([child.intrinsic_reward for child in current_node.children])])
 			current_node = current_node.children[np.argmax([child.intrinsic_reward for child in current_node.children])]
 			print("SOLN TILL NOW", current_node.actionSeq)
-			if current_node.terminal:
-				print("TERMINAL")
+			print("RAM USAGE", self.process.memory_info().rss)
+			if current_node.win or len(current_node.actionSeq) >= 20:
+				print("FINISHED PLAN")
 				self.current_node = None
 				self.solution, last_node, value_array, reward_array = self.getValueSolution()
 				self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(last_node)
 				self.quitting = False
-				return value_array, reward_array
+				return value_array, reward_array				
 			print
+
+	# def planUsingTDSearch(self, n_sims = 100):
+	# 	self.root_node = Node(self.rle, self, [], None)
+	# 	self.process = psutil.Process(os.getpid())
+		
+	# 	for i_sim in range(n_sims):
+	# 		print
+	# 		print("SIMULATION", i_sim)
+	# 		print("RAM USAGE", self.process.memory_info().rss)
+	# 		current_node = self.root_node
+	# 		current_actions = self.trim_futile_actions(current_node)
+	# 		if current_node.children == []:
+	# 			print("CURRENT NODE IS A LEAF")
+	# 			win_node = self.BFS(current_node)
+	# 		else:
+	# 			print("CURRENT NODE IS NOT LEAF")
+	# 			current = current_node
+	# 			flag = 0
+	# 			# first reach a leaf node
+	# 			while current.children != []:
+	# 				if current.children != []:
+	# 					current = current.children[np.argmax([child.value for child in current.children])]
+	# 			# now do BFS till a win node
+	# 			win_node = self.BFS(current)
+	# 		print("WIN NODE ACTIONSEQ", win_node.actionSeq)
+	# 		current_node.value = self.TDTillRoot(win_node, current_node)
+	# 		print("CURRENT NODE VALUE", current_node.value)
+
+	# 	# now decide real actions
+	# 	current_node = self.root_node
+	# 	value_array, reward_array = [], []
+	# 	while current_node.win is False:
+	# 		if current_node.children == []:
+	# 			break
+	# 		child_values = [child.value for child in current_node.children]
+	# 		print("CHILD VALUES", child_values)
+	# 		value_array.append(np.array(child_values).T)
+	# 		reward_array.append(np.array([child.intrinsic_reward for child in current_node.children]).T)
+	# 		current_node = current_node.children[np.argmax(child_values)]
+	# 	self.solution = current_node.actionSeq
+	# 	print("SOLUTION", self.solution)
+	# 	self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(current_node)
+	# 	self.quitting = False
+	# 	return value_array, reward_array
+
 
 class Node():
 	def __init__(self, rle, WBP, actionSeq, parent):
