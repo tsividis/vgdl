@@ -56,4 +56,5 @@ vgdl/sprites
 
 savedCurricula/*
 results/*
-
+.vscode/
+*.csv
