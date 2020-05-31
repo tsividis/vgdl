@@ -430,7 +430,8 @@ class Agent:
                 'n_ts': [], # size of finalTimeStepList
                 'num_effects': [], # redundant with effectListByColor logged in states, for sanity check
                 'newEffects_flag': [],
-                'newTimeStep': [] # basically finalTimeStepList
+                'newTimeStep': [], # basically finalTimeStepList
+                'newTimeStep_flag': [] # basically finalTimeStepList
             }
 
 
@@ -644,6 +645,7 @@ class Agent:
                 'gameState': None, 'rle': self.environment} # momchil: rle makes the dumped savedCurricula state huge; compress somehow
 
         newEffects = False
+        newTimeStep_flag = False
 
         ## If any collisions occurred
         if effects:
@@ -680,6 +682,7 @@ class Agent:
             newTimeStep = TimeStep(event['agentAction'], event['agentState'], event['effectList'], event['gameState'], event['rle'])
             self.finalTimeStepList.append(newTimeStep)
             self.logfMRIRegressor('newTimeStep', newTimeStep)
+            newTimeStep_flag = True
             for e in effects:
                 compactEvent = (e[0], e[1], e[2])
                 if compactEvent not in self.finalEffectList:
@@ -726,7 +729,7 @@ class Agent:
                 # don't log stuff from before any observations
                 # convention is: timestamp = stuff right after frame
 
-                # calculate postarior of old hypotheses
+                # calculate posterior of old hypotheses
                 # momchil: don't do; errors out for bait sometimes and screws up the whole thing, also doesn't really make sense
                 '''
                 P = getPosterior(self.hypotheses, self.finalTimeStepList)
@@ -770,10 +773,12 @@ class Agent:
         if self.record_fMRIRegressors and self.environment.getTime() > 0: 
             # don't log stuff from before any observations
             # convention is: timestamp = stuff right after frame
+            # hypotheses[0] = new theory
+            # self.hypotheses[0] = old theory
 
             interactionSetEqual = all(any(i1==i2 for i2 in self.hypotheses[0].interactionSet) for i1 in hypotheses[0].interactionSet) # from Theory.__eq__(); # order is important here!
             interaction_change_flag = not interactionSetEqual
-            termination_change_flag = set(hypotheses[0].terminationSet) != oldTerminationSet
+            termination_change_flag = set(hypotheses[0].terminationSet) != set(self.hypotheses[0].terminationSet) 
 
             self.logfMRIRegressor('theory_change_flag', theory_change_flag)
             self.logfMRIRegressor('sprite_change_flag', distributionsHaveChanged)
@@ -789,12 +794,13 @@ class Agent:
             if termination_change_flag and not theory_change_flag:
                 print 'ASSERT FAIL: terminations changed but theory didnt!'
 
-            replan_flag = self.checkForDangerOrAvatarMisLocation(self.environment, self.hypotheses[0], self.predicted_states, self.steps_in_solution) or self.environment.getTime() == 1
+            replan_flag = self.checkForDangerOrAvatarMisLocation(self.environment, hypotheses[0], self.predicted_states, self.steps_in_solution) or self.environment.getTime() == 1
             self.logfMRIRegressor('replan_flag', replan_flag)
    
             if len(self.finalTimeStepList) > 0:
-                likelihood = hypotheses[0].likelihood(self.finalTimeStepList[-1])
-                sum_lik = sum([hypotheses[0].likelihood(ts) for ts in self.finalTimeStepList]) 
+                # note based on previous hypotheses!
+                likelihood = self.hypotheses[0].likelihood(self.finalTimeStepList[-1])
+                sum_lik = sum([self.hypotheses[0].likelihood(ts) for ts in self.finalTimeStepList]) 
             else:
                 likelihood = float("nan")
                 sum_lik = float("nan")
@@ -803,6 +809,7 @@ class Agent:
             self.logfMRIRegressor('n_ts', len(self.finalTimeStepList))
             self.logfMRIRegressor('num_effects', len(effects))
             self.logfMRIRegressor('newEffects_flag', newEffects)
+            self.logfMRIRegressor('newTimeStep_flag', newTimeStep_flag) # same as len(effectListByColor) > 0
 
 
             # get intrinsic rewards using fake planner TODO momchil test for perf, might be very slow, especially copying the RLE and whatnot

@@ -145,6 +145,10 @@ def playsPostproc(subj_id):
         with open(reg['regressors']['theory_filename'], 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
 
+        # load newTimeSteps i.e. basically finalTimeStepList from disk
+        with open(reg['regressors']['newTimeStep_filename'], 'r') as f:
+            reg['regressors']['newTimeStep'] = cloudpickle.load(f)
+
         # create object to hold play postprocessing data
         # similar to regressors (see fmri_empaReplay.py)
         play_post = {
@@ -160,6 +164,7 @@ def playsPostproc(subj_id):
         }
 
         # hack to fix interaction_change_flag TODO undo once we re-run it
+        #
         assert len(reg['regressors']['interaction_change_flag']) == len(reg['regressors']['theory'])
         for i in range(1, len(reg['regressors']['theory'])):
             prev_theory = reg['regressors']['theory'][i-1][0]
@@ -172,7 +177,58 @@ def playsPostproc(subj_id):
                 print 'ASSERT FAIL: interactions changed but theory didnt!'
                 #embed()
         interaction_change_flag = reg['regressors']['interaction_change_flag']
+
         play_post['interaction_change_flag'] = interaction_change_flag
+
+        # hack to fix termination set ... TODO undo once we re-run
+        #
+        assert len(reg['regressors']['termination_change_flag']) == len(reg['regressors']['theory'])
+        for i in range(1, len(reg['regressors']['theory'])):
+            prev_theory = reg['regressors']['theory'][i-1][0]
+            curr_theory = reg['regressors']['theory'][i][0]
+            termination_change_flag = set(prev_theory.terminationSet) != set(curr_theory.terminationSet)
+
+            reg['regressors']['termination_change_flag'][i][0] = termination_change_flag 
+
+            if reg['regressors']['termination_change_flag'][i][0] and not reg['regressors']['theory_change_flag'][i][0]:
+                print 'ASSERT FAIL: terminations changed but theory didnt!'
+                #embed()
+        termination_change_flag = reg['regressors']['termination_change_flag']
+
+        play_post['termination_change_flag'] = termination_change_flag
+
+        # hack to fix likelihood and sum_lik TODO fix in EMPA
+        #
+        newTimeStep_flag = [False]
+        likelihood = [float('nan')]
+        sum_lik_play = [float('nan')]
+        surprise = [float('nan')]
+        t = 0
+        finalTimeStepList = []
+        for i in range(1, len(reg['regressors']['theory'])):
+            while t < len(reg['regressors']['newTimeStep']) and reg['regressors']['newTimeStep'][t][1] < reg['regressors']['theory'][i][1]:
+                t += 1
+
+            if t < len(reg['regressors']['newTimeStep']) and reg['regressors']['newTimeStep'][t][1] == reg['regressors']['theory'][i][1]:
+                newTimeStep_flag.append(True)
+                finalTimeStepList.append(reg['regressors']['newTimeStep'][t][0])
+            else:
+                newTimeStep_flag.append(False)
+
+            prev_theory = reg['regressors']['theory'][i-1][0]
+            if len(finalTimeStepList) > 0:
+                likelihood.append(prev_theory.likelihood(finalTimeStepList[-1]))
+                surprise.append(1 - likelihood[-1])
+                sum_lik_play.append(sum([prev_theory.likelihood(ts) for ts in finalTimeStepList]))
+            else:
+                likelihood.append(float("nan"))
+                surprise.append(float('nan'))
+                sum_lik_play.append(float("nan"))
+
+        play_post['newTimeStep_flag'] = newTimeStep_flag # same as len(effectListByColor) > 0
+        play_post['likelihood'] = likelihood
+        play_post['surprise'] = surprise # might be the same as theory_change_flag 
+        play_post['sum_lik_play'] = sum_lik_play # notice for current episode only
 
         #
         # extract theory-based regressors
@@ -235,8 +291,10 @@ def playsPostproc(subj_id):
         movable = []
         collisions = []
         effects = []
+        effectsByCol = []
         sprite_groups = []
         changed = []
+        avatar_collision_flag = []
 
         sprite_poss = [] # sprite positions in each state, as UUID => x, y
         grids = [] # grid squares in each state, as (x,y) => UUID
@@ -253,6 +311,7 @@ def playsPostproc(subj_id):
             sprites.append(len(state['list']))
             collisions.append(state['collision_effLen'])
             effects.append(state['effectListLen'])
+            effectsByCol.append(len(state['effectListByColor']))
             sprite_groups.append(state['sprite_groupsLen'])
 
             # extract stuff from sprites themselves
@@ -318,6 +377,18 @@ def playsPostproc(subj_id):
                         ch += 1
                     
             changed.append(ch)
+    
+            # extract effect stuff
+            #
+
+            acf = False
+            for eff in state['effectListByClass']:
+                if 'avatar' == eff[1] or 'avatar' == eff[2]:
+                    acf = True
+                    break
+
+            avatar_collision_flag.append(acf)
+
 
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
 
@@ -333,6 +404,8 @@ def playsPostproc(subj_id):
         play_post['moved'] = moved # num sprites that just moved
         play_post['movable'] = movable  # num of sprites that can mave (i.e. are not static)
         play_post['changed'] = changed  # num changed grid squares
+        play_post['avatar_collision_flag'] = avatar_collision_flag  # whether the avatar collided with an object 
+        play_post['effectsByCol'] = effectsByCol # num effects
 
         #
         # extract keypresses similar to keyholds, etc already recorded in plays (see startGame() in core.py)
