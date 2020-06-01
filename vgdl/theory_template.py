@@ -934,13 +934,13 @@ class Theory(object):
 		return
 
 	def doWeMakeANoveltyRule(self, rule, thingWeShoot):
-		if rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar'):
-			return True
-		if rule.interaction == 'nothing':
-			if (rule.slot1==thingWeShoot and rule.slot2 not in [thingWeShoot, 'avatar']) or (rule.slot2==thingWeShoot and rule.slot1 not in [thingWeShoot, 'avatar']) :
-				return True
-			if any([k in str(self.classes[rule.slot1][0].vgdlType) for k in ['Resource', 'Immovable', 'Missile']]) and any([k in str(self.classes[rule.slot2][0].vgdlType) for k in ['Resource', 'Immovable', 'Missile']]):
-				return True
+		# if rule.asTuple()[0]!='nothing' and not (rule.slot1==thingWeShoot and rule.slot2=='avatar'):
+		# 	return True
+		# if rule.interaction == 'nothing':
+		# 	if (rule.slot1==thingWeShoot and rule.slot2 not in [thingWeShoot, 'avatar']) or (rule.slot2==thingWeShoot and rule.slot1 not in [thingWeShoot, 'avatar']) :
+		# 		return True
+		# 	if any([k in str(self.classes[rule.slot1][0].vgdlType) for k in ['Resource', 'Immovable', 'Missile']]) and any([k in str(self.classes[rule.slot2][0].vgdlType) for k in ['Resource', 'Immovable', 'Missile']]):
+		# 		return True
 		return False
 
 	def findRule(self, rule, lst):
@@ -1492,9 +1492,9 @@ def generateTheoryFromGame(rle, alterGoal=True):
 			timeout = TimeoutRule(limit=termination.limit,
 								  win=termination.win)
 			theory.terminationSet.append(timeout)
-		elif termination.name == 'NoveltyRule':
-			noveltyrule = NoveltyRule(s1=termination.s1, s2=termination.s2, win=termination.win)
-			theory.terminationSet.append(noveltyrule)
+		# elif termination.name == 'NoveltyRule':
+		# 	noveltyrule = NoveltyRule(s1=termination.s1, s2=termination.s2, win=termination.win)
+		# 	theory.terminationSet.append(noveltyrule)
 
 	return theory
 
