@@ -93,7 +93,6 @@ if __name__ == '__main__':
     all_regressors = {}
     all_movie_names = {}
     
-    prev_block_id = None
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
         game = subj['games'][play['game_id']]
@@ -132,7 +131,7 @@ if __name__ == '__main__':
         print 'video_name = ', video_name
 
         # this is the money that gets passed to playCurriculum
-        reset_finalTimeStepList = prev_block_id != play['block_id'] # reset finalTimeStepList before every block -- balance betweew psychological plausibility and practicality (i.e. avoiding OOM in plaqueAttack)
+        reset_finalTimeStepList = play['instance_id'] == 0 and play['play_id'] == 0 # reset finalTimeStepList before every block -- balance between psychological plausibility and practicality (i.e. avoiding OOM in plaqueAttack)
         all_pairs[game['name']].append((play['game_str'], play['level_str'], states, keystates, video_name, reset_finalTimeStepList)) # TODO momchil OOM? 
 
         # pre-populate regressors object for each play with identifier info
@@ -153,7 +152,6 @@ if __name__ == '__main__':
         movie_name = game['name'] + '_lev=' + str(play['level_id']) + '_' + str(play['play_id'])
         all_movie_names[game['name']].append(movie_name)
 
-        prev_block_id = play['block_id']
 
     # for each game, play all instances as part of one curriculum
     # allows within-game transfer but no cross-game transfer

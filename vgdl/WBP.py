@@ -958,11 +958,11 @@ class Node():
 	def calculate_intrinsic_reward(self):
 
 		## Calculate theory-driven heuristic reward
-		self.heuristicVal, _ = self.calculate_theory_driven_heuristics(**self.WBP.hyperparameters)
+                self.heuristicVal, _ = self.calculate_theory_driven_heuristics(**self.WBP.hyperparameters)
 		
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
-		return
+		return 
 
 	def position_score(self, factor=1.):
 		try:
@@ -1042,7 +1042,7 @@ class Node():
 
 		self.do_rollout_if_appropriate()
 
-		self.calculate_resource_driven_curiosity_bonus()
+                self.calculate_resource_driven_curiosity_bonus()
 
 		self.calculate_intrinsic_reward()
 

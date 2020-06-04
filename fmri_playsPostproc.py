@@ -197,6 +197,27 @@ def playsPostproc(subj_id):
 
         play_post['termination_change_flag'] = termination_change_flag
 
+
+        # debug code -- checks if theory_change_flag always corresponds to sprite, interaction, or termination change
+        # (it doesn't but very rarely -- see how we set it)
+        '''
+        for i in range(1, len(reg['regressors']['theory'])):
+            tc = reg['regressors']['theory_change_flag'][i][0]
+            sc = reg['regressors']['sprite_change_flag'][i][0]
+            ic = reg['regressors']['interaction_change_flag'][i][0]
+            tec = reg['regressors']['termination_change_flag'][i][0]
+            if tc and not (sc or ic or tec):
+                prev_theory = reg['regressors']['theory'][i-1][0]
+                curr_theory = reg['regressors']['theory'][i][0]
+
+                print 'ssheeeeeeeeeeeeeit'
+                print 'prev'
+                prev_theory.display()
+                print 'curr'
+                curr_theory.display()
+                embed()
+        '''
+
         # hack to fix likelihood and sum_lik TODO fix in EMPA
         #
         newTimeStep_flag = [False]
@@ -281,7 +302,8 @@ def playsPostproc(subj_id):
         g = VGDLParser().parseGame(play['game_str'])
 
         # other visual regressors
-        timestamps = []
+        keystate_timestamps = []
+        state_timestamps = []
         new_sprites = []
         killed_sprites = []
         sprites = []
@@ -298,9 +320,16 @@ def playsPostproc(subj_id):
 
         sprite_poss = [] # sprite positions in each state, as UUID => x, y
         grids = [] # grid squares in each state, as (x,y) => UUID
+        assert(len(states) == len(keystates))
         for t in range(len(states)):
             state = states[t]
-            timestamps.append(state['ts'])
+            keystate = keystates[t]
+            state_timestamps.append(state['ts'])
+            if keystate:
+                keystate_timestamps.append(keystate['ts'])
+            else:
+                assert t == 0
+                keystate_timestamps.append(state['ts']) # first keystate is dummy
             new_sprites.append(state['new_spritesLen'])
             if t > 0 and states[t]['kill_listLen'] != states[t - 1]['kill_listLen']:
                 # b/c in fMRI mode we keep tally of all killed sprites, need to take delta here -- see _clearAll in core.py (which does not get called in fMRI mode, to be consistent with _performAction())
@@ -392,7 +421,9 @@ def playsPostproc(subj_id):
 
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
 
-        play_post['timestamps'] = timestamps
+        play_post['state_timestamps'] = state_timestamps
+        play_post['keystate_timestamps'] = keystate_timestamps # for crossreferencing with the EMPA regressors
+        play_post['timestamps'] = state_timestamps # backwards compatibility
         play_post['new_sprites'] = new_sprites # num new sprites
         play_post['killed_sprites'] = killed_sprites # num killed sprites
         play_post['sprites'] = sprites # num sprites
@@ -405,7 +436,7 @@ def playsPostproc(subj_id):
         play_post['movable'] = movable  # num of sprites that can mave (i.e. are not static)
         play_post['changed'] = changed  # num changed grid squares
         play_post['avatar_collision_flag'] = avatar_collision_flag  # whether the avatar collided with an object 
-        play_post['effectsByCol'] = effectsByCol # num effects
+        play_post['effectsByCol'] = effectsByCol # num effects; used in EMPA
 
         #
         # extract keypresses similar to keyholds, etc already recorded in plays (see startGame() in core.py)

@@ -615,8 +615,8 @@ class Agent:
         if self.record_fMRIRegressors and self.environment.getTime() > 0: 
             # don't log stuff from before any observations
             # convention is: timestamp = stuff right after frame
-            #spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) momchil: don't do it; super slow for plaqueAttack
-            #self.logfMRIRegressor('spriteKL', spriteKL)
+            spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) # momchil: don't do it; super slow for plaqueAttack
+            self.logfMRIRegressor('spriteKL', spriteKL)
             pass
         
         # print "phase 4: {}".format(time.time()-t1)
@@ -824,22 +824,22 @@ class Agent:
                 extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
             node = WBP.Node(p.rle, p, [], None)
 
-            rh = p.rolloutHyperparameters # copy
+            hyp = p.hyperparameters.copy() # copy
 
             # zero out second_alpha's (coefficient for R_GG) to get R_SG
-            p.rolloutHyperparameters['sprite_second_alpha'] = 0;
-            p.rolloutHyperparameters['multisprite_second_alpha'] = 0;
-            p.rolloutHyperparameters['novelty_second_alpha'] = 0;
-            R_GG, R_GGs = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
+            p.hyperparameters['sprite_second_alpha'] = 0;
+            p.hyperparameters['multisprite_second_alpha'] = 0;
+            p.hyperparameters['novelty_second_alpha'] = 0;
+            R_GG, R_GGs = node.calculate_theory_driven_heuristics(**p.hyperparameters)
             self.logfMRIRegressor('R_GG', R_GG) # goal gradient 
             self.logfMRIRegressor('R_GGs', R_GGs) # broken down by type
 
             # zero out first_alpha's (coefficient for R_SG) to get R_GG
-            p.rolloutHyperparameters = rh
-            p.rolloutHyperparameters['sprite_first_alpha'] = 0;
-            p.rolloutHyperparameters['multisprite_first_alpha'] = 0;
-            p.rolloutHyperparameters['novelty_first_alpha'] = 0;
-            R_SG, R_SGs = node.calculate_theory_driven_heuristics(p.rle, **p.rolloutHyperparameters)
+            p.hyperparameters = hyp
+            p.hyperparameters['sprite_first_alpha'] = 0;
+            p.hyperparameters['multisprite_first_alpha'] = 0;
+            p.hyperparameters['novelty_first_alpha'] = 0;
+            R_SG, R_SGs = node.calculate_theory_driven_heuristics(**p.hyperparameters)
             self.logfMRIRegressor('R_SG', R_SG) # subgoals 
             self.logfMRIRegressor('R_SGs', R_SGs) # broken down by type
 
@@ -1026,9 +1026,8 @@ class Agent:
                 self.distribution.spriteInduction(environment._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
 
                 if self.record_fMRIRegressors:
-                    #spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) momchil: don't do it; super slow for plaqueAttack
-                    #self.logfMRIRegressor('spriteKL', spriteKL)
-                    pass
+                    spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) # momchil: don't do it; super slow for plaqueAttack
+                    self.logfMRIRegressor('spriteKL', spriteKL)
         else:
             self.distribution.spriteInduction(environment._game, self.memory, step=1,  bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
         print 'momchil: observe() -- does this even happen anymore?'
