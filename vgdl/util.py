@@ -3,6 +3,7 @@ import csv
 import cPickle
 import itertools
 import os
+import numpy as np
 import random
 from IPython import embed
 

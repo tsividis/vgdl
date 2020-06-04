@@ -271,6 +271,7 @@ class Environment:
         self.agent.make_movie = self.make_movie
         self.agent.value_array = []
         self.agent.reward_array = []
+        self.agent.boltz_temp = 1.0
         
         print "Playing level {}".format(self.n_level + 1)
 

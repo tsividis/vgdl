@@ -456,7 +456,7 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            self.plan_value_array, self.plan_reward_array = p.planUsingTDSearch()
+            self.plan_value_array, self.plan_reward_array, self.boltz_temp = p.planUsingTDSearch(self.boltz_temp)
             # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)
