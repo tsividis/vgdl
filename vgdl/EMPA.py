@@ -243,6 +243,9 @@ class Agent:
                 "./theory_files/{}_{}.py_auto".format(self.gameFilename, self.task_ID)) # momchil: include task_ID so parallel subjects don't overwrite each other (same as episode filename), also extension not .py so as not to overwrite accidentally during scp 
         # print "writeTheory: {}".format(time.time()-t1)
         # t1 = time.time()
+
+        embed()
+
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.environment, Vrle, hypothesis)
