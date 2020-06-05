@@ -6,10 +6,18 @@ import os
 import csv
 import scipy.stats
 import sklearn.metrics.pairwise as k
+from IPython import embed
+import time
+from pprint import pprint
+import logging, sys
 
 # ### Helper functions
 
 # In[5]:
+
+logging.basicConfig(stream=sys.stderr, level=logging.ERROR)
+
+logging.disable(logging.INFO)
 
 
 def dim(K, N, E):
@@ -143,6 +151,8 @@ def gameDescFromFile(filename):
 # as returned by writeTheoryToTxt
 #
 def getGameDescriptionFromLines(lines):
+
+    #pprint(lines)
         
     # index of the first line in the sprite set
     spriteIdx = None
@@ -183,6 +193,10 @@ def getGameDescriptionFromLines(lines):
         # still inside the sprite set
         tokens = row.split()
         sprite_info = {}
+
+        if len(tokens) < 3:
+            logging.error('NO SPRITE TYPE' + str(tokens)) # TODO zelda enemy sprite; assert false for theories
+            continue
         
         sprite_info["name"] = tokens[0]
         sprite_info["type"] = tokens[2]
@@ -278,7 +292,7 @@ def getGameDescriptionFromLines(lines):
                         parameters[field] = value
         
         if agent == "EOS" or patient == "EOS":
-            print("there shouldn't be EOS")
+            logging.error("there shouldn't be EOS") # TODO momchil
             continue
             
         # distinguish roles of the same type across interactions
@@ -330,83 +344,6 @@ def getGameDescriptionFromLines(lines):
 
 
 
-# In[16]:
-
-
-
-def identify_tokens(file_path):
-    
-    # a dictionary containing theory information
-    gameDescriptions = {}
-    
-    game_files = file_path
-
-    for f in os.listdir(game_files):
-        if "txt" in f and "lvl" not in f:
-            #print(f)
-            game_name = " ".join(f[:-4].split("_"))
-            if "expt" in game_name:
-                game_name = game_name.split(" ")[1]
-            gameFileName = game_files + "/" + f
-            game = gameDescription(gameFileName)
-            gameDescriptions[game_name] = game
-    
-    
-    # to figure out how many tokens we will embed
-    tokens = []
-    sprite_names = []
-    
-
-    for game_file in gameDescriptions:
-
-        
-        # first identify all sprite names
-        sprite_names = []
-        for idx, sprite_info in enumerate(gameDescriptions[game_file]['sprites']):
-            for field in sprite_info:
-                if field == "name":
-                    sprite_names.append(sprite_info[field])
-                
-        # sprite set info
-        for idx, sprite_info in enumerate(gameDescriptions[game_file]['sprites']):
-            for field in sprite_info:
-                # we do not care about the names of objects in the description file
-                # momchil TODO: do we not? brain might have unique objects class identifiers
-                if field == "name":
-                    continue
-                if field not in tokens and field not in sprite_names:
-                    tokens.append(field)
-                value = sprite_info[field]
-                if value not in tokens and value not in sprite_names:
-                    tokens.append(value)
-                    
-        # interaction set info
-        for info in gameDescriptions[game_file]['interactions']:
-            for field in info:
-                if field is not "parameters":
-                    if field not in tokens and field not in sprite_names:
-                        tokens.append(field)
-                    if info[field] not in tokens and info[field] not in sprite_names:
-                        tokens.append(info[field])
-                else:
-                    for subfield in info[field]:
-                        if subfield not in tokens and subfield not in sprite_names:
-                            tokens.append(subfield)
-                        if info[field][subfield] not in tokens and info[field][subfield] not in sprite_names:
-                            tokens.append(info[field][subfield])
-        
-        # termination set info
-        for info in gameDescriptions[game_file]['terminations']:
-            for field in info:
-                if field not in tokens:
-                    tokens.append(field)
-                if info[field] not in tokens and info[field] not in sprite_names:
-                    tokens.append(info[field])
-                    
-    return gameDescriptions, tokens
-
-
-
 
 class SubjectHRR(object):
 
@@ -423,12 +360,12 @@ class SubjectHRR(object):
     def embedToken(self, token):
         if token not in self.embeddings.keys():
             self.embeddings[token] = self.genEmbedding()
-            print '                                        generating ', token #, ': ', self.embeddings[token]
+            logging.debug('                                        generating ' + token) #, ': ', self.embeddings[token]
         return self.embeddings[token]
 
     def embedGame(self, gameDesc):
         
-        print(gameDesc)
+        #pprint(gameDesc)
 
         game_HRR = np.zeros(self.D)
         spriteSet_HRR = np.zeros(self.D)
@@ -441,7 +378,7 @@ class SubjectHRR(object):
     
         sprite_embeddings = {}
 
-        print '...sprites'
+        logging.debug('...sprites')
         
         # first embed non-stype sprites: base vectors should have an expected length of 1
         for sprite_info in sprite_set:
@@ -451,7 +388,7 @@ class SubjectHRR(object):
             for field in sprite_info.keys():
                 if 'stype' in field:
                     s = True
-            print '    :: ', sprite_name
+            logging.debug('    :: ' + sprite_name)
             if s:
                 continue
             else:
@@ -459,13 +396,13 @@ class SubjectHRR(object):
                     if field == 'name':
                         continue
                     else:
-                        print '          + ', field, ' * ', val
+                        logging.debug('          + ' + field + ' * ' + val)
                         feature_embedding = encode(self.embedToken(field), self.embedToken(val))
                         sprite_embedding = np.add(sprite_embedding, feature_embedding)
             sprite_embedding = sprite_embedding / np.sqrt(np.sum(np.square(sprite_embedding))) # unit length TODO legit?
             sprite_embeddings[sprite_name] = sprite_embedding
             
-        print '...more sprites'
+        logging.debug('...more sprites')
 
         # then let's deal with stype sprites whose stype arguments are already embedded: base vectors should have an expected length of 1
         moreRemaining = True
@@ -476,7 +413,7 @@ class SubjectHRR(object):
             for sprite_info in sprite_set:
                 sprite_name = sprite_info['name']
                 sprite_embedding = np.zeros(self.D)
-                print '    :: ', sprite_name
+                logging.debug('    :: ' + sprite_name)
                 if sprite_name in sprite_embeddings.keys():
                     continue
                 s = None
@@ -498,11 +435,11 @@ class SubjectHRR(object):
                         if field == 'name':
                             continue
                         elif 'stype' in field and val != 'recursive':
-                            print '             + ', field, ' * sprite ', val
+                            logging.debug('             + ' + field + ' * sprite ' + val)
                             feature_embedding = encode(self.embedToken(field), sprite_embeddings[val])
                             sprite_embedding = np.add(sprite_embedding, feature_embedding)
                         else:
-                            print '             + ', field, ' * ', val
+                            logging.debug('             + ' + field + ' * ' + val)
                             feature_embedding = encode(self.embedToken(field), self.embedToken(val))
                             sprite_embedding = np.add(sprite_embedding, feature_embedding)
                 sprite_embedding = sprite_embedding / np.sqrt(np.sum(np.square(sprite_embedding))) # unit length TODO legit?
@@ -511,48 +448,57 @@ class SubjectHRR(object):
         for sprite in sprite_embeddings:
             spriteSet_HRR = np.add(spriteSet_HRR, sprite_embeddings[sprite])
         
-        print '...interactions'
+        logging.debug('...interactions')
 
         for interaction_info in interaction_set:
             interaction_embedding = np.zeros(self.D)
 
-            print interaction_info
+            logging.debug(interaction_info)
 
             for field, val in interaction_info.iteritems():
                 if field is not "parameters":
                     #if field not in embeddings or (interaction_info[field] not in embeddings and interaction_info[field] not in sprite_embeddings):
                     #    print("{}, {}".format(field, interaction_info[field]))
                     if 'agent' in field or 'patient' in field:
-                        print '             + ', field, ' * sprite ', val
+                        logging.debug('             + ' + field + ' * sprite ' + val)
+                        if val not in sprite_embeddings:
+                            logging.error('NO SUCH SPRITE ' + val) # TODO helper rand & missile; add assert for theories
+                            continue
                         embedding = encode(self.embedToken(field), sprite_embeddings[val])
                         interaction_embedding = np.add(interaction_embedding, embedding)
                     else:
-                        print '             + ', field, ' * ', val
+                        logging.debug('             + ' + field + ' * ' + val)
                         embedding = encode(self.embedToken(field), self.embedToken(val))
                         interaction_embedding = np.add(interaction_embedding, embedding)
                 else:
                     for subfield in val:
                         if val[subfield] in sprite_embeddings.keys():
-                            print '             + ', field, ' * sprite ', val
+                            logging.debug('             + ' + field + ' * sprite ' + val[subfield])
+                            if val[subfield] not in sprite_embeddings:
+                                print 'NO SUCH SPRITE ', val[subfield] # TODO add assert for theories
+                                continue
                             embedding = encode(self.embedToken(subfield), sprite_embeddings[val[subfield]])
                             interaction_embedding = np.add(interaction_embedding, embedding)
                         else:
-                            print '             + ', field, ' * ', val
+                            logging.debug('             + ' + field + ' * ' + val[subfield])
                             embedding = encode(self.embedToken(subfield), self.embedToken(val[subfield]))
                             interaction_embedding = np.add(interaction_embedding, embedding)
             interactionSet_HRR = np.add(interactionSet_HRR, interaction_embedding)
 
-        print '...terminations'
+        logging.debug('...terminations')
         
         for termination_info in termination_set:
             termination_embedding = np.zeros(self.D)
             for field, val in termination_info.iteritems():
                 if 'stype' in field:
-                    print '             + ', field, ' * sprite ', val
+                    logging.debug('             + ' + field + ' * sprite ' + val)
+                    if val not in sprite_embeddings:
+                        logging.error('NO SUCH SPRITE ' + val) # TODO add assert for theories
+                        continue
                     embedding = encode(self.embedToken(field), sprite_embeddings[val])
                     termination_embedding = np.add(termination_embedding, embedding)
                 else:
-                    print '             + ', field, ' * ', val
+                    logging.debug('             + ' + field + ' * ' + val)
                     embedding = encode(self.embedToken(field), self.embedToken(val))
                     termination_embedding = np.add(termination_embedding, embedding)
             terminationSet_HRR = np.add(terminationSet_HRR, termination_embedding)
@@ -563,3 +509,53 @@ class SubjectHRR(object):
                 
         return game_HRR, spriteSet_HRR, interactionSet_HRR, terminationSet_HRR
 
+
+
+def sanity():
+
+    from pymongo import MongoClient
+    from fmri_play import game_names
+
+    client = MongoClient('localhost', 27017)
+    db = client['heroku_7lzprs54']
+
+    games = []
+    for i in range(len(game_names)):
+        game = db.games.find_one({'name': game_names[i]})
+        games.append(game)
+    ng = len(games)
+
+    niters = 100
+    K = 100
+    N = 100
+    E = 0.05
+    
+    rs = np.zeros((niters, ng, ng))
+
+    for i in range(niters):
+        logging.info('iter ' + str(i)) 
+
+        s1 = SubjectHRR(K, N, E)
+        s2 = SubjectHRR(K, N, E)
+        
+        g1 = np.zeros((len(games), s1.D))
+        g2 = np.zeros((len(games), s2.D))
+        for j in range(ng):
+            game = games[j]
+
+            logging.debug(' ---------------' + game_names[j])
+
+            lines = game['descs'][0].replace('\t', '    ').split('\n')
+            desc = getGameDescriptionFromLines(lines)
+            
+            g1[j,:], _, _, _ = s1.embedGame(desc)
+            g2[j,:], _, _, _ = s2.embedGame(desc)
+
+        r = np.corrcoef(g1, g2)
+        r = r[ng:,:ng] # cross-correlations
+        rs[i,:,:] = r
+
+    rm = np.mean(rs, axis=0)
+    rsem = np.std(rs, axis=0) / math.sqrt(niters)
+
+    return rm, rsem, rs, game_names

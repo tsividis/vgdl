@@ -84,8 +84,8 @@ Depending on how old the dump is, might have to also do:
 
 To edit games, use the [jsVGDL](https://github.com/yl3506/heroku_vgdl) repo (ask Yichen for access) -- 
 - Make sure in `app.js`, we are connecting to the local Mongo server (look for `mongoose.connect` around line 142, should connect to localhost)
-- follow readme.txt to start NodeJS server
-- go to `http://127.0.0.1:3000/admin` (p: cocosciiscool) to edit games
+- follow readme.txt to start NodeJS server (`npm start`)
+- go to `http://127.0.0.1:3000/admin` (p: cocosciiscool) to edit games (prefix `vgfmri3_`)
 - as sanity check, maybe stop mongo server and make sure it stops working (so we don't accidentally end up editing live games for the online experiment)
 
 
