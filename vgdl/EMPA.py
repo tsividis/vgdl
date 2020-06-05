@@ -61,6 +61,7 @@ class Agent:
         self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
         self.forfeit_level = False
         self.agentState = defaultdict(lambda: 0)
+        self.boltz_temp = 2.0
 
         self.metacontroller_params = metacontroller_sets[metacontroller_index]
         self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
