@@ -17,7 +17,7 @@ import logging, sys
 
 logging.basicConfig(stream=sys.stderr, level=logging.ERROR)
 
-logging.disable(logging.INFO)
+logging.disable(logging.CRITICAL)
 
 
 def dim(K, N, E):
@@ -525,21 +525,21 @@ def sanity():
         games.append(game)
     ng = len(games)
 
-    niters = 100
-    K = 100
-    N = 100
+    niters = 1000
+    K = 10
+    N = 10
     E = 0.05
     
     rs = np.zeros((niters, ng, ng))
+    null_rs = np.zeros((niters, ng, ng))
 
     for i in range(niters):
-        logging.info('iter ' + str(i)) 
+        #logging.info('iter ' + str(i)) 
+        print i
 
-        s1 = SubjectHRR(K, N, E)
-        s2 = SubjectHRR(K, N, E)
+        subj = SubjectHRR(K, N, E)
         
-        g1 = np.zeros((len(games), s1.D))
-        g2 = np.zeros((len(games), s2.D))
+        g = np.zeros((len(games), subj.D))
         for j in range(ng):
             game = games[j]
 
@@ -548,14 +548,25 @@ def sanity():
             lines = game['descs'][0].replace('\t', '    ').split('\n')
             desc = getGameDescriptionFromLines(lines)
             
-            g1[j,:], _, _, _ = s1.embedGame(desc)
-            g2[j,:], _, _, _ = s2.embedGame(desc)
+            g[j,:], _, _, _ = subj.embedGame(desc)
 
-        r = np.corrcoef(g1, g2)
-        r = r[ng:,:ng] # cross-correlations
+        r = np.corrcoef(g)
         rs[i,:,:] = r
+
+        np.random.shuffle(g) # null distr
+        null_rs[i,:,:] = np.corrcoef(g)
+
+    rhos = []
+    null_rhos = []
+    ix = np.triu_indices(ng, 1)
+    for i in range(0,niters,2):
+        rho = scipy.stats.spearmanr(rs[i,ix[0],ix[1]], rs[i+1,ix[0],ix[1]]).correlation
+        rhos.append(rho)
+
+        null_rho = scipy.stats.spearmanr(null_rs[i,ix[0],ix[1]], rs[i+1,ix[0],ix[1]]).correlation
+        null_rhos.append(null_rho)
 
     rm = np.mean(rs, axis=0)
     rsem = np.std(rs, axis=0) / math.sqrt(niters)
 
-    return rm, rsem, rs, game_names
+    return rm, rsem, rs, null_rs, rhos, null_rhos, game_names
