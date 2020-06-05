@@ -223,3 +223,12 @@ Python memory profiling: [memory-profiler](https://pypi.org/project/memory-profi
 Careful not to overwrite local scp\*.sh files when copying from NCF
 
 Careful not to overwrite remote theory_files when copying to NCF
+
+EMPA replay checklist
+-----
+
+Before running `fmri_empaReplay.sh`, make sure to check:
+- `run_fmri_empaReplay.sh`: `rm savedCurricula/*` if replaying from scratch (or not, if we're continuing replay)
+- `fmri_empaReplay.sh`: subjects, games, memory, time limit (start small, e.g. subj 1 chase only)
+- `mongo`: `db.regressors.remove({})` (dump first and mv to `../backups`)
+- `fmri_empaReplay.py`: `db.regressors.insert` and `continue` are uncommented
