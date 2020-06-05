@@ -426,12 +426,13 @@ class Agent:
                 'R_SGs': [],
                 'replan_flag': [],
                 'likelihood': [],
+                'surprise': [],
                 'sum_lik': [], # sum of lik as used in theory inference TODO momchil: how does this make sense? we're summing not multiplying probabilities??
                 'n_ts': [], # size of finalTimeStepList
                 'num_effects': [], # redundant with effectListByColor logged in states, for sanity check
                 'newEffects_flag': [],
                 'newTimeStep': [], # basically finalTimeStepList
-                'newTimeStep_flag': [] # basically finalTimeStepList
+                'newTimeStep_flag': [], # basically finalTimeStepList
             }
 
 
@@ -800,50 +801,20 @@ class Agent:
             if len(self.finalTimeStepList) > 0:
                 # note based on previous hypotheses!
                 likelihood = self.hypotheses[0].likelihood(self.finalTimeStepList[-1])
+                surprise = 1 - likelihood
                 sum_lik = sum([self.hypotheses[0].likelihood(ts) for ts in self.finalTimeStepList]) 
             else:
                 likelihood = float("nan")
+                surprise = float("nan")
                 sum_lik = float("nan")
             self.logfMRIRegressor('likelihood', likelihood)
+            self.logfMRIRegressor('surprise', surprise)
             self.logfMRIRegressor('sum_lik', sum_lik)
             self.logfMRIRegressor('n_ts', len(self.finalTimeStepList))
             self.logfMRIRegressor('num_effects', len(effects))
             self.logfMRIRegressor('newEffects_flag', newEffects)
             self.logfMRIRegressor('newTimeStep_flag', newTimeStep_flag) # same as len(effectListByColor) > 0
 
-
-            # get intrinsic rewards using fake planner TODO momchil test for perf, might be very slow, especially copying the RLE and whatnot
-            # TODO put in function
-            # from planAsNeeded and BFS
-            self.theoryRLEs = self.VrleInitPhase()
-            self.metacontroller.setMaxNodes()
-            self.steps_in_solution = 0
-            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
-            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
-                return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
-                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
-            node = WBP.Node(p.rle, p, [], None)
-
-            hyp = p.hyperparameters.copy() # copy
-
-            # zero out second_alpha's (coefficient for R_GG) to get R_SG
-            p.hyperparameters['sprite_second_alpha'] = 0;
-            p.hyperparameters['multisprite_second_alpha'] = 0;
-            p.hyperparameters['novelty_second_alpha'] = 0;
-            R_GG, R_GGs = node.calculate_theory_driven_heuristics(**p.hyperparameters)
-            self.logfMRIRegressor('R_GG', R_GG) # goal gradient 
-            self.logfMRIRegressor('R_GGs', R_GGs) # broken down by type
-
-            # zero out first_alpha's (coefficient for R_SG) to get R_GG
-            p.hyperparameters = hyp
-            p.hyperparameters['sprite_first_alpha'] = 0;
-            p.hyperparameters['multisprite_first_alpha'] = 0;
-            p.hyperparameters['novelty_first_alpha'] = 0;
-            R_SG, R_SGs = node.calculate_theory_driven_heuristics(**p.hyperparameters)
-            self.logfMRIRegressor('R_SG', R_SG) # subgoals 
-            self.logfMRIRegressor('R_SGs', R_SGs) # broken down by type
-
-            print R_GG, R_GGs, R_SG, R_SGs
 
             if theory_change_flag:
                 print "new theory:"
@@ -882,7 +853,7 @@ class Agent:
             self.hypotheses = hypotheses
             # self.hypotheses[0].display()
 
-        self.re_plan = theory_change_flag
+        self.re_plan = theory_change_flag # momchil: we overwrite it in planAsNeeded?
 
         # print "phase 11: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -893,6 +864,48 @@ class Agent:
             self.action = None 
         else:
             self.action = self.planAsNeeded()
+
+
+
+
+
+        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+            # log planning stuff; now, self.hypotheses[0] is the new theory 
+            # do it here to make sure the Vrle uses the new theory
+            #
+
+            # get intrinsic rewards using fake planner TODO momchil test for perf, might be very slow, especially copying the RLE and whatnot
+            # TODO put in function
+            # from planAsNeeded and BFS
+            self.theoryRLEs = self.VrleInitPhase()
+            self.metacontroller.setMaxNodes()
+            self.steps_in_solution = 0
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
+            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
+                return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
+                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
+            node = WBP.Node(p.rle, p, [], None)
+
+            hyp = p.hyperparameters.copy() # copy
+
+            # zero out second_alpha's (coefficient for R_GG) to get R_SG
+            p.hyperparameters['sprite_second_alpha'] = 0;
+            p.hyperparameters['multisprite_second_alpha'] = 0;
+            p.hyperparameters['novelty_second_alpha'] = 0;
+            R_SG, R_SGs = node.calculate_theory_driven_heuristics(**p.hyperparameters)
+            self.logfMRIRegressor('R_SG', R_SG) # goal gradient 
+            self.logfMRIRegressor('R_SGs', R_SGs) # broken down by type
+
+            # zero out first_alpha's (coefficient for R_SG) to get R_GG
+            p.hyperparameters = hyp
+            p.hyperparameters['sprite_first_alpha'] = 0;
+            p.hyperparameters['multisprite_first_alpha'] = 0;
+            p.hyperparameters['novelty_first_alpha'] = 0;
+            R_GG, R_GGs = node.calculate_theory_driven_heuristics(**p.hyperparameters)
+            self.logfMRIRegressor('R_GG', R_GG) # subgoals 
+            self.logfMRIRegressor('R_GGs', R_GGs) # broken down by type
+
+            print R_SG, R_SGs, R_GG, R_GGs
 
         # print "phase 12: {}".format(time.time()-t1)
         # t1 = time.time()

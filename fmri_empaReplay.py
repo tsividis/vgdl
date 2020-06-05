@@ -145,7 +145,9 @@ if __name__ == '__main__':
             'play_id': play['play_id'],
             'game_name': play['game_name'],
             'level_id': play['level_id'],
-            'type': 'fmri_empaReplay'
+            'type': 'fmri_empaReplay',
+            'reg_ts': time.time(), # for sanity checks
+            'reg_dts': datetime.now().strftime("%m/%d/%Y, %H:%M:%S") # for sanity checks
         }
         all_regressors[game['name']].append(reg)
 

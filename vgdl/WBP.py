@@ -953,6 +953,7 @@ class Node():
 		
 		self.heuristicVal = heuristicVal
 
+                #print heuristicVal, (spritecounter_val_tot, multispritecounter_val_tot, timeout_val_tot, noveltytermination_val_tot)
 		return heuristicVal, (spritecounter_val_tot, multispritecounter_val_tot, timeout_val_tot, noveltytermination_val_tot)
 
 	def calculate_intrinsic_reward(self):

@@ -317,6 +317,9 @@ def playsPostproc(subj_id):
         sprite_groups = []
         changed = []
         avatar_collision_flag = []
+        win = []
+        score = []
+        ended = []
 
         sprite_poss = [] # sprite positions in each state, as UUID => x, y
         grids = [] # grid squares in each state, as (x,y) => UUID
@@ -418,6 +421,10 @@ def playsPostproc(subj_id):
 
             avatar_collision_flag.append(acf)
 
+            win.append(state['win'])
+            score.append(state['score'])
+            ended.append(state['ended'])
+
 
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
 
@@ -437,6 +444,11 @@ def playsPostproc(subj_id):
         play_post['changed'] = changed  # num changed grid squares
         play_post['avatar_collision_flag'] = avatar_collision_flag  # whether the avatar collided with an object 
         play_post['effectsByCol'] = effectsByCol # num effects; used in EMPA
+        play_post['win'] = win 
+        play_post['score'] = score
+        play_post['ended'] = ended
+        play_post['play_post_ts'] = time.time() # for sanity checks
+        play_post['play_post_dts'] = datetime.now().strftime("%m/%d/%Y, %H:%M:%S") # for sanity checks
 
         #
         # extract keypresses similar to keyholds, etc already recorded in plays (see startGame() in core.py)
