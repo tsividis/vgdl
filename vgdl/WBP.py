@@ -627,7 +627,7 @@ class WBP():
 				break
 
 			# if current is at depth
-			elif len(current.actionSeq) == depth:
+			elif len(current.actionSeq) == depth or current.terminal == True:
 				last_nodes.append(current)
 				continue
 			
@@ -641,7 +641,7 @@ class WBP():
 					else:
 						assert len(current.children) == len(current_actions)
 						current.children[a_i].actionSeq = current.actionSeq + [a]
-				# child = self.check_node_for_subgoal_progress(child)
+					current.children[a_i] = self.check_node_for_subgoal_progress(current.children[a_i])
 
 				# add to queue
 				nqueue.extend(current.children)
@@ -663,7 +663,7 @@ class WBP():
 				break
 			if current_node.parent.value == None:
 				current_node.parent.value = 0
-			current_node.parent.value += lr * (current_node.intrinsic_reward + discount * current_node.value - current_node.parent.value)
+			current_node.parent.value += lr * (current_node.parent.intrinsic_reward + discount * current_node.value - current_node.parent.value)
 			if current_node.parent.actionSeq == till.actionSeq:
 				# return what action to take from parent
 				parent_actions = self.trim_futile_actions(current_node.parent) 
@@ -701,8 +701,9 @@ class WBP():
 		print "in EMPAPlanner"
 
 		last_node = self.EMPASearch(root_node, n_depth=n_depth)
-		# print("EMPASearch info:", last_node.actionSeq)
 		child, a_i = self.TD(last_node, till=root_node)
+		print("EMPASearch info:", child.value, child.intrinsic_reward, last_node.actionSeq, last_node.intrinsic_reward)
+
 		root_node.children[a_i] = child
 
 		return root_node
@@ -739,9 +740,9 @@ class WBP():
 			print
 		
 		# bfs from root
-		if till_bfs <= 0 or (None in [child.value in child in root_node.children]):
+		if till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children]):
 			root_node = self.TDBFS(root_node, depth=self.bfs_depth)
-			td_bfs = self.bfs_range
+			till_bfs = self.bfs_range
 
 		# select action 
 		child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
@@ -761,10 +762,12 @@ class WBP():
 		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
 		self.quitting = False
 
-		# clear child's parent and actionSeq since not required
+		# clear child's details that are not required
 		child.parent = None
 		child.actionSeq = []
 		child.value = None
+		child.win = False
+		child.terminal = False
 
 		# decrement till_bfs and update on_high_r
 		till_bfs = till_bfs - 1

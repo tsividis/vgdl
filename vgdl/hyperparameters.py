@@ -6,7 +6,7 @@ hyperparameter_sets = {
      'return_subgoal_plans': True,
      'sprite_first_alpha': 10000,
      'sprite_second_alpha': 100,
-     'sprite_negative_mult': .1, #normally .1
+     'sprite_negative_mult': 10, #normally .1
      'multisprite_first_alpha': 10000,
      'multisprite_second_alpha': 100,
      'novelty_first_alpha': 5000,
