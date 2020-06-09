@@ -269,8 +269,9 @@ class Environment:
         self.initializeEnvironment()
         self.agent.environment = self.environment
         self.agent.make_movie = self.make_movie
-        self.agent.value_array = []
-        self.agent.reward_array = []
+        self.agent.root_node = None
+        self.agent.till_bfs = 0
+        self.agent.on_high_r = False
         
         print "Playing level {}".format(self.n_level + 1)
 
@@ -309,12 +310,7 @@ class Environment:
 
         episode_end_time = time.time()
         score = self.environment.getScore()
-        self.agent.reward_array = np.array(self.agent.reward_array).T
-        self.agent.value_array = np.array(self.agent.value_array).T
 
-        print(self.agent.value_array.shape, self.agent.reward_array.shape)
-        np.savetxt('win_fast_lvl{}_values.csv'.format(self.n_level), self.agent.value_array, delimiter=',')
-        np.savetxt('win_fast_lvl{}_rewards.csv'.format(self.n_level), self.agent.reward_array, delimiter=',')
         if win:
             display('win')
         else:

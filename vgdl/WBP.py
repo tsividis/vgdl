@@ -91,8 +91,8 @@ class WBP():
 		self.bestNode = None
 
 		self.empa_plan_nodes = 50
-		self.bfs_depth = 10
-		self.bfs_range = 5
+		self.bfs_depth = 3
+		self.bfs_range = 0
 
 		###################################################
 		### 		Theory-based heuristics				###
@@ -535,6 +535,8 @@ class WBP():
 		Search for win state by travelling along high reward states
 		"""
 
+		print "in EMPASearch"
+
 		QReward = []
 		self.winning_states = []
 
@@ -575,6 +577,7 @@ class WBP():
 					current.children.append(child)
 				else:
 					assert len(current.children) == len(current_actions)
+					current.children[a_i].actionSeq = current.actionSeq + [a]
 					child = current.children[a_i]
 				child = self.check_node_for_subgoal_progress(child)
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
@@ -587,7 +590,6 @@ class WBP():
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))
 				self.bestNode = bestNodes[0]
-				print('TOTAL NODES SELECTED', self.total_nodes_selected)
 				# self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(self.bestNode)
 				# self.solution = self.bestNode.actionSeq
 				if self.display:
@@ -612,6 +614,7 @@ class WBP():
 		"""
 		Fixed depth Breadth First Search
 		"""
+		print "in BFS"
 
 		nqueue = [start_node]
 		last_nodes = []
@@ -623,20 +626,22 @@ class WBP():
 			if len(current.actionSeq) > depth:
 				break
 
-			# if current is terminal state
-			elif current.terminal == True or len(current.actionSeq) == depth:
+			# if current is at depth
+			elif len(current.actionSeq) == depth:
 				last_nodes.append(current)
 				continue
 			
 			# unexpanded node
 			else:
-				# get current's children
-				if current.children == []:
-					current_actions = self.trim_futile_actions(current)
-
-					for a in current_actions:
+				current_actions = self.trim_futile_actions(current)
+				for a_i,a in enumerate(current_actions):
+					if len(current.children) < len(current_actions):
 						child = Node(self.rle, self, current.actionSeq+[a], current)
 						current.children.append(child)
+					else:
+						assert len(current.children) == len(current_actions)
+						current.children[a_i].actionSeq = current.actionSeq + [a]
+				# child = self.check_node_for_subgoal_progress(child)
 
 				# add to queue
 				nqueue.extend(current.children)
@@ -648,20 +653,27 @@ class WBP():
 		"""
 		Update node values along tree
 		"""
+		# print "in TD"
 
 		last_node.value = last_node.intrinsic_reward
 		current_node = last_node
 
 		while True:
-			if current_node.parent.value is None:
+			if current_node.parent == None:
+				break
+			if current_node.parent.value == None:
 				current_node.parent.value = 0
 			current_node.parent.value += lr * (current_node.intrinsic_reward + discount * current_node.value - current_node.parent.value)
-			if current_node.actionSeq == till.actionSeq:
-				till_value = current_node.value
+			if current_node.parent.actionSeq == till.actionSeq:
+				# return what action to take from parent
+				parent_actions = self.trim_futile_actions(current_node.parent) 
+				a_i = parent_actions.index(current_node.actionSeq[-1])
 				break
 			current_node = current_node.parent
 
-		return till_value
+		# print("TD info",last_node.actionSeq, a_i)
+	
+		return current_node, a_i
 
 
 	def get_boltzmann_action(self, child_values):
@@ -686,58 +698,82 @@ class WBP():
 		"""
 		Run EMPA search and TD update from end point
 		"""
+		print "in EMPAPlanner"
 
 		last_node = self.EMPASearch(root_node, n_depth=n_depth)
-		root_node.value = self.TD(last_node, till=root_node)
+		# print("EMPASearch info:", last_node.actionSeq)
+		child, a_i = self.TD(last_node, till=root_node)
+		root_node.children[a_i] = child
 
 		return root_node
 
 
-	def TDBFS(seld, root_node, depth):
+	def TDBFS(self, root_node, depth):
 		"""
 		Run BFS and perform TD update from each end point
 		"""
+		print "in TDBFS"
 
 		last_nodes = self.BFS(root_node, depth=depth)
 		for n in last_nodes:
-			root_node.value = self.TD(n, till=root_node)
+			child, a_i = self.TD(n, till=root_node)
+			root_node.children[a_i] = child
 
 		return root_node
 
 
-	def plan(self, till_bfs, root_node = None):
+	def plan(self, till_bfs, on_high_r, root_node = None):
 		"""
 		plan a single step using value estimation
 		"""
+		print "in plan"
 
 		if root_node is None:
 			root_node = Node(self.rle, self, [], None)
+		root_node.rle = self.rle
 		current_actions = self.trim_futile_actions(root_node)
 
 		# empa plan from root if not on best reward path
-		parent_best_action = current_actions[np.argmax([child.intrinsic_reward for child in root_node.parent.children])]
-		if root_node.parent == None or (root_node.parent != None and root_node.actionSeq[-1] == parent_best_action):
+		if on_high_r == False:
 			root_node = self.EMPAPlanner(root_node, n_depth=self.empa_plan_nodes)
+			print
 		
 		# bfs from root
-		if till_bfs == 0:
+		if till_bfs <= 0 or (None in [child.value in child in root_node.children]):
 			root_node = self.TDBFS(root_node, depth=self.bfs_depth)
 			td_bfs = self.bfs_range
 
 		# select action 
 		child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
 		child_values, child_rewards = zip(*child_values_rewards)
+
 		a_i = np.argmax(child_values)
 		action = current_actions[a_i]
 		child = root_node.children[a_i]
+
+		print("REWARDS", child_rewards)
+		print("VALUES", child_values)
+
+		assert (None not in child_values)
 
 		# book keeping for agent class
 		self.solution = [action]
 		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
 		self.quitting = False
 
-		# decrement till_bfs and return child
-		return child, till_bfs
+		# clear child's parent and actionSeq since not required
+		child.parent = None
+		child.actionSeq = []
+		child.value = None
+
+		# decrement till_bfs and update on_high_r
+		till_bfs = till_bfs - 1
+		if a_i == np.argmax(child_rewards):
+			on_high_r = True
+		else:
+			on_high_r = False
+
+		return child, till_bfs, on_high_r
 
 
 class Node():
@@ -1208,7 +1244,7 @@ class Node():
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
 		if self.win:
-			self.intrinsic_reward += 1000
+			self.intrinsic_reward += 200
 		return
 
 	def position_score(self, factor=1.):
