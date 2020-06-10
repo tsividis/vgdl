@@ -1,10 +1,6 @@
 import random
-import numpy as np
 from IPython import embed
 import WBP
-
-random.seed(42)
-np.random.seed(42)
 
 class Metacontroller:
     def __init__(self, agent):
@@ -22,6 +18,8 @@ class Metacontroller:
             if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.environment, self.agent.hypotheses[0], self.agent.predicted_states, self.agent.steps_in_solution):
                 re_plan = True
                 self.agent.on_high_r = False
+                self.agent.till_bfs = 0
+                self.agent.till_empa = 0
                 # self.agent.value_array.pop()
                 # self.agent.reward_array.pop()
                 print "regrounding"

@@ -15,9 +15,6 @@ from theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRu
 NoveltyRule, generateTheoryFromGame
 from util import *
 
-random.seed(42)
-np.random.seed(42)
-
 NONE = 0
 ACTIONS = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, NONE]
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NONE: 'wait'}
@@ -93,6 +90,7 @@ class WBP():
 		self.empa_plan_nodes = 50
 		self.bfs_depth = 3
 		self.bfs_range = 0
+		self.win_bonus = 5000
 
 		###################################################
 		### 		Theory-based heuristics				###
@@ -116,7 +114,7 @@ class WBP():
 
 		self.killer_types = [inter.slot2 for inter in self.theory.interactionSet if inter.slot1=='avatar' and inter.interaction in ['killSprite']]
 
-		self.position_score_multiplier = -500 #-500
+		self.position_score_multiplier = -1 #-500
 		if self.hyperparameter_index in ['long-term'] and not movingTypesInGame:
 			self.position_score_multiplier = -1
 
@@ -580,6 +578,7 @@ class WBP():
 					current.children[a_i].actionSeq = current.actionSeq + [a]
 					child = current.children[a_i]
 				child = self.check_node_for_subgoal_progress(child)
+
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
 					self.winning_states.append(child)
@@ -622,12 +621,17 @@ class WBP():
 		while len(nqueue) > 0:
 			current = nqueue.pop(0)
 
+			# set current's value to None to avoid overlap in TD
+			current.value = None
+
 			# check if exceeded depth
 			if len(current.actionSeq) > depth:
 				break
 
 			# if current is at depth
-			elif len(current.actionSeq) == depth or current.terminal == True:
+			elif len(current.actionSeq) == depth or current.win == True:
+				if current.win:
+					current.intrinsic_reward += self.win_bonus
 				last_nodes.append(current)
 				continue
 			
@@ -701,12 +705,16 @@ class WBP():
 		print "in EMPAPlanner"
 
 		last_node = self.EMPASearch(root_node, n_depth=n_depth)
+		if last_node.win:
+			last_node.intrinsic_reward += self.win_bonus
+
+		print("LAST NODE:", last_node.intrinsic_reward, last_node.win)
 		child, a_i = self.TD(last_node, till=root_node)
 		print("EMPASearch info:", child.value, child.intrinsic_reward, last_node.actionSeq, last_node.intrinsic_reward)
 
 		root_node.children[a_i] = child
 
-		return root_node
+		return root_node, len(last_node.actionSeq)
 
 
 	def TDBFS(self, root_node, depth):
@@ -717,13 +725,14 @@ class WBP():
 
 		last_nodes = self.BFS(root_node, depth=depth)
 		for n in last_nodes:
+			# print(n.actionSeq, n.intrinsic_reward, n.win)
 			child, a_i = self.TD(n, till=root_node)
 			root_node.children[a_i] = child
 
 		return root_node
 
 
-	def plan(self, till_bfs, on_high_r, root_node = None):
+	def plan(self, till_bfs, till_empa, on_high_r, root_node = None):
 		"""
 		plan a single step using value estimation
 		"""
@@ -734,15 +743,17 @@ class WBP():
 		root_node.rle = self.rle
 		current_actions = self.trim_futile_actions(root_node)
 
-		# empa plan from root if not on best reward path
-		if on_high_r == False:
-			root_node = self.EMPAPlanner(root_node, n_depth=self.empa_plan_nodes)
-			print
-		
 		# bfs from root
 		if till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children]):
 			root_node = self.TDBFS(root_node, depth=self.bfs_depth)
+			print("AFTER TDBFS", [child.value for child in root_node.children])
 			till_bfs = self.bfs_range
+
+		# empa plan from root if not on best reward path
+		if on_high_r == False or till_empa <= 0:
+			root_node, till_empa = self.EMPAPlanner(root_node, n_depth=self.empa_plan_nodes)
+			print("AFTER EMPAPlanner", [child.value for child in root_node.children])
+			print
 
 		# select action 
 		child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
@@ -771,12 +782,13 @@ class WBP():
 
 		# decrement till_bfs and update on_high_r
 		till_bfs = till_bfs - 1
+		till_empa = till_empa - 1
 		if a_i == np.argmax(child_rewards):
 			on_high_r = True
 		else:
 			on_high_r = False
 
-		return child, till_bfs, on_high_r
+		return child, till_bfs, till_empa, on_high_r
 
 
 class Node():
@@ -1246,8 +1258,8 @@ class Node():
 		# print(self.heuristicVal, self.position_score(self.WBP.position_score_multiplier), self.rle._game.score)
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
-		if self.win:
-			self.intrinsic_reward += 200
+		# if self.win:
+		# 	self.intrinsic_reward += 200
 		return
 
 	def position_score(self, factor=1.):

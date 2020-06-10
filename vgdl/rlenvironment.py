@@ -13,10 +13,6 @@ from ontology import BASEDIRS
 from core import VGDLSprite
 from stateobs import StateObsHandler 
 import argparse
-import random
-
-random.seed(42)
-np.random.seed(42)
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'

@@ -6,9 +6,6 @@ from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 import random
 from util import str2bool
 
-random.seed(42)
-np.random.seed(42)
-
 actions = [K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE]
 
 """

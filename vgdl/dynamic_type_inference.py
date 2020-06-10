@@ -1,8 +1,5 @@
 from ontology import *
 
-random.seed(42)
-np.random.seed(42)
-
 # ---------------------------------------------------------------------
 #     Dyanmic-type inference
 #     'Sprites' refer to dynamic types

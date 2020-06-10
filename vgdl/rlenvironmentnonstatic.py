@@ -25,9 +25,6 @@ from termcolor import colored
 import time
 import cPickle
 
-random.seed(42)
-np.random.seed(42)
-
 
 OBSERVATION_LOCAL = 'local'
 OBSERVATION_GLOBAL = 'global'

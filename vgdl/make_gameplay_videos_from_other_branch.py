@@ -14,10 +14,6 @@ from collections import defaultdict, OrderedDict
 import cPickle, os, random
 import subprocess
 import shutil
-import numpy as np
-
-random.seed(42)
-np.random.seed(42)
 
 hyperparameter_sets = [
     {'idx'           : 0,

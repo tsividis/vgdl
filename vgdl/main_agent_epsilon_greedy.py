@@ -21,9 +21,6 @@ from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrin
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 
-random.seed(42)
-np.random.seed(42)
-
 MAX_STEPS = 1000000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none'}
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,

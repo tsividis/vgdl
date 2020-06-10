@@ -23,9 +23,6 @@ generateSymbolDict, ruleCluster, Theory, Game, writeTheoryToTxt, generateTheoryF
 from rlenvironmentnonstatic import createRLInputGame
 import curses
 
-random.seed(42)
-np.random.seed(42)
-
 #A hack to display things to the terminal conveniently.
 np.core.arrayprint._line_width=250
 

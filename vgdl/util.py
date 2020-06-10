@@ -3,11 +3,8 @@ import csv
 import cPickle
 import itertools
 import os
-import numpy as np
 import random
 from IPython import embed
-
-random.seed(42)
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
 CHARS = 'bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM'

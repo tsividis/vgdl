@@ -11,10 +11,6 @@ import time, math
 from util import factorize, assign_symbols_to_objects
 from rlenvironmentnonstatic import createMindEnv
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
-import random 
-
-random.seed(42)
-np.random.seed(42)
 
 
 ALNUM = '0123456789bcdefhijklmnpqrstuvwxyzQWERTYUIOPSDFHJKLZXCVBNM,./;[]<>?:`-=~!@#$%^&*()_+'
@@ -1492,9 +1488,9 @@ def generateTheoryFromGame(rle, alterGoal=True):
 			timeout = TimeoutRule(limit=termination.limit,
 								  win=termination.win)
 			theory.terminationSet.append(timeout)
-		# elif termination.name == 'NoveltyRule':
-		# 	noveltyrule = NoveltyRule(s1=termination.s1, s2=termination.s2, win=termination.win)
-		# 	theory.terminationSet.append(noveltyrule)
+		elif termination.name == 'NoveltyRule':
+			noveltyrule = NoveltyRule(s1=termination.s1, s2=termination.s2, win=termination.win)
+			theory.terminationSet.append(noveltyrule)
 
 	return theory
 

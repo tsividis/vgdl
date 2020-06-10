@@ -14,9 +14,6 @@ import random
 Environment class for running VGDL experiments
 """
 
-np.random.seed(42)
-random.seed(42)
-
 MAX_STEPS = 10000
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
@@ -271,6 +268,7 @@ class Environment:
         self.agent.make_movie = self.make_movie
         self.agent.root_node = None
         self.agent.till_bfs = 0
+        self.agent.till_empa = 0
         self.agent.on_high_r = False
         
         print "Playing level {}".format(self.n_level + 1)

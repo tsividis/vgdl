@@ -20,9 +20,6 @@ import pygame
 import random
 import sys
 
-random.seed(42)
-np.random.seed(42)
-
 os.environ['SDL_AUDIODRIVER'] = 'dsp'
 
 

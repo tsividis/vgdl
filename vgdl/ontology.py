@@ -28,10 +28,6 @@ from pygame import Rect
 from collections import defaultdict
 from class_theory_template import Sprite
 
-random.seed(42)
-np.random.seed(42)
-
-
 UP = (0, -1)
 DOWN = (0, 1)
 LEFT = (-1, 0)

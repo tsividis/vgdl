@@ -22,9 +22,6 @@ import WBP
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from bookkeeping import Bookkeeping
 
-random.seed(42)
-np.random.seed(42)
-
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
@@ -453,7 +450,7 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            self.root_node, self.till_bfs, self.on_high_r = p.plan(self.till_bfs, self.on_high_r, self.root_node)
+            self.root_node, self.till_bfs, self.till_empa, self.on_high_r = p.plan(self.till_bfs, self.till_empa, self.on_high_r, self.root_node)
             # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)
@@ -480,9 +477,11 @@ class Agent:
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if self.solution:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
-                # for i,g in enumerate(self.printable_predicted_states[1:]):
-                print actionDict[self.solution[0]]
-                print colored(self.printable_predicted_states[-1], 'green')
+                for i,g in enumerate(self.printable_predicted_states[1:]):
+                    print(i)
+                    print actionDict[self.solution[i]]
+                    print colored(g, 'green')
+                    # print colored(self.printable_predicted_states[i], 'green')
                 # print "==============================================================="
 
 
