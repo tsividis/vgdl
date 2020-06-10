@@ -1,10 +1,11 @@
-# from https://github.com/yl3506/heroku_vgdl/tree/master/HRR_Analysis
+# from https://github.com/yl3508/heroku_vgdl/tree/master/HRR_Analysis
 
 import numpy as np
 import math
 import os 
 import csv
 import scipy.stats
+import scipy.io
 import sklearn.metrics.pairwise as k
 from IPython import embed
 import time
@@ -521,17 +522,96 @@ def sanity():
 
     games = []
     for i in range(len(game_names)):
+        # TODO skip sokoban
         game = db.games.find_one({'name': game_names[i]})
         games.append(game)
     ng = len(games)
 
-    niters = 1000
+    niters = 100
     K = 10
     N = 10
     E = 0.05
     
     rs = np.zeros((niters, ng, ng))
     null_rs = np.zeros((niters, ng, ng))
+
+    # generate many RDMs from random "subjects" i.e. embeddings
+    # also generate null distribution for good measure
+    #
+    for i in range(niters):
+        #logging.info('iter ' + str(i)) 
+        print i
+
+        subj = SubjectHRR(K, N, E)
+        
+        g = np.zeros((len(games), subj.D))
+        for j in range(ng):
+            game = games[j]
+
+            logging.debug(' ---------------' + game_names[j])
+
+            lines = game['descs'][0].replace('\t', '    ').split('\n')
+            desc = getGameDescriptionFromLines(lines)
+            
+            g[j,:], _, _, _ = subj.embedGame(desc)
+
+        #r = k.euclidean_distances(g)
+        #r = 1 - k.cosine_similarity(g)
+        r = 1 - np.corrcoef(g)
+        rs[i,:,:] = r
+
+        np.random.shuffle(g) # null distr
+        null_rs[i,:,:] = np.corrcoef(g)
+
+    # compute Spearman rank correlations for every other pair of subjects
+    # to make sure they are consistent
+    #
+    rhos = []
+    null_rhos = []
+    ix = np.triu_indices(ng, 1)
+    for i in range(0,niters,2):
+        rho = scipy.stats.spearmanr(rs[i,ix[0],ix[1]], rs[i+1,ix[0],ix[1]]).correlation
+        rhos.append(rho)
+
+        null_rho = scipy.stats.spearmanr(null_rs[i,ix[0],ix[1]], rs[i+1,ix[0],ix[1]]).correlation
+        null_rhos.append(null_rho)
+
+    rm = np.mean(rs, axis=0)
+    rsem = np.std(rs, axis=0) / math.sqrt(niters)
+
+    return rm, rsem, rs, null_rs, rhos, null_rhos, game_names
+
+
+
+# generate many RDMs from random "subjects" i.e. embeddings
+# also generate null distribution for sanity checking
+#
+def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=1000, dist='correlation'):
+
+    assert dist == 'correlation'
+
+    from pymongo import MongoClient
+
+    client = MongoClient('localhost', 27017)
+    db = client['heroku_7lzprs54']
+
+    # coupled with neurosynth_rsa_HRR.m
+    game_names = [
+        "vgfmri3_chase",
+        "vgfmri3_helper",
+        "vgfmri3_bait",
+        "vgfmri3_lemmings",
+        "vgfmri3_plaqueAttack",
+        "vgfmri3_zelda"
+    ]
+
+    games = []
+    for i in range(len(game_names)):
+        game = db.games.find_one({'name': game_names[i]})
+        games.append(game)
+    ng = len(games)
+
+    RDMs = np.zeros((niters, ng, ng))
 
     for i in range(niters):
         #logging.info('iter ' + str(i)) 
@@ -550,23 +630,21 @@ def sanity():
             
             g[j,:], _, _, _ = subj.embedGame(desc)
 
-        r = np.corrcoef(g)
-        rs[i,:,:] = r
+        #RDM = k.euclidean_distances(g)
+        RDM = 1 - k.cosine_similarity(g)
+        #RDM = 1 - np.corrcoef(g)
+        RDMs[i,:,:] = RDM
 
-        np.random.shuffle(g) # null distr
-        null_rs[i,:,:] = np.corrcoef(g)
+    mean_RDM = np.mean(RDMs, axis=0)
 
-    rhos = []
-    null_rhos = []
-    ix = np.triu_indices(ng, 1)
-    for i in range(0,niters,2):
-        rho = scipy.stats.spearmanr(rs[i,ix[0],ix[1]], rs[i+1,ix[0],ix[1]]).correlation
-        rhos.append(rho)
+    return mean_RDM, game_names, RDMs
 
-        null_rho = scipy.stats.spearmanr(null_rs[i,ix[0],ix[1]], rs[i+1,ix[0],ix[1]]).correlation
-        null_rhos.append(null_rho)
 
-    rm = np.mean(rs, axis=0)
-    rsem = np.std(rs, axis=0) / math.sqrt(niters)
+def gen_and_export_RDMs_to_matlab(filename='mat/HRR_groundtruth_RDM_cosine.mat'):
 
-    return rm, rsem, rs, null_rs, rhos, null_rhos, game_names
+    mean_RDM, game_names, _ = gen_ground_truth_RDMs()
+
+    g = np.zeros((len(game_names),), dtype=np.object)
+    g[:] = game_names
+
+    scipy.io.savemat(filename, {'mean_RDM': mean_RDM, 'game_names': game_names})

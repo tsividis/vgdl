@@ -230,5 +230,30 @@ EMPA replay checklist
 Before running `fmri_empaReplay.sh`, make sure to check:
 - `run_fmri_empaReplay.sh`: `rm savedCurricula/*` if replaying from scratch (or not, if we're continuing replay)
 - `fmri_empaReplay.sh`: subjects, games, memory, time limit (start small, e.g. subj 1 chase only)
-- `mongo`: `db.regressors.remove({})` (dump first and mv to `../backups`)
+- `mongo`: `db.regressors.remove({})` (dump first, tar gzip and mv to `../backups`)
 - `fmri_empaReplay.py`: `db.regressors.insert` and `continue` are uncommented
+
+
+EMPA postprocessing checklist 
+-----
+
+Before running `fmri_playsPostproc.sh`, make sure to:
+- `python fmri_countRegressors.py [subj]` for all subjects, make sure everything is good
+- `mongodump` remotely
+- `tar -zcvf dump_DATE_DECS.tar.gz dump`, `mv dump_DATE_DESC.tar.gz ../backups`
+- `scp_from_ncf.sh` edit and copy over regressors jsons (make sure the ones you have already are archived locally)
+- `mongo`: `db.plays_post.remove({})`
+- `fmri_playsPostproc.py`: `db.plays_post.insert` and `continue` are uncommented
+
+
+EMPA GLMs
+-----
+
+Before running GLMs:
+- `mongodump`, tar gzip, mv to backups
+- `scp_from_ncf.sh` edit and copy over `plays_post` jsons (make sure the ones you have already are archived locally)
+- zip
+- `mongo`: `db.regressors.remove({})`, `db.plays_post.remove({})`
+- `mongorestore`
+- (in `matlab_vgdl`) `rm mat/get_*.mat`, `rm mat/*create_multi*.mat`
+
