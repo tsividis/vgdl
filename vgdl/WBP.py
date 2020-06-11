@@ -462,17 +462,18 @@ class WBP():
 			self.total_nodes_opened += len(current_actions)
 
 			## Node expansion
+			current_actions = self.trim_futile_actions(current)
 			for a_i,a in enumerate(current_actions):
+				child = Node(self.rle, self, current.actionSeq+[a], current)
 				if len(current.children) < len(current_actions):
-					child = Node(self.rle, self, current.actionSeq+[a], current)
 					current.children.append(child)
 				else:
 					assert len(current.children) == len(current_actions)
-					current.children[a_i].actionSeq = current.actionSeq + [a]
-					child = current.children[a_i]
+					child.value = current.children[a_i].value
+					child.children = current.children[a_i].children
 				child = self.check_node_for_subgoal_progress(child)
+				current.children[a_i] = child
 
-				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
 					self.winning_states.append(child)
 				else:
