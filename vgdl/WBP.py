@@ -421,113 +421,6 @@ class WBP():
 			node = node.parent
 		return printable_predicted_states[::-1], predicted_states[::-1]
 
-	# def getValueSolution(self, boltz_temp):
-	# 	print
-	# 	print "SOLUTION"
-	# 	self.current_node = self.root_node
-	# 	solution = []
-	# 	value_array = []
-	# 	reward_array = []
-	# 	self.boltz_temp = boltz_temp
-	# 	i = 0
-	# 	while self.current_node.terminal == False:
-	# 		current_actions = self.trim_futile_actions(self.current_node)
-	# 		if len(self.current_node.children) < len(current_actions):
-	# 			for a in current_actions:
-	# 				child = Node(self.rle, self, self.current_node.actionSeq + [a], self.current_node)
-	# 				self.current_node.children.append(child)
-	# 		if None in [child.value for child in self.current_node.children]:
-	# 			for a_i, (a, child) in enumerate(zip(current_actions, self.current_node.children)):
-	# 				if child.value is None:
-	# 					if child.terminal and not child.win:
-	# 						child.value = -np.inf
-	# 						self.current_node.children[a_i] = child
-	# 						break
-	# 					self.winning_states = []
-	# 					win_node = self.BFS(child)
-	# 					child.value = self.TDTillRoot(win_node, child, discount=0.2)
-	# 					self.current_node.children[a_i] = child
-	# 			return self.getValueSolution(boltz_temp)
-
-	# 		child_values = [child.value for child in self.current_node.children]
-			
-                        
-	# 		print("CHILD VALUES:", child_values)
-	# 		# if i >= len(self.random_array):
-	# 			# # get boltzmann action and append to array if random
-	# 			# a_i = self.get_boltzmann_action(child_values)
-	# 			# self.random_array.append(a_i == np.argmax(child_values))
-	# 		# else:
-	# 			# if self.random_array[i] == True:
-	# 				# # take only random action
-	# 				# a_i = self.get_boltzmann_action([val for val in child_values if val != max(child_values)])
-	# 			# else:
-	# 				# # take boltzmann action
-	# 				# a_i = self.get_boltzmann_action(child_values)
-	# 				# if a_i != np.argmax(child_values):
-	# 					# self.random_array[i] = True
-	# 				# # a_i = np.argmax(child_values)
-    #                     a_i = self.get_boltzmann_action(child_values)
-			
-	# 		print('CHOSEN ACTION: {}, MAX ACTION: {}'.format(current_actions[a_i], current_actions[np.argmax(child_values)]))
-	# 		value_array.append(np.array(child_values).T)
-	# 		reward_array.append(np.array([child.intrinsic_reward for child in self.current_node.children]).T)
-	# 		action = current_actions[a_i]
-	# 		solution.append(action)
-    #                     self.boltz_temp *= 0.99 # 500 steps from 10 to 0.1
-	# 		if self.boltz_temp < 0.1:
-	# 			self.boltz_temp = 0.1
-	# 		print("TEMP", self.boltz_temp)
-	# 		i += 1
-
-	# 		print("SOLUTION TILL NOW", solution)
-	# 		print("RAM USAGE", self.process.memory_info().rss)
-	# 		self.current_node = self.current_node.children[a_i]
-	# 		print
-	# 		if len(solution) >= 7:
-	# 		    break
-	# 	print("FINAL SOLUTION", solution)
-	# 	print(self.random_array)
-	# 	return solution, self.current_node, np.array(value_array), np.array(reward_array)
-
-	# def planUsingTDSearch(self, boltz_temp):
-	# 	self.process = psutil.Process(os.getpid())
-	# 	self.root_node = Node(self.rle, self, [], None)
-	# 	current_node = self.root_node
-	# 	self.plan_size = 20
-                
-	# 	while True:
-	# 		current_actions = self.trim_futile_actions(current_node)
-	# 		for a_i, a in enumerate(current_actions):
-	# 			if len(current_node.children) < len(current_actions):
-	# 				child = Node(self.rle, self, current_node.actionSeq + [a], current_node)
-	# 				current_node.children.append(child)
-	# 			else:
-	# 				assert len(current_node.children) == len(current_actions)
-	# 				child = current_node.children[a_i]
-	# 			self.winning_states = []
-	# 			win_node = self.BFS(child)
-	# 			print("WIN STATE AT", len(win_node.actionSeq) - len(child.actionSeq))
-	# 			child.value = self.TDTillRoot(win_node, child)
-				
-	# 			# print("VALUE AND REWARD", child.value, child.intrinsic_reward)
-	# 			current_node.children[a_i] = child
-
-	# 		print("ACTION", current_actions[np.argmax([child.intrinsic_reward for child in current_node.children])])
-	# 		current_node = current_node.children[np.argmax([child.intrinsic_reward for child in current_node.children])]
-	# 		print("SOLN TILL NOW", current_node.actionSeq)
-	# 		print("RAM USAGE", self.process.memory_info().rss)
-	# 		if current_node.win or len(current_node.actionSeq) >= self.plan_size:
-	# 			print "FINISHED PLAN"
-	# 			print
-	# 			self.current_node = None
-	# 			self.random_array = []
-	# 			self.solution, last_node, value_array, reward_array = self.getValueSolution(boltz_temp)
-	# 			self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(last_node)
-	# 			self.quitting = False
-	# 			return value_array, reward_array, self.boltz_temp
-	# 		print
-
 	def EMPASearch(self, start_node, n_depth):
 		"""
 		Search for win state by travelling along high reward states
@@ -600,14 +493,6 @@ class WBP():
 		print "returning best non-win-plan"
 		self.return_best_non_win_plan(QReward)
 		return self.bestNode
-
-		## Above segment can be changed to this:
-		# if self.stall_mode:
-		# 	print "returning best non-win-plan"
-		# 	self.return_non_win_plan(start, QReward)
-		# 	return
-
-		# return self.bestNode
 
 	def BFS(self, start_node, depth):
 		"""
