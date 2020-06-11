@@ -90,7 +90,7 @@ class WBP():
 		self.empa_plan_nodes = 50
 		self.bfs_depth = 3
 		self.bfs_range = 0
-		self.win_bonus = 10000 # 5000
+		self.win_bonus = 1000000 # 5000
 
 		###################################################
 		### 		Theory-based heuristics				###
@@ -639,14 +639,14 @@ class WBP():
 			else:
 				current_actions = self.trim_futile_actions(current)
 				for a_i,a in enumerate(current_actions):
+					child = Node(self.rle, self, current.actionSeq+[a], current)
 					if len(current.children) < len(current_actions):
-						child = Node(self.rle, self, current.actionSeq+[a], current)
 						current.children.append(child)
 					else:
 						assert len(current.children) == len(current_actions)
-						current.children[a_i].actionSeq = current.actionSeq + [a]
-						current.children[a_i].rle = self.rle
-					current.children[a_i] = self.check_node_for_subgoal_progress(current.children[a_i])
+						child.value = current.children[a_i].value
+						child.children = current.children[a_i].children
+					current.children[a_i] = self.check_node_for_subgoal_progress(child)
 
 				# add to queue
 				nqueue.extend(current.children)
@@ -666,9 +666,13 @@ class WBP():
 		while True:
 			if current_node.parent == None:
 				break
+
 			if current_node.parent.value == None:
 				current_node.parent.value = 0
-			current_node.parent.value += lr * (current_node.parent.intrinsic_reward + discount * current_node.value - current_node.parent.value)
+
+			if not(current_node.terminal and not current_node.win):
+				current_node.parent.value += lr * (current_node.parent.intrinsic_reward + discount * current_node.value - current_node.parent.value)
+			
 			if current_node.parent.actionSeq == till.actionSeq:
 				# return what action to take from parent
 				parent_actions = self.trim_futile_actions(current_node.parent) 
@@ -726,7 +730,6 @@ class WBP():
 
 		last_nodes = self.BFS(root_node, depth=depth)
 		for n in last_nodes:
-			# print(n.actionSeq, n.intrinsic_reward, n.win)
 			child, a_i = self.TD(n, till=root_node)
 			root_node.children[a_i] = child
 
@@ -1256,11 +1259,8 @@ class Node():
 
 		## Calculate theory-driven heuristic reward
 		self.heuristicVal = self.calculate_theory_driven_heuristics(**self.WBP.hyperparameters)
-		# print(self.heuristicVal, self.position_score(self.WBP.position_score_multiplier), self.rle._game.score)
 		## Add position_score (to counteract IW) and game score
 		self.intrinsic_reward = self.heuristicVal + self.position_score(self.WBP.position_score_multiplier) + self.rle._game.score
-		# if self.win:
-		# 	self.intrinsic_reward += 200
 		return
 
 	def position_score(self, factor=1.):
