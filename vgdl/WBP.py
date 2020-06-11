@@ -90,7 +90,7 @@ class WBP():
 		self.empa_plan_nodes = 50
 		self.bfs_depth = 3
 		self.bfs_range = 0
-		self.win_bonus = 5000
+		self.win_bonus = 10000 # 5000
 
 		###################################################
 		### 		Theory-based heuristics				###
@@ -628,7 +628,7 @@ class WBP():
 			if len(current.actionSeq) > depth:
 				break
 
-			# if current is at depth
+			# if current is at depth or win
 			elif len(current.actionSeq) == depth or current.win == True:
 				if current.win:
 					current.intrinsic_reward += self.win_bonus
@@ -645,6 +645,7 @@ class WBP():
 					else:
 						assert len(current.children) == len(current_actions)
 						current.children[a_i].actionSeq = current.actionSeq + [a]
+						current.children[a_i].rle = self.rle
 					current.children[a_i] = self.check_node_for_subgoal_progress(current.children[a_i])
 
 				# add to queue
@@ -1028,7 +1029,7 @@ class Node():
 				# Then, you should not be disincentivized to create it, which can be achieved through this high penalty
 				distance = 101
 				added_val = float(mult * second_alpha * distance)
-			elif not stype_positions:
+			elif not stype_positions and stype == 'avatar':
 				## If we couldn't compute a second-order distance because the avatar is dead, give infinite penalty.
 				added_val = -float('inf')
 			else:
