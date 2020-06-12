@@ -30,7 +30,7 @@ OBJECT_LOCATION_TRACKING_LIMIT = 1000
 class WBP():
 	def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], max_nodes=100000,
 		return_subgoal_plans=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1, 
-		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False):
+		objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False, boltz_hyps = None):
 		self.rle = rle
 		self.gameFilename = gameFilename
 
@@ -87,12 +87,10 @@ class WBP():
 		self.printable_predicted_states = []
 		self.bestNode = None
 
-		self.empa_plan_nodes = 50
-		self.bfs_depth = 3
-		self.bfs_range = 0
-		self.win_bonus = 1000000 # 5000
-		self.boltz_decay = 0.9922
-		self.boltz_min = 0.1
+		self.empa_plan_nodes = boltz_hyps['empa_plan_nodes']
+		self.bfs_depth = boltz_hyps['bfs_depth']
+		self.bfs_range = boltz_hyps['bfs_range']
+		self.win_bonus = boltz_hyps['win_bonus']
 
 		###################################################
 		### 		Theory-based heuristics				###
@@ -573,7 +571,7 @@ class WBP():
 		return current_node, a_i
 
 
-	def get_boltzmann_action(self, child_values):
+	def get_boltzmann_action(self, child_values, boltz_temp):
 		"""
 		Given child values, apply boltzmann exploration
 		"""
@@ -587,8 +585,8 @@ class WBP():
 		# 	npcv[npcv != -np.inf] = noinf
 		# else:
 		npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + 1)
-		print("BOLTZ: ",softmax(npcv, self.boltz_temp), self.boltz_temp)
-		return np.random.choice(range(len(child_values)), p=softmax(npcv, self.boltz_temp))
+		print("BOLTZ: ",softmax(npcv, boltz_temp), boltz_temp)
+		return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
 
 
 	def EMPAPlanner(self, root_node, n_depth):
@@ -634,7 +632,6 @@ class WBP():
 			root_node = Node(self.rle, self, [], None)
 		root_node.rle = self.rle
 		current_actions = self.trim_futile_actions(root_node)
-		self.boltz_temp = boltz_temp
 
 		# bfs from root
 		if till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children]):
@@ -655,14 +652,9 @@ class WBP():
 		assert (None not in child_values)
 
 		# a_i = np.argmax(child_values)
-		a_i = self.get_boltzmann_action(child_values)
+		a_i = self.get_boltzmann_action(child_values, boltz_temp)
 		action = current_actions[a_i]
 		child = root_node.children[a_i]
-
-		# decay boltzmann temperature
-		self.boltz_temp *= self.boltz_decay # decay boltzmann temperature
-		if self.boltz_temp < self.boltz_min:
-			self.boltz_temp = self.boltz_min
 
 		print("REWARDS", child_rewards)
 		print("VALUES", child_values)
@@ -687,7 +679,7 @@ class WBP():
 		else:
 			on_high_r = False
 
-		return child, till_bfs, till_empa, on_high_r, self.boltz_temp
+		return child, till_bfs, till_empa, on_high_r
 
 
 class Node():

@@ -143,7 +143,7 @@ class Environment:
 
         return
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, boltz_hyps = None):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -167,6 +167,12 @@ class Environment:
             # print "loaded a game"
             # embed()
         j=0
+
+        # set boltzmann hyperparameters
+        self.agent.boltz_hyps = boltz_hyps
+        self.agent.boltz_temp = boltz_hyps['boltz_init']
+        self.agent.steps_so_far = 0
+
         fullStateEpisodes, episodeCompactStates = {}, {}
         for n_level, level_game in enumerate(level_game_pairs):
 
@@ -270,7 +276,6 @@ class Environment:
         self.agent.till_bfs = 0
         self.agent.till_empa = 0
         self.agent.on_high_r = False
-        self.agent.boltz_temp = 5.0
         
         print "Playing level {}".format(self.n_level + 1)
 
@@ -314,7 +319,7 @@ class Environment:
             display('win')
         else:
             display('loss')
-        print('Level completed in:', episode_end_time - episode_start_time)
+        print('Level completed in {} s and {} steps'.format(episode_end_time - episode_start_time, self.agent.memory.episodeSteps))
 
         return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level
 

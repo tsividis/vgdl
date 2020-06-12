@@ -58,7 +58,6 @@ class Agent:
         self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
         self.forfeit_level = False
         self.agentState = defaultdict(lambda: 0)
-        self.boltz_temp = 2.0
 
         self.metacontroller_params = metacontroller_sets[metacontroller_index]
         self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
@@ -446,11 +445,20 @@ class Agent:
             # t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
-                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
+                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion, boltz_hyps = self.boltz_hyps)
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            self.root_node, self.till_bfs, self.till_empa, self.on_high_r, self.boltz_temp = p.plan(self.till_bfs, self.till_empa, self.on_high_r, self.boltz_temp, self.root_node)
+            self.root_node, self.till_bfs, self.till_empa, self.on_high_r = p.plan(self.till_bfs, self.till_empa, self.on_high_r, self.boltz_temp, self.root_node)
+            
+            # take boltzmann action
+            if self.steps_so_far < self.boltz_hyps['boltz_exploit']:
+                print()
+                self.boltz_temp = self.boltz_hyps['boltz_init'] - self.steps_so_far *((self.boltz_hyps['boltz_init']-self.boltz_hyps['boltz_min'])/self.boltz_hyps['boltz_exploit'])
+            else:
+                self.boltz_temp = self.boltz_hyps['boltz_min']
+
+            self.steps_so_far += 1
             # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)

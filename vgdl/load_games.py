@@ -13,6 +13,13 @@ from hyperparameters import *
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
+parser.add_argument('--bfs_depth', type=int, default=3)
+parser.add_argument('--bfs_range', type=int, default=0)
+parser.add_argument('--boltz_init', type=float, default=8.0)
+parser.add_argument('--boltz_exploit', type=int, default=500)
+parser.add_argument('--boltz_min', type=float, default=0.1)
+parser.add_argument('--empa_plan_nodes', type=int, default=50)
+parser.add_argument('--win_bonus', type=int, default=1000000)
 parser.add_argument('--hyperparameter_index', type=str, default='short-term', help='hyperparameter_index')
 parser.add_argument('--metacontroller_index', type=int, default=0, help='metacontroller_index')
 parser.add_argument('--IW_k', type=int, default=1, help='IW_k')
@@ -25,6 +32,21 @@ parser.add_argument('--produce_printout', type=str2bool, default=True, help='pro
 args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
+
+# group them up
+boltz_hyps = {
+    'bfs_depth': args.bfs_depth,
+    'bfs_range': args.bfs_range,
+    'boltz_init': args.boltz_init,
+    'boltz_min': args.boltz_min,
+    'boltz_exploit': args.boltz_exploit,
+    'empa_plan_nodes': args.empa_plan_nodes,
+    'win_bonus': args.win_bonus
+}
+
+print("HYPERPARAMS ARE")
+print(boltz_hyps)
+
 hyperparameter_index = args.hyperparameter_index
 metacontroller_index = args.metacontroller_index
 IW_k = args.IW_k
@@ -60,7 +82,7 @@ def read_gvgai_game(filename):
         new_doc = "\n".join(new_doc)
     return new_doc
 
-def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
+def play_trainset(hyperparameter_sets, hyperparameter_index, args=None, boltz_hyps = None):
     start_time = time.time()
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
@@ -80,7 +102,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
             level_game_pairs.append([game_descriptions[level_number], level.read()])
 
     agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index=hyperparameter_index, metacontroller_index=metacontroller_index, IW_k=IW_k, extra_atom_allowed=extra_atom_allowed, task_ID=task_ID)
-
+    
     environment = Environment(game_name, agent, task_ID=task_ID, produce_printout = produce_printout)
 
     ##then pass this down for multiple episodes
@@ -101,8 +123,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
         print "Playing {}".format(game_name)
     print "Typical runtime for this game: {}".format(estimated_time[game_name])
 
-
-    environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap)
+    environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=make_movie, heatmap=heatmap, boltz_hyps = boltz_hyps)
 
     # print game_levels
 
@@ -110,7 +131,7 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
     return total_time
 
-play_trainset(hyperparameter_sets, hyperparameter_index, args)
+play_trainset(hyperparameter_sets, hyperparameter_index, args, boltz_hyps)
 
 
 
