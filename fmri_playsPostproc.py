@@ -117,7 +117,7 @@ def playsPostproc(subj_id):
         print db.plays_post.count(q)
         if db.plays_post.count(q) > 0:
             print '..........skipping: already computed'
-            continue
+            #continue
 
         # get regressors
         q = {'play_key': play['_id']}
@@ -171,6 +171,11 @@ def playsPostproc(subj_id):
             curr_theory = reg['regressors']['theory'][i][0]
             interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
 
+            #if interactionSetEqual == reg['regressors']['interaction_change_flag'][i][0]:
+            #    print 'sheeeeit'
+            #    embed()
+            #    time.sleep(10)
+
             reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
 
             if reg['regressors']['interaction_change_flag'][i][0] and not reg['regressors']['theory_change_flag'][i][0]:
@@ -187,6 +192,11 @@ def playsPostproc(subj_id):
             prev_theory = reg['regressors']['theory'][i-1][0]
             curr_theory = reg['regressors']['theory'][i][0]
             termination_change_flag = set(prev_theory.terminationSet) != set(curr_theory.terminationSet)
+
+            if termination_change_flag != reg['regressors']['termination_change_flag'][i][0]:
+                print 'sheeeeitttttttttt'
+                embed()
+                time.sleep(10)
 
             reg['regressors']['termination_change_flag'][i][0] = termination_change_flag 
 
@@ -571,7 +581,7 @@ def playsPostproc(subj_id):
         play_post['keyups'] = keyups
         play_post['keydowns'] = keydowns
 
-        db.plays_post.insert_one(play_post)
+        #db.plays_post.insert_one(play_post)
         
     print 'done!'
     plays.close()

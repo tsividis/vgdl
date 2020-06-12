@@ -256,4 +256,6 @@ Before running GLMs:
 - `mongo`: `db.regressors.remove({})`, `db.plays_post.remove({})`
 - `mongorestore`
 - (in `matlab_vgdl`) `rm mat/get_*.mat`, `rm mat/*create_multi*.mat`
-
+- run `get_regressors` as script (comment out first line, uncomment stuff right after) to debug
+- (MATLAB) `ccnl_check_multi(vgdl_expt(), 3)` to get theory regressors, then 21 to get everything else
+- `ccnl_check_multi` for all GLMs you intend to run, then `scp_to_ncf.sh` to copy them over (edit first)

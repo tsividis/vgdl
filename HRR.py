@@ -16,9 +16,9 @@ import logging, sys
 
 # In[5]:
 
-logging.basicConfig(stream=sys.stderr, level=logging.ERROR)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-logging.disable(logging.CRITICAL)
+#logging.disable(logging.CRITICAL)
 
 
 def dim(K, N, E):
@@ -512,56 +512,37 @@ class SubjectHRR(object):
 
 
 
-def sanity():
+    def embedTheory(self, theory):
 
-    from pymongo import MongoClient
-    from fmri_play import game_names
+        theory_HRR = np.zeros(self.D)
+        spriteSet_HRR = np.zeros(self.D)
+        interactionSet_HRR = np.zeros(self.D)
+        terminationSet_HRR = np.zeros(self.D)
 
-    client = MongoClient('localhost', 27017)
-    db = client['heroku_7lzprs54']
+        sprite_embeddings = {}
 
-    games = []
-    for i in range(len(game_names)):
-        # TODO skip sokoban
-        game = db.games.find_one({'name': game_names[i]})
-        games.append(game)
-    ng = len(games)
+        logging.debug('...terminations')
+
+        for terminationRule in theory.terminationSet:
+            if terminationRule.ruleType in ['TimeoutRule']:
+                pass
+        
+
+
+
+def sanity(dist='correlation'):
 
     niters = 100
     K = 10
     N = 10
     E = 0.05
+
+    rm, game_names, rs = gen_ground_truth_RDMs(K, N, E, niters, dist, shuffle=False)
+    rsem = np.std(rs, axis=0) / math.sqrt(niters)
+
+    _, _, null_rs = gen_ground_truth_RDMs(K, N, E, niters, dist, shuffle=True)
     
-    rs = np.zeros((niters, ng, ng))
-    null_rs = np.zeros((niters, ng, ng))
-
-    # generate many RDMs from random "subjects" i.e. embeddings
-    # also generate null distribution for good measure
-    #
-    for i in range(niters):
-        #logging.info('iter ' + str(i)) 
-        print i
-
-        subj = SubjectHRR(K, N, E)
-        
-        g = np.zeros((len(games), subj.D))
-        for j in range(ng):
-            game = games[j]
-
-            logging.debug(' ---------------' + game_names[j])
-
-            lines = game['descs'][0].replace('\t', '    ').split('\n')
-            desc = getGameDescriptionFromLines(lines)
-            
-            g[j,:], _, _, _ = subj.embedGame(desc)
-
-        #r = k.euclidean_distances(g)
-        #r = 1 - k.cosine_similarity(g)
-        r = 1 - np.corrcoef(g)
-        rs[i,:,:] = r
-
-        np.random.shuffle(g) # null distr
-        null_rs[i,:,:] = np.corrcoef(g)
+    ng = len(game_names)
 
     # compute Spearman rank correlations for every other pair of subjects
     # to make sure they are consistent
@@ -586,9 +567,7 @@ def sanity():
 # generate many RDMs from random "subjects" i.e. embeddings
 # also generate null distribution for sanity checking
 #
-def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=1000, dist='correlation'):
-
-    assert dist == 'correlation'
+def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=100, dist='correlation', shuffle=False):
 
     from pymongo import MongoClient
 
@@ -630,9 +609,18 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=1000, dist='correlation'):
             
             g[j,:], _, _, _ = subj.embedGame(desc)
 
-        #RDM = k.euclidean_distances(g)
-        RDM = 1 - k.cosine_similarity(g)
-        #RDM = 1 - np.corrcoef(g)
+        if shuffle:
+            np.random.shuffle(g) # null distr
+
+        if dist == 'correlation':
+            RDM = 1 - np.corrcoef(g)
+        elif dist == 'cosine':
+            RDM = 1 - k.cosine_similarity(g)
+        elif dist == 'euclidean':
+            RDM = k.euclidean_distances(g)
+        else: 
+            assert False, 'invalid distance metric'
+
         RDMs[i,:,:] = RDM
 
     mean_RDM = np.mean(RDMs, axis=0)
@@ -640,11 +628,131 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=1000, dist='correlation'):
     return mean_RDM, game_names, RDMs
 
 
-def gen_and_export_RDMs_to_matlab(filename='mat/HRR_groundtruth_RDM_cosine.mat'):
 
-    mean_RDM, game_names, _ = gen_ground_truth_RDMs()
+
+# export ground truth HRR RDMs to matlab
+#
+def gen_and_export_RDMs_to_matlab(K, N, E, niters, dist):
+
+    filename='mat/HRR_groundtruth_RDM_K=%d_N=%d_E=%d_niters=%d_dist=%s.mat' % (K, N, E, niters, dist)
+
+    mean_RDM, game_names, _ = gen_ground_truth_RDMs(K, N, E, niters, dist)
 
     g = np.zeros((len(game_names),), dtype=np.object)
     g[:] = game_names
 
     scipy.io.savemat(filename, {'mean_RDM': mean_RDM, 'game_names': game_names})
+
+
+
+# helper to read multi from matlab (must have created it first with ccnl_check_multi)
+#
+def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
+    filename = '../matlab_vgdl/mat/vgdl_create_multi_glm%d_subj%d_run%d.mat' % (glmodel, subj_id, run_id)
+    
+    import h5py
+
+    onsets = []
+    durations = []
+    with h5py.File(filename) as f:
+        
+        n = len(f['multi']['onsets'][()])
+        for i in range(n):
+            onsets.append(f[f['multi']['onsets'][i][0]][()][0][0])
+            durations.append(f[f['multi']['durations'][i][0]][()][0][0])
+
+    return onsets, durations
+
+
+def gen_subject_RDMs(subj_id, K=10, N=10, E=0.05, niters=100, dist='correlation', shuffle=False):
+    subj_id = str(subj_id)
+
+    from pymongo import MongoClient
+    from collections import defaultdict
+    from vgdl import core
+    from vgdl.core import VGDLParser, fMRI_screensize
+    from vgdl.core import keyPresses as keyNames
+    from IPython import embed
+    from vgdl.EMPA import Agent
+    import cPickle, cloudpickle
+    from vgdl.environment import Environment
+    from vgdl.hyperparameters import hyperparameter_sets
+    from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+
+    import pygame
+
+
+    client = MongoClient('localhost', 27017)
+    db = client['heroku_7lzprs54']
+
+    subj = db.subjects.find_one({'subj_id': subj_id})
+
+    # get plays
+    query = {'subj_id': subj_id, 'run_id': {'$lt': 7}}
+    plays = db.plays.find(query).sort('start_time')
+
+    # "subject" embeddings: have multiple (niters), for robustness
+    samples = [SubjectHRR(K, N, E) for _ in range(niters)]
+   
+    g = [[]] * niters
+    ts = []
+    run_id = []
+
+    for play in plays:
+
+        game = subj['games'][play['game_id']]
+        print 'gen_subject_RDMs: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+
+        # get regressors
+        q = {'play_key': play['_id']}
+        print q
+        print db.regressors.count(q)
+        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.regressors.count(q) == 0:
+            print 'skipping (e.g. Sokoban)'
+            continue
+        regs = db.regressors.find(q).sort('ts', -1)
+        reg = None
+        for reg in regs:
+            break # just take the latest one
+
+        # get states
+        zstates = play['zstates']
+        states = core.VGDLParser.decompress(zstates)
+        states = states['states'] # dummy dict
+
+        # load theories from disk
+        with open(reg['regressors']['theory_filename'], 'r') as f:
+            reg['regressors']['theory'] = cloudpickle.load(f)
+
+        # create temporary environment just to convert theory to VGDL description
+        # roughly main steps from:
+        # - fmri_empaRepaly.py
+        # - vgdl/environment.py: playCurriculum.py
+        # - vgdl/environment.py: playEpisode.py
+        # - vgdl/EMPA.py: initializeHypotheses and initializeVrle
+        game_name = game['name']
+        task_ID = 'subj={}'.format(subj_id)
+        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
+        environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
+        environment.gameString = play['game_str']
+        environment.levelString = play['level_str']
+        environment.playback_states = None
+        environment.playback_keystates = None
+        environment.initializeEnvironment()
+        symbolDict = generateSymbolDict(environment.environment)
+
+        for i in range(0, len(reg['regressors']['theory'])):
+            theory = reg['regressors']['theory'][i][0]
+
+            # convert theory to VGDL description
+            gameString, _, _ = writeTheoryToTxt(environment.environment, theory, symbolDict, "./theory_files/{}_{}.py_auto_HRR".format(agent.gameFilename, task_ID))
+            gameLines = gameString.replace('\t', '    ').split('\n')
+
+            gameDesc = getGameDescriptionFromLines(gameLines)
+
+            HRR = samples[0].embedGame(gameDesc)
+            g[0].append(HRR)
+
+            embed()
+            time.sleep(10)
