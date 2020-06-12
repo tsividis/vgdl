@@ -450,7 +450,7 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            self.root_node, self.till_bfs, self.till_empa, self.on_high_r = p.plan(self.till_bfs, self.till_empa, self.on_high_r, self.root_node)
+            self.root_node, self.till_bfs, self.till_empa, self.on_high_r, self.boltz_temp = p.plan(self.till_bfs, self.till_empa, self.on_high_r, self.boltz_temp, self.root_node)
             # p.BFS()
 
             # print "plan phase 5: {}".format(time.time()-t1)

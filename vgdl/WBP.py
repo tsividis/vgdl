@@ -91,6 +91,8 @@ class WBP():
 		self.bfs_depth = 3
 		self.bfs_range = 0
 		self.win_bonus = 1000000 # 5000
+		self.boltz_decay = 0.9922
+		self.boltz_min = 0.1
 
 		###################################################
 		### 		Theory-based heuristics				###
@@ -576,16 +578,16 @@ class WBP():
 		Given child values, apply boltzmann exploration
 		"""
 
-		if np.inf in child_values:
-			return child_values.index(np.inf)
-		if -np.inf in child_values:
-			npcv = np.array(child_values)
-			noinf = npcv[npcv != -np.inf]
-			noinf = (noinf - np.mean(noinf))/np.std(noinf)
-			npcv[npcv != -np.inf] = noinf
-		else:
-			npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + 1)
-                print("BOLTZ PROBAS: ",softmax(npcv, self.boltz_temp))
+		# if np.inf in child_values:
+		# 	return child_values.index(np.inf)
+		# if -np.inf in child_values:
+		# 	npcv = np.array(child_values)
+		# 	noinf = npcv[npcv != -np.inf]
+		# 	noinf = (noinf - np.mean(noinf))/np.std(noinf)
+		# 	npcv[npcv != -np.inf] = noinf
+		# else:
+		npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + 1)
+		print("BOLTZ: ",softmax(npcv, self.boltz_temp), self.boltz_temp)
 		return np.random.choice(range(len(child_values)), p=softmax(npcv, self.boltz_temp))
 
 
@@ -622,7 +624,7 @@ class WBP():
 		return root_node
 
 
-	def plan(self, till_bfs, till_empa, on_high_r, root_node = None):
+	def plan(self, till_bfs, till_empa, on_high_r, boltz_temp, root_node = None):
 		"""
 		plan a single step using value estimation
 		"""
@@ -632,6 +634,7 @@ class WBP():
 			root_node = Node(self.rle, self, [], None)
 		root_node.rle = self.rle
 		current_actions = self.trim_futile_actions(root_node)
+		self.boltz_temp = boltz_temp
 
 		# bfs from root
 		if till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children]):
@@ -649,14 +652,20 @@ class WBP():
 		child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
 		child_values, child_rewards = zip(*child_values_rewards)
 
-		a_i = np.argmax(child_values)
+		assert (None not in child_values)
+
+		# a_i = np.argmax(child_values)
+		a_i = self.get_boltzmann_action(child_values)
 		action = current_actions[a_i]
 		child = root_node.children[a_i]
 
+		# decay boltzmann temperature
+		self.boltz_temp *= self.boltz_decay # decay boltzmann temperature
+		if self.boltz_temp < self.boltz_min:
+			self.boltz_temp = self.boltz_min
+
 		print("REWARDS", child_rewards)
 		print("VALUES", child_values)
-
-		assert (None not in child_values)
 
 		# book keeping for agent class
 		self.solution = [action]
@@ -678,7 +687,7 @@ class WBP():
 		else:
 			on_high_r = False
 
-		return child, till_bfs, till_empa, on_high_r
+		return child, till_bfs, till_empa, on_high_r, self.boltz_temp
 
 
 class Node():

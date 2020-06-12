@@ -270,6 +270,7 @@ class Environment:
         self.agent.till_bfs = 0
         self.agent.till_empa = 0
         self.agent.on_high_r = False
+        self.agent.boltz_temp = 5.0
         
         print "Playing level {}".format(self.n_level + 1)
 
