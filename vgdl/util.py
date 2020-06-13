@@ -15,7 +15,7 @@ CAPCHARS = 'QWERTYUIOPSDFHJKLZXCVBNM'
 """Math"""
 def softmax(w, t = 1.0):
 	e = np.exp(np.array(w) / t)
-	dist = e / np.sum(e)
+	dist = e / (np.sum(e) + np.finfo(float).eps)
 	return dist
 
 def normalize(array):

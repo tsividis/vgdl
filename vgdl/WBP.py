@@ -576,16 +576,16 @@ class WBP():
 		Given child values, apply boltzmann exploration
 		"""
 
-		# if np.inf in child_values:
-		# 	return child_values.index(np.inf)
-		# if -np.inf in child_values:
-		# 	npcv = np.array(child_values)
-		# 	noinf = npcv[npcv != -np.inf]
-		# 	noinf = (noinf - np.mean(noinf))/np.std(noinf)
-		# 	npcv[npcv != -np.inf] = noinf
-		# else:
-		npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + 1)
-		print("BOLTZ: ",softmax(npcv, boltz_temp), boltz_temp)
+		if (np.inf or np.nan) in child_values:
+			return child_values.index(np.inf)
+		if -np.inf in child_values:
+			npcv = np.array(child_values)
+			noinf = npcv[npcv != -np.inf]
+			noinf = (noinf - np.mean(noinf))/np.std(noinf)
+			npcv[npcv != -np.inf] = noinf
+		else:
+			npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + np.finfo(float).eps)
+			print("BOLTZ: ",softmax(npcv, boltz_temp), boltz_temp)
 		return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
 
 
