@@ -18,7 +18,7 @@ import logging, sys
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-#logging.disable(logging.CRITICAL)
+logging.disable(logging.CRITICAL)
 
 
 def dim(K, N, E):
@@ -345,7 +345,9 @@ def getGameDescriptionFromLines(lines):
 
 
 
-
+# a sample of HRR embeddings
+# as if it's a single "subject"
+#
 class SubjectHRR(object):
 
     # K: the maximum number of terms to be combined
@@ -532,15 +534,15 @@ class SubjectHRR(object):
 
 def sanity(dist='correlation'):
 
-    niters = 100
+    nsamples = 100
     K = 10
     N = 10
     E = 0.05
 
-    rm, game_names, rs = gen_ground_truth_RDMs(K, N, E, niters, dist, shuffle=False)
-    rsem = np.std(rs, axis=0) / math.sqrt(niters)
+    rm, game_names, rs = gen_ground_truth_RDMs(K, N, E, nsamples, dist, shuffle=False)
+    rsem = np.std(rs, axis=0) / math.sqrt(nsamples)
 
-    _, _, null_rs = gen_ground_truth_RDMs(K, N, E, niters, dist, shuffle=True)
+    _, _, null_rs = gen_ground_truth_RDMs(K, N, E, nsamples, dist, shuffle=True)
     
     ng = len(game_names)
 
@@ -550,7 +552,7 @@ def sanity(dist='correlation'):
     rhos = []
     null_rhos = []
     ix = np.triu_indices(ng, 1)
-    for i in range(0,niters,2):
+    for i in range(0,nsamples,2):
         rho = scipy.stats.spearmanr(rs[i,ix[0],ix[1]], rs[i+1,ix[0],ix[1]]).correlation
         rhos.append(rho)
 
@@ -558,7 +560,7 @@ def sanity(dist='correlation'):
         null_rhos.append(null_rho)
 
     rm = np.mean(rs, axis=0)
-    rsem = np.std(rs, axis=0) / math.sqrt(niters)
+    rsem = np.std(rs, axis=0) / math.sqrt(nsamples)
 
     return rm, rsem, rs, null_rs, rhos, null_rhos, game_names
 
@@ -567,7 +569,7 @@ def sanity(dist='correlation'):
 # generate many RDMs from random "subjects" i.e. embeddings
 # also generate null distribution for sanity checking
 #
-def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=100, dist='correlation', shuffle=False):
+def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', shuffle=False):
 
     from pymongo import MongoClient
 
@@ -590,9 +592,9 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=100, dist='correlation', sh
         games.append(game)
     ng = len(games)
 
-    RDMs = np.zeros((niters, ng, ng))
+    RDMs = np.zeros((nsamples, ng, ng))
 
-    for i in range(niters):
+    for i in range(nsamples):
         #logging.info('iter ' + str(i)) 
         print i
 
@@ -632,11 +634,11 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, niters=100, dist='correlation', sh
 
 # export ground truth HRR RDMs to matlab
 #
-def gen_and_export_RDMs_to_matlab(K, N, E, niters, dist):
+def gen_and_export_RDMs_to_matlab(K, N, E, nsamples, dist):
 
-    filename='mat/HRR_groundtruth_RDM_K=%d_N=%d_E=%d_niters=%d_dist=%s.mat' % (K, N, E, niters, dist)
+    filename='mat/HRR_groundtruth_RDM_K=%d_N=%d_E=%d_nsamples=%d_dist=%s.mat' % (K, N, E, nsamples, dist)
 
-    mean_RDM, game_names, _ = gen_ground_truth_RDMs(K, N, E, niters, dist)
+    mean_RDM, game_names, _ = gen_ground_truth_RDMs(K, N, E, nsamples, dist)
 
     g = np.zeros((len(game_names),), dtype=np.object)
     g[:] = game_names
@@ -648,7 +650,7 @@ def gen_and_export_RDMs_to_matlab(K, N, E, niters, dist):
 # helper to read multi from matlab (must have created it first with ccnl_check_multi)
 #
 def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
-    filename = '../matlab_vgdl/mat/vgdl_create_multi_glm%d_subj%d_run%d.mat' % (glmodel, subj_id, run_id)
+    filename = 'mat/vgdl_create_multi_glm%d_subj%d_run%d.mat' % (glmodel, subj_id, run_id)
     
     import h5py
 
@@ -664,9 +666,12 @@ def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
     return onsets, durations
 
 
-def gen_subject_RDMs(subj_id, K=10, N=10, E=0.05, niters=100, dist='correlation', shuffle=False):
+# get squence of HRRs for subject's inferred theories
+#
+def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
     subj_id = str(subj_id)
 
+    import socket
     from pymongo import MongoClient
     from collections import defaultdict
     from vgdl import core
@@ -681,27 +686,41 @@ def gen_subject_RDMs(subj_id, K=10, N=10, E=0.05, niters=100, dist='correlation'
 
     import pygame
 
+    if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
+        # local on my Mac, or on a login / VDI node
+        client = MongoClient('localhost', 27017)
+    else:
+        # cluster
+        client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
 
-    client = MongoClient('localhost', 27017)
     db = client['heroku_7lzprs54']
 
     subj = db.subjects.find_one({'subj_id': subj_id})
 
     # get plays
     query = {'subj_id': subj_id, 'run_id': {'$lt': 7}}
-    plays = db.plays.find(query).sort('start_time')
+    plays = db.plays.find(query, no_cursor_timeout=True).sort('start_time')
 
-    # "subject" embeddings: have multiple (niters), for robustness
-    samples = [SubjectHRR(K, N, E) for _ in range(niters)]
+    # "subject" embeddings: have multiple (nsamples), for robustness
+    samples = [SubjectHRR(K, N, E) for _ in range(nsamples)]
    
-    g = [[]] * niters
+    theory_HRRs = [[] for _ in range(nsamples)] 
+    sprite_HRRs = [[] for _ in range(nsamples)] 
+    interaction_HRRs = [[] for _ in range(nsamples)]
+    termination_HRRs = [[] for _ in range(nsamples)] 
     ts = []
     run_id = []
+    play_key = []
+    frame = []
+
+    then0 = time.time()
 
     for play in plays:
 
+        then = time.time()
+
         game = subj['games'][play['game_id']]
-        print 'gen_subject_RDMs: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+        print 'gen_subject_HRRs: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
         # get regressors
         q = {'play_key': play['_id']}
@@ -742,6 +761,10 @@ def gen_subject_RDMs(subj_id, K=10, N=10, E=0.05, niters=100, dist='correlation'
         environment.initializeEnvironment()
         symbolDict = generateSymbolDict(environment.environment)
 
+        print 'loading play time: ', (time.time() - then)
+
+        then = time.time()
+
         for i in range(0, len(reg['regressors']['theory'])):
             theory = reg['regressors']['theory'][i][0]
 
@@ -751,8 +774,292 @@ def gen_subject_RDMs(subj_id, K=10, N=10, E=0.05, niters=100, dist='correlation'
 
             gameDesc = getGameDescriptionFromLines(gameLines)
 
-            HRR = samples[0].embedGame(gameDesc)
-            g[0].append(HRR)
+            for j in range(nsamples):
+                theory_HRR, sprite_HRR, interaction_HRR, termination_HRR = samples[j].embedGame(gameDesc)
+                theory_HRRs[j].append(theory_HRR)
+                sprite_HRRs[j].append(sprite_HRR)
+                interaction_HRRs[j].append(interaction_HRR)
+                termination_HRRs[j].append(termination_HRR)
 
-            embed()
-            time.sleep(10)
+            frame.append(reg['regressors']['theory'][i][1])
+            ts.append(reg['regressors']['theory'][i][2] - play['run_start_ts'])
+            play_key.append(str(play['_id']))
+            run_id.append(play['run_id'])
+
+        print 'HRR time: ', (time.time() - then)
+
+    print 'total time: ', (time.time() - then0)
+
+    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame
+
+
+# aggregate HRRs in range
+#
+def aggregate_HRRs(HRRs, st, en, agg):
+
+    if agg == 'avg':
+        HRR = np.zeros(HRRs[st].shape)
+        for i in range(st,en):
+            HRR = np.add(HRR, HRRs[i])
+        HRR = HRR / (en - st)
+
+    elif agg == 'last':
+        HRR = HRR[en - 1]
+
+    else:
+        assert False, 'invalid aggregate'
+
+    return HRR
+
+
+
+# generate RDMs from output of gen_subject_HRRs
+#
+def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist='correlation', agg='avg', glmodel=24, shuffle=False):
+
+    assert len(theory_HRRs[0]) == len(sprite_HRRs[0])
+    assert len(theory_HRRs[0]) == len(interaction_HRRs[0])
+    assert len(theory_HRRs[0]) == len(termination_HRRs[0])
+    assert len(theory_HRRs[0]) == len(ts)
+    assert len(theory_HRRs[0]) == len(run_id)
+    assert len(theory_HRRs[0]) == len(sprite_HRRs[0])
+    assert all([len(theory_HRRs[0]) == len(theory_HRRs[j]) for j in range(len(theory_HRRs))])
+    assert all([len(sprite_HRRs[0]) == len(sprite_HRRs[j]) for j in range(len(sprite_HRRs))])
+    assert all([len(interaction_HRRs[0]) == len(interaction_HRRs[j]) for j in range(len(interaction_HRRs))])
+    assert all([len(termination_HRRs[0]) == len(termination_HRRs[j]) for j in range(len(termination_HRRs))])
+
+    nsamples = len(theory_HRRs)
+
+    #
+    # first aggregate HRRs according to boxcars from beta series GLM
+    #
+
+    # aggregate for boxcars
+    agg_theory_HRRs = [[] for _ in range(nsamples)] 
+    agg_sprite_HRRs = [[] for _ in range(nsamples)] 
+    agg_interaction_HRRs = [[] for _ in range(nsamples)]
+    agg_termination_HRRs = [[] for _ in range(nsamples)] 
+    agg_run_id = []
+    beta_id = [] # boxcar/beta idx within run, before aggregation
+
+    r = 1 # current run id
+    onsets, durations = get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, r)
+
+    b = 0 # current boxcar index
+    st = 0 # index of first theory for current boxcar
+    for en in range(len(theory_HRRs[0])):
+
+        #print st
+        #print en
+        #print ts[st]
+        #print onsets[b]
+        #print onsets[b] + durations[b]
+        assert ts[st] >= onsets[b] and ts[st] <= onsets[b] + durations[b]
+
+        beta_id.append(b)
+
+        # if we're at the last frame, 
+        # or we're about to move to the next boxcar,
+        # or we're about to move to the next run,
+        # compute aggregate theory until now
+        if en + 1 == len(theory_HRRs[0]) or run_id[en + 1] == r + 1 or ts[en + 1] > onsets[b] + durations[b]:
+
+            #print '          end of boxcar!!! aggregate [', st, ',', en, ']; b =', b, ' r =', r
+           
+            for j in range(nsamples):
+                theory_HRR = aggregate_HRRs(theory_HRRs[j], st, en + 1, agg)
+                agg_theory_HRRs[j].append(theory_HRR)
+                
+                sprite_HRR = aggregate_HRRs(sprite_HRRs[j], st, en + 1, agg)
+                agg_sprite_HRRs[j].append(sprite_HRR)
+
+                interaction_HRR = aggregate_HRRs(interaction_HRRs[j], st, en + 1, agg)
+                agg_interaction_HRRs[j].append(interaction_HRR)
+
+                termination_HRR = aggregate_HRRs(termination_HRRs[j], st, en + 1, agg)
+                agg_termination_HRRs[j].append(termination_HRR)
+                
+                agg_run_id.append(r)
+
+            st = en + 1
+
+            if en + 1 == len(theory_HRRs[0]):
+                #print '               ...last iter!'
+                pass # last iteration
+
+            elif run_id[en + 1] == r + 1:
+                #print '               ...next run!'
+
+                # end of run => go to next one
+                assert b + 1 == len(onsets)
+                assert ts[en + 1] < ts[en]
+
+                b = 0
+                r += 1
+                if r < 7:
+                    onsets, durations = get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, r)
+
+            else:
+                #print '               ...next boxcar!'
+                # go to next boxcar
+                assert ts[en + 1] > onsets[b] + durations[b]
+                assert run_id[en + 1] == r
+                assert b + 1 < len(onsets)
+
+                b += 1
+
+        else:
+            assert ts[en] >= onsets[b] and ts[en] <= onsets[b] + durations[b]
+            assert run_id[en] == r
+       
+    assert b == len(onsets) - 1
+    assert r == 6
+    assert len(agg_theory_HRRs[0]) == len(onsets) * 6
+
+    #
+    # second, compute RDMs
+    #
+
+    n = len(agg_theory_HRRs[0])
+    theory_RDMs = np.zeros((nsamples, n, n))
+    sprite_RDMs = np.zeros((nsamples, n, n))
+    interaction_RDMs = np.zeros((nsamples, n, n))
+    termination_RDMs = np.zeros((nsamples, n, n))
+
+    for j in range(nsamples):
+
+        if dist == 'correlation':
+            theory_RDM = 1 - np.corrcoef(agg_theory_HRRs[j])
+            sprite_RDM = 1 - np.corrcoef(agg_sprite_HRRs[j])
+            interaction_RDM = 1 - np.corrcoef(agg_interaction_HRRs[j])
+            termination_RDM = 1 - np.corrcoef(agg_termination_HRRs[j])
+
+        elif dist == 'cosine':
+            theory_RDM = 1 - k.cosine_similarity(agg_theory_HRRs[j])
+            sprite_RDM = 1 - k.cosine_similarity(agg_sprite_HRRs[j])
+            interaction_RDM = 1 - k.cosine_similarity(agg_interaction_HRRs[j])
+            termination_RDM = 1 - k.cosine_similarity(agg_termination_HRRs[j])
+
+        elif dist == 'euclidean':
+            theory_RDM = k.euclidean_distances(agg_theory_HRRs[j])
+            sprite_RDM = k.euclidean_distances(agg_sprite_HRRs[j])
+            interaction_RDM = k.euclidean_distances(agg_interaction_HRRs[j])
+            termination_RDM = k.euclidean_distances(agg_termination_HRRs[j])
+
+        else: 
+            assert False, 'invalid distance metric'
+
+        theory_RDMs[j,:,:] = theory_RDM
+        sprite_RDMs[j,:,:] = sprite_RDM
+        interaction_RDMs[j,:,:] = interaction_RDM
+        termination_RDMs[j,:,:] = termination_RDM
+
+    theory_RDM = np.mean(theory_RDMs, axis=0)
+    sprite_RDM = np.mean(sprite_RDMs, axis=0)
+    interaction_RDM = np.mean(interaction_RDMs, axis=0)
+    termination_RDM = np.mean(termination_RDMs, axis=0)
+
+    return theory_RDM, sprite_RDM, interaction_RDM, termination_RDM, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_run_id, beta_id
+
+
+
+if __name__ == '__main__':
+    subj_id = int(sys.argv[1])
+
+    K = 10 
+    N = 10
+    E = 0.05
+    nsamples = 100
+    dist = 'correlation'
+    glmodel = 24
+    agg = 'avg'
+
+    batch_size = 10
+    assert nsamples % batch_size == 0
+
+    # generate HRRs and RDMs in batches, b/c of OOM (HRRs are too big)
+    # batches is better than 1 by 1 b/c of overhead of querying mongo
+    #
+    all_theory_RDMs = []
+    all_sprite_RDMs = []
+    all_interaction_RDMs = []
+    all_termination_RDMs = []
+
+    for batch in range(nsamples / batch_size):
+        print 'BATCH ', batch
+
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame = gen_subject_HRRs(subj_id, K, N, E, nsamples / batch_size)
+
+        _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_run_id, beta_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist, agg, glmodel)
+
+        all_theory_RDMs.append(theory_RDMs)
+        all_sprite_RDMs.append(sprite_RDMs)
+        all_interaction_RDMs.append(interaction_RDMs)
+        all_termination_RDMs.append(termination_RDMs)
+
+    theory_RDMs = np.concatenate(all_theory_RDMs, axis=0)
+    sprite_RDMs = np.concatenate(all_sprite_RDMs, axis=0)
+    interaction_RDMs = np.concatenate(all_interaction_RDMs, axis=0)
+    termination_RDMs = np.concatenate(all_termination_RDMs, axis=0)
+
+    theory_RDM = np.mean(theory_RDMs, axis=0)
+    sprite_RDM = np.mean(sprite_RDMs, axis=0)
+    interaction_RDM = np.mean(interaction_RDMs, axis=0)
+    termination_RDM = np.mean(termination_RDMs, axis=0)
+
+    # save last batch of HRRs, for sanity checks
+    #
+    HRR_filename='mat/HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d.mat' % (subj_id, K, N, E, nsamples)
+
+    d = {
+        'theory_HRRs': theory_HRRs,
+        'sprite_HRRs': sprite_HRRs,
+        'interaction_HRRs': interaction_HRRs,
+        'termination_HRRs': termination_HRRs,
+        'ts': ts,
+        'run_id': run_id,
+        'play_key': play_key,
+        'K': K,
+        'N': N,
+        'E': E,
+        'nsamples': nsamples,
+        'batch_size': batch_size,
+        'subj_id': subj_id
+    }
+
+    scipy.io.savemat(HRR_filename, d)
+
+    # save RDMs
+    #
+    RDM_filename='mat/HRR_subject_RDM_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (subj_id, K, N, E, nsamples, dist)
+
+    d = {
+        'theory_RDM': theory_RDM,
+        'sprite_RDM': sprite_RDM,
+        'interaction_RDM': interaction_RDM,
+        'termination_RDM': termination_RDM,
+        'theory_RDMs': theory_RDMs,
+        'sprite_RDMs': sprite_RDMs,
+        'interaction_RDMs': interaction_RDMs,
+        'termination_RDMs': termination_RDMs,
+        'agg_theory_HRRs': agg_theory_HRRs,
+        'agg_sprite_HRRs': agg_sprite_HRRs,
+        'agg_interaction_HRRs': agg_interaction_HRRs,
+        'agg_termination_HRRs': agg_termination_HRRs,
+        'ts': ts,
+        'run_id': run_id,
+        'beta_id': beta_id,
+        'agg_run_id': agg_run_id,
+        'K': K,
+        'N': N,
+        'E': E,
+        'dist': dist,
+        'nsamples': nsamples,
+        'subj_id': subj_id,
+        'glmodel': glmodel,
+        'agg': agg
+    }
+
+    scipy.io.savemat(RDM_filename, d)
+
+    print 'Done'
