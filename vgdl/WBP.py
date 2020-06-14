@@ -520,6 +520,10 @@ class WBP():
 					current.intrinsic_reward += self.win_bonus
 				last_nodes.append(current)
 				continue
+
+			# if current is a loss node
+			elif (current.terminal and not current.win) or (current.intrinsic_reward == -np.inf):
+				continue
 			
 			# unexpanded node
 			else:
@@ -566,8 +570,6 @@ class WBP():
 				break
 			current_node = current_node.parent
 
-		# print("TD info",last_node.actionSeq, a_i)
-	
 		return current_node, a_i
 
 
@@ -578,14 +580,17 @@ class WBP():
 
 		if (np.inf or np.nan) in child_values:
 			return child_values.index(np.inf)
-		if -np.inf in child_values:
+		# Loss node in value array will be None, not -inf
+		if None in child_values:
 			npcv = np.array(child_values)
-			noinf = npcv[npcv != -np.inf]
+			noinf = npcv[npcv != None]
 			noinf = (noinf - np.mean(noinf))/np.std(noinf)
-			npcv[npcv != -np.inf] = noinf
+			npcv[npcv != None] = noinf
+			npcv[npcv == None] = -np.inf
 		else:
 			npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + np.finfo(float).eps)
 			print("BOLTZ: ",softmax(npcv, boltz_temp), boltz_temp)
+		npcv = npcv.astype('float')
 		return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
 
 
@@ -648,8 +653,6 @@ class WBP():
 		# select action 
 		child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
 		child_values, child_rewards = zip(*child_values_rewards)
-
-		assert (None not in child_values)
 
 		# a_i = np.argmax(child_values)
 		a_i = self.get_boltzmann_action(child_values, boltz_temp)
