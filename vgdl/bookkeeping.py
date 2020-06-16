@@ -31,8 +31,8 @@ class Bookkeeping:
         filename = self.curriculumDir+'/'+self.curriculumSaveFile
         savedState = {'agent':agent,
                       'episodeCompactStates': episodeCompactStates}
-        with open(filename, 'wb') as f:
-            cloudpickle.dump(savedState, f)
+        # with open(filename, 'wb') as f:
+            # cloudpickle.dump(savedState, f)
 
     def loadCurriculumState(self, filename):
         ## For runs on cluster that may get interrupted -- if you find a saved state for this particular agent, load that and run from there.

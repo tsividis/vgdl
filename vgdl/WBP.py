@@ -578,15 +578,17 @@ class WBP():
 		Given child values, apply boltzmann exploration
 		"""
 
-		if (np.inf or np.nan) in child_values:
+		if np.inf in child_values:
 			return child_values.index(np.inf)
 		# Loss node in value array will be None, not -inf
-		if None in child_values:
-			npcv = np.array(child_values)
-			noinf = npcv[npcv != None]
-			noinf = (noinf - np.mean(noinf))/np.std(noinf)
-			npcv[npcv != None] = noinf
-			npcv[npcv == None] = -np.inf
+		npcv = np.array(child_values).astype(float)
+		if np.any(np.isnan(npcv)):
+			i_nan = np.argwhere(np.isnan(npcv))
+			i_nonan = np.argwhere(np.isnan(npcv) == False)
+			nonan = npcv[i_nonan]
+			nonan = (nonan - np.mean(nonan))/(np.std(nonan) + np.finfo(float).eps)
+			npcv[i_nonan] = nonan
+			npcv[i_nan] = -np.inf
 		else:
 			npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + np.finfo(float).eps)
 			print("BOLTZ: ",softmax(npcv, boltz_temp), boltz_temp)
