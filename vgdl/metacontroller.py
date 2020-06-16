@@ -1,11 +1,13 @@
 import random
 from IPython import embed
+from hyperparameters import metacontroller_sets
 import WBP
 
 class Metacontroller:
     def __init__(self, agent):
         self.agent = agent
         self.display_text = self.agent.display_text
+        self.prev_long_term_nodes = metacontroller_sets[0]['longHorizonNodes']
         self.quitting = False
 
     def isReplanningNecessary(self):
@@ -120,57 +122,89 @@ class Metacontroller:
         predicted_states, printable_predicted_states = self.agent.predicted_states, self.agent.printable_predicted_states
 
         if not solution:
-            ## If planner didn't give a solution, switch modes according to metacontroller policy
-            if self.checkForRepeatedDeaths(self.agent.episodeRecord, 2):
-                if self.agent.hyperparameter_index == 'long-term':
-                    new_index = 'long-term' ## don't switch away from idx_1
-                    stall_mode = False
-                if self.agent.hyperparameter_index == 'short-term':
-                    if self.display_text:
-                        print "Repeated deaths. Switching to long-range planning"
-                    new_index = 'long-term'
-                    stall_mode = False
-                planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
+            print("HULLO")
+            # ## If planner didn't give a solution, switch modes according to metacontroller policy
+            # if self.checkForRepeatedDeaths(self.agent.episodeRecord, 2):
+            #     if self.agent.hyperparameter_index == 'long-term':
+            #         new_index = 'long-term' ## don't switch away from idx_1
+            #         stall_mode = False
+            #     if self.agent.hyperparameter_index == 'short-term':
+            #         if self.display_text:
+            #             print "Repeated deaths. Switching to long-range planning"
+            #         new_index = 'long-term'
+            #         stall_mode = False
+            #     planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
 
-            elif self.agent.hyperparameter_index == 'short-term':
+            # elif self.agent.hyperparameter_index == 'short-term':
                 
-                ## Do things move?
-                movingTypes = self.checkForMovingTypes(env, self.agent.hypotheses[0])
+            #     ## Do things move?
+            #     movingTypes = self.checkForMovingTypes(env, self.agent.hypotheses[0])
 
-                ## Does the score change with each time-step?
-                if len(self.agent.bookkeeping.compactStates)>1 and env.getTime()>self.agent.bookkeeping.compactStates[-2]['timestep']:
-                    scoreChange = env.getScore()!=self.agent.bookkeeping.compactStates[-2]['score']
-                else:
-                    scoreChange = False
+            #     ## Does the score change with each time-step?
+            #     if len(self.agent.bookkeeping.compactStates)>1 and env.getTime()>self.agent.bookkeeping.compactStates[-2]['timestep']:
+            #         scoreChange = env.getScore()!=self.agent.bookkeeping.compactStates[-2]['score']
+            #     else:
+            #         scoreChange = False
 
-                if self.display_text:
-                    print "moving types: {}".format(movingTypes)
-                    print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(env, self.agent.hypotheses[0], self.agent.noNewObjectNum))
-                    print "scoreChange: {}".format(scoreChange)
-                if self.noNewObjectsInAWhile(env, self.agent.hypotheses[0], self.agent.noNewObjectNum) and \
-                        (not movingTypes or (movingTypes and not scoreChange)):
-                    if self.agent.produce_printout:
-                        print "switching to long-range planning"
-                    ## switch to long-range planning
-                    new_index = 'long-term'
-                    planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
-                    stall_mode = False
-                else:
-                    if self.agent.produce_printout:
-                        print "planning in 'stall' mode"
-                    new_index = 'short-term'
-                    planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
-                    stall_mode = True
-                    self.agent.stored_max_nodes = self.agent.max_nodes ##taking annealing into account
-                    self.agent.max_nodes = self.agent.stall_mode_max_nodes
+            #     if self.display_text:
+            #         print "moving types: {}".format(movingTypes)
+            #         print "noNewObjectsInAWhile: {}".format(self.noNewObjectsInAWhile(env, self.agent.hypotheses[0], self.agent.noNewObjectNum))
+            #         print "scoreChange: {}".format(scoreChange)
+            #     if self.noNewObjectsInAWhile(env, self.agent.hypotheses[0], self.agent.noNewObjectNum) and \
+            #             (not movingTypes or (movingTypes and not scoreChange)):
+            #         if self.agent.produce_printout:
+            #             print "switching to long-range planning"
+            #         ## switch to long-range planning
+            #         new_index = 'long-term'
+            #         planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
+            #         stall_mode = False
+            #     else:
+            #         if self.agent.produce_printout:
+            #             print "planning in 'stall' mode"
+            #         new_index = 'short-term'
+            #         planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
+            #         stall_mode = True
+            #         self.agent.stored_max_nodes = self.agent.max_nodes ##taking annealing into account
+            #         self.agent.max_nodes = self.agent.stall_mode_max_nodes
+            # else:
+            #     stall_mode = False
+
+            # # if self.display_text:
+            # print "planning in {} mode".format(self.agent.hyperparameter_index)
+            # print "max_nodes: {}, short_horizon: {}, stall_mode: {}".format(self.agent.max_nodes, self.agent.shortHorizon, stall_mode)
+
+            # if stall_mode: #aka 'stall' mode
+            #     ## Replan in new mode
+            #     p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
+            #         seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, return_subgoal_plans=self.agent.return_subgoal_plans, stall_mode=stall_mode, hyperparameters=planner_hyperparameters, 
+            #         extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, lesion=self.agent.planner_lesion)
+            #     planner_recommended_quitting = p.quitting
+            #     p.BFS()
+            #     self.agent.total_planner_steps += p.total_nodes_opened
+            #     self.agent.planner_nodes_opened_on_most_recent_step = p.total_nodes_opened
+
+            #     solution = p.solution
+            #     predicted_states = p.predicted_states
+            #     printable_predicted_states = p.printable_predicted_states
+
+
+            # select random planning mode
+            planning_mode = random.choice(['long-term', 'short-term', 'stall-mode'])
+
+            print("Planning in {}".format(planning_mode))
+            
+            if planning_mode in ['long-term', 'short-term']:
+                planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=planning_mode)
+                if planning_mode == 'long-term':
+                    self.agent.max_nodes = self.prev_long_term_nodes
+                    self.agent.stored_max_nodes = self.agent.max_nodes
             else:
-                stall_mode = False
-            # if self.display_text:
-            print "planning in {} mode".format(self.agent.hyperparameter_index)
-            print "max_nodes: {}, short_horizon: {}, stall_mode: {}".format(self.agent.max_nodes, self.agent.shortHorizon, stall_mode)
+                stall_mode = True
+                planner_hyperparameters = self.agent.hyperparameterSwitch(new_index='short-term')
+                self.agent.stored_max_nodes = self.agent.max_nodes
+                self.agent.max_nodes = self.agent.stall_mode_max_nodes
 
-            if stall_mode: #aka 'stall' mode
-                ## Replan in new mode
+                # get solution and predicted states
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
                     seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, return_subgoal_plans=self.agent.return_subgoal_plans, stall_mode=stall_mode, hyperparameters=planner_hyperparameters, 
                     extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, lesion=self.agent.planner_lesion)
@@ -181,7 +215,7 @@ class Metacontroller:
 
                 solution = p.solution
                 predicted_states = p.predicted_states
-                printable_predicted_states = p.printable_predicted_states
+                printable_predicted_states = p.printable_predicted_states    
 
         self.agent.takingRandomSteps = False
 
@@ -209,6 +243,8 @@ class Metacontroller:
                 self.agent.takingRandomSteps = True
             else:
                 self.annealUp()
+                # set prev nodes to continue annealing
+                self.prev_long_term_nodes = self.agent.max_nodes
                 self.quitting = True
                 print "DECIDING TO QUIT"
 
