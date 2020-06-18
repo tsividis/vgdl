@@ -471,7 +471,7 @@ class Agent:
             self.solution, self.predicted_states, self.printable_predicted_states = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.environment, planner_recommended_quitting)
             # print "plan phase 6: {}".format(time.time()-t1)
             # t1 = time.time()
-
+    
             ## Most common scenario: planner worked. Show projected plan and states, then act.
             if self.solution:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))

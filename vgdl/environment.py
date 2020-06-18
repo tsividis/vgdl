@@ -274,6 +274,7 @@ class Environment:
         quitting = False
         episodeSteps = 0
         ## Main episode loop
+        episode_start_time = time.time()
         while not quitting:
 
             ### ENVIRONMENT ###
@@ -295,7 +296,7 @@ class Environment:
 
             ended, win = self.environment._isDone()
             
-
+        print("Episode ended in {} s with {} steps".format(time.time() - episode_start_time, self.agent.memory.episodeSteps))
         score = self.environment.getScore()
             
         if win:

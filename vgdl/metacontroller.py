@@ -190,8 +190,7 @@ class Metacontroller:
 
             # select random planning mode
             planning_mode = random.choice(['long-term', 'short-term', 'stall-mode'])
-
-            print("Planning in {}".format(planning_mode))
+            stall_mode = False
             
             if planning_mode in ['long-term', 'short-term']:
                 planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=planning_mode)
@@ -217,6 +216,8 @@ class Metacontroller:
                 predicted_states = p.predicted_states
                 printable_predicted_states = p.printable_predicted_states    
 
+            print "planning in {} mode".format(self.agent.hyperparameter_index)
+            print "max_nodes: {}, short_horizon: {}, stall_mode: {}".format(self.agent.max_nodes, self.agent.shortHorizon, stall_mode)
         self.agent.takingRandomSteps = False
 
         if (not solution) or planner_recommended_quitting:
@@ -233,6 +234,7 @@ class Metacontroller:
                 self.agent.extra_atom = True
             
             ## if you don't get a plan with short-horizon mode you'll plan in stall mode. You only get here if you're in long-term planning and don't find a plan.
+            print(self.agent.longHorizonObservationLimit, self.agent.longHorizonObservations)
             if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit: 
                 if self.agent.produce_printout:
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.agent.random_steps_on_plan_failure)
@@ -241,10 +243,13 @@ class Metacontroller:
                     solution.append(random.choice(self.agent.hypotheses[0].getLegalActions()))
                 self.agent.longHorizonObservations += 1
                 self.agent.takingRandomSteps = True
-            else:
+            elif self.agent.hyperparameter_index == 'long-term':
                 self.annealUp()
                 # set prev nodes to continue annealing
                 self.prev_long_term_nodes = self.agent.max_nodes
+                self.quitting = True
+                print "DECIDING TO QUIT"
+            else:
                 self.quitting = True
                 print "DECIDING TO QUIT"
 
