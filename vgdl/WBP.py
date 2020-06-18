@@ -589,10 +589,17 @@ class WBP():
 			nonan = (nonan - np.mean(nonan))/(np.std(nonan) + np.finfo(float).eps)
 			npcv[i_nonan] = nonan
 			npcv[i_nan] = -np.inf
+		elif np.any(npcv == -np.inf):
+			i_inf = np.argwhere(a == -np.inf)
+			i_noinf = np.argwhere(a != -np.inf)
+			noinf = npcv[i_noinf]
+			noinf = (noinf - np.mean(noinf)) / (np.std(noinf) + np.finfo(float).eps)
+			npcv[i_noinf] = noinf
+			npcv[i_inf] = -np.inf
 		else:
 			npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + np.finfo(float).eps)
 			print("BOLTZ: ",softmax(npcv, boltz_temp), boltz_temp)
-		npcv = npcv.astype('float')
+		npcv = npcv.astype(float)
 		return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
 
 
