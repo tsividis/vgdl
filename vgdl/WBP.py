@@ -655,7 +655,8 @@ class WBP():
 
 		# empa plan from root if not on best reward path
 		if on_high_r == False or till_empa <= 0:
-			root_node, till_empa = self.EMPAPlanner(root_node, n_depth=self.empa_plan_nodes)
+			# root_node, till_empa = self.EMPAPlanner(root_node, n_depth=self.empa_plan_nodes)
+			root_node, till_empa = self.EMPAPlanner(root_node, n_depth=self.max_nodes)
 			print("AFTER EMPAPlanner", [child.value for child in root_node.children])
 			print
 
