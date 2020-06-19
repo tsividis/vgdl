@@ -32,7 +32,7 @@ scanner_remap = {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('4'): K_RIGHT, ord('2')
 client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
 
-actual_fMRI_experiment = True
+actual_fMRI_experiment = False
 
 
 # > db.games.find({'name': /vgfmri3.*/}, {'name': 1})
@@ -166,11 +166,11 @@ assert(len(alphabets) == len(game_names))
 # total TRs = 283 TRs = 566 seconds
 
 nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
-prerun_interval = 10 # = 10 sec, how long for scanner to settle
+prerun_interval = 1 # = 10 sec, how long for scanner to settle
 postrun_interval = 10 # = 10 sec, how long for HRF to settle
 nblocks = 3 # = 3 per run
 ninstances = 3 # = 3 per block
-duration = 60 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
+duration = 20 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
 interplay_interval = 2 # = 2 sec, how long to hold last screen
 interblock_interval = 2 # = 2 sec, how long to show game name
 
@@ -246,7 +246,7 @@ def gen_runs(games):
         blocks = []
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
-            g = 0 # TODO 
+            g = b + 1 # TODO 
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -258,7 +258,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': 2, # TODO actual
+                    'level_id': i, # TODO actual
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }

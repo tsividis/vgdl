@@ -636,7 +636,7 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
 #
 def gen_and_export_RDMs_to_matlab(K, N, E, nsamples, dist):
 
-    filename='mat/HRR_groundtruth_RDM_K=%d_N=%d_E=%d_nsamples=%d_dist=%s.mat' % (K, N, E, nsamples, dist)
+    filename='mat/HRR_groundtruth_RDM_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (K, N, E, nsamples, dist)
 
     mean_RDM, game_names, _ = gen_ground_truth_RDMs(K, N, E, nsamples, dist)
 
