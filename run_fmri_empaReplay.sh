@@ -8,7 +8,7 @@ echo running empa replay for subj ${1}, game ${2}
 source activate pedro
 
 # TODO string coupling with main_agent.py 
-rm savedCurricula/curriculum_${2}_*_subj=${1}*
+#rm savedCurricula/curriculum_${2}_*_subj=${1}*
 
 tot_plays=0
 
@@ -72,4 +72,4 @@ do
     done
 done
 
-
+echo 'Done'

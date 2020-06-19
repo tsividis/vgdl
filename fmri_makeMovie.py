@@ -110,7 +110,7 @@ if __name__ == '__main__':
         for reg in regs:
             break # just take the latest one
 
-        video_name = 'real_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'pres_real_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
 
         ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic

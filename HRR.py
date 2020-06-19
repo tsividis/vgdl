@@ -18,7 +18,8 @@ import logging, sys
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-logging.disable(logging.CRITICAL)
+#logging.disable(logging.CRITICAL)
+logging.disable(logging.ERROR)
 
 
 def dim(K, N, E):
@@ -409,7 +410,14 @@ class SubjectHRR(object):
 
         # then let's deal with stype sprites whose stype arguments are already embedded: base vectors should have an expected length of 1
         moreRemaining = True
+        it = 0
         while moreRemaining:
+
+            it += 1 
+            if it == 100:
+                # TODO happens rarely, e.g. for subj 3; just ignore for now.. TODO FIXME
+                logging.error('RECURSIVE SPRITE STYPES! ignoring...')
+                break
 
             moreRemaining = False
         
@@ -699,7 +707,11 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
 
     # get plays
     query = {'subj_id': subj_id, 'run_id': {'$lt': 7}}
-    plays = db.plays.find(query, no_cursor_timeout=True).sort('start_time')
+    plays = db.plays.find(query, {'_id': 1}).sort('start_time')
+    pks = []
+    for play in plays:
+        pks.append(play['_id'])
+    del plays # close cursor, o/w screws things up
 
     # "subject" embeddings: have multiple (nsamples), for robustness
     samples = [SubjectHRR(K, N, E) for _ in range(nsamples)]
@@ -715,9 +727,13 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
 
     then0 = time.time()
 
-    for play in plays:
+    for pk in pks:
 
         then = time.time()
+
+        query = {'_id': pk}
+        play = db.plays.find_one(query)
+        assert play['subj_id'] == subj_id
 
         game = subj['games'][play['game_id']]
         print 'gen_subject_HRRs: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
@@ -879,7 +895,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
                 termination_HRR = aggregate_HRRs(termination_HRRs[j], st, en + 1, agg)
                 agg_termination_HRRs[j].append(termination_HRR)
                 
-                agg_run_id.append(r)
+            agg_run_id.append(r)
 
             st = en + 1
 
@@ -969,7 +985,7 @@ if __name__ == '__main__':
     K = 10 
     N = 10
     E = 0.05
-    nsamples = 100
+    nsamples = 10
     dist = 'correlation'
     glmodel = 24
     agg = 'avg'

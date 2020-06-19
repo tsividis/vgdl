@@ -3,7 +3,7 @@ subj_arg="${subjects[@]}" # stringify it
 
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
 #games=( 'vgfmri3_chase' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' )
-games=('vgfmri3_chase')
+games=('vgfmri3_chase', 'vgfmri3_bait', 'vgfmri3_plaqueAttack')
 
 source activate pedro
 
