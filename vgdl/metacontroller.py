@@ -8,14 +8,14 @@ class Metacontroller:
         self.display_text = self.agent.display_text
         self.quitting = False
 
-    def isReplanningNecessary(self):
+    def isReplanningNecessary(self, replan_threshold):
         
         re_plan = False
         ## Make sure agent is far enough from unpredictable dangerous objects.
         # Check for disparities between plan and reality
         # (e.g. stochastic effects)
         if self.agent.steps_in_solution%self.agent.regrounding==0 and self.agent.environment.getTime()>0:
-            if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.environment, self.agent.hypotheses[0], self.agent.predicted_states, self.agent.steps_in_solution):
+            if (not self.agent.takingRandomSteps) and self.agent.checkForDangerOrAvatarMisLocation(self.agent.environment, self.agent.hypotheses[0], self.agent.predicted_states, self.agent.steps_in_solution, replan_threshold):
                 re_plan = True
                 print "regrounding"
 

@@ -425,7 +425,7 @@ class Agent:
                 print "lost on timeout. switching hyperparameters"
             self.hyperparameterSwitch(new_index='long-term')
 
-        self.re_plan = self.metacontroller.isReplanningNecessary()
+        self.re_plan = self.metacontroller.isReplanningNecessary(replan_threshold = 0.)
 
         # print "plan phase 2: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -743,7 +743,7 @@ class Agent:
         print "quitting:", self.quitting
         return self.action, self.quitting
 
-    def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, predicted_states, i):
+    def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, predicted_states, i, replan_threshold):
         
         ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
 
@@ -766,28 +766,37 @@ class Agent:
             print "problem in checkForDangerOrAvatarMisLocation"
             embed()
 
+        count = 0.0
         for s in environment.getAliveSprites():
-            ## If the object isn't in our predicted environment or the positions vary
-            if s.name=='avatar' or s.colorName in killer_colors:
-                if environment.getAvatars() and s.ID not in hypDict and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+            # ## If the object isn't in our predicted environment or the positions vary
+            # if s.name=='avatar' or s.colorName in killer_colors:
+            #     if environment.getAvatars() and s.ID not in hypDict and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
 
-                    regroundingFlag=True
-                    # if self.produce_printout:
-                    print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
-                    break
-                if s.name!='avatar' and environment.getAvatars() and s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
-                    # if self.produce_printout:
-                    print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
-                            s, environment.getAvatars()[0], manhattan_distance(s.rect, environment.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
-                            'white', 'on_yellow')
-                    # embed()
-                    regroundingFlag=True
-                    break
-                if s.name=='avatar' and s.rect!=hypDict[s.ID].rect:
-                    print colored("Regrounding because avatar is not where we expected", 'white', 'on_yellow')
-                    regroundingFlag = True
-                    break
-                rleDict[s.ID] = s
+            #         regroundingFlag=True
+            #         # if self.produce_printout:
+            #         print colored("Regrounding because we didn't predict the appearance of {} and it's too close for comfort".format(s), 'white', 'on_yellow')
+            #         break
+            #     if s.name!='avatar' and environment.getAvatars() and s.ID in hypDict and s.rect!=hypDict[s.ID].rect and manhattan_distance(s.rect, environment.getAvatars()[0].rect) < self.safeDistance*s.rect.width:
+            #         # if self.produce_printout:
+            #         print colored("Regrounding because distance between {} and {} is {}, which is less than the safe distance of {}. We thought it would be at {}".format(
+            #                 s, environment.getAvatars()[0], manhattan_distance(s.rect, environment.getAvatars()[0].rect), self.safeDistance*s.rect.width, hypDict[s.ID]),
+            #                 'white', 'on_yellow')
+            #         # embed()
+            #         regroundingFlag=True
+            #         break
+            #     if s.name=='avatar' and s.rect!=hypDict[s.ID].rect:
+            #         print colored("Regrounding because avatar is not where we expected", 'white', 'on_yellow')
+            #         regroundingFlag = True
+            #         break
+            #     rleDict[s.ID] = s
+            if (s.ID not in hypDict) or (s.ID in hypDict and s.rect!=hypDict[s.ID].rect):
+                count += 1
+
+        print("DEBUG REPLANNER", count, len(environment.getAliveSprites()))
+        if count / len(environment.getAliveSprites()) > replan_threshold:
+            print colored("Regrounding because some sprites were not where we expected", 'white', 'on_yellow')
+            regroundingFlag = True
+
         return regroundingFlag
 
     def matchEventToRuleByIDAndSpriteName(self, event, rule):
