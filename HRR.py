@@ -600,7 +600,10 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
         games.append(game)
     ng = len(games)
 
-    RDMs = np.zeros((nsamples, ng, ng))
+    game_RDMs = np.zeros((nsamples, ng, ng))
+    sprite_RDMs = np.zeros((nsamples, ng, ng))
+    interaction_RDMs = np.zeros((nsamples, ng, ng))
+    termination_RDMs = np.zeros((nsamples, ng, ng))
 
     for i in range(nsamples):
         #logging.info('iter ' + str(i)) 
@@ -608,7 +611,10 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
 
         subj = SubjectHRR(K, N, E)
         
-        g = np.zeros((len(games), subj.D))
+        game_HRR = np.zeros((len(games), subj.D))
+        sprite_HRR = np.zeros((len(games), subj.D))
+        interaction_HRR = np.zeros((len(games), subj.D))
+        termination_HRR = np.zeros((len(games), subj.D))
         for j in range(ng):
             game = games[j]
 
@@ -617,25 +623,40 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
             lines = game['descs'][0].replace('\t', '    ').split('\n')
             desc = getGameDescriptionFromLines(lines)
             
-            g[j,:], _, _, _ = subj.embedGame(desc)
+            game_HRR[j,:], sprite_HRR[j,:], interaction_HRR[j,:], termination_HRR[j,:] = subj.embedGame(desc)
 
         if shuffle:
-            np.random.shuffle(g) # null distr
+            np.random.shuffle(game_HRR) # null distr
 
         if dist == 'correlation':
-            RDM = 1 - np.corrcoef(g)
+            game_RDM = 1 - np.corrcoef(game_HRR)
+            sprite_RDM = 1 - np.corrcoef(sprite_HRR)
+            interaction_RDM = 1 - np.corrcoef(interaction_HRR)
+            termination_RDM = 1 - np.corrcoef(termination_HRR)
         elif dist == 'cosine':
-            RDM = 1 - k.cosine_similarity(g)
+            game_RDM = 1 - k.cosine_similarity(game_HRR)
+            sprite_RDM = 1 - k.cosine_similarity(sprite_HRR)
+            interaction_RDM = 1 - k.cosine_similarity(interaction_HRR)
+            termination_RDM = 1 - k.cosine_similarity(termination_HRR)
         elif dist == 'euclidean':
-            RDM = k.euclidean_distances(g)
+            game_RDM = k.euclidean_distances(game_HRR)
+            sprite_RDM = k.euclidean_distances(sprite_HRR)
+            interaction_RDM = k.euclidean_distances(interaction_HRR)
+            termination_RDM = k.euclidean_distances(termination_HRR)
         else: 
             assert False, 'invalid distance metric'
 
-        RDMs[i,:,:] = RDM
+        game_RDMs[i,:,:] = game_RDM
+        sprite_RDMs[i,:,:] = sprite_RDM
+        interaction_RDMs[i,:,:] = interaction_RDM
+        termination_RDMs[i,:,:] = termination_RDM
 
-    mean_RDM = np.mean(RDMs, axis=0)
+    game_RDM = np.mean(game_RDMs, axis=0)
+    sprite_RDM = np.mean(sprite_RDMs, axis=0)
+    interaction_RDM = np.mean(interaction_RDMs, axis=0)
+    termination_RDM = np.mean(termination_RDMs, axis=0)
 
-    return mean_RDM, game_names, RDMs
+    return game_RDM, sprite_RDM, interaction_RDM, termination_RDM, game_names
 
 
 
@@ -646,12 +667,12 @@ def gen_and_export_RDMs_to_matlab(K, N, E, nsamples, dist):
 
     filename='mat/HRR_groundtruth_RDM_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (K, N, E, nsamples, dist)
 
-    mean_RDM, game_names, _ = gen_ground_truth_RDMs(K, N, E, nsamples, dist)
+    game_RDM, sprite_RDM, interaction_RDM, termination_RDM, game_names = gen_ground_truth_RDMs(K, N, E, nsamples, dist)
 
     g = np.zeros((len(game_names),), dtype=np.object)
     g[:] = game_names
 
-    scipy.io.savemat(filename, {'mean_RDM': mean_RDM, 'game_names': game_names})
+    scipy.io.savemat(filename, {'game_RDM': game_RDM, 'sprite_RDM': sprite_RDM, 'interaction_RDM': interaction_RDM, 'termination_RDM': termination_RDM, 'game_names': game_names})
 
 
 
