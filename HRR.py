@@ -685,7 +685,7 @@ def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
 
     onsets = []
     durations = []
-    with h5py.File(filename) as f:
+    with h5py.File(filename) as f: # make sure to save with -v7.3, otherwise doesn't work...
         
         n = len(f['multi']['onsets'][()])
         for i in range(n):
@@ -745,6 +745,8 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
     run_id = []
     play_key = []
     frame = []
+    play_ons_idx = []
+    play_offs_idx = []
 
     then0 = time.time()
 
@@ -771,6 +773,8 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
         reg = None
         for reg in regs:
             break # just take the latest one
+
+        play_ons_idx.append(len(ts))
 
         # get states
         zstates = play['zstates']
@@ -823,14 +827,16 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
             play_key.append(str(play['_id']))
             run_id.append(play['run_id'])
 
+        play_offs_idx.append(len(ts))
+
         print 'HRR time: ', (time.time() - then)
 
     print 'total time: ', (time.time() - then0)
 
-    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame
+    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, play_ons_idx, play_offs_idx
 
 
-# aggregate HRRs in range
+# aggregate single sample HRRs in range
 #
 def aggregate_HRRs(HRRs, st, en, agg):
 
@@ -848,6 +854,142 @@ def aggregate_HRRs(HRRs, st, en, agg):
 
     return HRR
 
+
+# convolve single sample HRR timecourses with HRF 
+# logic from spm_get_ons.m and spm_Volterra.m, as used in spm_fMRI_design.m
+#
+def convolve_HRRs(HRRs, ts, run_id, play_ons_idx, play_offs_idx):
+
+    assert len(play_ons_idx) == len(play_offs_idx)
+
+    # convert to proper 2D array, rows = frames, columns = features
+    HRRs = np.concatenate([np.reshape(HRR, (1,len(HRR))) for HRR in HRRs], axis=0)
+
+    filename = 'mat/SPM73.mat' # any single-subject SPM.mat (glmOutput/model1/subj1/), make sure to re-save with -v7.3
+
+    import h5py
+
+    with h5py.File(filename) as f:
+        nruns = len(f['SPM']['nscan'])
+        assert nruns == 6
+
+    Xx = []
+    r_id = [] 
+
+    for s in range(nruns): # from spm_fMRI_design.m
+
+        which = np.array(run_id) == s + 1
+
+        with h5py.File(filename) as f:
+            # from spm_get_ons.m
+            #
+            k = int(f['SPM']['nscan'][s][0])
+            assert k == 283
+
+            T = int(f['SPM']['xBF']['T'][0][0])
+            assert T == 16
+
+            dt = f['SPM']['xBF']['dt'][0][0]
+            assert dt == 0.1250
+
+            UNITS = u''.join(unichr(c) for c in f['SPM']['xBF']['UNITS'])
+            assert UNITS == 'secs'
+            TR = 1
+
+            bf = f['SPM']['xBF']['bf'][()]
+            bf = np.reshape(bf, bf.shape[1]) # make 1-D
+            assert bf.shape[0] == 257
+
+        # calculate durations separately for each play, because we assume consecituve frames within play
+        # and need to take special care for the last frame
+        dur = np.array([])
+        for i in range(len(play_ons_idx)):
+            st = play_ons_idx[i]
+            en = play_offs_idx[i] # + 1
+
+            if run_id[st] != s + 1: 
+                continue
+
+            print st, en
+            d = np.array(ts[st+1:en]) - np.array(ts[st:en-1])
+            d = np.append(d, np.mean(d)) # average duration for last frame (see get_regressors.m)
+            dur = np.append(dur, d)
+
+        # from spm_get_ons.m
+        #
+        ons = np.array(ts)[which]
+        u = HRRs[which,:]
+        ton = np.round(ons*TR/dt).astype(int) + 33 # 32 bin offset
+        toff = np.round(dur*TR/dt).astype(int) + ton + 1
+        sf = np.zeros((k*T + 128, u.shape[1]))
+
+        assert np.all(ton >= 0)
+        assert np.all(ton < sf.shape[0])
+        assert np.all(toff >= 0)
+        assert np.all(toff < sf.shape[0])
+
+        for j in range(len(ton)):
+            sf[ton[j],:] += u[j,:]
+            sf[toff[j],:] -= u[j,:]
+
+        sf = np.cumsum(sf, axis=0)
+        sf = sf[0:k*T + 32]  # 32 bin offset
+
+        # from spm_Volterra
+        #
+        X = np.zeros(sf.shape)
+        for i in range(sf.shape[1]):
+            x = sf[:,i]
+            d = range(x.shape[0])
+            x = np.convolve(x, bf)
+            x = x[d]
+            X[:,i] = x
+
+        # from spm_fMRI_design.m
+        #
+        with h5py.File(filename) as f:
+            fMRI_T = int(f['SPM']['xBF']['T'][0][0])
+            fMRI_T0 = int(f['SPM']['xBF']['T0'][0][0])
+
+        # resample regressors at acquisition times (32 bin offset)
+        assert k == 283
+        idx = np.array(range(k)) * fMRI_T + fMRI_T0 + 32
+        X = X[idx - 1, :]
+
+        Xx.append(X)
+        r_id.append(np.array([s+1]*X.shape[0]))
+
+    Xx = np.concatenate(Xx, axis=0)
+    assert Xx.shape[0] == k * nruns
+    assert Xx.shape[1] == HRRs.shape[1]
+
+    r_id = np.concatenate(r_id, axis=0)
+
+    return Xx, r_id
+
+
+
+# generate kernel from output of convolve_HRRs, after gen_subject_HRRs
+#
+def gen_subject_kernels(subj_id, HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w):
+
+    nsamples = len(HRRs)
+
+    Ks = []
+
+    for j in range(nsamples):
+        
+        Xx, r_id = convolve_HRRs(HRRs[j], ts, run_id, play_ons_idx, play_offs_idx)
+        Sigma_w = np.identity(Xx.shape[1]) * sigma_w # Sigma_p in Rasmussen, Eq. 2.4
+
+        K = np.matmul(np.matmul(Xx, Sigma_w), np.transpose(Xx)) # K in Rasmussen, Eq. 2.12
+
+        Ks.append(K)
+
+    Ks = [K.reshape((1, K.shape[0], K.shape[1])) for K in Ks]
+    Ks = np.concatenate(Ks, axis=0)
+
+    return Ks, r_id, Xx
 
 
 # generate RDMs from output of gen_subject_HRRs
@@ -1000,8 +1142,11 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
 
 
 
-if __name__ == '__main__':
-    subj_id = int(sys.argv[1])
+def gen_and_save_subject_RDMs_batched(subj_id):
+
+    # generate HRRs and RDMs in batches, b/c of OOM (HRRs are too big)
+    # batches is better than 1 by 1 b/c of overhead of querying mongo
+    #
 
     K = 10 
     N = 10
@@ -1014,9 +1159,6 @@ if __name__ == '__main__':
     batch_size = 10
     assert nsamples % batch_size == 0
 
-    # generate HRRs and RDMs in batches, b/c of OOM (HRRs are too big)
-    # batches is better than 1 by 1 b/c of overhead of querying mongo
-    #
     all_theory_RDMs = []
     all_sprite_RDMs = []
     all_interaction_RDMs = []
@@ -1025,7 +1167,7 @@ if __name__ == '__main__':
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame = gen_subject_HRRs(subj_id, K, N, E, nsamples / batch_size)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, play_ons_idx, play_offs_idx = gen_subject_HRRs(subj_id, K, N, E, nsamples / batch_size)
 
         _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_run_id, beta_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist, agg, glmodel)
 
@@ -1098,5 +1240,118 @@ if __name__ == '__main__':
     }
 
     scipy.io.savemat(RDM_filename, d)
+
+
+
+
+def gen_and_save_subject_kernels_batched(subj_id):
+
+    # copy of gen_and_save_subject_RDMs_batched but for kernels
+
+    # generate HRRs and kernels in batches, b/c of OOM (HRRs are too big)
+    # batches is better than 1 by 1 b/c of overhead of querying mongo
+    #
+
+    K = 10 
+    N = 10
+    E = 0.05
+    nsamples = 10
+
+    sigma_w = 1; # TODO parameter
+
+    batch_size = 10
+    assert nsamples % batch_size == 0
+
+    all_theory_kernels = []
+    all_sprite_kernels = []
+    all_interaction_kernels = []
+    all_termination_kernels = []
+
+    for batch in range(nsamples / batch_size):
+        print 'BATCH ', batch
+
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, play_ons_idx, play_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
+
+        theory_kernels, r_id, theory_Xx = gen_subject_kernels(subj_id, theory_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
+        sprite_kernels, _, sprite_Xx = gen_subject_kernels(subj_id, sprite_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
+        interaction_kernels, _, interaction_Xx = gen_subject_kernels(subj_id, interaction_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
+        termination_kernels, _, termination_Xx = gen_subject_kernels(subj_id, termination_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
+
+        all_theory_kernels.append(theory_kernels)
+        all_sprite_kernels.append(sprite_kernels)
+        all_interaction_kernels.append(interaction_kernels)
+        all_termination_kernels.append(termination_kernels)
+
+    theory_kernels = np.concatenate(all_theory_kernels, axis=0)
+    sprite_kernels = np.concatenate(all_sprite_kernels, axis=0)
+    interaction_kernels = np.concatenate(all_interaction_kernels, axis=0)
+    termination_kernels = np.concatenate(all_termination_kernels, axis=0)
+
+    theory_kernel = np.mean(theory_kernels, axis=0)
+    sprite_kernel = np.mean(sprite_kernels, axis=0)
+    interaction_kernel = np.mean(interaction_kernels, axis=0)
+    termination_kernel = np.mean(termination_kernels, axis=0)
+
+    # save last batch of HRRs, for sanity checks
+    #
+    HRR_filename='mat/HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_for_ker.mat' % (subj_id, K, N, E, nsamples)
+
+    d = {
+        'theory_HRRs': theory_HRRs,
+        'sprite_HRRs': sprite_HRRs,
+        'interaction_HRRs': interaction_HRRs,
+        'termination_HRRs': termination_HRRs,
+        'ts': ts,
+        'run_id': run_id,
+        'play_key': play_key,
+        'K': K,
+        'N': N,
+        'E': E,
+        'nsamples': nsamples,
+        'batch_size': batch_size,
+        'subj_id': subj_id
+    }
+
+    scipy.io.savemat(HRR_filename, d)
+
+    # save kernels
+    #
+    kernel_filename='mat/HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%s.mat' % (subj_id, K, N, E, nsamples, sigma_w)
+
+    d = {
+        'theory_kernel': theory_kernel,
+        'sprite_kernel': sprite_kernel,
+        'interaction_kernel': interaction_kernel,
+        'termination_kernel': termination_kernel,
+        'theory_kernels': theory_kernels,
+        'sprite_kernels': sprite_kernels,
+        'interaction_kernels': interaction_kernels,
+        'termination_kernels': termination_kernels,
+        'theory_Xx': theory_Xx,
+        'sprite_Xx': sprite_Xx,
+        'interaction_Xx': interaction_Xx,
+        'termination_Xx': termination_Xx,
+        'r_id': r_id,
+        'ts': ts,
+        'play_ons_idx': play_ons_idx,
+        'play_offs_idx': play_offs_idx,
+        'K': K,
+        'N': N,
+        'E': E,
+        'sigma_w': sigma_w,
+        'nsamples': nsamples,
+        'subj_id': subj_id,
+    }
+
+    scipy.io.savemat(kernel_filename, d)
+
+
+
+
+if __name__ == '__main__':
+    subj_id = int(sys.argv[1])
+
+    #gen_and_save_subject_RDMs_batched(subj_id)
+    gen_and_save_subject_kernels_batched(subj_id)
 
     print 'Done'
