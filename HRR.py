@@ -835,8 +835,6 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
 
         print 'HRR time: ', (time.time() - then)
 
-        if play['run_id'] == 2: # TODO REMOVE ME!!!!!!!!!!!
-            break
 
     block_offs_idx.append(len(ts))
 
@@ -894,17 +892,17 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
             # from spm_get_ons.m
             #
             k = int(f['SPM']['nscan'][s][0])
-            assert k == 283
+            assert k == 283 # # of TRs
 
             T = int(f['SPM']['xBF']['T'][0][0])
-            assert T == 16
+            assert T == 16 # resolution: # of time points per TR
 
             dt = f['SPM']['xBF']['dt'][0][0]
-            assert dt == 0.1250
+            assert dt == 0.1250 # resolution: # of seconds per time point (T * dt = 2 s = TR)
 
             UNITS = u''.join(unichr(c) for c in f['SPM']['xBF']['UNITS'])
             assert UNITS == 'secs'
-            TR = 1
+            TR = 1 # not actual TR, b/c units of dt are in seconds
 
             bf = f['SPM']['xBF']['bf'][()]
             bf = np.reshape(bf, bf.shape[1]) # make 1-D
@@ -913,18 +911,18 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
         # calculate durations separately for each play, because we assume consecituve frames within play
         # and need to take special care for the last frame
         # update: don't do it; assume theory lingers between plays
-        dur = np.array([])
-        for i in range(len(block_ons_idx)):
-            st = block_ons_idx[i]
-            en = block_offs_idx[i] # + 1
+        #dur = np.array([])
+        #for i in range(len(block_ons_idx)):
+        #    st = block_ons_idx[i]
+        #    en = block_offs_idx[i] # + 1
 
-            if run_id[st] != s + 1: 
-                continue
+        #    if run_id[st] != s + 1: 
+        #        continue
 
-            print st, en
-            d = np.array(ts[st+1:en]) - np.array(ts[st:en-1])
-            d = np.append(d, np.mean(d)) # average duration for last frame (see get_regressors.m)
-            dur = np.append(dur, d)
+        #    print st, en
+        #    d = np.array(ts[st+1:en]) - np.array(ts[st:en-1])
+        #    d = np.append(d, np.mean(d)) # average duration for last frame (see get_regressors.m)
+        #    dur = np.append(dur, d)
 
         # from spm_get_ons.m
         #
@@ -933,7 +931,8 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
         #dur = np.append(dur, np.mean(dur)) # average duration for last frame (see get_regressors.m)
         u = HRRs[which,:]
         ton = np.round(ons*TR/dt).astype(int) + 33 # 32 bin offset
-        toff = np.round(dur*TR/dt).astype(int) + ton + 1
+        toff = ton[1:]
+        toff = np.append(toff, ton[-1] + T) # 1 s duration for last one, to match other between-block / level durations TODO more rigorous
         sf = np.zeros((k*T + 128, u.shape[1]))
 
         assert np.all(ton >= 0)
@@ -945,9 +944,7 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
             sf[ton[j],:] += u[j,:]
             sf[toff[j],:] -= u[j,:]
 
-        embed()
-
-        Xsf.append(sf)
+        Xsf.append(sf) # for sanity checks
 
         sf = np.cumsum(sf, axis=0)
         sf = sf[0:k*T + 32]  # 32 bin offset
@@ -958,7 +955,7 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
         for i in range(sf.shape[1]):
             x = sf[:,i]
             d = range(x.shape[0])
-            #x = np.convolve(x, bf) # TODO !!!!!!!!!!!!!!!!!!!!!!!!
+            x = np.convolve(x, bf)
             x = x[d]
             X[:,i] = x
 
@@ -1186,7 +1183,7 @@ def gen_and_save_subject_RDMs_batched(subj_id):
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, nsamples / batch_size)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
 
         _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_run_id, beta_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist, agg, glmodel)
 
@@ -1340,7 +1337,7 @@ def gen_and_save_subject_kernels_batched(subj_id):
 
     # save kernels
     #
-    kernel_filename='mat/HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%s.mat' % (subj_id, K, N, E, nsamples, sigma_w)
+    kernel_filename='mat/HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f.mat' % (subj_id, K, N, E, nsamples, sigma_w)
 
     d = {
         'theory_kernel': theory_kernel,
