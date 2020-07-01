@@ -745,10 +745,12 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
     run_id = []
     play_key = []
     frame = []
-    play_ons_idx = []
-    play_offs_idx = []
+    block_ons_idx = []
+    block_offs_idx = []
 
     then0 = time.time()
+
+    last_block_id = None
 
     for pk in pks:
 
@@ -774,7 +776,11 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
         for reg in regs:
             break # just take the latest one
 
-        play_ons_idx.append(len(ts))
+        if last_block_id != play['block_id']:
+            if last_block_id is not None:
+                block_offs_idx.append(len(ts))
+            block_ons_idx.append(len(ts))
+            last_block_id = play['block_id']
 
         # get states
         zstates = play['zstates']
@@ -827,13 +833,16 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
             play_key.append(str(play['_id']))
             run_id.append(play['run_id'])
 
-        play_offs_idx.append(len(ts))
-
         print 'HRR time: ', (time.time() - then)
+
+        if play['run_id'] == 2: # TODO REMOVE ME!!!!!!!!!!!
+            break
+
+    block_offs_idx.append(len(ts))
 
     print 'total time: ', (time.time() - then0)
 
-    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, play_ons_idx, play_offs_idx
+    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx
 
 
 # aggregate single sample HRRs in range
@@ -858,9 +867,9 @@ def aggregate_HRRs(HRRs, st, en, agg):
 # convolve single sample HRR timecourses with HRF 
 # logic from spm_get_ons.m and spm_Volterra.m, as used in spm_fMRI_design.m
 #
-def convolve_HRRs(HRRs, ts, run_id, play_ons_idx, play_offs_idx):
+def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
 
-    assert len(play_ons_idx) == len(play_offs_idx)
+    assert len(block_ons_idx) == len(block_offs_idx)
 
     # convert to proper 2D array, rows = frames, columns = features
     HRRs = np.concatenate([np.reshape(HRR, (1,len(HRR))) for HRR in HRRs], axis=0)
@@ -875,6 +884,7 @@ def convolve_HRRs(HRRs, ts, run_id, play_ons_idx, play_offs_idx):
 
     Xx = []
     r_id = [] 
+    Xsf = []
 
     for s in range(nruns): # from spm_fMRI_design.m
 
@@ -902,10 +912,11 @@ def convolve_HRRs(HRRs, ts, run_id, play_ons_idx, play_offs_idx):
 
         # calculate durations separately for each play, because we assume consecituve frames within play
         # and need to take special care for the last frame
+        # update: don't do it; assume theory lingers between plays
         dur = np.array([])
-        for i in range(len(play_ons_idx)):
-            st = play_ons_idx[i]
-            en = play_offs_idx[i] # + 1
+        for i in range(len(block_ons_idx)):
+            st = block_ons_idx[i]
+            en = block_offs_idx[i] # + 1
 
             if run_id[st] != s + 1: 
                 continue
@@ -918,6 +929,8 @@ def convolve_HRRs(HRRs, ts, run_id, play_ons_idx, play_offs_idx):
         # from spm_get_ons.m
         #
         ons = np.array(ts)[which]
+        #dur = ons[1:] - ons[:-1]
+        #dur = np.append(dur, np.mean(dur)) # average duration for last frame (see get_regressors.m)
         u = HRRs[which,:]
         ton = np.round(ons*TR/dt).astype(int) + 33 # 32 bin offset
         toff = np.round(dur*TR/dt).astype(int) + ton + 1
@@ -932,16 +945,20 @@ def convolve_HRRs(HRRs, ts, run_id, play_ons_idx, play_offs_idx):
             sf[ton[j],:] += u[j,:]
             sf[toff[j],:] -= u[j,:]
 
+        embed()
+
+        Xsf.append(sf)
+
         sf = np.cumsum(sf, axis=0)
         sf = sf[0:k*T + 32]  # 32 bin offset
 
-        # from spm_Volterra
+        # from spm_Volterra.m
         #
         X = np.zeros(sf.shape)
         for i in range(sf.shape[1]):
             x = sf[:,i]
             d = range(x.shape[0])
-            x = np.convolve(x, bf)
+            #x = np.convolve(x, bf) # TODO !!!!!!!!!!!!!!!!!!!!!!!!
             x = x[d]
             X[:,i] = x
 
@@ -963,15 +980,17 @@ def convolve_HRRs(HRRs, ts, run_id, play_ons_idx, play_offs_idx):
     assert Xx.shape[0] == k * nruns
     assert Xx.shape[1] == HRRs.shape[1]
 
+    Xsf = np.concatenate(Xsf, axis=0)
+
     r_id = np.concatenate(r_id, axis=0)
 
-    return Xx, r_id
+    return Xx, r_id, Xsf
 
 
 
 # generate kernel from output of convolve_HRRs, after gen_subject_HRRs
 #
-def gen_subject_kernels(subj_id, HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w):
+def gen_subject_kernels(subj_id, HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w):
 
     nsamples = len(HRRs)
 
@@ -979,7 +998,7 @@ def gen_subject_kernels(subj_id, HRRs, ts, run_id, play_ons_idx, play_offs_idx, 
 
     for j in range(nsamples):
         
-        Xx, r_id = convolve_HRRs(HRRs[j], ts, run_id, play_ons_idx, play_offs_idx)
+        Xx, r_id, sf = convolve_HRRs(HRRs[j], ts, run_id, block_ons_idx, block_offs_idx)
         Sigma_w = np.identity(Xx.shape[1]) * sigma_w # Sigma_p in Rasmussen, Eq. 2.4
 
         K = np.matmul(np.matmul(Xx, Sigma_w), np.transpose(Xx)) # K in Rasmussen, Eq. 2.12
@@ -989,7 +1008,7 @@ def gen_subject_kernels(subj_id, HRRs, ts, run_id, play_ons_idx, play_offs_idx, 
     Ks = [K.reshape((1, K.shape[0], K.shape[1])) for K in Ks]
     Ks = np.concatenate(Ks, axis=0)
 
-    return Ks, r_id, Xx
+    return Ks, r_id, Xx, sf
 
 
 # generate RDMs from output of gen_subject_HRRs
@@ -1167,7 +1186,7 @@ def gen_and_save_subject_RDMs_batched(subj_id):
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, play_ons_idx, play_offs_idx = gen_subject_HRRs(subj_id, K, N, E, nsamples / batch_size)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, nsamples / batch_size)
 
         _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_run_id, beta_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist, agg, glmodel)
 
@@ -1217,10 +1236,10 @@ def gen_and_save_subject_RDMs_batched(subj_id):
         'sprite_RDM': sprite_RDM,
         'interaction_RDM': interaction_RDM,
         'termination_RDM': termination_RDM,
-        'theory_RDMs': theory_RDMs,
-        'sprite_RDMs': sprite_RDMs,
-        'interaction_RDMs': interaction_RDMs,
-        'termination_RDMs': termination_RDMs,
+        #'theory_RDMs': theory_RDMs,  # -- too much memory
+        #'sprite_RDMs': sprite_RDMs,
+        #'interaction_RDMs': interaction_RDMs,
+        #'termination_RDMs': termination_RDMs,
         'agg_theory_HRRs': agg_theory_HRRs,
         'agg_sprite_HRRs': agg_sprite_HRRs,
         'agg_interaction_HRRs': agg_interaction_HRRs,
@@ -1270,12 +1289,12 @@ def gen_and_save_subject_kernels_batched(subj_id):
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, play_ons_idx, play_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
 
-        theory_kernels, r_id, theory_Xx = gen_subject_kernels(subj_id, theory_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
-        sprite_kernels, _, sprite_Xx = gen_subject_kernels(subj_id, sprite_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
-        interaction_kernels, _, interaction_Xx = gen_subject_kernels(subj_id, interaction_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
-        termination_kernels, _, termination_Xx = gen_subject_kernels(subj_id, termination_HRRs, ts, run_id, play_ons_idx, play_offs_idx, sigma_w)
+        theory_kernels, r_id, theory_Xx, theory_sf = gen_subject_kernels(subj_id, theory_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
+        sprite_kernels, _, sprite_Xx, sprite_sf = gen_subject_kernels(subj_id, sprite_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
+        interaction_kernels, _, interaction_Xx, interaction_sf = gen_subject_kernels(subj_id, interaction_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
+        termination_kernels, _, termination_Xx, termination_sf = gen_subject_kernels(subj_id, termination_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
 
         all_theory_kernels.append(theory_kernels)
         all_sprite_kernels.append(sprite_kernels)
@@ -1291,6 +1310,11 @@ def gen_and_save_subject_kernels_batched(subj_id):
     sprite_kernel = np.mean(sprite_kernels, axis=0)
     interaction_kernel = np.mean(interaction_kernels, axis=0)
     termination_kernel = np.mean(termination_kernels, axis=0)
+
+    theory_kernel_std = np.std(theory_kernels, axis=0)
+    sprite_kernel_std = np.std(sprite_kernels, axis=0)
+    interaction_kernel_std = np.std(interaction_kernels, axis=0)
+    termination_kernel_std = np.std(termination_kernels, axis=0)
 
     # save last batch of HRRs, for sanity checks
     #
@@ -1323,18 +1347,26 @@ def gen_and_save_subject_kernels_batched(subj_id):
         'sprite_kernel': sprite_kernel,
         'interaction_kernel': interaction_kernel,
         'termination_kernel': termination_kernel,
-        'theory_kernels': theory_kernels,
-        'sprite_kernels': sprite_kernels,
-        'interaction_kernels': interaction_kernels,
-        'termination_kernels': termination_kernels,
+        'theory_kernel_std': theory_kernel_std,
+        'sprite_kernel_std': sprite_kernel_std,
+        'interaction_kernel_std': interaction_kernel_std,
+        'termination_kernel_std': termination_kernel_std,
+        #'theory_kernels': theory_kernels, # -- too much memory
+        #'sprite_kernels': sprite_kernels,
+        #'interaction_kernels': interaction_kernels,
+        #'termination_kernels': termination_kernels,
         'theory_Xx': theory_Xx,
         'sprite_Xx': sprite_Xx,
         'interaction_Xx': interaction_Xx,
         'termination_Xx': termination_Xx,
+        'theory_sf': theory_sf,
+        'sprite_sf': sprite_sf,
+        'interaction_sf': interaction_sf,
+        'termination_sf': termination_sf,
         'r_id': r_id,
         'ts': ts,
-        'play_ons_idx': play_ons_idx,
-        'play_offs_idx': play_offs_idx,
+        'block_ons_idx': block_ons_idx,
+        'block_offs_idx': block_offs_idx,
         'K': K,
         'N': N,
         'E': E,
