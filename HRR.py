@@ -367,7 +367,7 @@ class SubjectHRR(object):
             logging.debug('                                        generating ' + token) #, ': ', self.embeddings[token]
         return self.embeddings[token]
 
-    def embedGame(self, gameDesc):
+    def embedGame(self, gameDesc, normalize):
         
         #pprint(gameDesc)
 
@@ -403,7 +403,7 @@ class SubjectHRR(object):
                         logging.debug('          + ' + field + ' * ' + val)
                         feature_embedding = encode(self.embedToken(field), self.embedToken(val))
                         sprite_embedding = np.add(sprite_embedding, feature_embedding)
-            sprite_embedding = sprite_embedding / np.sqrt(np.sum(np.square(sprite_embedding))) # unit length TODO legit?
+            sprite_embedding = sprite_embedding / np.sqrt(np.sum(np.square(sprite_embedding))) # unit length TODO legit? see X.E in Plate 1995
             sprite_embeddings[sprite_name] = sprite_embedding
             
         logging.debug('...more sprites')
@@ -453,7 +453,7 @@ class SubjectHRR(object):
                             logging.debug('             + ' + field + ' * ' + val)
                             feature_embedding = encode(self.embedToken(field), self.embedToken(val))
                             sprite_embedding = np.add(sprite_embedding, feature_embedding)
-                sprite_embedding = sprite_embedding / np.sqrt(np.sum(np.square(sprite_embedding))) # unit length TODO legit?
+                sprite_embedding = sprite_embedding / np.sqrt(np.sum(np.square(sprite_embedding))) # unit length TODO legit? see X.E in Plate 1995
                 sprite_embeddings[sprite_name] = sprite_embedding
         
         for sprite in sprite_embeddings:
@@ -513,6 +513,12 @@ class SubjectHRR(object):
                     embedding = encode(self.embedToken(field), self.embedToken(val))
                     termination_embedding = np.add(termination_embedding, embedding)
             terminationSet_HRR = np.add(terminationSet_HRR, termination_embedding)
+
+        if normalize:
+            # see X.E in Plate 1995
+            spriteSet_HRR = spriteSet_HRR / np.sqrt(np.sum(np.square(spriteSet_HRR)))
+            interactionSet_HRR = interactionSet_HRR / np.sqrt(np.sum(np.square(interactionSet_HRR)))
+            terminationSet_HRR = terminationSet_HRR / np.sqrt(np.sum(np.square(terminationSet_HRR)))
 
         game_HRR = np.add(game_HRR, spriteSet_HRR)
         game_HRR = np.add(game_HRR, interactionSet_HRR)
@@ -623,7 +629,7 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
             lines = game['descs'][0].replace('\t', '    ').split('\n')
             desc = getGameDescriptionFromLines(lines)
             
-            game_HRR[j,:], sprite_HRR[j,:], interaction_HRR[j,:], termination_HRR[j,:] = subj.embedGame(desc)
+            game_HRR[j,:], sprite_HRR[j,:], interaction_HRR[j,:], termination_HRR[j,:] = subj.embedGame(desc, normalize=False)
 
         if shuffle:
             np.random.shuffle(game_HRR) # null distr
@@ -685,7 +691,7 @@ def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
 
     onsets = []
     durations = []
-    with h5py.File(filename) as f: # make sure to save with -v7.3, otherwise doesn't work...
+    with h5py.File(filename, 'r') as f: # make sure to save with -v7.3, otherwise doesn't work...
         
         n = len(f['multi']['onsets'][()])
         for i in range(n):
@@ -697,7 +703,7 @@ def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
 
 # get squence of HRRs for subject's inferred theories
 #
-def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
+def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False):
     subj_id = str(subj_id)
 
     import socket
@@ -822,7 +828,7 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100):
             gameDesc = getGameDescriptionFromLines(gameLines)
 
             for j in range(nsamples):
-                theory_HRR, sprite_HRR, interaction_HRR, termination_HRR = samples[j].embedGame(gameDesc)
+                theory_HRR, sprite_HRR, interaction_HRR, termination_HRR = samples[j].embedGame(gameDesc, normalize)
                 theory_HRRs[j].append(theory_HRR)
                 sprite_HRRs[j].append(sprite_HRR)
                 interaction_HRRs[j].append(interaction_HRR)
@@ -876,7 +882,7 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
 
     import h5py
 
-    with h5py.File(filename) as f:
+    with h5py.File(filename, 'r') as f:
         nruns = len(f['SPM']['nscan'])
         assert nruns == 6
 
@@ -888,7 +894,7 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
 
         which = np.array(run_id) == s + 1
 
-        with h5py.File(filename) as f:
+        with h5py.File(filename, 'r') as f:
             # from spm_get_ons.m
             #
             k = int(f['SPM']['nscan'][s][0])
@@ -961,7 +967,7 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
 
         # from spm_fMRI_design.m
         #
-        with h5py.File(filename) as f:
+        with h5py.File(filename, 'r') as f:
             fMRI_T = int(f['SPM']['xBF']['T'][0][0])
             fMRI_T0 = int(f['SPM']['xBF']['T0'][0][0])
 
@@ -1203,7 +1209,9 @@ def gen_and_save_subject_RDMs_batched(subj_id):
     termination_RDM = np.mean(termination_RDMs, axis=0)
 
     # save last batch of HRRs, for sanity checks
+    # ...or not (memory)
     #
+    '''
     HRR_filename='mat/HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d.mat' % (subj_id, K, N, E, nsamples)
 
     d = {
@@ -1223,6 +1231,7 @@ def gen_and_save_subject_RDMs_batched(subj_id):
     }
 
     scipy.io.savemat(HRR_filename, d)
+    '''
 
     # save RDMs
     #
@@ -1272,6 +1281,7 @@ def gen_and_save_subject_kernels_batched(subj_id):
     N = 10
     E = 0.05
     nsamples = 10
+    normalize = True
 
     sigma_w = 1; # TODO parameter
 
@@ -1286,7 +1296,7 @@ def gen_and_save_subject_kernels_batched(subj_id):
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize)
 
         theory_kernels, r_id, theory_Xx, theory_sf = gen_subject_kernels(subj_id, theory_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
         sprite_kernels, _, sprite_Xx, sprite_sf = gen_subject_kernels(subj_id, sprite_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
@@ -1314,7 +1324,9 @@ def gen_and_save_subject_kernels_batched(subj_id):
     termination_kernel_std = np.std(termination_kernels, axis=0)
 
     # save last batch of HRRs, for sanity checks
+    # ...or not (memory)
     #
+    '''
     HRR_filename='mat/HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_for_ker.mat' % (subj_id, K, N, E, nsamples)
 
     d = {
@@ -1334,10 +1346,11 @@ def gen_and_save_subject_kernels_batched(subj_id):
     }
 
     scipy.io.savemat(HRR_filename, d)
+    '''
 
     # save kernels
     #
-    kernel_filename='mat/HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f.mat' % (subj_id, K, N, E, nsamples, sigma_w)
+    kernel_filename='mat/HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize)
 
     d = {
         'theory_kernel': theory_kernel,
