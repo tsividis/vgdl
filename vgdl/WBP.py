@@ -724,7 +724,7 @@ class Node():
 				distance = 101
 				added_val = float(mult * second_alpha * distance)
 			elif not stype_positions:
-				## If we couldn't compute a second-order distance because the avatar is dead, give infinite penalty.
+				## If we couldn't compute a second-order distance because the avatar or the stype is dead, give infinite penalty.
 				added_val = -float('inf')
 			else:
 				added_val = 0.
