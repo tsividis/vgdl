@@ -52,7 +52,7 @@ for (i in 1:length(excluded_subjects$game_name)){
 
 
 alldata = rbind(humandata, EMPAdata, rEMPAdata)
-refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata))
+#refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata))
 human_normed_data = make_human_normed_data(alldata)
 
 colors = c('steelblue1', 'purple1', 'palegreen3')
@@ -306,7 +306,7 @@ humankappadata = calculate_kappas(filter(alldata, agent_type=='human'),step_mini
 EMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA'),step_minimum=NA)
 rEMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA_refactor'),step_minimum=NA)
 
-DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
+#DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
 
 kappadata = rbind(humankappadata, EMPAkappadata, rEMPAkappadata)
 
