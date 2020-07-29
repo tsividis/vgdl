@@ -700,6 +700,173 @@ def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
 
     return onsets, durations
 
+# get squence of unique HRRs for subject's inferred theories
+# faster, and also used for decoding (we pass those to MATLAB which recombines them, convolves with the HRF, computes the kernels, and fits the GP in the same loop)
+# copy of gen_subject_HRRs
+#
+def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False):
+    subj_id = str(subj_id)
+
+    import socket
+    from pymongo import MongoClient
+    from collections import defaultdict
+    from vgdl import core
+    from vgdl.core import VGDLParser, fMRI_screensize
+    from vgdl.core import keyPresses as keyNames
+    from IPython import embed
+    from vgdl.EMPA import Agent
+    import cPickle, cloudpickle
+    from vgdl.environment import Environment
+    from vgdl.hyperparameters import hyperparameter_sets
+    from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+
+    import pygame
+
+    if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
+        # local on my Mac, or on a login / VDI node
+        client = MongoClient('localhost', 27017)
+    else:
+        # cluster
+        client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+
+    db = client['heroku_7lzprs54']
+
+    subj = db.subjects.find_one({'subj_id': subj_id})
+
+    # get plays
+    query = {'subj_id': subj_id, 'run_id': {'$lt': 7}}
+    plays = db.plays.find(query, {'_id': 1}).sort('start_time')
+    pks = []
+    for play in plays:
+        pks.append(play['_id'])
+    del plays # close cursor, o/w screws things up
+
+    # "subject" embeddings: have multiple (nsamples), for robustness
+    samples = [SubjectHRR(K, N, E) for _ in range(nsamples)]
+   
+    theory_HRRs = [[] for _ in range(nsamples)] 
+    sprite_HRRs = [[] for _ in range(nsamples)] 
+    interaction_HRRs = [[] for _ in range(nsamples)]
+    termination_HRRs = [[] for _ in range(nsamples)] 
+    ts = []
+    run_id = []
+    play_key = []
+    frame = []
+    block_ons_idx = []
+    block_offs_idx = []
+
+    then0 = time.time()
+
+    last_block_id = None
+
+    gameStrings = []  # theories as strings
+    gameString_to_id = dict()  # reverse mapping for gameStrings 
+    theories = []
+
+    for pk in pks:
+
+        then = time.time()
+
+        query = {'_id': pk}
+        play = db.plays.find_one(query)
+        assert play['subj_id'] == subj_id
+
+        game = subj['games'][play['game_id']]
+        print 'gen_subject_HRRs: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+
+        # get regressors
+        q = {'play_key': play['_id']}
+        print q
+        print db.regressors.count(q)
+        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.regressors.count(q) == 0:
+            print 'skipping (e.g. Sokoban)'
+            continue
+        regs = db.regressors.find(q).sort('ts', -1)
+        reg = None
+        for reg in regs:
+            break # just take the latest one
+
+        if last_block_id != play['block_id']:
+            if last_block_id is not None:
+                block_offs_idx.append(len(ts))
+            block_ons_idx.append(len(ts))
+            last_block_id = play['block_id']
+
+        # get states
+        zstates = play['zstates']
+        states = core.VGDLParser.decompress(zstates)
+        states = states['states'] # dummy dict
+
+        # load theories from disk
+        with open(reg['regressors']['theory_filename'], 'r') as f:
+            reg['regressors']['theory'] = cloudpickle.load(f)
+
+        # create temporary environment just to convert theory to VGDL description
+        # roughly main steps from:
+        # - fmri_empaRepaly.py
+        # - vgdl/environment.py: playCurriculum.py
+        # - vgdl/environment.py: playEpisode.py
+        # - vgdl/EMPA.py: initializeHypotheses and initializeVrle
+        game_name = game['name']
+        task_ID = 'subj={}'.format(subj_id)
+        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
+        environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
+        environment.gameString = play['game_str']
+        environment.levelString = play['level_str']
+        environment.playback_states = None
+        environment.playback_keystates = None
+        environment.initializeEnvironment()
+        symbolDict = generateSymbolDict(environment.environment)
+
+        print 'loading play time: ', (time.time() - then)
+
+        then = time.time()
+
+        for i in range(0, len(reg['regressors']['theory'])):
+            theory = reg['regressors']['theory'][i][0]
+
+            # convert theory to VGDL description
+            gameString, _, _ = writeTheoryToTxt(environment.environment, theory, symbolDict, "./theory_files/{}_{}.py_auto_HRR".format(agent.gameFilename, task_ID))
+
+            if gameString not in gameString_to_id.keys():
+                # previously unseen theory
+
+                gameLines = gameString.replace('\t', '    ').split('\n')
+                gameDesc = getGameDescriptionFromLines(gameLines)
+
+                # save it
+                gameString_to_id[gameString] = len(gameString_to_id)
+                gameStrings.append(gameString)
+                theories.append(theory)
+
+                # note each new row = unique theory, not frame
+                for j in range(nsamples):
+                    theory_HRR, sprite_HRR, interaction_HRR, termination_HRR = samples[j].embedGame(gameDesc, normalize)
+                    theory_HRRs[j].append(theory_HRR)
+                    sprite_HRRs[j].append(sprite_HRR)
+                    interaction_HRRs[j].append(interaction_HRR)
+                    termination_HRRs[j].append(termination_HRR)
+
+            theory_id = gameString_to_id[gameString]
+            assert gameStrings[theory_id] == gameString
+
+            theory_id_seq.append(theory_id)
+            frame.append(reg['regressors']['theory'][i][1])
+            ts.append(reg['regressors']['theory'][i][2] - play['run_start_ts'])
+            play_key.append(str(play['_id']))
+            run_id.append(play['run_id'])
+
+        print 'HRR time: ', (time.time() - then)
+
+
+    block_offs_idx.append(len(ts))
+
+    print 'total time: ', (time.time() - then0)
+
+    return theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx
+
+
 
 # get squence of HRRs for subject's inferred theories
 #
@@ -1386,6 +1553,53 @@ def gen_and_save_subject_kernels_batched(subj_id):
     }
 
     scipy.io.savemat(kernel_filename, d)
+
+
+
+
+def gen_and_save_subject_unique_HRRs(subj_id):
+
+    # copy of gen_and_save_subject_kernels_batched but for unique HRRs
+
+    # generate HRRs for each unique theory only, assign unique ID to each theory,
+    # and pass to MATLAB to modify theory sequence and recompute kernels easily in the same loop as fittitg the GP, for decoding
+    #
+
+    K = 10 
+    N = 10
+    E = 0.05
+    nsamples = 10
+    normalize = True
+
+    sigma_w = 1; # TODO parameter
+
+    theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
+
+    # save unique HRRs and theory sequence
+    #
+    HRR_filename='mat/unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_for_ker.mat' % (subj_id, K, N, E, nsamples)
+
+    d = {
+        'theory_id_seq': theory_id_seq,
+        'gameString_to_id': gameString_to_id,
+        'gameStrings': gameStrings,
+        'theories': theories,
+        'theory_HRRs': theory_HRRs,
+        'sprite_HRRs': sprite_HRRs,
+        'interaction_HRRs': interaction_HRRs,
+        'termination_HRRs': termination_HRRs,
+        'ts': ts,
+        'run_id': run_id,
+        'play_key': play_key,
+        'K': K,
+        'N': N,
+        'E': E,
+        'nsamples': nsamples,
+        'batch_size': batch_size,
+        'subj_id': subj_id
+    }
+
+    scipy.io.savemat(HRR_filename, d)
 
 
 
