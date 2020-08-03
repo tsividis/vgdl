@@ -2,7 +2,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 ## Once you set it, you can load the workspace using load(".RData") !
 
 ## gameplay data
-EMPA_dates = list('mar28', 'apr4')
+EMPA_dates = list('mar28')
 refactor_dates = list('refactor_feb13')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
@@ -52,7 +52,7 @@ for (i in 1:length(excluded_subjects$game_name)){
 
 
 alldata = rbind(humandata, EMPAdata, rEMPAdata)
-refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata))
+#refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata))
 human_normed_data = make_human_normed_data(alldata)
 
 colors = c('steelblue1', 'purple1', 'palegreen3')
@@ -306,7 +306,7 @@ humankappadata = calculate_kappas(filter(alldata, agent_type=='human'),step_mini
 EMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA'),step_minimum=NA)
 rEMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA_refactor'),step_minimum=NA)
 
-DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
+#DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
 
 kappadata = rbind(humankappadata, EMPAkappadata, rEMPAkappadata)
 
@@ -324,6 +324,8 @@ means_and_CIs = bootstrap_means_and_CIs(kappadata, 'EMPA')
 rEMPAmeans_and_CIs = bootstrap_means_and_CIs(kappadata, 'EMPA_refactor')
 rEMPAmeans_and_CIs$agent_type = as.factor('EMPA_refactor')
 
+
+## Refactor vs. original EMPA comparison
 mean_and_CI_diffs = data.frame(game_name=as.character(), agent_type=as.character(), mean=as.numeric())
 for (game in unique(means_and_CIs$game_name)){
   diff = rEMPAmeans_and_CIs[rEMPAmeans_and_CIs$game_name==game,]$mean / means_and_CIs[means_and_CIs$game_name==game,]$mean
@@ -331,6 +333,8 @@ for (game in unique(means_and_CIs$game_name)){
   mean_and_CI_diffs = rbind(mean_and_CI_diffs, row)
 }
 
+
+## Plot difference between refactor and original EMPA
 main_plot_agent_types = c('EMPA_refactor', 'EMPA')
 s = mean_and_CI_diffs
 ordered_names = s[order(log(s$mean)),]$game_name
@@ -356,6 +360,36 @@ p = p+scale_fill_manual(values=colors)
 p
 
 
+## Human-normed figure (figure 3, but with refactored agent)
+main_plot_agent_types = c('EMPA_refactor', 'EMPA')
+s = filter(rEMPAmeans_and_CIs, agent_type=='EMPA_refactor')
+ordered_names = s[order(log(s$mean)),]$game_name
+p = ggplot()+
+  geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+  #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+  #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
+  # geom_point(data=non_max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  # geom_point(data=max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+logtickmarks=(log(tickmarks))
+tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p = p+scale_fill_manual(values=colors)
+p
+# p = p + scale_fill_manual(values=colors,name="Model",
+# breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+# labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
+#                                                             breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+#                                                             labels=c("EMPA", "EMPA fail", "DDQN"))
+## 14x10
 
 
 ## Human-normed figure (figure 3)
@@ -557,7 +591,17 @@ p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=a
 p
 ## 30x24
 
-
+## see games for which albations did better than EMPA
+for (i in 1:length(scatter_data$empa_score)){
+  if(scatter_data$empa_score[i] < scatter_data$model_score[i]){
+    print(scatter_data[i,])
+  }
+}
+## Reviewer 3's suggested figure 4
+scatter_data = make_scatter_data(human_normed_data)
+p = ggplot(scatter_data, aes(x=log(empa_score), y=log(model_score), color=model_name))+geom_point()+scale_color_manual(values=colors)+
+  xlim(-20,2)+ylim(-20,2)+geom_abline(slope=1, intercept=0)
+p
 ## Plot subjective game ratings
 s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
 p = ggplot(s, aes(x=reorder(variant_number, as.numeric(variant_number)), y=difficulty)) +
