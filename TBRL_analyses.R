@@ -519,6 +519,8 @@ p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=a
 p
 ## 30x24
 
+## Reviewer 3's suggestion for figure 4:
+
 
 ## Plot subjective game ratings
 s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)

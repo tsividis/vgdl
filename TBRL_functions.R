@@ -196,6 +196,24 @@ make_human_normed_data = function(dataframe){
   return(outputdata)
 }
 
+make_scatter_data = function(human_normed_data){
+  output = data.frame(game_name=as.character(), human_score=as.numeric(), model_score=as.numeric(), model_name=as.character())
+  models = unique(human_normed_data$agent_type)
+  for (game in unique(human_normed_data$game_name)){
+    print(game)
+    s = subset(human_normed_data, game_name == game)
+    empa_score_on_game = filter(s, agent_type=='EMPA')$composite_ratio
+    for (model in models){
+      model_score_on_game = filter(s, agent_type==model)$composite_ratio
+      if (!(model%in%c('EMPA','human','DDQN 1k', 'DDQN 10k'))){
+        row = data.frame(game_name=game, empa_score=empa_score_on_game, model_score=model_score_on_game, model_name=model)
+        output = rbind(output, row)
+      }
+    }
+  }
+  return(output)
+}
+
 load_reward_data = function(data_to_load, dates_or_groups){
   if (data_to_load=='EMPA'){
     data = c()
