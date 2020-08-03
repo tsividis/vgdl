@@ -2,7 +2,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 ## Once you set it, you can load the workspace using load(".RData") !
 
 ## gameplay data
-EMPA_dates = list('mar28', 'apr4')
+EMPA_dates = list('mar28')
 refactor_dates = list('refactor_feb13')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
@@ -83,10 +83,10 @@ games_to_plot = unique(rEMPAdata$game_name)
 games_in_order = unique(rEMPAdata$game_name)[order(unique(rEMPAdata$game_name))]
 plots = list()
 for (k in 1:length(games_to_plot)){
-# for (k in 1:length(games_in_order)){
+  # for (k in 1:length(games_in_order)){
   # game = games_in_order[k]
   game = games_to_plot[k]
-
+  
   max_x = 10000
   
   ## used for interpolating data points to sparse DDQN data
@@ -117,10 +117,10 @@ for (k in 1:length(games_to_plot)){
   }else{
     subjects_to_exclude = c()
   }
-
+  
   d = filter(d, !(subject_ID%in%subjects_to_exclude))
-
-
+  
+  
   if (game %in% c('antagonist', 'antagonist_1', 'antagonist_2', 'bees_and_birds', 'bees_and_birds_1', 
                   'closing_gates', 'closing_gates_1', 'corridor', 'corridor_1', 
                   'helper', 'helper_1', 'helper_2', 'preconditions', 'preconditions_1', 'preconditions_2',
@@ -135,58 +135,58 @@ for (k in 1:length(games_to_plot)){
   ## Add data points for every 'step_size' DDQN time-step, since we can afford to do this and know what the data points are
   ## (as we recorded end-of-episode data and cumulative_wins definitionally don't change before then)
   if (max_x<1000000){
-  replacement_subjects = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
-                              modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
-  clean_d=filter(d, (!grepl('DDQN', agent_type) & (!grepl('rainbow', agent_type))) )
-  for (subject in unique(filter(d, (grepl('DDQN', agent_type)|(grepl('rainbow', agent_type))))$subject_ID)){
-    subject_data = filter(d, subject_ID==subject, cumulative_steps<max_x)
-    
-    ## if we actually have subject data for the max_x cutoff we care about...
-    if (length(subject_data$cumulative_steps)>0){
-      subject_agent_type = subject_data$agent_type[1]
-      last_steps = 0
+    replacement_subjects = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
+                                      modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
+    clean_d=filter(d, (!grepl('DDQN', agent_type) & (!grepl('rainbow', agent_type))) )
+    for (subject in unique(filter(d, (grepl('DDQN', agent_type)|(grepl('rainbow', agent_type))))$subject_ID)){
+      subject_data = filter(d, subject_ID==subject, cumulative_steps<max_x)
       
-      new_subject_df = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
-                                  modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
-      
-      for (i in 1:length(subject_data$cumulative_steps)){ ## meaning, for each episode
-        subject_row = subject_data[i,]
-        if ( (last_steps<subject_row$cumulative_steps)){
-          if (subject_row$cumulative_wins<level_max){## add lots of points if game is not won
-            for (j in seq(last_steps, subject_row$cumulative_steps-1,step_size)){
-                    row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
-                           modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
-                           score=subject_row$score)
-            new_subject_df = rbind(new_subject_df, row)
+      ## if we actually have subject data for the max_x cutoff we care about...
+      if (length(subject_data$cumulative_steps)>0){
+        subject_agent_type = subject_data$agent_type[1]
+        last_steps = 0
+        
+        new_subject_df = data.frame(game_name=as.character(), agent_type=as.character(), long_agent_type=as.character(), subject_ID=as.character(),
+                                    modelrun_ID=as.character(), level_number=as.numeric(), cumulative_steps=as.numeric(), cumulative_wins=as.numeric(), score=as.numeric())
+        
+        for (i in 1:length(subject_data$cumulative_steps)){ ## meaning, for each episode
+          subject_row = subject_data[i,]
+          if ( (last_steps<subject_row$cumulative_steps)){
+            if (subject_row$cumulative_wins<level_max){## add lots of points if game is not won
+              for (j in seq(last_steps, subject_row$cumulative_steps-1,step_size)){
+                row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
+                                 modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
+                                 score=subject_row$score)
+                new_subject_df = rbind(new_subject_df, row)
+              }
             }
-          }
-          else{ ## just add the last row
+            else{ ## just add the last row
               row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
                                modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
                                score=subject_row$score)
               new_subject_df = rbind(new_subject_df, row)    
             }
-        new_subject_df = rbind(new_subject_df, subject_row)
-        last_steps = subject_row$cumulative_steps
+            new_subject_df = rbind(new_subject_df, subject_row)
+            last_steps = subject_row$cumulative_steps
+          }
         }
-      }
-      ## If we haven't filled out the x range
-      last_x = new_subject_df$cumulative_steps[length(new_subject_df$cumulative_steps)]
-      if(last_x+step_size<max_x){
-        subject_row = new_subject_df[length(new_subject_df$cumulative_steps),]
-        for (j in seq(last_x+step_size, max_x, step_size)){
-          row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
-                           modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
-                           score=subject_row$score)
-          new_subject_df = rbind(new_subject_df, row)
+        ## If we haven't filled out the x range
+        last_x = new_subject_df$cumulative_steps[length(new_subject_df$cumulative_steps)]
+        if(last_x+step_size<max_x){
+          subject_row = new_subject_df[length(new_subject_df$cumulative_steps),]
+          for (j in seq(last_x+step_size, max_x, step_size)){
+            row = data.frame(game_name=game, agent_type=subject_data$agent_type[1], long_agent_type=subject_data$long_agent_type[1], subject_ID=subject,
+                             modelrun_ID=subject_data$modelrun_ID[1], level_number=subject_row$level_number, cumulative_steps=j, cumulative_wins=subject_row$cumulative_wins,
+                             score=subject_row$score)
+            new_subject_df = rbind(new_subject_df, row)
+          }
         }
-      }
-      replacement_subjects = rbind(replacement_subjects, new_subject_df)
-    } 
-    
-    clean_d = rbind(clean_d, replacement_subjects) 
-  }
-  d = clean_d
+        replacement_subjects = rbind(replacement_subjects, new_subject_df)
+      } 
+      
+      clean_d = rbind(clean_d, replacement_subjects) 
+    }
+    d = clean_d
   }
   
   d = filter(d, cumulative_steps<=max_x)
@@ -269,14 +269,14 @@ for (k in 1:length(games_to_plot)){
   }
   
   p=p+xlim(0,max_x)+ylim(0,max_y)
-
+  
   if(max_x==10000){
     p=p+scale_x_continuous(breaks=c(0, 2500, 5000, 7500, 10000),labels=c('0', '2.5k', '5k', '7.5k', '10k'), limits=c(0,10000))
   }  
   if(max_x==1000000){
     p=p+scale_x_continuous(breaks=c(0, 250000, 500000, 750000, 1000000),labels=c('0', '250k', '500k', '750k', '1mil'), limits=c(0,1000000))
   }
-
+  
   p = p+ theme(axis.line=element_line())
   human_kappa = filter(kappa_df, agent_type=='human')$efficiency
   EMPA_kappa = filter(kappa_df, agent_type=='EMPA')$efficiency
@@ -324,6 +324,8 @@ means_and_CIs = bootstrap_means_and_CIs(kappadata, 'EMPA')
 rEMPAmeans_and_CIs = bootstrap_means_and_CIs(kappadata, 'EMPA_refactor')
 rEMPAmeans_and_CIs$agent_type = as.factor('EMPA_refactor')
 
+
+## Refactor vs. original EMPA comparison
 mean_and_CI_diffs = data.frame(game_name=as.character(), agent_type=as.character(), mean=as.numeric())
 for (game in unique(means_and_CIs$game_name)){
   diff = rEMPAmeans_and_CIs[rEMPAmeans_and_CIs$game_name==game,]$mean / means_and_CIs[means_and_CIs$game_name==game,]$mean
@@ -331,6 +333,8 @@ for (game in unique(means_and_CIs$game_name)){
   mean_and_CI_diffs = rbind(mean_and_CI_diffs, row)
 }
 
+
+## Plot difference between refactor and original EMPA
 main_plot_agent_types = c('EMPA_refactor', 'EMPA')
 s = mean_and_CI_diffs
 ordered_names = s[order(log(s$mean)),]$game_name
@@ -356,19 +360,17 @@ p = p+scale_fill_manual(values=colors)
 p
 
 
-
-
-## Human-normed figure (figure 3)
+## Human-normed figure (figure 3, but with refactored agent)
 main_plot_agent_types = c('EMPA_refactor', 'EMPA')
-s = filter(means_and_CIs, agent_type=='EMPA')
+s = filter(rEMPAmeans_and_CIs, agent_type=='EMPA_refactor')
 ordered_names = s[order(log(s$mean)),]$game_name
 p = ggplot()+
-  geom_bar(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+  geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
            aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
-  geom_bar(data=filter(means_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
+  geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
            aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
   #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
-   #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
+  #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
   # geom_point(data=non_max_DDQNkappadata,
   #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
   # geom_point(data=max_DDQNkappadata,
@@ -383,10 +385,42 @@ p = p + theme(axis.line=element_line())+theme(panel.background = element_blank()
 p = p+scale_fill_manual(values=colors)
 p
 # p = p + scale_fill_manual(values=colors,name="Model",
-                          # breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
-                          # labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
-                          #                                                             breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
-                          #                                                             labels=c("EMPA", "EMPA fail", "DDQN"))
+# breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+# labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
+#                                                             breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+#                                                             labels=c("EMPA", "EMPA fail", "DDQN"))
+## 14x10
+
+
+## Human-normed figure (figure 3)
+main_plot_agent_types = c('EMPA_refactor', 'EMPA')
+s = filter(means_and_CIs, agent_type=='EMPA')
+ordered_names = s[order(log(s$mean)),]$game_name
+p = ggplot()+
+  geom_bar(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+  geom_bar(data=filter(means_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
+           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+  #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
+  #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
+  # geom_point(data=non_max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  # geom_point(data=max_DDQNkappadata,
+  #            aes(x=game_name, y=log(kappa), color=agent_type), stat='identity', position='dodge', shape='|', size=3, stroke=2)+
+  scale_x_discrete(limits=ordered_names)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
+tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+logtickmarks=(log(tickmarks))
+tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p = p+scale_fill_manual(values=colors)
+p
+# p = p + scale_fill_manual(values=colors,name="Model",
+# breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+# labels=c("EMPA", "EMPA fail", "DDQN")) + scale_color_manual(values=colors,name="Model",
+#                                                             breaks=c("EMPA", "EMPA fail", "DDQN 100k"),
+#                                                             labels=c("EMPA", "EMPA fail", "DDQN"))
 ## 14x10
 
 
@@ -557,6 +591,17 @@ p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=a
 p
 ## 30x24
 
+## see games for which albations did better than EMPA
+for (i in 1:length(scatter_data$empa_score)){
+  if(scatter_data$empa_score[i] < scatter_data$model_score[i]){
+    print(scatter_data[i,])
+  }
+}
+## Reviewer 3's suggested figure 4
+scatter_data = make_scatter_data(human_normed_data)
+p = ggplot(scatter_data, aes(x=log(empa_score), y=log(model_score), color=model_name))+geom_point()+scale_color_manual(values=colors)+
+  xlim(-20,2)+ylim(-20,2)+geom_abline(slope=1, intercept=0)
+p
 
 ## Plot subjective game ratings
 s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)
