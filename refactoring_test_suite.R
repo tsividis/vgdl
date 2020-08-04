@@ -4,6 +4,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 ## gameplay data
 EMPA_dates = list('mar28')
 refactor_dates = list('refactor_feb13')
+lesion_dates = list('refactor_aug4')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load helper functions
@@ -14,6 +15,7 @@ humandata = load_reward_data('human', NA)
 EMPAdata = load_reward_data('EMPA', EMPA_dates)
 rEMPAdata = load_reward_data('EMPA', refactor_dates)
 rEMPAdata$agent_type = as.factor('EMPA_refactor')
+refactor_lesions = load_reward_data('EMPA', c('refactor_aug4'))
 
 ##Load subjective game ratings
 ratings = load_ratings()
@@ -50,6 +52,8 @@ for (i in 1:length(excluded_subjects$game_name)){
 }
 
 
+refactor_alldata = rbind(humandata, rEMPAdata, refactor_lesions)
+refactor_human_normed_data = make_human_normed_data(refactor_alldata)
 
 alldata = rbind(humandata, EMPAdata, rEMPAdata)
 #refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata))
@@ -76,18 +80,21 @@ names(colors) = c('EMPA', 'EMPA_refactor', 'human')
 
 ### Learning curve plots
 ## plotting all agents/models
-# agents_to_plot = c('human', 'EMPA', 'EMPA_refactor')
-agents_to_plot=c('EMPA_refactor')
-# games_to_plot = c('bait', 'zelda', 'butterflies', 'avoidgeorge','frogs','plaqueattack')
-games_to_plot = unique(rEMPAdata$game_name)
-games_in_order = unique(rEMPAdata$game_name)[order(unique(rEMPAdata$game_name))]
+agents_to_plot = c('human', 'EMPA', 'EMPA_refactor')
+# agents_to_plot=c('EMPA_refactor')
+games_to_plot = c('bait', 'zelda', 'butterflies', 'avoidgeorge','frogs','plaqueattack')
+games_in_order = c('bait', 'zelda', 'butterflies', 'avoidgeorge','frogs','plaqueattack')
+# games_to_plot = unique(rEMPAdata$game_name)
+# games_in_order = unique(rEMPAdata$game_name)[order(unique(rEMPAdata$game_name))]
+# games_to_plot = c('avoidgeorge')
+# games_in_order = c('avoidgeorge')
 plots = list()
 for (k in 1:length(games_to_plot)){
   # for (k in 1:length(games_in_order)){
   # game = games_in_order[k]
   game = games_to_plot[k]
   
-  max_x = 10000
+  max_x = 1000
   
   ## used for interpolating data points to sparse DDQN data
   if(max_x<5000){
@@ -253,7 +260,9 @@ for (k in 1:length(games_to_plot)){
           axis.title.y=element_text(size=24),
           panel.background = element_blank())
   
-  p=p+geom_smooth(data=filter(d,!(subject_ID%in%no_win_subjects)), se=FALSE)
+  p=p+geom_smooth(data=filter(d,!(subject_ID%in%no_win_subjects)), se=FALSE, method=lm)
+  
+  if (max_x>1000){
   if ( (length(no_win_subjects)>0) & length(filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type))$cumulative_steps>0) ){
     p = p+geom_segment(aes(x=0,y=0,xend=max_x,yend=0),data=filter(d,subject_ID%in%no_win_subjects,grepl('DDQN', agent_type)),size=1.4)
   }
@@ -267,6 +276,7 @@ for (k in 1:length(games_to_plot)){
   if (length(filter(d, grepl('rainbow', agent_type), cumulative_steps<max_x)$cumulative_steps)==0){
     p = p+geom_segment(aes(x=0,y=0.05,xend=max_x,yend=0.05,alpha=.7),data=d,size=1.4, color=colors['rainbow']) ## add offset so that it's visible w/ DDQN.
   }
+    }
   
   p=p+xlim(0,max_x)+ylim(0,max_y)
   
@@ -591,16 +601,53 @@ p = ggplot(df, aes(x=log(human_normed_composite_ratio), fill=agent_type, color=a
 p
 ## 30x24
 
+
+saved_human_normed_data = human_normed_data
+human_normed_data = refactor_human_normed_data
+## Reviewer 3's suggested figure 4
+refactor_scatter_data = make_scatter_data(refactor_human_normed_data)
+
+p = ggplot(scatter_data, aes(x=log(empa_score), y=log(model_score), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+
+  xlim(-20,-3)+ylim(-20,-3)+geom_abline(slope=1, intercept=0)+theme_bw()
+p
+
+## exploration lesions
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'e-greedy 2k', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 1k DS')), aes(x=log(empa_score), y=log(model_score), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+
+  xlim(-21,-3)+ylim(-21,-3)+geom_abline(slope=1, intercept=0)
+p
+
 ## see games for which albations did better than EMPA
 for (i in 1:length(scatter_data$empa_score)){
-  if(scatter_data$empa_score[i] < scatter_data$model_score[i]){
+  if((scatter_data$model_name[i] %in% c('EMPA', 'e-greedy 2k', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 1k DS')) && (scatter_data$empa_score[i] < scatter_data$model_score[i])){
     print(scatter_data[i,])
+   print(scatter_data$model_score[i] / scatter_data$empa_score[i])
   }
 }
-## Reviewer 3's suggested figure 4
-scatter_data = make_scatter_data(human_normed_data)
-p = ggplot(scatter_data, aes(x=log(empa_score), y=log(model_score), color=model_name))+geom_point()+scale_color_manual(values=colors)+
-  xlim(-20,2)+ylim(-20,2)+geom_abline(slope=1, intercept=0)
+
+for (i in 1:length(scatter_data$empa_score)){
+  if((scatter_data$model_name[i] %in% c('EMPA', 'no IW', 'no subgoals', 'no subgoals + no gradient + no IW', 'no goal gradient',
+                                        'no subgoals + no gradient')) && (scatter_data$empa_score[i] < scatter_data$model_score[i])){
+    print(scatter_data[i,])
+    print(scatter_data$model_score[i] / scatter_data$empa_score[i])
+  }
+}
+
+
+## Supplement: showing that EMPA performance on GVGAI games is not significantly different from synthetic ones.
+game_category_df$gvgai_or_synthetic = factor(game_category_df$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
+game_category_summary = summarySE(game_category_df, measurevar="human_normed_composite_ratio", groupvars=c("gvgai_or_synthetic"), na.rm=TRUE)
+p = ggplot(game_category_summary, aes(x=gvgai_or_synthetic, y=human_normed_composite_ratio, color=gvgai_or_synthetic, fill=gvgai_or_synthetic))+
+  geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=human_normed_composite_ratio-ci, ymax=human_normed_composite_ratio+ci),color="black")+
+  xlab('Game type')+ ylab('Human-normed Efficiency') + theme(panel.background = element_blank(), axis.line = element_line(color="black"))
+p
+
+## human vs empa by category scatter
+game_category_scatter$gvgai_or_synthetic = factor(game_category_scatter$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
+p = ggplot(game_category_scatter, aes(x=log(human_score), y=log(empa_score), color=gvgai_or_synthetic))+geom_point()+
+  geom_abline(slope=1, intercept=0)+xlim(-10,-2)+ylim(-10,-2)+xlab('Human efficiency')+ylab('EMPA efficiency') +
+ theme_bw()#theme(panel.background = element_blank(), axis.line = element_line(color="black"))
 p
 
 ## Plot subjective game ratings

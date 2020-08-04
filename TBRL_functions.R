@@ -202,14 +202,16 @@ make_scatter_data = function(human_normed_data){
   for (game in unique(human_normed_data$game_name)){
     print(game)
     s = subset(human_normed_data, game_name == game)
-    empa_score_on_game = filter(s, agent_type=='EMPA')$composite_ratio
+    empa_score_on_game = filter(s, agent_type=='EMPA_refactor')$composite_ratio
     for (model in models){
-      model_score_on_game = filter(s, agent_type==model)$composite_ratio
-      if (!(model%in%c('EMPA','human','DDQN 1k', 'DDQN 10k'))){
+      model_row = filter(s, agent_type==model)
+      if (nrow(model_row)>0){
+      model_score_on_game = model_row$composite_ratio
+      if (!(model%in%c('EMPA_refactor','human','DDQN 1k', 'DDQN 10k'))){
         row = data.frame(game_name=game, empa_score=empa_score_on_game, model_score=model_score_on_game, model_name=model)
         output = rbind(output, row)
       }
-    }
+    }}
   }
   return(output)
 }
@@ -579,6 +581,57 @@ load_reward_data = function(data_to_load, dates_or_groups){
   
   
   return (data)
+}
+
+synthetic_games = c('antagonist', 'bees_and_birds', 'closing_gates', 'corridor', 'ee', 
+                    'helper', 'preconditions', 'push_boulders','relational', 'surprise')
+
+
+##GVGAI-original, GVGAI-variant, synthetic-original, synthetic-variant
+game_category_df = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), human_normed_composite_ratio = as.numeric())
+
+for (game in unique(human_normed_data$game_name)){
+  gvgai_or_synthetic = 'GVGAI'
+  for (synthetic_name in synthetic_games){
+    if (grepl(synthetic_name, game)){
+      gvgai_or_synthetic = 'Synthetic'
+    }
+  }
+  original_or_variant = 'original'
+  for (num in c('1', '2', '3', '4')){
+    if (grepl(num, game)){
+      original_or_variant = 'variant'
+    }
+  }
+  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+  hncr = filter(human_normed_data, game_name==game, agent_type=='EMPA')$human_normed_composite_ratio
+  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, human_normed_composite_ratio=hncr)
+  game_category_df = rbind(game_category_df, row)
+}
+
+
+game_category_scatter = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
+                              human_score = as.numeric(), empa_score = as.numeric())
+
+for (game in unique(human_normed_data$game_name)){
+  gvgai_or_synthetic = 'GVGAI'
+  for (synthetic_name in synthetic_games){
+    if (grepl(synthetic_name, game)){
+      gvgai_or_synthetic = 'Synthetic'
+    }
+  }
+  original_or_variant = 'original'
+  for (num in c('1', '2', '3', '4')){
+    if (grepl(num, game)){
+      original_or_variant = 'variant'
+    }
+  }
+  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+  human_score = filter(human_normed_data, game_name==game, agent_type=='human')$composite_ratio
+  empa_score = filter(human_normed_data, game_name==game, agent_type=='EMPA')$composite_ratio
+  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
+                   human_score = human_score, empa_score = empa_score)
+  game_category_scatter = rbind(game_category_scatter, row)
 }
 
 

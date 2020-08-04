@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-89
+#SBATCH --array=0-449
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
-#SBATCH --time=1440
+#SBATCH --time=2880
 #SBATCH --partition=normal
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=64G
@@ -49,5 +49,5 @@ if [ ! -d "${ROOT}/slurm_logs/main" ]; then
 fi
 
 # finally, run the model
-singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --metacontroller_index 3
+singularity exec  -B "/$BASE:/$BASE" $CONT python -m vgdl.load_games --game_number $GAME_NUMBER --task_ID $SLURM_ARRAY_TASK_ID --make_movie False --metacontroller_index 1
 # echo "-m vgdl.load_games --game_number ${GAME_NUMBER} --metacontroller_index ${META_IDX}"
