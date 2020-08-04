@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_vgdl_model
-#SBATCH --array=0-449
+#SBATCH --array=0-89
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
-#SBATCH --time=2880
+#SBATCH --time=1440
 #SBATCH --partition=normal
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=64G
