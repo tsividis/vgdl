@@ -607,15 +607,38 @@ human_normed_data = refactor_human_normed_data
 ## Reviewer 3's suggested figure 4
 refactor_scatter_data = make_scatter_data(refactor_human_normed_data)
 
-p = ggplot(scatter_data, aes(x=log(empa_score), y=log(model_score), color=model_name))+geom_point()+
+p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
-  xlim(-20,-3)+ylim(-20,-3)+geom_abline(slope=1, intercept=0)+theme_bw()
+  xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)+theme_bw()
+p
+
+## planning lesions
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                  'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+
+  xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)
+p
+
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                  'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_levels,10), y=log(model_levels,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+geom_abline(slope=1, intercept=0)+
+  xlim(-.8,.8)+ylim(-.8,.8)
+p
+
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                  'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_steps,10), y=log(model_steps,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+geom_abline(slope=1, intercept=0)+
+  xlim(1,4)+ylim(1,4)
 p
 
 ## exploration lesions
-p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'e-greedy 2k', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 1k DS')), aes(x=log(empa_score), y=log(model_score), color=model_name))+geom_point()+
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'e-greedy 2k', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 1k DS')),
+           aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
-  xlim(-21,-3)+ylim(-21,-3)+geom_abline(slope=1, intercept=0)
+  xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)
 p
 
 ## see games for which albations did better than EMPA
@@ -645,8 +668,8 @@ p
 
 ## human vs empa by category scatter
 game_category_scatter$gvgai_or_synthetic = factor(game_category_scatter$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
-p = ggplot(game_category_scatter, aes(x=log(human_score), y=log(empa_score), color=gvgai_or_synthetic))+geom_point()+
-  geom_abline(slope=1, intercept=0)+xlim(-10,-2)+ylim(-10,-2)+xlab('Human efficiency')+ylab('EMPA efficiency') +
+p = ggplot(game_category_scatter, aes(x=log(human_score,10), y=log(empa_score,10), color=gvgai_or_synthetic))+geom_point()+
+  geom_abline(slope=1, intercept=0)+xlim(-5,-2)+ylim(-5,-2)+xlab('Human efficiency')+ylab('EMPA efficiency') +
  theme_bw()#theme(panel.background = element_blank(), axis.line = element_line(color="black"))
 p
 

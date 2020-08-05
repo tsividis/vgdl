@@ -197,18 +197,27 @@ make_human_normed_data = function(dataframe){
 }
 
 make_scatter_data = function(human_normed_data){
-  output = data.frame(game_name=as.character(), human_score=as.numeric(), model_score=as.numeric(), model_name=as.character())
+  output = data.frame(game_name=as.character(), empa_score=as.numeric(), model_score=as.numeric(), 
+                      empa_steps=as.numeric(), model_steps=as.numeric(),
+                      empa_levels=as.numeric(), model_levels=as.numeric(), model_name=as.character())
   models = unique(human_normed_data$agent_type)
   for (game in unique(human_normed_data$game_name)){
     print(game)
     s = subset(human_normed_data, game_name == game)
-    empa_score_on_game = filter(s, agent_type=='EMPA_refactor')$composite_ratio
+    empa_score_on_game = filter(s, agent_type=='EMPA')$composite_ratio
+    empa_steps_on_game = filter(s, agent_type=='EMPA')$max_steps
+    empa_levels_on_game = filter(s, agent_type=='EMPA')$mean_levels_won
+    
     for (model in models){
       model_row = filter(s, agent_type==model)
       if (nrow(model_row)>0){
       model_score_on_game = model_row$composite_ratio
-      if (!(model%in%c('EMPA_refactor','human','DDQN 1k', 'DDQN 10k'))){
-        row = data.frame(game_name=game, empa_score=empa_score_on_game, model_score=model_score_on_game, model_name=model)
+      model_steps_on_game = model_row$max_steps
+      model_levels_on_game = model_row$mean_levels_won
+      if (!(model%in%c('EMPA','human','DDQN 1k', 'DDQN 10k'))){
+        row = data.frame(game_name=game, empa_score=empa_score_on_game, model_score=model_score_on_game,
+                         empa_steps=empa_steps_on_game, model_steps=model_steps_on_game,
+                         empa_levels=empa_levels_on_game, model_levels=model_levels_on_game, model_name=model)
         output = rbind(output, row)
       }
     }}
