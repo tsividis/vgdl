@@ -762,6 +762,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
     gameStrings = []  # theories as strings
     gameString_to_id = dict()  # reverse mapping for gameStrings 
     theories = []
+    theory_id_seq = []
 
     for pk in pks:
 
@@ -858,7 +859,6 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
             run_id.append(play['run_id'])
 
         print 'HRR time: ', (time.time() - then)
-
 
     block_offs_idx.append(len(ts))
 
@@ -1571,19 +1571,15 @@ def gen_and_save_subject_unique_HRRs(subj_id):
     nsamples = 10
     normalize = True
 
-    sigma_w = 1; # TODO parameter
-
     theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
 
     # save unique HRRs and theory sequence
     #
-    HRR_filename='mat/unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_for_ker.mat' % (subj_id, K, N, E, nsamples)
+    HRR_filename='mat/unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.mat' % (subj_id, K, N, E, nsamples, normalize)
 
     d = {
         'theory_id_seq': theory_id_seq,
-        'gameString_to_id': gameString_to_id,
         'gameStrings': gameStrings,
-        'theories': theories,
         'theory_HRRs': theory_HRRs,
         'sprite_HRRs': sprite_HRRs,
         'interaction_HRRs': interaction_HRRs,
@@ -1594,8 +1590,8 @@ def gen_and_save_subject_unique_HRRs(subj_id):
         'K': K,
         'N': N,
         'E': E,
+        'normalize': normalize,
         'nsamples': nsamples,
-        'batch_size': batch_size,
         'subj_id': subj_id
     }
 
