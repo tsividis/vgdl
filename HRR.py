@@ -754,6 +754,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
     frame = []
     block_ons_idx = []
     block_offs_idx = []
+    game_names = []
 
     then0 = time.time()
 
@@ -857,6 +858,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
             ts.append(reg['regressors']['theory'][i][2] - play['run_start_ts'])
             play_key.append(str(play['_id']))
             run_id.append(play['run_id'])
+            game_names.append(game_name)
 
         print 'HRR time: ', (time.time() - then)
 
@@ -864,7 +866,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
 
     print 'total time: ', (time.time() - then0)
 
-    return theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx
+    return theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names
 
 
 
@@ -920,7 +922,6 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
     frame = []
     block_ons_idx = []
     block_offs_idx = []
-    game_names = []
 
     then0 = time.time()
 
@@ -1006,7 +1007,6 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
             ts.append(reg['regressors']['theory'][i][2] - play['run_start_ts'])
             play_key.append(str(play['_id']))
             run_id.append(play['run_id'])
-            game_names.append(game_name)
 
         print 'HRR time: ', (time.time() - then)
 
@@ -1015,7 +1015,7 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
 
     print 'total time: ', (time.time() - then0)
 
-    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names
+    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx
 
 
 # aggregate single sample HRRs in range
@@ -1449,12 +1449,12 @@ def gen_and_save_subject_kernels_batched(subj_id):
     K = 10 
     N = 10
     E = 0.05
-    nsamples = 1
+    nsamples = 100
     normalize = True
 
     sigma_w = 1; # TODO parameter
 
-    batch_size = 1
+    batch_size = 10
     assert nsamples % batch_size == 0
 
     all_theory_kernels = []
@@ -1593,6 +1593,8 @@ def gen_and_save_subject_unique_HRRs(subj_id):
         'N': N,
         'E': E,
         'normalize': normalize,
+        'block_ons_idx': block_ons_idx,
+        'block_offs_idx': block_offs_idx,
         'nsamples': nsamples,
         'game_names': game_names,
         'subj_id': subj_id
