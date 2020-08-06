@@ -79,6 +79,7 @@ class WBP():
 			self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
 
 		self.winning_states = []
+                self.losing_states = [] # Momchil: for fitting to behavior
 		self.total_nodes_opened, self.total_nodes_selected = 0, 0
 		self.actions = self.getAvailableActions()
 		self.solution = None
@@ -418,6 +419,7 @@ class WBP():
 
 	def BFS(self):
 		QReward = []
+                self.QReward = QReward # for behavior
 
 		start = Node(self.rle, self, [], None)
 
@@ -457,9 +459,11 @@ class WBP():
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
 					self.winning_states.append(child)
+                                elif child.terminal and not child.win:
+					self.losing_states.append(child)
 				else:
-					if not (child.terminal and not child.win):
-						QReward.append(child)
+					assert not (child.terminal and not child.win)
+                                        QReward.append(child)
 
 			if self.winning_states:
 				bestNodes = sorted(self.winning_states, key=lambda n: (-n.intrinsic_reward))

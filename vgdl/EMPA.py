@@ -244,8 +244,6 @@ class Agent:
         # print "writeTheory: {}".format(time.time()-t1)
         # t1 = time.time()
 
-        embed()
-
         Vrle = createMindEnv(gameString, levelString, output=False)
 
         self.setSpritePositions(self.environment, Vrle, hypothesis)
@@ -436,11 +434,12 @@ class Agent:
                 'newEffects_flag': [],
                 'newTimeStep': [], # basically finalTimeStepList
                 'newTimeStep_flag': [], # basically finalTimeStepList
+                'plans': []
             }
 
 
 
-    def planAsNeeded(self):
+    def planAsNeeded(self, force_replan=False):
 
         """ 
         Calls all planning-related functions:
@@ -465,7 +464,7 @@ class Agent:
                 print "lost on timeout. switching hyperparameters"
             self.hyperparameterSwitch(new_index='long-term')
 
-        self.re_plan = self.metacontroller.isReplanningNecessary()
+        self.re_plan = force_replan or self.metacontroller.isReplanningNecessary()
 
         # print "plan phase 2: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -502,6 +501,7 @@ class Agent:
             # else:
             #     self.solution = []
 
+            self.p = p # Momchil: fMRI
             self.solution = p.solution
             self.predicted_states = p.predicted_states
             self.printable_predicted_states = p.printable_predicted_states
@@ -864,7 +864,52 @@ class Agent:
         if self.record_fMRIRegressors:
             # we replay the human actions
             # TODO make sure we won't need the action anywhere here, e.g. for inference and whatnot
-            self.action = None 
+
+            if self.environment.getTime() <= 0:
+                self.action = None 
+
+            else:
+
+                self.action = self.planAsNeeded(force_replan=True)
+
+                p = self.p
+                leaves = p.winning_states + p.losing_states + p.QReward
+
+                plans = []
+
+                # for each leaf node = potential plan
+                #
+                for node in leaves:
+
+                    plan = {
+                        'intrinsic_reward': node.intrinsic_reward,
+                        'actionSeq': node.actionSeq,
+                        'win': node.win,
+                        'terminal': node.terminal,
+                    }
+
+                    # go in reverse to get all interactions
+                    # note we skip the starting node
+                    effectListByClassSeq = []
+                    actionSeq = []
+                    while node.parent is not None:
+                        effectListByClassSeq.append(node.rle._game.effectListByClass)
+                        actionSeq.append(node.actionSeq[-1])
+                        node = node.parent
+                    effectListByClassSeq.reverse()
+                    actionSeq.reverse()
+
+                    assert len(actionSeq) == len(plan['actionSeq'])
+                    assert all([actionSeq[i] == plan['actionSeq'][i] for i in range(len(actionSeq))])
+
+                    # important: note that those are the events AFTER taking the corresponding action
+                    # see BFS() in WBP.py: first we append action, then we compute new effectsa
+                    # also, first node has no corresponding action
+                    plan['effectListByClassSeq'] = effectListByClassSeq
+                    plans.append(plan)
+
+                self.logfMRIRegressor('plans', plans) 
+                    
         else:
             self.action = self.planAsNeeded()
 

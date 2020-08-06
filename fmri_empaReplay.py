@@ -216,6 +216,13 @@ if __name__ == '__main__':
             reg['regressors']['newTimeStep_filename'] = filename
             reg['regressors']['newTimeStep'] = [] # remove from regressor object
 
+            # serialize plans
+            filename = os.path.join(theoriesDir, 'plans_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+            with open(filename, 'wb') as f:
+                cloudpickle.dump(reg['regressors']['plans'], f)
+            reg['regressors']['plans_filename'] = filename
+            reg['regressors']['plans'] = [] # remove from regressor object
+
             # same deal with sprite distribution
             # TODO too big -- risks running out of disk space; shelve for now
             #
