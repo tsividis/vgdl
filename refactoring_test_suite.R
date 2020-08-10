@@ -4,7 +4,7 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 ## gameplay data
 EMPA_dates = list('mar28')
 refactor_dates = list('refactor_feb13')
-lesion_dates = list('refactor_aug4')
+refactor_lesion_dates = list('refactor_aug4', 'refactor_aug10')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load helper functions
@@ -13,9 +13,10 @@ source(paste(getwd(), '/TBRL_functions.R', sep=''))
 ## Load data. These next few lines take a long time.
 humandata = load_reward_data('human', NA)
 EMPAdata = load_reward_data('EMPA', EMPA_dates)
+lesions = load_reward_data('EMPA', c('apr4', 'jun3', 'jun22', 'jun23'))
 rEMPAdata = load_reward_data('EMPA', refactor_dates)
 rEMPAdata$agent_type = as.factor('EMPA_refactor')
-refactor_lesions = load_reward_data('EMPA', c('refactor_aug4'))
+refactor_lesions = load_reward_data('EMPA', refactor_lesion_dates)
 
 ##Load subjective game ratings
 ratings = load_ratings()
@@ -52,12 +53,32 @@ for (i in 1:length(excluded_subjects$game_name)){
 }
 
 
+## Grab first 5 of each lesion.
+first_5_IDs_of_each_lesion_type = rep(NA, 9*450)
+i = 1
+for (agent in unique(lesions$agent_type)){
+  if (!(agent %in% c('e-greedy 1k SN', 'e-greedy 1k SS', 'EMPA'))){
+    agent_data = filter(lesions, agent_type==agent)
+    for (game in unique(agent_data$game)){
+      game_data = filter(agent_data, game_name==game)
+      for (subject in unique(game_data$subject_ID)[1:5]){
+        first_5_IDs_of_each_lesion_type[i] = subject
+        i = i+1
+      }
+    }
+  }
+}
+lesions = filter(lesions, subject_ID%in%first_5_IDs_of_each_lesion_type)
+
 refactor_alldata = rbind(humandata, rEMPAdata, refactor_lesions)
 refactor_human_normed_data = make_human_normed_data(refactor_alldata)
 
-alldata = rbind(humandata, EMPAdata, rEMPAdata)
-#refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata))
+alldata = rbind(humandata, EMPAdata, lesions)
+refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata, refactor_lesions))
 human_normed_data = make_human_normed_data(alldata)
+human_normed_data = make_human_normed_data(alldata1)
+
+
 
 colors = c('steelblue1', 'purple1', 'palegreen3')
 names(colors) = c('EMPA', 'EMPA_refactor', 'human')
@@ -350,9 +371,9 @@ s = mean_and_CI_diffs
 ordered_names = s[order(log(s$mean)),]$game_name
 p = ggplot()+
   geom_bar(data=filter(mean_and_CI_diffs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
-           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+           aes(x=game_name, y=log(mean,10), fill=as.factor(agent_type)), stat='identity', position='dodge')+
   geom_bar(data=filter(mean_and_CI_diffs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
-           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+           aes(x=game_name, y=log(mean,10), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
   #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
   #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
   # geom_point(data=non_max_DDQNkappadata,
@@ -362,7 +383,7 @@ p = ggplot()+
   scale_x_discrete(limits=ordered_names)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
-logtickmarks=(log(tickmarks))
+logtickmarks=(log(tickmarks,10))
 tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -376,9 +397,9 @@ s = filter(rEMPAmeans_and_CIs, agent_type=='EMPA_refactor')
 ordered_names = s[order(log(s$mean)),]$game_name
 p = ggplot()+
   geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
-           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+           aes(x=game_name, y=log(mean,10), fill=as.factor(agent_type)), stat='identity', position='dodge')+
   geom_bar(data=filter(rEMPAmeans_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
-           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+           aes(x=game_name, y=log(mean,10), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
   #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
   #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
   # geom_point(data=non_max_DDQNkappadata,
@@ -388,7 +409,7 @@ p = ggplot()+
   scale_x_discrete(limits=ordered_names)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
-logtickmarks=(log(tickmarks))
+logtickmarks=(log(tickmarks,10))
 tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -408,9 +429,9 @@ s = filter(means_and_CIs, agent_type=='EMPA')
 ordered_names = s[order(log(s$mean)),]$game_name
 p = ggplot()+
   geom_bar(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
-           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), stat='identity', position='dodge')+
+           aes(x=game_name, y=log(mean,10), fill=as.factor(agent_type)), stat='identity', position='dodge')+
   geom_bar(data=filter(means_and_CIs, agent_type!='DDQN 100k', !log(mean, 10)>-3),
-           aes(x=game_name, y=log(mean), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
+           aes(x=game_name, y=log(mean,10), fill=as.factor(agent_type)), alpha=1, stat='identity', position='dodge')+
   #geom_linerange(data=filter(means_and_CIs, agent_type%in%main_plot_agent_types & agent_type!='DDQN 100k', log(mean, 10)>-3),
   #              aes(x=game_name, ymin=log(low_margin), ymax=log(high_margin), fill=as.factor(agent_type)), alpha=.2, stat='identity', position='dodge')+
   # geom_point(data=non_max_DDQNkappadata,
@@ -420,7 +441,7 @@ p = ggplot()+
   scale_x_discrete(limits=ordered_names)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Efficiency")+xlab('Game name')+ylim(-10,10)
 tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
-logtickmarks=(log(tickmarks))
+logtickmarks=(log(tickmarks,10))
 tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
 p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
 p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -605,20 +626,73 @@ p
 saved_human_normed_data = human_normed_data
 human_normed_data = refactor_human_normed_data
 ## Reviewer 3's suggested figure 4
-refactor_scatter_data = make_scatter_data(refactor_human_normed_data)
+scatter_data = make_scatter_data(filter(human_normed_data, agent_type!='random policy'))
+refactor_scatter_data = make_scatter_data(filter(refactor_human_normed_data, agent_type!='random policy'))
+
+## give absolute failures a number so that they can get plotted...
+## then make scatter data and confirm that EMPA failure is in these plots.
+tickmarks = c(-9,-8,-7,-6,-5,-4,-3,-2,-1)
 
 p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
-  xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)+theme_bw()
+  # xlim(-9,-1)+ylim(-9,-1)+
+  geom_abline(slope=1, intercept=0)+theme_bw()+
+  scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)
 p
 
-## planning lesions
+# same, but broken down by model cluster
+p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+
+  xlim(-9,-1)+ylim(-9,-1)+geom_abline(slope=1, intercept=0)+theme_bw()+
+  scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)+
+facet_wrap(~model_cluster)
+p
+
+# same, but broken down by model
+p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+
+  xlim(-9,-1)+ylim(-9,-1)+geom_abline(slope=1, intercept=0)+theme_bw()+
+  scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)+
+  facet_wrap(~model_name)
+p
+
+## same, but for refactor
+p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+
+  # xlim(-9,-1)+ylim(-9,-1)+
+  geom_abline(slope=1, intercept=0)+theme_bw()+
+  scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)
+p
+
+p = ggplot(filter(scatter_data, empa_score<.000001, model_score<.000001), aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+
+  xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)+theme_bw()+
+  scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)+
+facet_wrap(~model_name)
+p
+
+
+
+## looking at the models that did better than EMPA -- how was their planning efficiency?
+p = ggplot(filter(scatter_data, model_score>empa_score), aes(x=log(empa_planning_steps,10), y=log(model_planning_steps,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+geom_abline(slope=1, intercept=0)+theme_bw()
+  xlim(-8,-1)+ylim(-8,-1)
+p
+
+## planning lesions (score = learning efficiency)
 p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
                                                   'no IW', 'no subgoals + no gradient + no IW')),
            aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
   xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)
 p
+
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                  'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)+facet_wrap(~model_name)
+p
+
 
 p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
                                                   'no IW', 'no subgoals + no gradient + no IW')),
@@ -633,6 +707,35 @@ p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goa
   scale_color_manual(values=colors)+geom_abline(slope=1, intercept=0)+
   xlim(1,4)+ylim(1,4)
 p
+
+## planning efficiency
+p = ggplot(filter(new_scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                  'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_planning_efficiency,10), y=log(model_planning_efficiency,10), color=model_name))+geom_point()+
+  # scale_color_manual(values=colors)+
+  geom_abline(slope=1, intercept=0)+facet_wrap(~model_name)+
+  xlim(-12,-1)+ylim(-12,-1)
+p
+
+## planning steps
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                      'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_planning_steps,10), y=log(model_planning_steps,10), color=model_name))+geom_point()+
+  # scale_color_manual(values=colors)+
+  geom_abline(slope=1, intercept=0)+facet_wrap(~model_name)+
+  xlim(1,6)+ylim(1,6)
+p
+
+
+p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                  'no IW', 'no subgoals + no gradient + no IW'), model_planning_steps>=empa_planning_steps),
+           aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  # scale_color_manual(values=colors)+
+  geom_abline(slope=1, intercept=0)+facet_wrap(~model_name)#+
+  xlim(1,6)+ylim(1,6)
+p
+
+
 
 ## exploration lesions
 p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'e-greedy 2k', 'e-greedy 2k DS', 'e-greedy 1k', 'e-greedy 1k DS')),
@@ -666,12 +769,149 @@ p = ggplot(game_category_summary, aes(x=gvgai_or_synthetic, y=human_normed_compo
   xlab('Game type')+ ylab('Human-normed Efficiency') + theme(panel.background = element_blank(), axis.line = element_line(color="black"))
 p
 
+## t-test by game category
+EMPAkappadata_with_game_category = EMPAkappadata
+EMPAkappadata_with_game_category$category=NA
+for (i in 1:length(EMPAkappadata_with_game_category$game_name)){
+  EMPAkappadata_with_game_category$category[i] = 'GVGAI'
+  for (synthetic_game in synthetic_games){
+    if (grepl(synthetic_game, EMPAkappadata_with_game_category$game_name[i])){
+      EMPAkappadata_with_game_category$category[i] = 'Synthetic'
+    }
+  }
+}
+EMPAcategoryframe = summarySE(EMPAkappadata_with_game_category, measurevar="kappa", groupvars=c("category"), na.rm=TRUE)
+
+bayes.t.test(kappa ~ category, data = EMPAkappadata_with_game_category)
+
+
+
+humankappadata_with_game_category = humankappadata
+humankappadata_with_game_category$category=NA
+for (i in 1:length(humankappadata_with_game_category$game_name)){
+  humankappadata_with_game_category$category[i] = 'GVGAI'
+  for (synthetic_game in synthetic_games){
+    if (grepl(synthetic_game, humankappadata_with_game_category$game_name[i])){
+      humankappadata_with_game_category$category[i] = 'Synthetic'
+    }
+  }
+}
+humancategoryframe = summarySE(humankappadata_with_game_category, measurevar="kappa", groupvars=c("category"), na.rm=TRUE)
+
+recalculated_human_normed_kappas = data.frame()
+for (game in unique(EMPAkappadata$game_name)){
+  EMPAgamedata = filter(EMPAkappadata, game_name==game)
+  humangamedata = filter(humankappadata, game_name==game)
+  human_normed_kappa = mean(EMPAgamedata$kappa)/mean(humangamedata$kappa)
+  row = data.frame(game_name=game, human_normed_kappa=human_normed_kappa)
+  recalculated_human_normed_kappas = rbind(recalculated_human_normed_kappas, row)
+}
+## grab kappas from original calculation
+recalculated_human_normed_kappas$original_human_normed_kappa = NA
+for (i in 1:length(unique(recalculated_human_normed_kappas$game_name))){
+  game_title = recalculated_human_normed_kappas$game_name[i]
+  if (game_title=='ee'){
+    game_title='explore/exploit'
+  }
+  if (game_title=='ee 1'){
+    game_title='explore/exploit 1'
+  }
+  if (game_title=='ee 2'){
+    game_title='explore/exploit 2'
+  }
+  if (game_title=='ee 3'){
+    game_title='explore/exploit 3'
+  }
+  print(game_title)
+  original_kappa = filter(human_normed_data, formatted_game_name==game_title, agent_type=='EMPA')$human_normed_composite_ratio
+  recalculated_human_normed_kappas$original_human_normed_kappa[i] = original_kappa
+}
+
+## add category
+recalculated_human_normed_kappas$category=NA
+for (i in 1:length(recalculated_human_normed_kappas$game_name)){
+  recalculated_human_normed_kappas$category[i] = 'GVGAI'
+  for (synthetic_game in synthetic_games){
+    if (grepl(synthetic_game, recalculated_human_normed_kappas$game_name[i])){
+      recalculated_human_normed_kappas$category[i] = 'Synthetic'
+    }
+  }
+}
+
+## sanity check that hunan_normned kappa plot is similar here and in the one you made from human-normed data
+p=ggplot(recalculated_human_normed_kappas, aes(x=category))
+p=p+geom_bar(aes(x=category, y=human_normed_kappa),stat='identity')
+p
+
+
+## sanity check that Figure 3 looks the same
+reordered_names = recalculated_human_normed_kappas[order(log(recalculated_human_normed_kappas$human_normed_kappa)),]$game_name
+p = ggplot(recalculated_human_normed_kappas, aes(x=game_name))
+p = p + geom_bar(aes(x=game_name, y=log(human_normed_kappa,10)), stat='identity')+  scale_x_discrete(limits=reordered_names)
+p
+
 ## human vs empa by category scatter
 game_category_scatter$gvgai_or_synthetic = factor(game_category_scatter$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
 p = ggplot(game_category_scatter, aes(x=log(human_score,10), y=log(empa_score,10), color=gvgai_or_synthetic))+geom_point()+
-  geom_abline(slope=1, intercept=0)+xlim(-5,-2)+ylim(-5,-2)+xlab('Human efficiency')+ylab('EMPA efficiency') +
+  geom_abline(slope=1, intercept=0)+xlim(-5,-2)+ylim(-5,-2)+xlab('Log Human efficiency')+ylab('Log EMPA efficiency') +
  theme_bw()#theme(panel.background = element_blank(), axis.line = element_line(color="black"))
 p
+## redoing with recalculated kappas
+game_category_scatter2$gvgai_or_synthetic = factor(game_category_scatter2$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
+p = ggplot(game_category_scatter2, aes(x=log(human_score,10), y=log(empa_score,10), color=gvgai_or_synthetic))+geom_point()+
+  geom_abline(slope=1, intercept=0)+
+  xlim(-4,-1)+ylim(-4,-1)+
+  xlab('Log Human efficiency')+ylab('Log EMPA efficiency') +
+  theme_bw()#theme(panel.background = element_blank(), axis.line = element_line(color="black"))
+p
+
+
+## Looking at plotting mean_levels_won and level_efficiency
+## This is the quick-and-dirty version. In reality you'll have to bootstrap pairs of humans and EMPA runs and calculate
+## human-normed ratios for those.
+qdataframe = data.frame(game_name=as.character(), human_normed_mean_levels=as.numeric(), human_normed_level_efficiency=as.numeric())
+for (game in unique(human_normed_data$game_name)){
+  gamedata = filter(human_normed_data, game_name==game)
+  empagamedata = filter(gamedata, agent_type=='EMPA')
+  humangamedata = filter(gamedata, agent_type=='human')
+  human_normed_level_efficiency = empagamedata$level_efficiency / humangamedata$level_efficiency
+  human_normed_level_percentage = empagamedata$level_percentage / humangamedata$level_percentage
+  row = data.frame(game_name = game, human_normed_level_efficiency = human_normed_level_efficiency, 
+                   human_normed_level_percentage = human_normed_level_percentage)
+  qdataframe = rbind(qdataframe, row)
+}
+head(qdataframe)
+
+main_plot_agent_types = c('EMPA')
+s = qdataframe
+ordered_names = s[order(log(s$human_normed_level_efficiency)),]$game_name
+p = ggplot()+
+  geom_bar(data=qdataframe,
+           aes(x=game_name, y=log(human_normed_level_efficiency,10), fill='steelblue3'), stat='identity', position='dodge')+
+  scale_x_discrete(limits=ordered_names)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Level efficiency")+xlab('Game name')+coord_flip()
+p
+
+ordered_names = s[order(log(s$human_normed_level_percentage)),]$game_name
+p = ggplot()+
+  geom_bar(data=qdataframe,
+           aes(x=game_name, y=log(human_normed_level_percentage,10), fill='steelblue3'), stat='identity', position='dodge')+
+  scale_x_discrete(limits=ordered_names)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),legend.position='none')+ylab("Human-normed Level percentage")+xlab('Game name')+coord_flip()
+p
+
+
++ylim(-10,10)
+tickmarks = c(1e-7,1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+logtickmarks=(log(tickmarks))
+tickmarks = c('0 (fail)', 1e-6, 1e-5,1e-4,1e-3,1e-2,1e-1,1e0,1e1,1e2,1e3,1e4, 1e5)
+p=p+coord_flip()+scale_y_continuous(breaks=logtickmarks,labels=tickmarks)
+p = p + theme(axis.line=element_line())+theme(panel.background = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+p = p+scale_fill_manual(values=colors)
+p
+
+
+
 
 ## Plot subjective game ratings
 s = summarySE(ratings, measurevar="difficulty", groupvars=c("source_game_name","variant_number"), na.rm=TRUE)

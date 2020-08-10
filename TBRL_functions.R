@@ -15,6 +15,7 @@ library("RColorBrewer")
 library("stats")
 library(zoo)
 library("zoom")
+library(Bolstad)
 
 remove_string_from_name = function(name){
   strings_to_remove = c('gvgai_variant','expt_variant','variant_expt', 'variant','gvgai', 'expt')
@@ -87,7 +88,7 @@ make_human_normed_data = function(dataframe){
   
   outputdata = data.frame(game_name=as.character(), agent_type=as.character(), max_score=as.numeric(), 
                             max_steps=as.numeric(), planning_time=as.numeric(), max_levels_won=as.numeric(),
-                            level_num=as.numeric(), level_efficiency=as.numeric())
+                            level_num=as.numeric(), level_efficiency=as.numeric(), mean_planner_steps=as.numeric())
   
   for (j in 1:length(unique(dataframe$agent_type))){
     agent = unique(dataframe$agent_type)[j]
@@ -100,6 +101,7 @@ make_human_normed_data = function(dataframe){
         ## grab each subject's max_steps and max_wins.
         level_maxes = list()
         cumulative_step_maxes = list()
+        planner_step_maxes = list()
         idx=1
         for (k in 1:length(unique(s$subject_ID))){
           subject = unique(s$subject_ID)[k]
@@ -108,6 +110,7 @@ make_human_normed_data = function(dataframe){
             if(max(subjectdata$cumulative_steps)>0){
               level_maxes[[idx]] = max(subjectdata$cumulative_wins)
               cumulative_step_maxes[[idx]] = max(subjectdata$cumulative_steps)
+              planner_step_maxes[[idx]] = max(subjectdata$cumulative_planner_nodes)
               idx = idx+1            
             }
             
@@ -117,8 +120,10 @@ make_human_normed_data = function(dataframe){
         ## mean vector of win numbers
         mean_wins = mean(as.numeric(as.vector(level_maxes)))
         
-        ##mean of vector steps+to+win ratios
+        ##mean of vector steps_to_win ratios
         l_e = mean(as.numeric(as.vector(level_maxes))/as.numeric(as.vector(cumulative_step_maxes)))
+        
+        mean_planner_steps = mean(as.numeric(as.vector(planner_step_maxes)))
         
         ## the row we want
         r = subset(s, cumulative_steps==max(cumulative_steps))[1,]
@@ -126,7 +131,7 @@ make_human_normed_data = function(dataframe){
         new = data.frame(game_name=r$game_name, agent_type=r$agent_type, max_score=r$score, 
                          max_steps=r$cumulative_steps, mean_levels_won=mean_wins,
                          level_num=subset(games_to_levels, (game_name==r$game_name))$num_levels,
-                         level_efficiency=l_e)
+                         level_efficiency=l_e, mean_planner_steps=mean_planner_steps)
         outputdata = rbind(outputdata, new)
       }
     }
@@ -135,6 +140,7 @@ make_human_normed_data = function(dataframe){
   
   outputdata = mutate(outputdata, level_percentage = mean_levels_won/level_num)
   outputdata = mutate(outputdata, composite_ratio = level_percentage*level_efficiency)
+  outputdata = mutate(outputdata, planning_normed_composite_ratio = composite_ratio/mean_planner_steps)
   
   outputdata$human_normed_composite_ratio=NA
   ##norm by human level_efficiency
@@ -199,7 +205,10 @@ make_human_normed_data = function(dataframe){
 make_scatter_data = function(human_normed_data){
   output = data.frame(game_name=as.character(), empa_score=as.numeric(), model_score=as.numeric(), 
                       empa_steps=as.numeric(), model_steps=as.numeric(),
-                      empa_levels=as.numeric(), model_levels=as.numeric(), model_name=as.character())
+                      empa_levels=as.numeric(), model_levels=as.numeric(),
+                      empa_planning_steps=as.numeric(), model_planning_steps=as.numeric(),
+                      empa_planning_efficiency=as.numeric(), model_planning_efficiency=as.numeric(),
+                      model_name=as.character(), model_cluster=as.character())
   models = unique(human_normed_data$agent_type)
   for (game in unique(human_normed_data$game_name)){
     print(game)
@@ -207,6 +216,8 @@ make_scatter_data = function(human_normed_data){
     empa_score_on_game = filter(s, agent_type=='EMPA')$composite_ratio
     empa_steps_on_game = filter(s, agent_type=='EMPA')$max_steps
     empa_levels_on_game = filter(s, agent_type=='EMPA')$mean_levels_won
+    empa_planning_steps_on_game = filter(s, agent_type=='EMPA')$mean_planner_steps
+    empa_planning_efficiency_on_game = filter(s, agent_type=='EMPA')$planning_normed_composite_ratio
     
     for (model in models){
       model_row = filter(s, agent_type==model)
@@ -214,13 +225,35 @@ make_scatter_data = function(human_normed_data){
       model_score_on_game = model_row$composite_ratio
       model_steps_on_game = model_row$max_steps
       model_levels_on_game = model_row$mean_levels_won
+      model_planning_steps_on_game = model_row$mean_planner_steps
+      model_planning_efficiency_on_game = model_row$planning_normed_composite_ratio
+      model_cluster = model_row$model_cluster
       if (!(model%in%c('EMPA','human','DDQN 1k', 'DDQN 10k'))){
         row = data.frame(game_name=game, empa_score=empa_score_on_game, model_score=model_score_on_game,
                          empa_steps=empa_steps_on_game, model_steps=model_steps_on_game,
-                         empa_levels=empa_levels_on_game, model_levels=model_levels_on_game, model_name=model)
+                         empa_levels=empa_levels_on_game, model_levels=model_levels_on_game,
+                         empa_planning_steps=empa_planning_steps_on_game, model_planning_steps=model_planning_steps_on_game,
+                         empa_planning_efficiency = empa_planning_efficiency_on_game, model_planning_efficiency = model_planning_efficiency_on_game,
+                         model_name=model, model_cluster=model_cluster)
         output = rbind(output, row)
       }
     }}
+  }
+  output$model_name = ordered(output$model_name, levels=c("e-greedy 1k", "e-greedy 2k", 
+                                                          "e-greedy 1k DS", "e-greedy 2k DS",
+                                                          "no goal gradient", "no subgoals",
+                                                          "no subgoals + no gradient",
+                                                          "no IW", "no subgoals + no gradient + no IW",
+                                                          "DDQN 100k", "rainbow 150k", "random policy"))
+  output$model_cluster = ordered(output$model_cluster, levels = c('EMPA', 'Exploration ablations', 'Planner ablations', 'Deep RL'))
+  
+  for (i in 1:length(output$empa_score)){
+    if (output$empa_score[i]==0){
+      output$empa_score[i]=1e-9
+    }
+    if (output$model_score[i]==0){
+      output$model_score[i]=1e-9
+    }
   }
   return(output)
 }
@@ -404,7 +437,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
     
     data$score = as.numeric(as.character(data$sparse_score))
     data = select(data, -timestep, -level_max_score, -cumulative_max_score, -sparse_score, -level_accumulated_score, 
-                  -episode_end, -win, -planner_nodes, -planner_settings, -cumulative_planner_nodes, 
+                  -episode_end, -win, -planner_nodes, -planner_settings,# -cumulative_planner_nodes, 
                   -cumulative_timestep, condition, -exploration_burn_ins)
     if ('entropy'%in% names(data)){
       data = select(data, -entropy)
@@ -415,7 +448,7 @@ load_reward_data = function(data_to_load, dates_or_groups){
     if ('sparse_levels_won'%in%names(data)){
       data = select(data, -sparse_levels_won)
     }
-    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
+    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score', 'cumulative_planner_nodes')]
   }else if (data_to_load == 'DDQN'){
     dqndata = list()
     for (gamefile in list.files(ddqn_path)){
@@ -465,8 +498,9 @@ load_reward_data = function(data_to_load, dates_or_groups){
     }
     data = dqndata
     data$modelrun_ID = NA
+    data$cumulative_planner_nodes = NA
     data = select(data, -criteria, -level, -ep_reward)
-    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
+    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score', 'cumulative_planner_nodes')]
     
   }else if (data_to_load == 'rainbow'){
     rainbowdata = list()
@@ -509,13 +543,13 @@ load_reward_data = function(data_to_load, dates_or_groups){
           }
         }}
       d$level_number = d$level
-      
       rainbowdata = rbind(rainbowdata,d)
     }
     data = rainbowdata
     data$modelrun_ID = NA
+    data$cumulative_planner_nodes = NA
     data = select(data, -criteria, -level, -ep_reward)
-    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
+    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score', 'cumulative_planner_nodes')]
   }else if (data_to_load == 'random'){
     randomdata = list()
     for (gamefile in list.files(random_path)){
@@ -559,8 +593,9 @@ load_reward_data = function(data_to_load, dates_or_groups){
     }
     data = randomdata
     data$modelrun_ID = NA
+    data$cumulative_planner_nodes = NA
     data = select(data, -criteria, -level, -ep_reward)
-    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
+    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score', 'cumulative_planner_nodes')]
   }
   else if (data_to_load == 'human'){
     humandata = list()
@@ -582,8 +617,9 @@ load_reward_data = function(data_to_load, dates_or_groups){
     humandata$game_name = as.factor(humandata$game_name)
     # humandata$cumulative_steps = humandata$cumulative_frames ## if you want to look at game frames
     humandata = select(humandata, -levels_lost, -group, -gameNumber, -gameRound)
+    humandata$cumulative_planner_nodes = NA
     data = humandata
-    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score')]
+    data = data[c('game_name',  'agent_type', 'long_agent_type', 'subject_ID', 'modelrun_ID', 'level_number', 'cumulative_steps', 'cumulative_wins', 'score','cumulative_planner_nodes')]
   }
   
   data$game_name = as.factor(as.character(lapply(as.vector(data$game_name), remove_string_from_name)))
@@ -592,8 +628,8 @@ load_reward_data = function(data_to_load, dates_or_groups){
   return (data)
 }
 
-synthetic_games = c('antagonist', 'bees_and_birds', 'closing_gates', 'corridor', 'ee', 
-                    'helper', 'preconditions', 'push_boulders','relational', 'surprise')
+synthetic_games = c('antagonist', 'bees_and_birds', 'bees and birds', 'closing_gates', 'closing gates', 'corridor', 'ee', 
+                    'helper', 'preconditions', 'push_boulders','push boulders', 'relational', 'surprise')
 
 
 ##GVGAI-original, GVGAI-variant, synthetic-original, synthetic-variant
@@ -641,6 +677,31 @@ for (game in unique(human_normed_data$game_name)){
   row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
                    human_score = human_score, empa_score = empa_score)
   game_category_scatter = rbind(game_category_scatter, row)
+}
+
+## recalculate using kappas
+game_category_scatter2 = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
+                                   human_score = as.numeric(), empa_score = as.numeric())
+
+for (game in unique(kappadata$game_name)){
+  gvgai_or_synthetic = 'GVGAI'
+  for (synthetic_name in synthetic_games){
+    if (grepl(synthetic_name, game)){
+      gvgai_or_synthetic = 'Synthetic'
+    }
+  }
+  original_or_variant = 'original'
+  for (num in c('1', '2', '3', '4')){
+    if (grepl(num, game)){
+      original_or_variant = 'variant'
+    }
+  }
+  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+  human_score = mean(filter(kappadata, game_name==game, agent_type=='human')$kappa)
+  empa_score = mean(filter(kappadata, game_name==game, agent_type=='EMPA')$kappa)
+  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
+                   human_score = human_score, empa_score = empa_score)
+  game_category_scatter2 = rbind(game_category_scatter2, row)
 }
 
 
@@ -744,11 +805,10 @@ calculate_kappa = function(subject_data, step_minimum){
   game = subject_data$game_name[1]
   if (game %in% c('antagonist', 'antagonist_1', 'antagonist_2', 'bees_and_birds', 'bees_and_birds_1', 
                   'closing_gates', 'closing_gates_1', 'corridor', 'corridor_1', 
-                  'helper', 'helper_1', 'helper_2', 'preconditions', 'preconditions_1', 'preconditions_2',
-                  'push_boulders', 'push_boulders_1', 'push_boulders_2', 'relational', 'relational_1', 'relational_2',
-                  'surprise', 'surprise_1', 'surprise_2')){
+                  'helper', 'helper_1', 'helper_2',
+                  'push_boulders', 'push_boulders_1', 'push_boulders_2', 'relational', 'relational_1', 'relational_2')){
     level_max = 4
-  }else if (game %in% c('ee', 'ee_1', 'ee_2', 'ee_3')){
+  }else if (game %in% c('ee', 'ee_1', 'ee_2', 'ee_3', 'preconditions_1')){
     level_max = 6
   }else{
     level_max = 5
