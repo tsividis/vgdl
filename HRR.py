@@ -11,6 +11,7 @@ from IPython import embed
 import time
 from pprint import pprint
 import logging, sys
+import cPickle, cloudpickle
 
 # ### Helper functions
 
@@ -1570,7 +1571,7 @@ def gen_and_save_subject_unique_HRRs(subj_id):
     K = 10 
     N = 10
     E = 0.05
-    nsamples = 100
+    nsamples = 1
     normalize = True
 
     theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names = gen_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
@@ -1578,9 +1579,15 @@ def gen_and_save_subject_unique_HRRs(subj_id):
     # save unique HRRs and theory sequence
     #
     HRR_filename='mat/unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.mat' % (subj_id, K, N, E, nsamples, normalize)
+    theoriesDir = 'theories'
+    theories_filename='%s/unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (theoriesDir, subj_id, K, N, E, nsamples, normalize)
+
+    with open(theories_filename, 'wb') as f:
+        cloudpickle.dump(theories, f)
 
     d = {
         'theory_id_seq': theory_id_seq,
+        'unique_theories_filename': theories_filename,
         'gameStrings': gameStrings,
         'theory_HRRs': theory_HRRs,
         'sprite_HRRs': sprite_HRRs,

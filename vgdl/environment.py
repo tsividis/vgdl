@@ -156,7 +156,7 @@ class Environment:
 
         return
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False, movie_names = []):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False, movie_names = [], theory_playback=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -167,6 +167,7 @@ class Environment:
 
         self.make_movie = make_movie
         self.video_name = None
+        self.theory_playback = theory_playback
 
         if self.make_movie:
             if 'images' in os.listdir('.') and 'tmp' in os.listdir('images') and self.gameFilename in os.listdir('images/tmp'):
@@ -202,11 +203,19 @@ class Environment:
 
             if playback:
                 # fMRI playback from human play
-                (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList) = level_game
+                if theory_playback:
+                    # replaying theories and states/actions
+                    (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList, self.theory) = level_game
+                else:
+                    # replaying states/actions only
+                    (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList) = level_game
             else:
+                assert not theory_playback
+
                 (self.gameString, self.levelString) = level_game
                 self.playback_states = None # TODO momchil undo
                 self.playback_keystates = None # TODO momchil undo
+                self.theory = None
 
             print '---------- game'
             print self.gameString
@@ -338,6 +347,9 @@ class Environment:
         self.initializeEnvironment()
         self.agent.environment = self.environment
         self.agent.make_movie = self.make_movie
+        self.agent.theory = self.theory
+        self.agent.theory_playback = self.theory_playback
+        self.agent.theory_playback_index = 0
         
         print "Playing level {}".format(self.n_level + 1)
 

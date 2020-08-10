@@ -704,50 +704,62 @@ class Agent:
         self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
             not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
-        ## Ideally you'd update the model at every step, but it takes a lot of time
-        ## so: Update when a new event happens (in which case you definitely need to update it), or when your MAP object-type hypothesis has changed for some class (in which case you definitely need to update it), or if we don't have a super-large number of time-steps in our history, do it sometimes (with probability .2)
-        if (newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) or distributionsHaveChanged:
-            # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
-            # if self.display_text:
-            print "new event", newEffects, "distributions changed", distributionsHaveChanged
+        if self.theory_playback:
+            # replaying theories => no inference; load from file
 
-            if newEffects or distributionsHaveChanged:
-                theory_change_flag = True
-            
-            # t1 = time.time()
-            
-            sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
-            
-            # print "inference phase 1: {}".format(time.time()-t1)
-            # t1 = time.time()
-            
-            game_object = Game(spriteInductionResult=sample)
-            
-            terminationCondition = {'ended': False, 'win':False, 'time':self.environment.getTime()}
-            trace = (self.finalTimeStepList, terminationCondition) 
+            assert self.theory_playback_index == len(self.bookkeeping.regressors['plans'])
+            theory = self.theory[self.theory_playback_index] 
+            hypotheses = [theory]
+            self.theory_playback_index += 1
 
-            hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
-            verbose=False, existingTheories=hypotheses))
+            print 'wop wop'
+            embed()
 
-            if self.record_fMRIRegressors and self.environment.getTime() > 0: 
-                # don't log stuff from before any observations
-                # convention is: timestamp = stuff right after frame
+        else:
+            ## Ideally you'd update the model at every step, but it takes a lot of time
+            ## so: Update when a new event happens (in which case you definitely need to update it), or when your MAP object-type hypothesis has changed for some class (in which case you definitely need to update it), or if we don't have a super-large number of time-steps in our history, do it sometimes (with probability .2)
+            if (newEffects or (random.random()<.2 and len(self.finalTimeStepList)<300)) or distributionsHaveChanged:
+                # print "event", (not all([e in all_effects for e in effects])), "distributions changed", distributionsHaveChanged
+                # if self.display_text:
+                print "new event", newEffects, "distributions changed", distributionsHaveChanged
 
-                # calculate posterior of old hypotheses
-                # momchil: don't do; errors out for bait sometimes and screws up the whole thing, also doesn't really make sense
-                '''
-                P = getPosterior(self.hypotheses, self.finalTimeStepList)
-                if self.hypothesesPosterior: # posterior on prev timestep
-                    # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
-                    # (need to exclude latest timesteps when computing likelihood though)
-                    sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
-                    self.logfMRIRegressor('sampleKL', sampleKL)
+                if newEffects or distributionsHaveChanged:
+                    theory_change_flag = True
+                
+                # t1 = time.time()
+                
+                sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
+                
+                # print "inference phase 1: {}".format(time.time()-t1)
+                # t1 = time.time()
+                
+                game_object = Game(spriteInductionResult=sample)
+                
+                terminationCondition = {'ended': False, 'win':False, 'time':self.environment.getTime()}
+                trace = (self.finalTimeStepList, terminationCondition) 
+
+                hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
+                verbose=False, existingTheories=hypotheses))
+
+                if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+                    # don't log stuff from before any observations
+                    # convention is: timestamp = stuff right after frame
+
+                    # calculate posterior of old hypotheses
+                    # momchil: don't do; errors out for bait sometimes and screws up the whole thing, also doesn't really make sense
+                    '''
+                    P = getPosterior(self.hypotheses, self.finalTimeStepList)
+                    if self.hypothesesPosterior: # posterior on prev timestep
+                        # TODO momchil maybe augment old posterior with new hypotheses for better approximation of KL
+                        # (need to exclude latest timesteps when computing likelihood though)
+                        sampleKL = scipy.stats.entropy(P, self.hypothesesPosterior)
+                        self.logfMRIRegressor('sampleKL', sampleKL)
+                        pass
+
+                    # calculate posterior using new hypotheses for next timestep
+                    self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
+                    '''
                     pass
-
-                # calculate posterior using new hypotheses for next timestep
-                self.hypothesesPosterior = getPosterior(hypotheses, self.finalTimeStepList)
-                '''
-                pass
 
 
             # print "inference phase 2: {}".format(time.time()-t1)
@@ -862,52 +874,69 @@ class Agent:
         # t1 = time.time()
 
         if self.record_fMRIRegressors:
-            # we replay the human actions
-            # TODO make sure we won't need the action anywhere here, e.g. for inference and whatnot
+            # we replay the human actions, and plan only on avatar-object interactions
+            # in order to compute likelihood of human behavior
 
             if self.environment.getTime() <= 0:
+                # TODO make sure we won't need the action anywhere here, e.g. for inference and whatnot
                 self.action = None 
 
             else:
 
-                self.action = self.planAsNeeded(force_replan=True)
+                # see if avatar interacted with something 
+                acf = False
+                for eff in self.environment._game.effectListByClass:
+                    if 'avatar' == eff[1] or 'avatar' == eff[2]:
+                        acf = True
+                        break
 
-                p = self.p
-                leaves = p.winning_states + p.losing_states + p.QReward
+                if not acf:
+                    # no avatar collisions => no replanning
+                    plans = []
+                    self.action = None
 
-                plans = []
+                else:
+                    # compute planning tree
 
-                # for each leaf node = potential plan
-                #
-                for node in leaves:
+                    self.action = self.planAsNeeded(force_replan=True)
 
-                    plan = {
-                        'intrinsic_reward': node.intrinsic_reward,
-                        'actionSeq': node.actionSeq,
-                        'win': node.win,
-                        'terminal': node.terminal,
-                    }
+                    p = self.p
+                    leaves = p.winning_states + p.losing_states + p.QReward
 
-                    # go in reverse to get all interactions
-                    # note we skip the starting node
-                    effectListByClassSeq = []
-                    actionSeq = []
-                    while node.parent is not None:
-                        effectListByClassSeq.append(node.rle._game.effectListByClass)
-                        actionSeq.append(node.actionSeq[-1])
-                        node = node.parent
-                    effectListByClassSeq.reverse()
-                    actionSeq.reverse()
+                    plans = []
 
-                    assert len(actionSeq) == len(plan['actionSeq'])
-                    assert all([actionSeq[i] == plan['actionSeq'][i] for i in range(len(actionSeq))])
+                    # for each leaf node = potential plan
+                    #
+                    for node in leaves:
 
-                    # important: note that those are the events AFTER taking the corresponding action
-                    # see BFS() in WBP.py: first we append action, then we compute new effectsa
-                    # also, first node has no corresponding action
-                    plan['effectListByClassSeq'] = effectListByClassSeq
-                    plans.append(plan)
+                        plan = {
+                            'intrinsic_reward': node.intrinsic_reward,
+                            'actionSeq': node.actionSeq,
+                            'win': node.win,
+                            'terminal': node.terminal,
+                        }
 
+                        # go in reverse to get all interactions
+                        # note we skip the starting node
+                        effectListByClassSeq = []
+                        actionSeq = []
+                        while node.parent is not None:
+                            effectListByClassSeq.append(node.rle._game.effectListByClass)
+                            actionSeq.append(node.actionSeq[-1])
+                            node = node.parent
+                        effectListByClassSeq.reverse()
+                        actionSeq.reverse()
+
+                        assert len(actionSeq) == len(plan['actionSeq'])
+                        assert all([actionSeq[i] == plan['actionSeq'][i] for i in range(len(actionSeq))])
+
+                        # important: note that those are the events AFTER taking the corresponding action
+                        # see BFS() in WBP.py: first we append action, then we compute new effectsa
+                        # also, first node has no corresponding action
+                        plan['effectListByClassSeq'] = effectListByClassSeq
+                        plans.append(plan)
+
+                # log plans for all states (even when no avatar interactions occurred)
                 self.logfMRIRegressor('plans', plans) 
                     
         else:
