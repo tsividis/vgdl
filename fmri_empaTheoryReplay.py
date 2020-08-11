@@ -225,7 +225,7 @@ if __name__ == '__main__':
             plan = plans[i]
 
             # prepare plans for insert into Mongo
-            plan['plan'] = curriculumRegressors[i]['plans']
+            plan['plans'] = curriculumRegressors[i]['plans']
             plan['dt'] = datetime.now()
             plan['ts'] = time.time()
 
@@ -237,7 +237,8 @@ if __name__ == '__main__':
                 os.makedirs(theoriesDir)
     
             # serialize plans
-            filename = os.path.join(theoriesDir, 'plans_' + str(plan['play_key']) + '_'+ theory_seq_filename + '_' + str(plan['ts'])) + '.pickle'
+            tmp = os.path.split(theory_seq_filename)[-1]
+            filename = os.path.join(theoriesDir, 'plans_' + str(plan['play_key']) + '_'+ tmp + '_' + str(plan['ts'])) + '.pickle'
             with open(filename, 'wb') as f:
                 cloudpickle.dump(plan['plans'], f)
             plan['plans_filename'] = filename

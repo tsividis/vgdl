@@ -434,7 +434,8 @@ class Agent:
                 'newEffects_flag': [],
                 'newTimeStep': [], # basically finalTimeStepList
                 'newTimeStep_flag': [], # basically finalTimeStepList
-                'plans': []
+                'plans': [],
+                'avatar_collisions': []
             }
 
 
@@ -884,13 +885,14 @@ class Agent:
             else:
 
                 # see if avatar interacted with something 
-                acf = False
+                ac = []
                 for eff in self.environment._game.effectListByClass:
-                    if 'avatar' == eff[1] or 'avatar' == eff[2]:
-                        acf = True
-                        break
+                    if 'avatar' == eff[1]:
+                        ac.append(eff[2])
+                    elif 'avatar' == eff[2]:
+                        ac.append(eff[1])
 
-                if not acf:
+                if not len(ac):
                     # no avatar collisions => no replanning
                     plans = []
                     self.action = None
@@ -938,6 +940,7 @@ class Agent:
 
                 # log plans for all states (even when no avatar interactions occurred)
                 self.logfMRIRegressor('plans', plans) 
+                self.logfMRIRegressor('avatar_collisions', ac) 
                     
         else:
             self.action = self.planAsNeeded()
