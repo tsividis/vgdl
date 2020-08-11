@@ -705,7 +705,7 @@ class Agent:
         self.fakeInteractionRules = [r for r in self.fakeInteractionRules if
             not any([self.matchEventToRuleByIDAndSpriteName(e, r) for e in event['effectList']])]
 
-        if self.theory_playback:
+        if self.theory_playback and self.environment.getTime() > 0:
             # replaying theories => no inference; load from file
 
             assert self.theory_playback_index == len(self.bookkeeping.regressors['plans'])
@@ -713,7 +713,9 @@ class Agent:
             hypotheses = [theory]
             self.theory_playback_index += 1
 
-            print 'wop wop'
+            theory_change_flag = self.theory_playback_index > 0 and self.theory[self.theory_playback_index - 1] != theory
+
+            print 'tnhaeu'
             embed()
 
         else:
@@ -769,19 +771,19 @@ class Agent:
             if hypotheses[0].__dict__ != self.hypotheses[0].__dict__:
                 theory_change_flag = True
 
-        # print "phase 7: {}".format(time.time()-inf_t1)
-        # t1 = time.time()
+            # print "phase 7: {}".format(time.time()-inf_t1)
+            # t1 = time.time()
 
-        ## We also need to update termination conditions even when we haven't seen a new event,
-        ## because the state is informative about termination conditions.
-        oldTerminationSet = set(hypotheses[0].terminationSet)
-        if event['effectList']:
-            [t.updateTerminations(event=event) for t in hypotheses]
+            ## We also need to update termination conditions even when we haven't seen a new event,
+            ## because the state is informative about termination conditions.
+            oldTerminationSet = set(hypotheses[0].terminationSet)
+            if event['effectList']:
+                [t.updateTerminations(event=event) for t in hypotheses]
 
-        if set(hypotheses[0].terminationSet) != oldTerminationSet:
-            if self.display_text:
-                print "terminationSet Change"
-            theory_change_flag = True
+            if set(hypotheses[0].terminationSet) != oldTerminationSet:
+                if self.display_text:
+                    print "terminationSet Change"
+                theory_change_flag = True
 
         if theory_change_flag and not distributionsHaveChanged and self.display_text:
             print "changed theory:"
@@ -892,13 +894,16 @@ class Agent:
                     elif 'avatar' == eff[2]:
                         ac.append(eff[1])
 
-                if not len(ac):
-                    # no avatar collisions => no replanning
+                if not len(ac) and self.environment.getTime() != 5: # plan at step 5
+                    # no avatar collisions => no replanning 
+                    # also, not in the very beginning
                     plans = []
                     self.action = None
 
                 else:
                     # compute planning tree
+
+                    print '-------------------------------------- planning at step ', self.environment.getTime()
 
                     self.action = self.planAsNeeded(force_replan=True)
 

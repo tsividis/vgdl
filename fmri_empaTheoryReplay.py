@@ -20,14 +20,17 @@ from vgdl.EMPA import Agent
 import cPickle, cloudpickle
 from vgdl.environment import Environment
 from vgdl.hyperparameters import hyperparameter_sets
+from bson.objectid import ObjectId
 
 import pygame
 
-# USAGE: python fmri_empaLik.py [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*] [game_name*] [theory_seq_filename]
-#        python fmri_empaLik.py [subj_id] [game_name] [theory_seq_filename]
-#        python fmri_empaLik.py [subj_id] [run_id] [game_name] [theory_seq_filename]
+# USAGE: python fmri_empaTheoryReplay.py [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*] [game_name*] [theory_seq_filename]
+#        python fmri_empaTheoryReplay.py [subj_id] [game_name] [theory_seq_filename]
+#        python fmri_empaTheoryReplay.py [subj_id] [run_id] [game_name] [theory_seq_filename]
 # * - optional
 # copied from fmri_empaPlay.py
+#
+# EXAMPLE: rm savedCurricula/*; python fmri_empaTheoryReplay.py 1 1 0 0 0 vgfmri3_chase ../../matlab/VGDL_fMRI/mat/decode_gp_CV_subj\=1_test.mat
 
 
 def randomString(stringLength=10):
@@ -105,14 +108,34 @@ if __name__ == '__main__':
     # get theory sequence as filename (for all plays for subject)
     import h5py
     with h5py.File(theory_seq_filename, 'r') as f: # make sure to save with -v7.3, otherwise doesn't work...
-        unique_theories_filename = f['unique_theories_filename'] # passed from HRR.py, gen_and_save_subject_unique_HRRs
-        theory_id_seq = f['theory_id_seq_best'] 
-        gameStrings = f['gameStrings'] # passed from HRR.py, gen_and_save_subject_unique_HRRs
-        play_key_seq = f['play_key'] # passed from HRR.py, gen_and_save_subject_unique_HRRs
+        # passed from HRR.py, gen_and_save_subject_unique_HRRs
+        unique_theories_filename = f['unique_theories_filename']
 
-        with open(unique_theories_filename, 'r') as f:
-            theories = cloudpickle.load(f)
-    
+        theory_id_seq = []
+        for i in range(len(f['theory_id_seq_best'])):
+            theory_id_seq.append(f['theory_id_seq_best'][i][0])
+
+        gameStrings = f['gameStrings']
+
+        '''
+        play_key_seq = []
+        for i in range(len(f['play_key_seq'][0])):
+            print i
+            play_key_seq.append(ObjectId(u''.join(unichr(c) for c in f[f['play_key_seq'][0][i]])))
+        '''
+        # TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+        #actually load 
+        #fuck NCF
+        with open('fuck_ncf.pickle', 'r') as ff:
+            play_key_seq = cloudpickle.load(ff)
+
+        s = u''.join(unichr(c) for c in unique_theories_filename)
+        with open(s, 'r') as ff:
+            theories = cloudpickle.load(ff)
+
+
+
+
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
         game = subj['games'][play['game_id']]
@@ -129,33 +152,34 @@ if __name__ == '__main__':
         count = db.plans.count(q)
         print q, count
         # this is so that we can resume from the last savedCurriculum e.g. after a crash
-        if count > 0:
-            print '........................................... found plans; skipping................................'
-            continue
+        #if count > 0:
+        #    print '........................................... found plans; skipping................................'
+        #    continue
 
         # get regressors, for sanity checks 
-        regs = db.regressors.find(q).sort('ts', -1)
+        regs = db.regressors.find({'play_key': play['_id']}).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
 
         # get theory sequence for given play
+
         theory = []
-        for i in range(len()):
+        assert len(play_key_seq) == len(theory_id_seq)
+        for i in range(len(theories)):
             if play_key_seq[i] == play['_id']:
                 theory.append(theories[theory_id_seq[i]])
-        assert len(theory) == len(reg['regressors']['theory_change_flag']
+        assert len(theory) == len(reg['regressors']['theory_change_flag'])
 
-
-	# get states
+        # get states
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
-
+        
         zkeystates = play['zkeystates']
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
-
+        
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
             all_plans[game['name']] = [] 
@@ -245,7 +269,7 @@ if __name__ == '__main__':
             plan['plans'] = [] # remove from plans object
 
             # insert plans into mongo
-            db.plans.insert_one(plan)
+            #db.plans.insert_one(plan)
 
     if didSomething:
         print 'Completed!'

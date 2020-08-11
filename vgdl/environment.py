@@ -209,6 +209,7 @@ class Environment:
                 else:
                     # replaying states/actions only
                     (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList) = level_game
+                    self.theory = None
             else:
                 assert not theory_playback
 
