@@ -4,7 +4,7 @@
 #SBATCH --array=0-449
 #SBATCH --output=slurm_logs/main/array_%A_%a.out
 #SBATCH --time=1440
-#SBATCH --partition=normal
+#SBATCH --partition=use-everything
 #SBTACH --cpus-per-task=2
 #SBATCH --mem=64G
 #SBATCH --requeue
