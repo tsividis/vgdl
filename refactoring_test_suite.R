@@ -683,9 +683,30 @@ p
 p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
                                                   'no IW', 'no subgoals + no gradient + no IW')),
            aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
-  scale_color_manual(values=colors)+
-  xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)
+  scale_color_manual(values=colors)+geom_abline(slope=1, intercept=0)
+  xlim(-8,-1)+ylim(-8,-1)
 p
+
+# same, but new lesions
+p = ggplot(filter(refactor_scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                  'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+geom_abline(slope=1, intercept=0)+
+  geom_text(aes(label=ifelse(empa_score/model_score<.01,as.character(game_name),'')),hjust=0,vjust=0)+
+  geom_text(aes(label=ifelse((empa_score/model_score>10)&(model_score>.0000001),as.character(game_name),'')),hjust=0,vjust=0)+
+  xlim(-9,1)+ylim(-9,1)
+p
+
+# same, but new lesions, broken down by model
+p = ggplot(filter(refactor_scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+                                                           'no IW', 'no subgoals + no gradient + no IW')),
+           aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  scale_color_manual(values=colors)+geom_abline(slope=1, intercept=0)+
+  geom_text(aes(label=ifelse(empa_score/model_score<.01,as.character(game_name),'')),hjust=0,vjust=0)+
+  geom_text(aes(label=ifelse((empa_score/model_score>10)&(model_score>.0000001),as.character(game_name),'')),hjust=0,vjust=0)+
+  facet_wrap(~model_name)+xlim(-9,1)+ylim(-9,1)
+p
+
 
 p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
                                                   'no IW', 'no subgoals + no gradient + no IW')),
@@ -709,11 +730,13 @@ p = ggplot(filter(scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goa
 p
 
 ## planning efficiency
-p = ggplot(filter(new_scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
+#new_scatter_data
+p = ggplot(filter(refactor_scatter_data, model_name %in% c('EMPA', 'no subgoals', 'no goal gradient', 'no subgoals + no gradient',
                                                   'no IW', 'no subgoals + no gradient + no IW')),
            aes(x=log(empa_planning_efficiency,10), y=log(model_planning_efficiency,10), color=model_name))+geom_point()+
   # scale_color_manual(values=colors)+
   geom_abline(slope=1, intercept=0)+facet_wrap(~model_name)+
+  geom_text(aes(label=ifelse(empa_planning_efficiency/model_planning_efficiency<.001,as.character(game_name),'')),hjust=0,vjust=0) #+
   xlim(-12,-1)+ylim(-12,-1)
 p
 
