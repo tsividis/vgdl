@@ -3,8 +3,10 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 
 ## gameplay data
 EMPA_dates = list('mar28')
-refactor_dates = list('refactor_feb13')
-refactor_lesion_dates = list('refactor_aug4', 'refactor_aug10')
+# refactor_dates = list('refactor_feb13')
+# refactor_lesion_dates = list('refactor_aug4', 'refactor_aug10')
+refactor_dates = list('ablations_aug31')
+refactor_lesion_dates = list('ablations_aug17', 'ablations_aug23', 'ablations_aug31')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load helper functions
@@ -15,7 +17,7 @@ humandata = load_reward_data('human', NA)
 EMPAdata = load_reward_data('EMPA', EMPA_dates)
 lesions = load_reward_data('EMPA', c('apr4', 'jun3', 'jun22', 'jun23'))
 rEMPAdata = load_reward_data('EMPA', refactor_dates)
-rEMPAdata$agent_type = as.factor('EMPA_refactor')
+# rEMPAdata$agent_type = as.factor('EMPA_refactor')
 refactor_lesions = load_reward_data('EMPA', refactor_lesion_dates)
 
 ##Load subjective game ratings
@@ -337,9 +339,13 @@ humankappadata = calculate_kappas(filter(alldata, agent_type=='human'),step_mini
 EMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA'),step_minimum=NA)
 rEMPAkappadata = calculate_kappas(filter(alldata, agent_type=='EMPA_refactor'),step_minimum=NA)
 
+humankappadata = calculate_kappas(filter(refactor_alldata, agent_type=='human'),step_minimum=NA)
+EMPAkappadata = calculate_kappas(filter(refactor_alldata, agent_type=='EMPA'),step_minimum=NA)
+ablationkappadata = calculate_kappas(filter(refactor_alldata, !(agent_type%in%c('human', 'EMPA'))))
+
 #DDQNkappadata = calculate_kappas(filter(alldata, agent_type=='DDQN 100k'),step_minimum=NA)
 
-kappadata = rbind(humankappadata, EMPAkappadata, rEMPAkappadata)
+kappadata = rbind(humankappadata, EMPAkappadata, ablationkappadata)
 
 max_DDQNkappadata = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), kappa=as.numeric())
 non_max_DDQNkappadata = data.frame(game_name=as.character(), agent_type=as.character(), subject_ID=as.character(), kappa=as.numeric())
