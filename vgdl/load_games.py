@@ -18,6 +18,9 @@ parser.add_argument('--bfs_range', type=int, default=0)
 parser.add_argument('--boltz_init', type=float, default=8.0)
 parser.add_argument('--boltz_exploit', type=int, default=500)
 parser.add_argument('--boltz_min', type=float, default=0.1)
+parser.add_argument('--epsilon_init', type=float, default=1.0)
+parser.add_argument('--epsilon_exploit', type=int, default=500)
+parser.add_argument('--epsilon_min', type=int, default=0.1)
 parser.add_argument('--empa_plan_nodes', type=int, default=50)
 parser.add_argument('--win_bonus', type=int, default=1000000)
 parser.add_argument('--hyperparameter_index', type=str, default='short-term', help='hyperparameter_index')
@@ -40,6 +43,9 @@ boltz_hyps = {
     'boltz_init': args.boltz_init,
     'boltz_min': args.boltz_min,
     'boltz_exploit': args.boltz_exploit,
+    'epsilon_init' : args.epsilon_init,
+    'epsilon_min' : args.epsilon_min,
+    'epsilon_exploit' : args.epsilon_exploit,
     'empa_plan_nodes': args.empa_plan_nodes,
     'win_bonus': args.win_bonus
 }
