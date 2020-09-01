@@ -76,11 +76,12 @@ refactor_alldata = rbind(humandata, rEMPAdata, refactor_lesions)
 refactor_human_normed_data = make_human_normed_data(refactor_alldata)
 
 alldata = rbind(humandata, EMPAdata, lesions)
-refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata, refactor_lesions))
 human_normed_data = make_human_normed_data(alldata)
-human_normed_data = make_human_normed_data(alldata1)
+refactor_human_normed = make_human_normed_data(rbind(humandata, rEMPAdata, refactor_lesions))
+deeprl_human_normed = make_human_normed_data(filter(alldata, agent_type%in%c('human', 'DDQN 100k', 'rainbow 150k')))
+refactor_human_normed = rbind(refactor_human_normed, filter(deeprl_human_normed, agent_type!='human'))
 
-
+ee_human_normed = make_human_normed_data(rbind(filter(humandata, game_name=='ee_1'), filter(refactor_lesions, agent_type=='no goal gradient', game_name=='ee_1')))
 
 colors = c('steelblue1', 'purple1', 'palegreen3')
 names(colors) = c('EMPA', 'EMPA_refactor', 'human')
@@ -633,13 +634,14 @@ saved_human_normed_data = human_normed_data
 human_normed_data = refactor_human_normed_data
 ## Reviewer 3's suggested figure 4
 scatter_data = make_scatter_data(filter(human_normed_data, agent_type!='random policy'))
-refactor_scatter_data = make_scatter_data(filter(refactor_human_normed_data, agent_type!='random policy'))
+
+refactor_scatter_data = make_scatter_data(refactor_human_normed)
 
 ## give absolute failures a number so that they can get plotted...
 ## then make scatter data and confirm that EMPA failure is in these plots.
 tickmarks = c(-9,-8,-7,-6,-5,-4,-3,-2,-1)
 
-p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
   # xlim(-9,-1)+ylim(-9,-1)+
   geom_abline(slope=1, intercept=0)+theme_bw()+
@@ -647,7 +649,7 @@ p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=
 p
 
 # same, but broken down by model cluster
-p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
   xlim(-9,-1)+ylim(-9,-1)+geom_abline(slope=1, intercept=0)+theme_bw()+
   scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)+

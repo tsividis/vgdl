@@ -65,13 +65,16 @@ def play_trainset(hyperparameter_sets, hyperparameter_index, args=None):
 
     game_levels = [l for l in os.listdir(gameFileString) if l[0:len(game_name+'_lvl')] == game_name+'_lvl']
 
+
     if "{}.txt".format(game_name) in os.listdir(gameFileString):
         gvgname = "./{}/{}".format(gameFileString, game_name)
         game_description = read_gvgai_game('{}.txt'.format(gvgname))
         game_descriptions = [game_description]*len(game_levels)
     else:
-        game_descriptions = [read_gvgai_game("./{}/{}".format(gameFileString, d)) for d in sorted([e for e in os.listdir(gameFileString) if (game_name in e and 'desc' in e)])]
-    # embed()
+        sorted_names = sorted([d for d in os.listdir(
+            gameFileString) if (game_name in d and 'desc' in d)])
+        game_descriptions = [read_gvgai_game(
+            "./{}/{}".format(gameFileString, d)) for d in sorted_names]
 
     level_game_pairs = []
     gvgname = "./{}/{}".format(gameFileString, game_name)

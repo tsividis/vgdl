@@ -284,7 +284,15 @@ class Environment:
 
             action, quitting = self.agent.step(None)
 
-
+            if quitting:
+                ended, win = self.environment._isDone()
+                if win: ## if agent wins on previous step, don't take another step in the environment.
+                    if self.produce_printout:
+                        print ""
+                        print actionDict[action]
+                        print self.environment.show(color='blue')
+                    break
+                # embed()
             ### TODO: environment step should overload rle and produce a blue printout.
             self.environment.step(action)
             if self.produce_printout:

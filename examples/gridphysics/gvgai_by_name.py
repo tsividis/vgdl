@@ -1,4 +1,5 @@
 import argparse, os
+from IPython import embed
 
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
@@ -21,8 +22,9 @@ def create_level_game_pairs(game_name):
         game_description = read_gvgai_game('{}.txt'.format(gvgname))
         game_descriptions = [game_description]*len(game_levels)
     else:
-        game_descriptions = [read_gvgai_game("./{}/{}".format(gameFileString, d)) for d in os.listdir(gameFileString) if (game_name in d and 'desc' in d)]
-    # embed()
+        sorted_names = sorted([d for d in os.listdir(gameFileString) if (game_name in d and 'desc' in d)])
+        game_descriptions = [read_gvgai_game(
+            "./{}/{}".format(gameFileString, d)) for d in sorted_names]
 
     level_game_pairs = []
     gvgname = "./{}/{}".format(gameFileString, game_name)
@@ -59,6 +61,8 @@ if __name__ == "__main__":
     #     game_n = 0
 
     level_game_pairs = create_level_game_pairs(game_name)
+
+
     if args.level is not None:
         level_game_pairs = [level_game_pairs[int(args.level)]]
     # if len(sys.argv)>=3:

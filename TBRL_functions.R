@@ -72,13 +72,15 @@ make_human_normed_data = function(dataframe){
     game_name=levels(dataframe$game_name)[i]
     num_levels = 5
     if ( (grepl('expt', game_name)) | (grepl('bees', game_name) )| (grepl('corridor',game_name))| 
-         (grepl('closing',game_name)) ){
+         (grepl('closing',game_name)) | (grepl('antagonist',game_name)) | (grepl('helper',game_name)) |
+         (grepl('relational',game_name))| (grepl('push_boulders',game_name))){
       num_levels=4
     }
-    if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) ){
+    if ((grepl('expt_ee', game_name)) | (grepl('expt_preconditions_1', game_name)) | (grepl('preconditions_1',game_name)) |
+        (grepl('ee',game_name))){
       num_levels=6
     }
-    if (game_name %in% c('expt_preconditions', 'expt_preconditions_2')){
+    if ((game_name %in% c('expt_preconditions', 'preconditions', 'expt_preconditions_2')) | (grepl('preconditions_2',game_name))){
       num_levels=5
     }
     new = data.frame(game_name=game_name, num_levels=num_levels)
