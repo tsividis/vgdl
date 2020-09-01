@@ -171,6 +171,7 @@ class Environment:
         # set boltzmann hyperparameters
         self.agent.boltz_hyps = boltz_hyps
         self.agent.boltz_temp = boltz_hyps['boltz_init']
+        self.agent.epsilon = boltz_hyps['epsilon_init']
         self.agent.steps_so_far = 0
 
         fullStateEpisodes, episodeCompactStates = {}, {}

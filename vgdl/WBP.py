@@ -636,63 +636,69 @@ class WBP():
 		return root_node
 
 
-	def plan(self, till_bfs, till_empa, on_high_r, boltz_temp, root_node = None):
-		"""
-		plan a single step using value estimation
-		"""
-		print "in plan"
+	def plan(self, till_bfs, boltz_temp, root_node = None, best_action=True):
+            """
+            plan a single step using value estimation
+            """
+            print "in plan"
 
-		if root_node is None:
-			root_node = Node(self.rle, self, [], None)
-		root_node.rle = self.rle
-		current_actions = self.trim_futile_actions(root_node)
+            if root_node is None:
+                    root_node = Node(self.rle, self, [], None)
+            root_node.rle = self.rle
+            current_actions = self.trim_futile_actions(root_node)
 
-		# bfs from root
-		if till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children]):
-			root_node = self.TDBFS(root_node, depth=self.bfs_depth)
-			print("AFTER TDBFS", [child.value for child in root_node.children])
-			till_bfs = self.bfs_range
+            if best_action == True:
+                children = []
+                if root_node.children == []:
+                    for a_i,a in enumerate(current_actions):
+                        child = Node(self.rle, self, root_node.actionSeq+[a], root_node)
+                        root_node.children.append(child)
 
-		# empa plan from root if not on best reward path
-		if on_high_r == False or till_empa <= 0:
-                        root_node, till_empa = self.EMPAPlanner(root_node, n_depth=self.empa_plan_nodes)
-			# root_node, till_empa = self.EMPAPlanner(root_node, n_depth=self.max_nodes)
-			print("AFTER EMPAPlanner", [child.value for child in root_node.children])
-			print
+                child_rewards = [c.intrinsic_reward for c in root_node.children]
+                a_i = np.argmax(child_rewards)
+                action = current_actions[a_i]
+                print("BEST ACTION: {}, CHILD REWARDS: {}".format(action, child_rewards))
+                child = root_node.children[a_i]
 
-		# select action 
-		child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
-		child_values, child_rewards = zip(*child_values_rewards)
+            # bfs from root
+            elif best_action==False and (till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children])):
+                root_node = self.TDBFS(root_node, depth=self.bfs_depth)
+                print("AFTER TDBFS", [child.value for child in root_node.children])
+                till_bfs = self.bfs_range
 
-		# a_i = np.argmax(child_values)
-		a_i = self.get_boltzmann_action(child_values, boltz_temp)
-		action = current_actions[a_i]
-		child = root_node.children[a_i]
+                # select action 
+                child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
+                child_values, child_rewards = zip(*child_values_rewards)
 
-		print("REWARDS", child_rewards)
-		print("VALUES", child_values)
+                # a_i = np.argmax(child_values)
+                a_i = self.get_boltzmann_action(child_values, boltz_temp)
+                action = current_actions[a_i]
+                child = root_node.children[a_i]
 
-		# book keeping for agent class
-		self.solution = [action]
-		self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
-		self.quitting = False
+                print("REWARDS", child_rewards)
+                print("VALUES", child_values)
 
-		# clear child's details that are not required
-		child.parent = None
-		child.actionSeq = []
-		child.value = None
-		child.win = False
-		child.terminal = False
+            # book keeping for agent class
+            self.solution = [action]
+            self.printable_predicted_states, self.predicted_states = self.extract_predicted_states_from_tree(child)
+            self.quitting = False
 
-		# decrement till_bfs and update on_high_r
-		till_bfs = till_bfs - 1
-		till_empa = till_empa - 1
-		if a_i == np.argmax(child_rewards):
-			on_high_r = True
-		else:
-			on_high_r = False
+            # clear child's details that are not required
+            child.parent = None
+            child.actionSeq = []
+            child.value = None
+            child.win = False
+            child.terminal = False
 
-		return child, till_bfs, till_empa, on_high_r
+            # decrement till_bfs and update on_high_r
+            till_bfs = till_bfs - 1
+            # till_empa = till_empa - 1
+            # if a_i == np.argmax(child_rewards):
+                    # on_high_r = True
+            # else:
+                    # on_high_r = False
+
+            return child, till_bfs
 
 
 class Node():

@@ -449,14 +449,31 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            self.root_node, self.till_bfs, self.till_empa, self.on_high_r = p.plan(self.till_bfs, self.till_empa, self.on_high_r, self.boltz_temp, self.root_node)
-            
-            # take boltzmann action
-            if self.steps_so_far < self.boltz_hyps['boltz_exploit']:
-                print()
-                self.boltz_temp = self.boltz_hyps['boltz_init'] - self.steps_so_far *((self.boltz_hyps['boltz_init']-self.boltz_hyps['boltz_min'])/self.boltz_hyps['boltz_exploit'])
+            # take epsilon greedy action
+            if np.random.uniform() > self.epsilon:
+                # best action
+                best_action = True
             else:
-                self.boltz_temp = self.boltz_hyps['boltz_min']
+                # boltzmann action
+                best_action = False
+
+            print('BEST ACTION: {}, EPSILON: {}'.format(best_action, self.epsilon)) 
+            # import ipdb; ipdb.set_trace()
+            self.root_node, self.till_bfs = p.plan(
+                    self.till_bfs,
+                    self.boltz_temp,
+                    self.root_node,
+                    best_action
+            )
+            
+            # decay boltzmann temperature
+            if best_action == False:
+                self.boltz_temp -= (self.boltz_hyps['boltz_init']-self.boltz_hyps['boltz_min'])/self.boltz_hyps['boltz_exploit']
+                self.boltz_temp = max(self.boltz_hyps['boltz_min'], self.boltz_temp)
+            
+            # decay epsilon
+            self.epsilon -= (self.boltz_hyps['epsilon_init']-self.boltz_hyps['epsilon_min'])/self.boltz_hyps['epsilon_exploit']
+            self.epsilon = max(self.boltz_hyps['epsilon_min'], self.epsilon)
 
             self.steps_so_far += 1
             # p.BFS()
