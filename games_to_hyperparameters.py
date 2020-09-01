@@ -31,4 +31,4 @@
 # 'zelda','variant_zelda_1', 'variant_zelda_2', 'variant_zelda_3'] #90 total
 
 
-game_names = ['variant_expt_ee_1']
+game_names = ['variant_expt_relational_1']

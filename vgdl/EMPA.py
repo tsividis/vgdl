@@ -15,7 +15,7 @@ from util import *
 from ontology import *
 from hyperparameters import hyperparameter_sets, metacontroller_sets
 from agent_utils import translate_events, findNearestSprite, getSpritesByColor
-from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict, NoveltyRule
 from metacontroller import Metacontroller
 from dynamic_type_inference import dynamicTypeDistribution_VGDL1
 import WBP
@@ -52,7 +52,6 @@ class Agent:
         self.return_subgoal_plans = self.hyperparameters['return_subgoal_plans'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k # Only using IW 1
         self.extra_atom_allowed = extra_atom_allowed # Adding optional extra atom to IW
-        self.epsilon_greedy = False # Ablation
         self.absolute_max_nodes = 32000 #To save on compute, don't deal with games that require more than this
         self.shortHorizonNodes = 500 ## This isn't used, but code needs further cleanup to actually delete it.
         self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
@@ -80,6 +79,14 @@ class Agent:
         self.interaction_lesion_replacement = self.metacontroller_params['interaction_lesion_replacement'] if 'interaction_lesion_replacement' in self.metacontroller_params else []
         self.disallowed_events = self.interaction_lesion
 
+        ## Exploration ablations
+        self.final_epsilon = self.metacontroller_params['final_epsilon'] if 'final_epsilon' in self.metacontroller_params else 0.
+        self.epsilon_greedy_variant = self.metacontroller_params[
+            'epsilon_greedy_variant'] if 'epsilon_greedy_variant' in self.metacontroller_params else None
+        # only used for e-greedy lesion
+        self.switch_to_exploit_step = self.metacontroller_params['switch_to_exploit_step'] if 'switch_to_exploit_step' in self.metacontroller_params else 0
+        self.epsilon_greedy = True if self.final_epsilon != 0 else False  # Ablation
+
         ## Planner ignores objects thought to move randomly and objects that don't persist (e.g. swords that flash
         ## in and out of existence) when applying IW criteria
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
@@ -104,9 +111,12 @@ class Agent:
         #         self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
         #         self.objectsWhoseLocationWeIgnoreString)
         
-        self.param_ID = "eG={}_PL={}".format(self.epsilon_greedy, self.planner_lesion)
+        # self.param_ID = "eG={}_PL={}".format(self.epsilon_greedy, self.planner_lesion)
+
+        #N=Normal, DF=delayed game forfeit after failure to plan in a level (by changing self.absolute_max_nodes)
+        self.param_ID = "eG={}_PL={}_egv={}".format(self.epsilon_greedy, self.planner_lesion, self.epsilon_greedy_variant)
+
         self.param_ID = self.param_ID+'_batchID='+str(0)
-    
     
         self.stall_mode = False
         self.regrounding = 1
@@ -249,7 +259,7 @@ class Agent:
 
         return Vrle
 
-    def VrleInitPhase(self):
+    def VrleInitPhase(self, skipTermins=False):
         ## Initialize multiple VRLEs, each corresponding to one hypothesis in self.hypotheses. In practice we only use one.
         VRLEs = []
 
@@ -266,8 +276,8 @@ class Agent:
             tempHypothesis.interactionSet.extend(tmpFakeInteractionRules)
             # print "vrleInitPhase3: {}".format(time.time()-t1)
             # t1 = time.time()
-
-            tempHypothesis.updateTerminations()
+            if not skipTermins:
+                tempHypothesis.updateTerminations()
             # print "vrleInitPhase4: {}".format(time.time()-t1)
             # t1 = time.time()
 
@@ -431,7 +441,7 @@ class Agent:
         # t1 = time.time()
 
         if self.re_plan==True:
-            self.theoryRLEs = self.VrleInitPhase()
+            self.theoryRLEs = self.VrleInitPhase(skipTermins=self.epsilon_greedy)
 
             self.metacontroller.setMaxNodes()
             self.steps_in_solution = 0
@@ -732,10 +742,37 @@ class Agent:
 
         self.re_plan = theory_change_flag
 
+
         # print "phase 11: {}".format(time.time()-t1)
         # t1 = time.time()
+        drew_random_action = False
+        if self.epsilon_greedy:
+            steps_so_far = self.memory.totalGameSteps+self.environment.getTime()
+            if steps_so_far < self.switch_to_exploit_step:
+                epsilon = 1. - steps_so_far * ((1-self.final_epsilon) / self.switch_to_exploit_step)
+            else:
+                epsilon = self.final_epsilon
+            
+            print "steps so far {}. epsilon {}".format(steps_so_far, epsilon)
+            if random.random()<epsilon:
+                print "taking a random step"
+                drew_random_action = True
 
-        self.action = self.planAsNeeded()
+            ## Remove curiosity
+            print "Removing curiosity"
+            def is_not_novelty_rule(rule):
+                return not isinstance(rule, NoveltyRule)
+            self.hypotheses[0].terminationSet = filter(
+                is_not_novelty_rule, self.hypotheses[0].terminationSet)
+
+        if drew_random_action:
+            # get actions from avatar-type definition
+            actions = self.environment._game.getAvatars()[0].declare_possible_actions().values()
+            actions.append(0)
+            self.action = random.choice(actions)
+            # self.action = ## expose legal actions and pick one here.
+        else:
+            self.action = self.planAsNeeded()
 
         # print "phase 12: {}".format(time.time()-t1)
         # t1 = time.time()
