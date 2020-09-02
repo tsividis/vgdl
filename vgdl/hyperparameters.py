@@ -128,8 +128,24 @@ metacontroller_sets = [
     'longHorizonObservationLimit': 2,
     'final_epsilon': .1,
     'switch_to_exploit_step': 1000,
-    'epsilon_greedy_variant': 'N' # run N and DS
+    'epsilon_greedy_variant': 'N' # run N and AF
     },
+    {'idx': 1,
+     'random_steps_on_plan_failure': 5,
+     'longHorizonNodes': 1000,
+     'longhorizonAnnealing': 2.,
+     'shortHorizonRandomChoice': [200, 500, 1000],
+     'stall_mode_max_nodes': 50,
+     'extra_atom': True,
+     'noNewObjectNum': 55,
+     'objectNumberTrackingLimit': 1000,
+     'objectLocationTrackingLimit': 1000,
+     'safeDistance': 3,
+     'longHorizonObservationLimit': 2,
+     'final_epsilon': .1,
+     'switch_to_exploit_step': 1000,
+     'epsilon_greedy_variant': 'AF'  # run N and AF
+     },
     ### Hypothesis-space lesions ###
     {'idx': 2,
     'random_steps_on_plan_failure': 5,

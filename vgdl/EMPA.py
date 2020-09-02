@@ -54,7 +54,7 @@ class Agent:
         self.extra_atom_allowed = extra_atom_allowed # Adding optional extra atom to IW
         self.absolute_max_nodes = 32000 #To save on compute, don't deal with games that require more than this
         self.shortHorizonNodes = 500 ## This isn't used, but code needs further cleanup to actually delete it.
-        self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
+        self.shortHorizonAnnealing = 1.0 ##  This isn't used, but code needs further cleanup to actually delete it.
         self.forfeit_level = False
         self.agentState = defaultdict(lambda: 0)
 
@@ -82,7 +82,7 @@ class Agent:
         ## Exploration ablations
         self.final_epsilon = self.metacontroller_params['final_epsilon'] if 'final_epsilon' in self.metacontroller_params else 0.
         self.epsilon_greedy_variant = self.metacontroller_params[
-            'epsilon_greedy_variant'] if 'epsilon_greedy_variant' in self.metacontroller_params else None
+            'epsilon_greedy_variant'] if 'epsilon_greedy_variant' in self.metacontroller_params else 'None'
         # only used for e-greedy lesion
         self.switch_to_exploit_step = self.metacontroller_params['switch_to_exploit_step'] if 'switch_to_exploit_step' in self.metacontroller_params else 0
         self.epsilon_greedy = True if self.final_epsilon != 0 else False  # Ablation
@@ -501,6 +501,20 @@ class Agent:
             self.quitting = True
             action = 0
 
+            ## Search more deeply next time.
+            curr_max_nodes = self.max_nodes
+            self.max_nodes *= self.max_nodes_annealing
+            self.stored_max_nodes = self.max_nodes
+            print "annealing up from {} to {} nodes".format(curr_max_nodes, self.max_nodes)
+            if self.max_nodes > self.absolute_max_nodes:
+                print "Exceeded absolute_max_nodes of {}. Annealing back down to {} and quitting the level".format(self.absolute_max_nodes, self.max_nodes/self.max_nodes_annealing)
+                self.max_nodes /= self.max_nodes_annealing
+                ## for the accelerated level forfeit variant, don't anneal longhorizon max nodes back to their original number. This means they'll plan with a higher budget but also that the agent will forfeit the level if it fails to find a plan with this budget again.
+                if self.epsilon_greedy and 'AF' in self.epsilon_greedy_variant:
+                    print "In accelerated-forfeit mode. Will plan in next episode without resetting planning budget."
+                    self.starting_max_nodes = self.max_nodes
+                self.stored_max_nodes = self.max_nodes
+
         if not ended:
             if not self.quitting:
                 action = self.solution[self.steps_in_solution]
@@ -692,8 +706,7 @@ class Agent:
         # print "phase 7: {}".format(time.time()-inf_t1)
         # t1 = time.time()
 
-        ## We also need to update termination conditions even when we haven't seen a new event,
-        ## because the state is informative about termination conditions.
+        ## We also need to update termination conditions even when we haven't seen a new event, because the state is informative about termination conditions.
         oldTerminationSet = set(hypotheses[0].terminationSet)
         if event['effectList']:
             [t.updateTerminations(event=event) for t in hypotheses]
@@ -742,9 +755,10 @@ class Agent:
 
         self.re_plan = theory_change_flag
 
-
         # print "phase 11: {}".format(time.time()-t1)
         # t1 = time.time()
+        
+        ## Exploration ablation
         drew_random_action = False
         if self.epsilon_greedy:
             steps_so_far = self.memory.totalGameSteps+self.environment.getTime()
