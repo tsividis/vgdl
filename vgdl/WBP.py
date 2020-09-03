@@ -627,12 +627,13 @@ class WBP():
 		Run BFS and perform TD update from each end point
 		"""
 		print "in TDBFS"
-
+                start = time.time()
 		last_nodes = self.BFS(root_node, depth=depth)
 		for n in last_nodes:
 			child, a_i = self.TD(n, till=root_node)
 			root_node.children[a_i] = child
 
+                print('TIME TAKEN FOR TDBFS OF DEPTH {}: {}'.format(depth, time.time() - start))
 		return root_node
 
 
