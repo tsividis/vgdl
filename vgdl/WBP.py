@@ -645,6 +645,8 @@ class WBP():
 
             if root_node is None:
                     root_node = Node(self.rle, self, [], None)
+
+            # resetting the RLE because if agent regrounds new state is not the same as planned
             root_node.rle = self.rle
             current_actions = self.trim_futile_actions(root_node)
 
@@ -662,10 +664,11 @@ class WBP():
                 child = root_node.children[a_i]
 
             # bfs from root
-            elif best_action==False and (till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children])):
-                root_node = self.TDBFS(root_node, depth=self.bfs_depth)
-                print("AFTER TDBFS", [child.value for child in root_node.children])
-                till_bfs = self.bfs_range
+            elif best_action==False:
+                if (till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children])):
+                    root_node = self.TDBFS(root_node, depth=self.bfs_depth)
+                    print("AFTER TDBFS", [child.value for child in root_node.children])
+                    till_bfs = self.bfs_range
 
                 # select action 
                 child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
