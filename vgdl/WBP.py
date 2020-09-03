@@ -499,7 +499,6 @@ class WBP():
 		"""
 		Fixed depth Breadth First Search
 		"""
-		print "in BFS"
 
 		nqueue = [start_node]
 		last_nodes = []
@@ -598,7 +597,6 @@ class WBP():
 			npcv[i_inf] = -np.inf
 		else:
 			npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + np.finfo(float).eps)
-			print("BOLTZ: ",softmax(npcv, boltz_temp), boltz_temp)
 		npcv = npcv.astype(float)
 		return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
 
@@ -626,14 +624,17 @@ class WBP():
 		"""
 		Run BFS and perform TD update from each end point
 		"""
-		print "in TDBFS"
+                print('RUNNING TDBFS')
                 start = time.time()
 		last_nodes = self.BFS(root_node, depth=depth)
+                bfs_time = time.time()
 		for n in last_nodes:
 			child, a_i = self.TD(n, till=root_node)
 			root_node.children[a_i] = child
+                td_time = time.time()
 
-                print('TIME TAKEN FOR TDBFS OF DEPTH {}: {}'.format(depth, time.time() - start))
+                print('TIME FOR TDBFS: {} (BFS: {}, TD: {})'.format(td_time-start, bfs_time-start, td_time-bfs_time))
+            
 		return root_node
 
 
@@ -641,7 +642,6 @@ class WBP():
             """
             plan a single step using value estimation
             """
-            print "in plan"
 
             if root_node is None:
                     root_node = Node(self.rle, self, [], None)
@@ -660,14 +660,12 @@ class WBP():
                 child_rewards = [c.intrinsic_reward for c in root_node.children]
                 a_i = np.argmax(child_rewards)
                 action = current_actions[a_i]
-                print("BEST ACTION: {}, CHILD REWARDS: {}".format(action, child_rewards))
                 child = root_node.children[a_i]
 
             # bfs from root
             elif best_action==False:
                 if (till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children])):
                     root_node = self.TDBFS(root_node, depth=self.bfs_depth)
-                    print("AFTER TDBFS", [child.value for child in root_node.children])
                     till_bfs = self.bfs_range
 
                 # select action 
@@ -679,8 +677,6 @@ class WBP():
                 action = current_actions[a_i]
                 child = root_node.children[a_i]
 
-                print("REWARDS", child_rewards)
-                print("VALUES", child_values)
 
             # book keeping for agent class
             self.solution = [action]
@@ -696,6 +692,10 @@ class WBP():
 
             # decrement till_bfs and update on_high_r
             till_bfs = till_bfs - 1
+
+            # logging
+            print('ACTION: {}, TILL_BFS: {}'.format(action, till_bfs))
+
             # till_empa = till_empa - 1
             # if a_i == np.argmax(child_rewards):
                     # on_high_r = True

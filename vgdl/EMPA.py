@@ -497,17 +497,20 @@ class Agent:
             if np.random.uniform() > self.epsilon:
                 # best action
                 best_action = True
+                print("TAKING BEST ACTION")
             else:
                 # boltzmann action
                 best_action = False
+                print("TAKING BOLTZMANN ACTION")
 
-            print('BEST ACTION: {}, EPSILON: {}'.format(best_action, self.epsilon)) 
+            start = time.time()
             self.root_node, self.till_bfs = p.plan(
                     self.till_bfs,
                     self.boltz_temp,
                     self.root_node,
                     best_action
             )
+            planning_time = time.time() - start
             
             # decay boltzmann temperature
             if best_action == False:
@@ -517,6 +520,10 @@ class Agent:
             # decay epsilon
             self.epsilon -= (self.boltz_hyps['epsilon_init']-self.boltz_hyps['epsilon_min'])/self.boltz_hyps['epsilon_exploit']
             self.epsilon = max(self.boltz_hyps['epsilon_min'], self.epsilon)
+
+            print("PLANNING TIME: {}, BOLTZ_TEMP: {}, EPSILON: {}".format(
+                    planning_time, self.boltz_temp, self.epsilon
+                ))
 
             self.steps_so_far += 1
             # p.BFS()
