@@ -20,6 +20,22 @@ rEMPAdata = load_reward_data('EMPA', refactor_dates)
 # rEMPAdata$agent_type = as.factor('EMPA_refactor')
 refactor_lesions = load_reward_data('EMPA', refactor_lesion_dates)
 
+## bugfixed EMPA for all games (for 5 or so games the runs are 6 hrs before finishing)
+## plus ee_1 and relational_1 for ablations after a game rule fix
+combo = load_reward_data('EMPA', c('refactor_sep4'))
+ablation_fixed_games = filter(combo, agent_type!='EMPA')
+fixed_games = rbind(filter(humandata, game_name %in% c('ee_1', 'relational_1')), ablation_fixed_games, filter(combo, agent_type=='EMPA' & game_name %in% c('ee_1', 'relational_1')))
+human_normed_fixed_games = make_human_normed_data(fixed_games)
+refactor_human_normed = filter(refactor_human_normed, !(game_name %in% c('ee_1', 'relational_1')))
+refactor_human_normed = rbind(refactor_human_normed, human_normed_fixed_games)
+refactor_scatter_data = make_scatter_data(refactor_human_normed)
+
+rerefactor = filter(combo, agent_type=='EMPA')
+rerefactor$agent_type='EMPA2'
+comparison = make_human_normed_data(rbind(rEMPAdata, humandata, rerefactor))
+scatter_comparison = make_scatter_data(comparison)
+
+
 ##Load subjective game ratings
 ratings = load_ratings()
 
@@ -639,7 +655,7 @@ refactor_scatter_data = make_scatter_data(refactor_human_normed)
 
 ## give absolute failures a number so that they can get plotted...
 ## then make scatter data and confirm that EMPA failure is in these plots.
-tickmarks = c(-9,-8,-7,-6,-5,-4,-3,-2,-1)
+tickmarks = c(-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1)
 
 p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
@@ -651,9 +667,17 @@ p
 # same, but broken down by model cluster
 p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
-  xlim(-9,-1)+ylim(-9,-1)+geom_abline(slope=1, intercept=0)+theme_bw()+
-  scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)+
-facet_wrap(~model_cluster)
+  # xlim(-9,-1)+ylim(-9,-1)+
+  geom_abline(slope=1, intercept=0)+
+  scale_y_continuous(limits = c(-9,-1), breaks=tickmarks,labels=tickmarks)+scale_x_continuous(limits=c(-9,-1),breaks=tickmarks,labels=tickmarks)+
+facet_wrap(~model_cluster)+theme_bw()
+p
+
+## checking that newest refactoring is not worse than previous one
+p = ggplot(scatter_comparison, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+  geom_abline(slope=1, intercept=0)+
+  scale_y_continuous(limits = c(-11,0), breaks=tickmarks,labels=tickmarks)+scale_x_continuous(limits=c(-11,0),breaks=tickmarks,labels=tickmarks)+
+  theme_bw()
 p
 
 # same, but broken down by model
