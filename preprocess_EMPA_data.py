@@ -52,7 +52,7 @@ def process_model_run(data, modelrun_ID):
 	## also don't process a particular run multiple times. you need a way of storing the processed model_IDs so that you don't keep appending to a long csv.
 	modelrun_ID = modelrun_ID[modelrun_ID.find('201'):modelrun_ID.find('201')+11]
 	subject_ID = generate_subject_ID()
-
+	print modelrun_ID, subject_ID
 	data_path = '{}/{}/{}'.format(relative_path, date, 'csv_data')
 	if 'csv_data' not in os.listdir('{}/{}'.format(relative_path, date)):
 	# data_path = '{}/{}'.format(date, 'csv_data')
@@ -201,14 +201,17 @@ def process_model_run(data, modelrun_ID):
 	h.close()
 
 def make_csvs(path, heatmap, game_names = [], game=None):
+	# embed()
 	for folder in open_folder(path):
+		## bugfix 9/14/20 -- running the 'all' folder results in 2x the subject IDs
+		if 'all' in folder:
+			continue
 		for gamefolder in open_folder("{}/{}".format(path,folder)):
 			if game==None or game==gamefolder:
-				print gamefolder
+				print gamefolder, folder
 				for modelrun_ID in open_folder("{}/{}/{}".format(path, folder, gamefolder)):
 					print modelrun_ID
 					modelrun_path = "{}/{}/{}/{}".format(path, folder, gamefolder, modelrun_ID)
-					# embed()
 					with open(modelrun_path, 'r') as o:
 						try:
 							data = cPickle.load(o)
@@ -223,6 +226,7 @@ def make_csvs(path, heatmap, game_names = [], game=None):
 								print "error..."
 								embed()
 						o.close()
+			print "done with game {}".format(gamefolder)
 
 def generate_subject_ID(length=7):
 	## Generate random subject IDs so that you can refer to them in R analyses

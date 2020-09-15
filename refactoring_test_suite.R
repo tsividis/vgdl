@@ -5,8 +5,8 @@ setwd('/Users/pedrotsividis/Projects/atari/vgdl')
 EMPA_dates = list('mar28')
 # refactor_dates = list('refactor_feb13')
 # refactor_lesion_dates = list('refactor_aug4', 'refactor_aug10')
-refactor_dates = list('ablations_aug31')
-refactor_lesion_dates = list('ablations_aug17', 'ablations_aug23', 'ablations_aug31')
+# refactor_dates = list('ablations_aug31')
+# refactor_lesion_dates = list('ablations_aug17', 'ablations_aug23', 'ablations_aug31')
 humandatapaths = list.files(paste(getwd(),'/data_files/humandata', sep=''))
 
 ## Load helper functions
@@ -18,22 +18,36 @@ EMPAdata = load_reward_data('EMPA', EMPA_dates)
 lesions = load_reward_data('EMPA', c('apr4', 'jun3', 'jun22', 'jun23'))
 rEMPAdata = load_reward_data('EMPA', refactor_dates)
 # rEMPAdata$agent_type = as.factor('EMPA_refactor')
-refactor_lesions = load_reward_data('EMPA', refactor_lesion_dates)
+refactor_lesions1 = load_reward_data('EMPA', c('ablations_aug17'))
+refactor_lesions2 = load_reward_data('EMPA', c('ablations_aug23'))
+refactor_lesions3 = rEMPAdata
+
 
 ## bugfixed EMPA for all games (for 5 or so games the runs are 6 hrs before finishing)
 ## plus ee_1 and relational_1 for ablations after a game rule fix
-combo = load_reward_data('EMPA', c('refactor_sep4'))
+combo = load_reward_data('EMPA', c('refactor_sep14'))
 ablation_fixed_games = filter(combo, agent_type!='EMPA')
-fixed_games = rbind(filter(humandata, game_name %in% c('ee_1', 'relational_1')), ablation_fixed_games, filter(combo, agent_type=='EMPA' & game_name %in% c('ee_1', 'relational_1')))
-human_normed_fixed_games = make_human_normed_data(fixed_games)
+# fixed_games = rbind(filter(humandata, game_name %in% c('ee_1', 'relational_1')), ablation_fixed_games, filter(combo, agent_type=='EMPA' & game_name %in% c('ee_1', 'relational_1')))
+
+for (agent in unique(data$agent_type)){
+  print(agent)
+  agent_data = filter(data, agent_type==agent)
+  for (game in unique(agent_data$game_name)){
+    game_data = filter(agent_data, game_name==game)
+    print(c(game,length(unique(game_data$subject_ID))))
+  }
+}
+
+human_normed_fixed_games = make_human_normed_data(rbind(combo, humandata))
+
 refactor_human_normed = filter(refactor_human_normed, !(game_name %in% c('ee_1', 'relational_1')))
 refactor_human_normed = rbind(refactor_human_normed, human_normed_fixed_games)
-refactor_scatter_data = make_scatter_data(refactor_human_normed)
+refactor_scatter_data = make_scatter_data(human_normed_fixed_games)
 
 rerefactor = filter(combo, agent_type=='EMPA')
 rerefactor$agent_type='EMPA2'
 comparison = make_human_normed_data(rbind(rEMPAdata, humandata, rerefactor))
-scatter_comparison = make_scatter_data(comparison)
+scatter_comparison = make_scatter_data_tmp(comparison)
 
 
 ##Load subjective game ratings
@@ -102,21 +116,21 @@ ee_human_normed = make_human_normed_data(rbind(filter(humandata, game_name=='ee_
 colors = c('steelblue1', 'purple1', 'palegreen3')
 names(colors) = c('EMPA', 'EMPA_refactor', 'human')
 
-# colors = c('steelblue1', 'slategray2',
-#            'slateblue1', 'slateblue4', 'mediumpurple1', 'purple1',
-#            'firebrick2', 'magenta3',
-#            'palegreen3',
-#            'gray50', 'gray65', 'gray80',
-#            'orange3', 'tomato3', 'red3', 'red3',
-#            'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkslategray2', 'darkolivegreen3')
-# names(colors)=c('EMPA', 'EMPA fail',
-#                 'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
-#                 'random policy', 'random',
-#                 'human',
-#                 'DDQN 100k', 'DDQN 10k', 'DDQN 1k',
-#                 'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow',
-#                 'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW', 'no subgoals + no gradient + no IW')
-# 
+colors = c('steelblue1', 'slategray2',
+           'slateblue1', 'slateblue4', 'mediumpurple1', 'purple1',
+           'firebrick2', 'magenta3',
+           'palegreen3',
+           'gray50', 'gray65', 'gray80',
+           'orange3', 'tomato3', 'red3', 'red3',
+           'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkslategray2', 'darkolivegreen3')
+names(colors)=c('EMPA', 'EMPA fail',
+                'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
+                'random policy', 'random',
+                'human',
+                'DDQN 100k', 'DDQN 10k', 'DDQN 1k',
+                'rainbow 250k', 'rainbow 150k', 'rainbow 50k', 'rainbow',
+                'no goal gradient', 'no subgoals', 'no subgoals + no gradient', 'no IW', 'no subgoals + no gradient + no IW')
+
 
 ### Learning curve plots
 ## plotting all agents/models
@@ -657,7 +671,7 @@ refactor_scatter_data = make_scatter_data(refactor_human_normed)
 ## then make scatter data and confirm that EMPA failure is in these plots.
 tickmarks = c(-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1)
 
-p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(refactor_scatter_data, aes(x=log(model_score,10), y=log(empa_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
   # xlim(-9,-1)+ylim(-9,-1)+
   geom_abline(slope=1, intercept=0)+theme_bw()+
@@ -665,7 +679,7 @@ p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10
 p
 
 # same, but broken down by model cluster
-p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(refactor_scatter_data, aes(x=log(model_score,10), y=log(empa_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
   # xlim(-9,-1)+ylim(-9,-1)+
   geom_abline(slope=1, intercept=0)+
@@ -674,14 +688,14 @@ facet_wrap(~model_cluster)+theme_bw()
 p
 
 ## checking that newest refactoring is not worse than previous one
-p = ggplot(scatter_comparison, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(scatter_comparison, aes(x=log(model_score,10), y=log(empa_score,10), color=model_name))+geom_point()+
   geom_abline(slope=1, intercept=0)+
   scale_y_continuous(limits = c(-11,0), breaks=tickmarks,labels=tickmarks)+scale_x_continuous(limits=c(-11,0),breaks=tickmarks,labels=tickmarks)+
   theme_bw()
 p
 
 # same, but broken down by model
-p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(scatter_data, aes(x=log(model_score,10), y=log(empa_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
   xlim(-9,-1)+ylim(-9,-1)+geom_abline(slope=1, intercept=0)+theme_bw()+
   scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)+
@@ -689,14 +703,15 @@ p = ggplot(scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=
 p
 
 ## same, but for refactor
-p = ggplot(refactor_scatter_data, aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(refactor_scatter_data, aes(x=log(model_score,10), y=log(empa_score,10), color=model_name))+geom_point()+
+  geom_jitter()+
   scale_color_manual(values=colors)+
   # xlim(-9,-1)+ylim(-9,-1)+
   geom_abline(slope=1, intercept=0)+theme_bw()+
   scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)
 p
 
-p = ggplot(filter(scatter_data, empa_score<.000001, model_score<.000001), aes(x=log(empa_score,10), y=log(model_score,10), color=model_name))+geom_point()+
+p = ggplot(filter(scatter_data, empa_score<.000001, model_score<.000001), aes(x=log(model_score,10), y=log(empa_score,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
   xlim(-8,-1)+ylim(-8,-1)+geom_abline(slope=1, intercept=0)+theme_bw()+
   scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)+
@@ -814,6 +829,84 @@ for (i in 1:length(scatter_data$empa_score)){
     print(scatter_data$model_score[i] / scatter_data$empa_score[i])
   }
 }
+
+
+synthetic_games = c('antagonist', 'bees_and_birds', 'bees and birds', 'closing_gates', 'closing gates', 'corridor', 'ee', 
+                    'helper', 'preconditions', 'push_boulders','push boulders', 'relational', 'surprise')
+
+
+##GVGAI-original, GVGAI-variant, synthetic-original, synthetic-variant
+game_category_df = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), human_normed_composite_ratio = as.numeric())
+
+for (game in unique(human_normed_data$game_name)){
+  gvgai_or_synthetic = 'GVGAI'
+  for (synthetic_name in synthetic_games){
+    if (grepl(synthetic_name, game)){
+      gvgai_or_synthetic = 'Synthetic'
+    }
+  }
+  original_or_variant = 'original'
+  for (num in c('1', '2', '3', '4')){
+    if (grepl(num, game)){
+      original_or_variant = 'variant'
+    }
+  }
+  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+  hncr = filter(human_normed_data, game_name==game, agent_type=='EMPA')$human_normed_composite_ratio
+  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, human_normed_composite_ratio=hncr)
+  game_category_df = rbind(game_category_df, row)
+}
+
+
+game_category_scatter = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
+                                   human_score = as.numeric(), empa_score = as.numeric())
+
+for (game in unique(human_normed_data$game_name)){
+  gvgai_or_synthetic = 'GVGAI'
+  for (synthetic_name in synthetic_games){
+    if (grepl(synthetic_name, game)){
+      gvgai_or_synthetic = 'Synthetic'
+    }
+  }
+  original_or_variant = 'original'
+  for (num in c('1', '2', '3', '4')){
+    if (grepl(num, game)){
+      original_or_variant = 'variant'
+    }
+  }
+  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+  human_score = filter(human_normed_data, game_name==game, agent_type=='human')$composite_ratio
+  empa_score = filter(human_normed_data, game_name==game, agent_type=='EMPA')$composite_ratio
+  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
+                   human_score = human_score, empa_score = empa_score)
+  game_category_scatter = rbind(game_category_scatter, row)
+}
+
+## recalculate using kappas
+game_category_scatter2 = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
+                                    human_score = as.numeric(), empa_score = as.numeric())
+
+for (game in unique(kappadata$game_name)){
+  gvgai_or_synthetic = 'GVGAI'
+  for (synthetic_name in synthetic_games){
+    if (grepl(synthetic_name, game)){
+      gvgai_or_synthetic = 'Synthetic'
+    }
+  }
+  original_or_variant = 'original'
+  for (num in c('1', '2', '3', '4')){
+    if (grepl(num, game)){
+      original_or_variant = 'variant'
+    }
+  }
+  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+  human_score = mean(filter(kappadata, game_name==game, agent_type=='human')$kappa)
+  empa_score = mean(filter(kappadata, game_name==game, agent_type=='EMPA')$kappa)
+  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
+                   human_score = human_score, empa_score = empa_score)
+  game_category_scatter2 = rbind(game_category_scatter2, row)
+}
+
 
 
 ## Supplement: showing that EMPA performance on GVGAI games is not significantly different from synthetic ones.

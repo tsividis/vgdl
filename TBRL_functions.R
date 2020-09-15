@@ -317,18 +317,23 @@ load_reward_data = function(data_to_load, dates_or_groups){
     planner_AGH1a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_AGH1b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH1_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_AGH1c='eG=False_PL=AGH1'
+    planner_AGH1d = 'eG=False_PL=AGH1_egv=None'
     planner_AGH2a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH2_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_AGH2b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH2_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_AGH2c='eG=False_PL=AGH2'
+    planner_AGH2d='eG=False_PL=AGH2_egv=None'
     planner_AGH3a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH3_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_AGH3b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=AGH3_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_AGH3c='eG=False_PL=AGH3'
+    planner_AGH3d='eG=False_PL=AGH3_egv=None'
     planner_IWa='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_IWb='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_IWc='eG=False_PL=IW'
+    planner_IWd='eG=False_PL=IW_egv=None'
     planner_IW_AGH3a='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW+AGH3_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_IW_AGH3b='IW=1_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=False_sTE=1000_hyb=False_PL=IW-AGH3_DTL=[]_IL=[]_ILR=[]_nnon=55_ontl=1000_oltl=1000_sD=3_lhol=2_igl=FR'
     planner_IW_AGH3c='eG=False_PL=IW-AGH3'
+    planner_IW_AGH3d='eG=False_PL=IW-AGH3_egv=None'
     
     IW2_e_greedy_1='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_sTE=2000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
     IW2_e_greedy_2='IW=2_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
@@ -414,6 +419,22 @@ load_reward_data = function(data_to_load, dates_or_groups){
     }
     if (planner_IW_AGH3c %in% unique(data$long_agent_type)){
       data[data$long_agent_type==planner_IW_AGH3c,]$agent_type = 'no subgoals + no gradient + no IW'
+    }
+    ## even newer
+    if (planner_AGH1d %in% unique(data$long_agent_type)){
+      data[data$long_agent_type==planner_AGH1d,]$agent_type = 'no goal gradient'
+    }
+    if (planner_AGH2d %in% unique(data$long_agent_type)){
+      data[data$long_agent_type==planner_AGH2d,]$agent_type = 'no subgoals'
+    }
+    if (planner_AGH3d %in% unique(data$long_agent_type)){
+      data[data$long_agent_type==planner_AGH3d,]$agent_type = 'no subgoals + no gradient'
+    }
+    if (planner_IWd %in% unique(data$long_agent_type)){
+      data[data$long_agent_type==planner_IWd,]$agent_type = 'no IW'
+    }
+    if (planner_IW_AGH3d %in% unique(data$long_agent_type)){
+      data[data$long_agent_type==planner_IW_AGH3d,]$agent_type = 'no subgoals + no gradient + no IW'
     }
     ## old IW models we don't want
     if (IW2_e_greedy_1 %in% unique(data$long_agent_type)){
@@ -630,81 +651,6 @@ load_reward_data = function(data_to_load, dates_or_groups){
   return (data)
 }
 
-synthetic_games = c('antagonist', 'bees_and_birds', 'bees and birds', 'closing_gates', 'closing gates', 'corridor', 'ee', 
-                    'helper', 'preconditions', 'push_boulders','push boulders', 'relational', 'surprise')
-
-
-##GVGAI-original, GVGAI-variant, synthetic-original, synthetic-variant
-game_category_df = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), human_normed_composite_ratio = as.numeric())
-
-for (game in unique(human_normed_data$game_name)){
-  gvgai_or_synthetic = 'GVGAI'
-  for (synthetic_name in synthetic_games){
-    if (grepl(synthetic_name, game)){
-      gvgai_or_synthetic = 'Synthetic'
-    }
-  }
-  original_or_variant = 'original'
-  for (num in c('1', '2', '3', '4')){
-    if (grepl(num, game)){
-      original_or_variant = 'variant'
-    }
-  }
-  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
-  hncr = filter(human_normed_data, game_name==game, agent_type=='EMPA')$human_normed_composite_ratio
-  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, human_normed_composite_ratio=hncr)
-  game_category_df = rbind(game_category_df, row)
-}
-
-
-game_category_scatter = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
-                              human_score = as.numeric(), empa_score = as.numeric())
-
-for (game in unique(human_normed_data$game_name)){
-  gvgai_or_synthetic = 'GVGAI'
-  for (synthetic_name in synthetic_games){
-    if (grepl(synthetic_name, game)){
-      gvgai_or_synthetic = 'Synthetic'
-    }
-  }
-  original_or_variant = 'original'
-  for (num in c('1', '2', '3', '4')){
-    if (grepl(num, game)){
-      original_or_variant = 'variant'
-    }
-  }
-  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
-  human_score = filter(human_normed_data, game_name==game, agent_type=='human')$composite_ratio
-  empa_score = filter(human_normed_data, game_name==game, agent_type=='EMPA')$composite_ratio
-  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
-                   human_score = human_score, empa_score = empa_score)
-  game_category_scatter = rbind(game_category_scatter, row)
-}
-
-## recalculate using kappas
-game_category_scatter2 = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
-                                   human_score = as.numeric(), empa_score = as.numeric())
-
-for (game in unique(kappadata$game_name)){
-  gvgai_or_synthetic = 'GVGAI'
-  for (synthetic_name in synthetic_games){
-    if (grepl(synthetic_name, game)){
-      gvgai_or_synthetic = 'Synthetic'
-    }
-  }
-  original_or_variant = 'original'
-  for (num in c('1', '2', '3', '4')){
-    if (grepl(num, game)){
-      original_or_variant = 'variant'
-    }
-  }
-  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
-  human_score = mean(filter(kappadata, game_name==game, agent_type=='human')$kappa)
-  empa_score = mean(filter(kappadata, game_name==game, agent_type=='EMPA')$kappa)
-  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
-                   human_score = human_score, empa_score = empa_score)
-  game_category_scatter2 = rbind(game_category_scatter2, row)
-}
 
 
 load_ratings = function(){
