@@ -13,16 +13,16 @@ from hyperparameters import *
 parser = argparse.ArgumentParser(description='Process game number.')
 parser.add_argument('--game_number', type=int, default=0, help='game number')
 parser.add_argument('--game_name', type=str, default=str(0), help='game name')
-parser.add_argument('--bfs_depth', type=int, default=3)
-parser.add_argument('--bfs_range', type=int, default=0)
-parser.add_argument('--boltz_init', type=float, default=8.0)
-parser.add_argument('--boltz_exploit', type=int, default=500)
-parser.add_argument('--boltz_min', type=float, default=0.1)
-parser.add_argument('--epsilon_init', type=float, default=1.0)
-parser.add_argument('--epsilon_exploit', type=int, default=500)
-parser.add_argument('--epsilon_min', type=int, default=0.1)
-parser.add_argument('--empa_plan_nodes', type=int, default=50)
-parser.add_argument('--win_bonus', type=int, default=1000000)
+parser.add_argument('--bfs_depth', type=int, default=3, help='number of tree levels to run bfs for')
+parser.add_argument('--bfs_range', type=int, default=0, help="interval between 2 BFS'")
+parser.add_argument('--boltz_init', type=float, default=8.0, help="initial boltz temp value")
+parser.add_argument('--boltz_exploit', type=int, default=500, help='steps for boltz_temp to finally decay to boltz_min')
+parser.add_argument('--boltz_min', type=float, default=0.1, help='residual boltz temp value')
+parser.add_argument('--epsilon_init', type=float, default=1.0, help='initial epsilon value')
+parser.add_argument('--epsilon_exploit', type=int, default=500, help='steps for epsilon to finally decay to epsilon_min')
+parser.add_argument('--epsilon_min', type=int, default=0.1, help='residual epsilon value')
+parser.add_argument('--empa_plan_nodes', type=int, default=50, help='number of nodes to open during empa search')
+parser.add_argument('--win_bonus', type=int, default=1000000, help='intrinsic reward bonus on reaching goal')
 parser.add_argument('--hyperparameter_index', type=str, default='short-term', help='hyperparameter_index')
 parser.add_argument('--metacontroller_index', type=int, default=0, help='metacontroller_index')
 parser.add_argument('--IW_k', type=int, default=1, help='IW_k')
@@ -36,7 +36,7 @@ args = parser.parse_args()
 game_number = args.game_number
 game_name = args.game_name
 
-# group them up
+# constants relevant for curiosity ablation
 boltz_hyps = {
     'bfs_depth': args.bfs_depth,
     'bfs_range': args.bfs_range,
