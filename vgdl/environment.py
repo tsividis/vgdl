@@ -175,6 +175,13 @@ class Environment:
         self.agent.steps_so_far = 0
 
         fullStateEpisodes, episodeCompactStates = {}, {}
+
+        # reset level logging file
+        if not os.path.exists('logs'):
+            os.mkdir(logs)
+        elif os.path.exists('logs/levels.log'):
+            open('logs/levels.log','w').close()
+
         for n_level, level_game in enumerate(level_game_pairs):
 
             if n_level < loaded_n_level: ## if we have a saved state that corresponds to us having played this level, skip it.
@@ -266,6 +273,9 @@ class Environment:
 
         endtime = time.time()
         print "Game took {} seconds".format(endtime-starttime)
+        with open('logs/levels.log', 'a') as f:
+            f.write("Game took {} seconds".format(endtime-starttime))
+        f.close()
 
     def playEpisode(self, gameObject, win=False):
 
@@ -320,7 +330,19 @@ class Environment:
             display('win')
         else:
             display('loss')
-        print('Level completed in {} s and {} steps'.format(episode_end_time - episode_start_time, self.agent.memory.episodeSteps))
+
+        # log level results in console and log file
+        level_log = 'Level {} {} in {} s and {} steps'.format(
+            self.n_level + 1,
+            'won' if win else 'lost',
+            episode_end_time - episode_start_time,
+            self.agent.memory.episodeSteps
+        )
+        print(level_log)
+
+        with open('logs/levels.log', 'a') as f:
+            f.write(level_log + '\n')
+        f.close()
 
         return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level
 
