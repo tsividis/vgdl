@@ -88,7 +88,7 @@ class Agent:
 
         print("HYPERPARAMETERS")
         print(self.bfs_depth, self.bfs_range, self.boltz_init, self.boltz_min, self.boltz_exploit, self.epsilon, self.boltz_temp)
-
+        embed()
         ## Planner ablations
         ## AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
         self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else []
@@ -121,10 +121,9 @@ class Agent:
         #         self.noNewObjectNum, self.objectNumberTrackingLimit, 
         #         self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
         #         self.objectsWhoseLocationWeIgnoreString)
-        
-        self.param_ID = "eG={}_PL={}".format(self.epsilon_greedy, self.planner_lesion)
+
+        self.param_ID = "BZ=T_d={}_Bi={}_Bm={}_Be={}_e={}_Bt={}".format(self.bfs_depth, self.boltz_init, self.boltz_min, self.boltz_exploit, self.epsilon, self.boltz_temp)
         self.param_ID = self.param_ID+'_batchID='+str(0)
-    
     
         self.stall_mode = False
         self.regrounding = 1
