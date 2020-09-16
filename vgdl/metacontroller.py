@@ -20,6 +20,7 @@ class Metacontroller:
                 self.agent.on_high_r = False
                 self.agent.till_bfs = 0
                 self.agent.till_empa = 0
+
                 # self.agent.value_array.pop()
                 # self.agent.reward_array.pop()
                 print "regrounding"
