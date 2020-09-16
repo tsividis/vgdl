@@ -497,11 +497,9 @@ class Agent:
             if np.random.uniform() > self.epsilon:
                 # best action
                 best_action = True
-                print("TAKING BEST ACTION")
             else:
                 # boltzmann action
                 best_action = False
-                print("TAKING BOLTZMANN ACTION")
 
             start = time.time()
             self.root_node, self.till_bfs = p.plan(

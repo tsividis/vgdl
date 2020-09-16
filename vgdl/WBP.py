@@ -634,9 +634,10 @@ class WBP():
         last_nodes = self.BFS(root_node, depth=depth)
         bfs_time = time.time()
         for n in last_nodes:
-            child, a_i = self.TD(n, till=root_node)
+            child = self.TD(n, till=root_node)
         td_time = time.time()
         
+        print('BFS CHILD VALUES: {}'.format([c.value for c in root_node.children]))
         print('TIME FOR TDBFS: {} (BFS: {}, TD: {})'.format(td_time-start, bfs_time-start, td_time-bfs_time))
         
         return root_node
@@ -664,6 +665,7 @@ class WBP():
                         root_node.children.append(child)
 
                 child_rewards = [c.intrinsic_reward for c in root_node.children]
+                print('CHILD REWARDS: {}'.format(child_rewards))
                 a_i = np.argmax(child_rewards)
                 action = current_actions[a_i]
                 child = root_node.children[a_i]
@@ -699,7 +701,10 @@ class WBP():
             child.terminal = False
 
             # logging
-            print('ACTION: {}, TILL_BFS: {}'.format(action, till_bfs))
+            if best_action == True:
+                print('BEST ACTION: {}, TILL_BFS: {}'.format(action, till_bfs))
+            else:
+                print('BOLTZMANN ACTION: {}, TILL_BFS: {}'.format(action, till_bfs))
 
             # till_empa = till_empa - 1
             # if a_i == np.argmax(child_rewards):
