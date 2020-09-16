@@ -545,7 +545,7 @@ class WBP():
 
 	def TD(self, last_node, till, lr=1, discount=0.9):
 		"""
-		Update node values along tree
+		Update node values along tree from leaves to root
 		"""
 		# print "in TD"
 
@@ -554,22 +554,27 @@ class WBP():
 
 		while True:
 			if current_node.parent == None:
+				# at root node
 				break
 
 			if current_node.parent.value == None:
+				# set value as 0 instead of None to avoid errors
 				current_node.parent.value = 0
 
 			if not(current_node.terminal and not current_node.win):
+				# perform TD update unless current node is a loss node.
+				# we don't want to backup -inf rewards
 				current_node.parent.value += lr * (current_node.parent.intrinsic_reward + discount * current_node.value - current_node.parent.value)
 			
 			if current_node.parent.actionSeq == till.actionSeq:
-				# return what action to take from parent
+				# when we've reached a child of "till"
 				parent_actions = self.trim_futile_actions(current_node.parent) 
 				a_i = parent_actions.index(current_node.actionSeq[-1])
+				till.children[a_i] = current_node
 				break
 			current_node = current_node.parent
 
-		return current_node, a_i
+		return current_node
 
 
 	def get_boltzmann_action(self, child_values, boltz_temp):
@@ -624,16 +629,15 @@ class WBP():
 		"""
 		Run BFS and perform TD update from each end point
 		"""
-                print('RUNNING TDBFS')
-                start = time.time()
+        print('RUNNING TDBFS')
+        start = time.time()
 		last_nodes = self.BFS(root_node, depth=depth)
-                bfs_time = time.time()
+        bfs_time = time.time()
 		for n in last_nodes:
 			child, a_i = self.TD(n, till=root_node)
-			root_node.children[a_i] = child
-                td_time = time.time()
+        td_time = time.time()
 
-                print('TIME FOR TDBFS: {} (BFS: {}, TD: {})'.format(td_time-start, bfs_time-start, td_time-bfs_time))
+        print('TIME FOR TDBFS: {} (BFS: {}, TD: {})'.format(td_time-start, bfs_time-start, td_time-bfs_time))
             
 		return root_node
 
@@ -643,6 +647,7 @@ class WBP():
             plan a single step using value estimation
             """
 
+			# create root node if None
             if root_node is None:
                     root_node = Node(self.rle, self, [], None)
 
@@ -651,9 +656,10 @@ class WBP():
             current_actions = self.trim_futile_actions(root_node)
 
             if best_action == True:
+				# select best intrinsic reward action
                 children = []
                 if root_node.children == []:
-                    for a_i,a in enumerate(current_actions):
+                    for a in current_actions:
                         child = Node(self.rle, self, root_node.actionSeq+[a], root_node)
                         root_node.children.append(child)
 
@@ -662,17 +668,19 @@ class WBP():
                 action = current_actions[a_i]
                 child = root_node.children[a_i]
 
-            # bfs from root
             elif best_action==False:
+				# run BFS from root node to get values
+				# till_bfs measures time till next BFS. if reset after every BFS
                 if (till_bfs <= 0 or root_node.children == [] or (None in [child.value for child in root_node.children])):
                     root_node = self.TDBFS(root_node, depth=self.bfs_depth)
                     till_bfs = self.bfs_range
+				else:
+					# if BFS is not run, decrement till_bfs
+					till_bfs -= 1
 
                 # select action 
                 child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
                 child_values, child_rewards = zip(*child_values_rewards)
-
-                # a_i = np.argmax(child_values)
                 a_i = self.get_boltzmann_action(child_values, boltz_temp)
                 action = current_actions[a_i]
                 child = root_node.children[a_i]
@@ -689,9 +697,6 @@ class WBP():
             child.value = None
             child.win = False
             child.terminal = False
-
-            # decrement till_bfs and update on_high_r
-            till_bfs = till_bfs - 1
 
             # logging
             print('ACTION: {}, TILL_BFS: {}'.format(action, till_bfs))
