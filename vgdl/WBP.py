@@ -87,10 +87,7 @@ class WBP():
         self.printable_predicted_states = []
         self.bestNode = None
 
-        self.empa_plan_nodes = boltz_hyps['empa_plan_nodes']
-        self.bfs_depth = boltz_hyps['bfs_depth']
-        self.bfs_range = boltz_hyps['bfs_range']
-        self.win_bonus = boltz_hyps['win_bonus']
+        self.bfs_depth, self.bfs_range, self.win_bonus = boltz_hyps
 
         ###################################################
         ### 		Theory-based heuristics				###

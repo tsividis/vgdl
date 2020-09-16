@@ -71,6 +71,24 @@ class Agent:
         self.safeDistance = self.metacontroller_params['safeDistance']
         self.longHorizonObservationLimit = self.metacontroller_params['longHorizonObservationLimit']
         self.objectNumberTrackingLimit = self.metacontroller_params['objectNumberTrackingLimit']
+
+        # Boltzmann ablation
+        self.bfs_depth = self.metacontroller_params['bfs_depth'] if 'bfs_depth' in self.metacontroller_params else []
+        self.bfs_range = self.metacontroller_params['bfs_range'] if 'bfs_range' in self.metacontroller_params else []
+        self.boltz_init = self.metacontroller_params['boltz_init'] if 'boltz_init' in self.metacontroller_params else []
+        self.boltz_min = self.metacontroller_params['boltz_min'] if 'boltz_min' in self.metacontroller_params else []
+        self.boltz_exploit = self.metacontroller_params['boltz_exploit'] if 'boltz_exploit' in self.metacontroller_params else []
+        self.epsilon_init = self.metacontroller_params['epsilon_init'] if 'epsilon_init' in self.metacontroller_params else []
+        self.epsilon_min = self.metacontroller_params['epsilon_min'] if 'epsilon_min' in self.metacontroller_params else []
+        self.epsilon_exploit = self.metacontroller_params['epsilon_exploit'] if 'epsilon_exploit' in self.metacontroller_params else []
+        self.win_bonus = self.metacontroller_params['win_bonus'] if 'win_bonus' in self.metacontroller_params else []
+
+        self.boltz_temp = self.boltz_init
+        self.epsilon = self.epsilon_init
+
+        print("HYPERPARAMETERS")
+        print(self.bfs_depth, self.bfs_range, self.boltz_init, self.boltz_min, self.boltz_exploit, self.epsilon, self.boltz_temp)
+
         ## Planner ablations
         ## AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
         self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else []
@@ -445,7 +463,7 @@ class Agent:
             # t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
-                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion, boltz_hyps = self.boltz_hyps)
+                extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion, boltz_hyps=[self.bfs_depth, self.bfs_range, self.win_bonus])
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
@@ -453,7 +471,7 @@ class Agent:
             BOLTZMANN ABLATION
             ==================
 
-            HYPERPARAMETERS (user-defined, stored in self.boltz_hyps):
+            HYPERPARAMETERS (user-defined, stored in self.metacontroller_params):
             -----------------------------------------------------
             bfs_depth: number of levels to run BFS for
             bfs_range: number of steps to wait between two BFS runs. To save computation
@@ -512,12 +530,12 @@ class Agent:
             
             # decay boltzmann temperature
             if best_action == False:
-                self.boltz_temp -= (self.boltz_hyps['boltz_init']-self.boltz_hyps['boltz_min'])/self.boltz_hyps['boltz_exploit']
-                self.boltz_temp = max(self.boltz_hyps['boltz_min'], self.boltz_temp)
+                self.boltz_temp -= (self.boltz_init-self.boltz_min)/self.boltz_exploit
+                self.boltz_temp = max(self.boltz_min, self.boltz_temp)
             
             # decay epsilon
-            self.epsilon -= (self.boltz_hyps['epsilon_init']-self.boltz_hyps['epsilon_min'])/self.boltz_hyps['epsilon_exploit']
-            self.epsilon = max(self.boltz_hyps['epsilon_min'], self.epsilon)
+            self.epsilon -= (self.epsilon_init-self.epsilon_min)/self.epsilon_exploit
+            self.epsilon = max(self.epsilon_min, self.epsilon)
 
             print("PLANNING TIME: {}, BOLTZ_TEMP: {}, EPSILON: {}".format(
                     planning_time, self.boltz_temp, self.epsilon

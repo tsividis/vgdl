@@ -143,7 +143,7 @@ class Environment:
 
         return
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, boltz_hyps = None):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -168,10 +168,6 @@ class Environment:
             # embed()
         j=0
 
-        # set boltzmann hyperparameters
-        self.agent.boltz_hyps = boltz_hyps
-        self.agent.boltz_temp = boltz_hyps['boltz_init']
-        self.agent.epsilon = boltz_hyps['epsilon_init']
         self.agent.steps_so_far = 0
 
         fullStateEpisodes, episodeCompactStates = {}, {}
