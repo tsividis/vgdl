@@ -43,6 +43,30 @@ metacontroller_sets = [
     'longHorizonObservationLimit': 2
     },
     ### AGH lesions ###
+    # boltzmann ablation
+    {'idx': 2,
+    'random_steps_on_plan_failure': 5,
+    'longHorizonNodes': 1000,
+    'longhorizonAnnealing': 2.,
+    'shortHorizonRandomChoice': [200,500,1000],
+    'stall_mode_max_nodes': 50,
+    'extra_atom': True,
+    'noNewObjectNum': 55,
+    'objectNumberTrackingLimit': 1000,
+    'objectLocationTrackingLimit': 1000,
+    'safeDistance': 3,
+    'longHorizonObservationLimit': 2,
+    # hyps specific to boltzmann ablation
+    'bfs_depth': 3,
+    'bfs_range': 0,
+    'boltz_init': 8.0,
+    'boltz_min': 0.1,
+    'boltz_exploit': 500,
+    'epsilon_init' : 1.0,
+    'epsilon_min' : 0.1,
+    'epsilon_exploit' : 500,
+    'win_bonus': 1000000
+    },
     {'idx': 2,
     'random_steps_on_plan_failure': 5,
     'longHorizonNodes': 1000,
