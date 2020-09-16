@@ -449,14 +449,79 @@ class Agent:
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
 
-            self.root_node, self.till_bfs, self.till_empa, self.on_high_r = p.plan(self.till_bfs, self.till_empa, self.on_high_r, self.boltz_temp, self.root_node)
-            
-            # take boltzmann action
-            if self.steps_so_far < self.boltz_hyps['boltz_exploit']:
-                print()
-                self.boltz_temp = self.boltz_hyps['boltz_init'] - self.steps_so_far *((self.boltz_hyps['boltz_init']-self.boltz_hyps['boltz_min'])/self.boltz_hyps['boltz_exploit'])
+            """
+            BOLTZMANN ABLATION
+            ==================
+
+            HYPERPARAMETERS (user-defined, stored in self.boltz_hyps):
+            -----------------------------------------------------
+            bfs_depth: number of levels to run BFS for
+            bfs_range: number of steps to wait between two BFS runs. To save computation
+            boltz_init: initial value of boltzmann temperature (at start of game)
+            boltz_min: minimum value that boltzmann temperature value linearly decays to
+            boltz_exploit: number of steps for boltzmann temperature to finally decay to boltz_min
+            epsilon_init: initial value of epsilon. (higher = explore, lower = exploit)
+            epsilon_min: minimum value that epsilon linearly decays to
+            epsilon_exploit: number of steps for epsilon to finally decay to epsilon_min
+            win_bonus: intrinsic reward bonus on reaching a 'win' state
+
+            PLANNER PARAMETERS
+            ------------------
+            till_bfs: how long (in steps) before BFS is run again
+
+            FLOW:
+            -----
+            * environment.py:playCurriculum - set agent boltz hyps, initialize boltz_temp and epsilon
+
+            * EMPA.py:planAsNeeded
+                * set re_plan: is true before every step because solution length = 1
+                * initialize planner with boltz_hyps
+                * take decision whether to take best reward action (best_action=True) 
+                    or boltzmann action (best_action = False), using epsilon-greedy
+                * call planner.plan() (see next main point) with current root_node, till_bfs, boltz_temp, and best_action
+                * get new root node, till_bfs
+                * decay boltzmann temperature if boltzmann action was chosen
+                * decay epsilon
+
+            * WBP.py:plan
+                * if root_node is uninitialized, create a new node
+                * reset root_node's RLE 
+                * if best reward action is to be taken: get children nodes and pick argmax as action
+                * else if boltzmann action is to be taken: 
+                    * run BFS if either till_bfs has expired or children values are uncalculated
+                    * select action using softmax over BFS values
+                * decrement till_bfs and return child (new root_node), till_bfs
+            """
+
+            # take epsilon greedy action
+            if np.random.uniform() > self.epsilon:
+                # best action
+                best_action = True
             else:
-                self.boltz_temp = self.boltz_hyps['boltz_min']
+                # boltzmann action
+                best_action = False
+
+            start = time.time()
+            self.root_node, self.till_bfs = p.plan(
+                    self.till_bfs,
+                    self.boltz_temp,
+                    self.root_node,
+                    best_action
+            )
+            planning_time = time.time() - start
+            
+            # decay boltzmann temperature
+            if best_action == False:
+                self.boltz_temp -= (self.boltz_hyps['boltz_init']-self.boltz_hyps['boltz_min'])/self.boltz_hyps['boltz_exploit']
+                self.boltz_temp = max(self.boltz_hyps['boltz_min'], self.boltz_temp)
+            
+            # decay epsilon
+            self.epsilon -= (self.boltz_hyps['epsilon_init']-self.boltz_hyps['epsilon_min'])/self.boltz_hyps['epsilon_exploit']
+            self.epsilon = max(self.boltz_hyps['epsilon_min'], self.epsilon)
+
+            print("PLANNING TIME: {}, BOLTZ_TEMP: {}, EPSILON: {}".format(
+                    planning_time, self.boltz_temp, self.epsilon
+                ))
 
             self.steps_so_far += 1
             # p.BFS()
