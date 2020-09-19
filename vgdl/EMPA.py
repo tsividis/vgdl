@@ -36,7 +36,7 @@ class Agent:
         self.display_states = False
         self.record_states = True
         self.record_video_info = True
-        self.write_video_info = True
+        self.write_video_info = False
         self.saveMidEpisode = False
         self.filename = None
         self.timestamp = False
