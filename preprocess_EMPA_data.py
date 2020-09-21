@@ -172,7 +172,12 @@ def process_model_run(data, modelrun_ID):
 				if win:
 					accumulated_score = accumulated_score + score
 					level_accumulated_score = accumulated_score
-				cumulative_timestep += 1
+				
+				## For Boltzmann ablation we're only recording episode-end data, so acccumulate cumulative timesteps differently
+				if 'BZ=T' in agent_type and episode_end:
+					cumulative_timestep += timestep
+				else:
+					cumulative_timestep += 1
 
 				mean_burn_in = np.mean(exploration_burn_ins) if type(exploration_burn_ins)==list else 'NA'
 				row = (agent_type, subject_ID, modelrun_ID, condition, mean_burn_in, game_name, level_number, t, cumulative_timestep, entropy, score, level_max_score, cumulative_max_score,
