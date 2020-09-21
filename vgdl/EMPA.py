@@ -125,6 +125,8 @@ class Agent:
         self.param_ID = "BZ=T_d={}_Bi={}_Bm={}_Be={}_e={}_Bt={}".format(self.bfs_depth, self.boltz_init, self.boltz_min, self.boltz_exploit, self.epsilon, self.boltz_temp)
         self.param_ID = self.param_ID+'_batchID='+str(0)
     
+        self.dirname_for_video = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
+
         self.stall_mode = False
         self.regrounding = 1
         self.takingRandomSteps = False
@@ -191,7 +193,6 @@ class Agent:
                 except:
                     print "failed to make dir {} in main_agent.py".format(dirname_for_results)
         if self.write_video_info:
-            self.dirname_for_video = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
             if not os.path.exists(self.dirname_for_video):
                 os.makedirs(self.dirname_for_video)
 

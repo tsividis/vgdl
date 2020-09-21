@@ -33,7 +33,7 @@ class Environment:
         self.movieName = movieName
         self.agent = agent
         self.agent.record_video_info = True
-        self.agent.write_video_info = True
+        self.agent.write_video_info = False
 
         self.value_array = []
         self.reward_array = []
