@@ -356,7 +356,8 @@ load_reward_data = function(data_to_load, dates_or_groups){
     }
     data = newdata
     
-    boltz1 = 'BZ=T_d=3_Bi=8.0_Bm=0.1_Be=500_e=1.0_Bt=8.0_batchID=0'
+    boltz1 = 'BZ=T_d=1_Bi=8.0_Bm=0.1_Be=500_e=1.0_Bt=8.0'
+    boltz2 = 'BZ=T_d=3_Bi=8.0_Bm=0.1_Be=500_e=1.0_Bt=8.0'
     e_greedy_05='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
     e_greedy_1a='IW=1_rand=False_eaa=True_ea=True_sh=500_lh=1000_sha=1.05_lha=2.0_shr=[200, 500, 1000]_nF=True_abmax=50000_lR=True_eG=True_egv=N_fe=0.1_sTE=1000_hyb=False_nnon=55_ontl=1000_oltl=1000_sD=5_lhol=2_igl=FR'
     e_greedy_1a1='rand=False_eG=True_egv=N_fe=0.1_sTE=1000'
@@ -394,6 +395,9 @@ load_reward_data = function(data_to_load, dates_or_groups){
     data$agent_type = NA
     if (boltz1 %in% unique(data$long_agent_type)){
       data[data$long_agent_type==boltz1,]$agent_type = 'boltzmann 1'
+    }
+    if (boltz2 %in% unique(data$long_agent_type)){
+      data[data$long_agent_type==boltz2,]$agent_type = 'boltzmann 2'
     }
     if (e_greedy_1a %in% unique(data$long_agent_type)){
       data[data$long_agent_type==e_greedy_1a,]$agent_type = 'e-greedy 1k'
