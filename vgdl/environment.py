@@ -10,6 +10,7 @@ import numpy as np
 from IPython import embed
 import random
 
+
 """
 Environment class for running VGDL experiments
 """
@@ -236,7 +237,10 @@ class Environment:
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.agent.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-                    episodeList = [v for k,v in sorted(episodeCompactStates.items())]
+                    # episodeList = [v for k,v in sorted(episodeCompactStates.items())]
+                    ## Boltzmann ablation generates an enormous number of states; just store last state of each episode
+                    episodeList = [[[v[0][-1]]]
+                                   for k, v in sorted(episodeCompactStates.items())]
 
                     with open(self.agent.filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.agent.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)

@@ -630,6 +630,7 @@ class WBP():
         start = time.time()
         last_nodes = self.BFS(root_node, depth=depth)
         bfs_time = time.time()
+        print "done with BFS"
         for n in last_nodes:
             child = self.TD(n, till=root_node)
         td_time = time.time()

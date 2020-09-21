@@ -88,7 +88,7 @@ class Agent:
 
         print("HYPERPARAMETERS")
         print(self.bfs_depth, self.bfs_range, self.boltz_init, self.boltz_min, self.boltz_exploit, self.epsilon, self.boltz_temp)
-        embed()
+
         ## Planner ablations
         ## AGH1 = goal gradient only | AGH2=subgoal only | AGH3=goal gradient + subgoal
         self.planner_lesion = self.metacontroller_params['planner_lesion'] if 'planner_lesion' in self.metacontroller_params else []
