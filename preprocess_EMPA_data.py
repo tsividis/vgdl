@@ -174,7 +174,7 @@ def process_model_run(data, modelrun_ID):
 					level_accumulated_score = accumulated_score
 				
 				## For Boltzmann ablation we're only recording episode-end data, so acccumulate cumulative timesteps differently
-				if 'BZ=T' in agent_type and episode_end:
+				if 'BZ=T' in agent_type:
 					cumulative_timestep += timestep
 				else:
 					cumulative_timestep += 1
@@ -207,6 +207,9 @@ def process_model_run(data, modelrun_ID):
 
 def make_csvs(path, heatmap, game_names = [], game=None):
 	for folder in open_folder(path):
+		## bugfix 9/14/20 -- running the 'all' folder results in 2x the subject IDs
+		if 'all' in folder:
+			continue
 		for gamefolder in open_folder("{}/{}".format(path,folder)):
 			if game==None or game==gamefolder:
 				print gamefolder
