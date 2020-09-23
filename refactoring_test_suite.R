@@ -947,66 +947,6 @@ for (game in unique(human_normed_fixed_games$game_name)){
   game_category_df = rbind(game_category_df, row)
 }
 
-
-game_category_scatter = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
-                                   human_score = as.numeric(), empa_score = as.numeric())
-
-for (game in unique(human_normed_fixed_games$game_name)){
-  gvgai_or_synthetic = 'GVGAI'
-  for (synthetic_name in synthetic_games){
-    if (grepl(synthetic_name, game)){
-      gvgai_or_synthetic = 'Synthetic'
-    }
-  }
-  original_or_variant = 'original'
-  for (num in c('1', '2', '3', '4')){
-    if (grepl(num, game)){
-      original_or_variant = 'variant'
-    }
-  }
-  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
-  human_score = filter(human_normed_fixed_games, game_name==game, agent_type=='human')$composite_ratio
-  empa_score = filter(human_normed_fixed_games, game_name==game, agent_type=='EMPA')$composite_ratio
-  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
-                   human_score = human_score, empa_score = empa_score)
-  game_category_scatter = rbind(game_category_scatter, row)
-}
-
-## recalculate using kappas
-game_category_scatter2 = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
-                                    human_score = as.numeric(), empa_score = as.numeric())
-
-for (game in unique(kappadata$game_name)){
-  gvgai_or_synthetic = 'GVGAI'
-  for (synthetic_name in synthetic_games){
-    if (grepl(synthetic_name, game)){
-      gvgai_or_synthetic = 'Synthetic'
-    }
-  }
-  original_or_variant = 'original'
-  for (num in c('1', '2', '3', '4')){
-    if (grepl(num, game)){
-      original_or_variant = 'variant'
-    }
-  }
-  game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
-  human_score = mean(filter(kappadata, game_name==game, agent_type=='human')$kappa)
-  empa_score = mean(filter(kappadata, game_name==game, agent_type=='EMPA')$kappa)
-  row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
-                   human_score = human_score, empa_score = empa_score)
-  game_category_scatter2 = rbind(game_category_scatter2, row)
-}
-
-
-
-## Supplement: showing that EMPA performance on GVGAI games is not significantly different from synthetic ones.
-game_category_df$gvgai_or_synthetic = factor(game_category_df$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
-game_category_summary = summarySE(game_category_df, measurevar="human_normed_composite_ratio", groupvars=c("gvgai_or_synthetic"), na.rm=TRUE)
-p = ggplot(game_category_summary, aes(x=gvgai_or_synthetic, y=human_normed_composite_ratio, color=gvgai_or_synthetic, fill=gvgai_or_synthetic))+
-  geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=human_normed_composite_ratio-ci, ymax=human_normed_composite_ratio+ci),color="black")+
-  xlab('Game type')+ ylab('Human-normed Efficiency') + theme(panel.background = element_blank(), axis.line = element_line(color="black"))
-p
-
 ### The plot josh wanted
 game_category_df$gvgai_or_synthetic = factor(game_category_df$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
 p = ggplot(game_category_df, aes(x=gvgai_or_synthetic, y=log(human_normed_composite_ratio), color=gvgai_or_synthetic))+
@@ -1015,24 +955,95 @@ p = ggplot(game_category_df, aes(x=gvgai_or_synthetic, y=log(human_normed_compos
   xlab('Game type')+ ylab('Log Human-normed Efficiency') + theme(panel.background = element_blank(), axis.line = element_line(color="black"))
 p
 
-fit = bayes.t.test(human_normed_composite_ratio ~ gvgai_or_synthetic, data = game_category_df)
-bf = ttestBF(formula=human_normed_composite_ratio ~ gvgai_or_synthetic, data = game_category_df)
+
+## Bayesian T test for gvgai vs synthetic games
+d1 = filter(game_category_df, gvgai_or_synthetic=='GVGAI')$human_normed_composite_ratio
+d2 = filter(game_category_df, gvgai_or_synthetic=='Synthetic')$human_normed_composite_ratio
+fit = bayes.t.test(human_normed_composite_ratio ~ gvgai_or_synthetic, data = game_category_df, alternative="two.sided", var.equal=FALSE)
+r = t.test(d1,d2, alternative="two.sided", var.equal=FALSE)
+## r and 'fit' give very similar results
+
+bt_fit = ttest.tstat(t=fit$statistic, n1=length(d1), n2=length(d2))[["bf"]]
+bt_r = ttest.tstat(t=r$statistic, n1=length(d1), n2=length(d2))[["bf"]]
+
+## The result
+exp(bt_fit)
 
 
-## t-test by game category
-EMPAkappadata_with_game_category = EMPAkappadata
-EMPAkappadata_with_game_category$category=NA
-for (i in 1:length(EMPAkappadata_with_game_category$game_name)){
-  EMPAkappadata_with_game_category$category[i] = 'GVGAI'
-  for (synthetic_game in synthetic_games){
-    if (grepl(synthetic_game, EMPAkappadata_with_game_category$game_name[i])){
-      EMPAkappadata_with_game_category$category[i] = 'Synthetic'
-    }
-  }
-}
-EMPAcategoryframe = summarySE(EMPAkappadata_with_game_category, measurevar="kappa", groupvars=c("category"), na.rm=TRUE)
 
-bayes.t.test(kappa ~ category, data = EMPAkappadata_with_game_category)
+# game_category_scatter = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
+#                                    human_score = as.numeric(), empa_score = as.numeric())
+# 
+# for (game in unique(human_normed_fixed_games$game_name)){
+#   gvgai_or_synthetic = 'GVGAI'
+#   for (synthetic_name in synthetic_games){
+#     if (grepl(synthetic_name, game)){
+#       gvgai_or_synthetic = 'Synthetic'
+#     }
+#   }
+#   original_or_variant = 'original'
+#   for (num in c('1', '2', '3', '4')){
+#     if (grepl(num, game)){
+#       original_or_variant = 'variant'
+#     }
+#   }
+#   game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+#   human_score = filter(human_normed_fixed_games, game_name==game, agent_type=='human')$composite_ratio
+#   empa_score = filter(human_normed_fixed_games, game_name==game, agent_type=='EMPA')$composite_ratio
+#   row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
+#                    human_score = human_score, empa_score = empa_score)
+#   game_category_scatter = rbind(game_category_scatter, row)
+# }
+# 
+# ## recalculate using kappas
+# game_category_scatter2 = data.frame(game_name = as.character(), category = as.character(), gvgai_or_synthetic = as.character(), 
+#                                     human_score = as.numeric(), empa_score = as.numeric())
+# 
+# for (game in unique(kappadata$game_name)){
+#   gvgai_or_synthetic = 'GVGAI'
+#   for (synthetic_name in synthetic_games){
+#     if (grepl(synthetic_name, game)){
+#       gvgai_or_synthetic = 'Synthetic'
+#     }
+#   }
+#   original_or_variant = 'original'
+#   for (num in c('1', '2', '3', '4')){
+#     if (grepl(num, game)){
+#       original_or_variant = 'variant'
+#     }
+#   }
+#   game_category = paste(gvgai_or_synthetic, '_', original_or_variant)
+#   human_score = mean(filter(kappadata, game_name==game, agent_type=='human')$kappa)
+#   empa_score = mean(filter(kappadata, game_name==game, agent_type=='EMPA')$kappa)
+#   row = data.frame(game_name = game, category = game_category, gvgai_or_synthetic = gvgai_or_synthetic, 
+#                    human_score = human_score, empa_score = empa_score)
+#   game_category_scatter2 = rbind(game_category_scatter2, row)
+# }
+
+
+# ## Supplement: showing that EMPA performance on GVGAI games is not significantly different from synthetic ones.
+# game_category_df$gvgai_or_synthetic = factor(game_category_df$gvgai_or_synthetic, levels = c('GVGAI', 'Synthetic'))
+# game_category_summary = summarySE(game_category_df, measurevar="human_normed_composite_ratio", groupvars=c("gvgai_or_synthetic"), na.rm=TRUE)
+# p = ggplot(game_category_summary, aes(x=gvgai_or_synthetic, y=human_normed_composite_ratio, color=gvgai_or_synthetic, fill=gvgai_or_synthetic))+
+#   geom_bar(position='dodge', stat='summary', fun.y='mean')+geom_linerange(aes(ymin=human_normed_composite_ratio-ci, ymax=human_normed_composite_ratio+ci),color="black")+
+#   xlab('Game type')+ ylab('Human-normed Efficiency') + theme(panel.background = element_blank(), axis.line = element_line(color="black"))
+# p
+
+
+# ## t-test by game category
+# EMPAkappadata_with_game_category = EMPAkappadata
+# EMPAkappadata_with_game_category$category=NA
+# for (i in 1:length(EMPAkappadata_with_game_category$game_name)){
+#   EMPAkappadata_with_game_category$category[i] = 'GVGAI'
+#   for (synthetic_game in synthetic_games){
+#     if (grepl(synthetic_game, EMPAkappadata_with_game_category$game_name[i])){
+#       EMPAkappadata_with_game_category$category[i] = 'Synthetic'
+#     }
+#   }
+# }
+# EMPAcategoryframe = summarySE(EMPAkappadata_with_game_category, measurevar="kappa", groupvars=c("category"), na.rm=TRUE)
+# 
+# bayes.t.test(kappa ~ category, data = EMPAkappadata_with_game_category)
 
 
 
