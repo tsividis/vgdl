@@ -15,7 +15,7 @@ import random
 Environment class for running VGDL experiments
 """
 
-MAX_STEPS = 100000
+MAX_STEPS = 10
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
 class Environment:
@@ -262,6 +262,7 @@ class Environment:
                 if self.agent.memory.totalGameSteps > MAX_STEPS:
                     if self.produce_printout:
                         print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.agent.memory.totalGameSteps, MAX_STEPS)
+                        break
 
                 self.agent.bookkeeping.deleteEpisodeFile()
 
