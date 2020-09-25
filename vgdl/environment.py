@@ -175,7 +175,7 @@ class Environment:
 
         # reset level logging file
         if not os.path.exists('logs'):
-            os.mkdir(logs)
+            os.mkdir('logs')
         elif os.path.exists('logs/levels.log'):
             open('logs/levels.log','w').close()
 

@@ -664,7 +664,12 @@ class WBP():
 
                 child_rewards = [c.intrinsic_reward for c in root_node.children]
                 print('CHILD REWARDS: {}'.format(child_rewards))
-                a_i = np.argmax(child_rewards)
+                if len(np.unique(child_rewards)) == 1:
+                    print('picking random action')
+                    a_i = np.random.randint(len(child_rewards))
+                else:
+                    print('picking best action')
+                    a_i = np.argmax(child_rewards)
                 action = current_actions[a_i]
                 child = root_node.children[a_i]
 
