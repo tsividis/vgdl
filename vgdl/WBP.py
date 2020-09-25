@@ -580,7 +580,6 @@ class WBP():
         """
 
         try:
-            raise 
             if np.inf in child_values:
                 return child_values.index(np.inf)
             # Loss node in value array will be None, not -inf
@@ -605,7 +604,7 @@ class WBP():
             return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
         except:
             # if all values are None pick random action
-            print('picking random action (nan values')
+            print('picking random action (nan values)')
             return np.random.choice(range(len(child_values)))
 
 
