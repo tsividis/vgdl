@@ -167,7 +167,7 @@ assert(len(alphabets) == len(game_names))
 
 nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
 prerun_interval = 1 # = 10 sec, how long for scanner to settle
-postrun_interval = 10 # = 10 sec, how long for HRF to settle
+postrun_interval = 1 # = 10 sec, how long for HRF to settle
 nblocks = 3 # = 3 per run
 ninstances = 3 # = 3 per block
 duration = 20 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
@@ -348,6 +348,7 @@ if __name__ == '__main__':
 
 
     from vgdl.core import VGDLParser
+
     #VGDLParser.fMRI_showAlphabets(alphabets)
     wins, scores = VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)
 

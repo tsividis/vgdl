@@ -7,7 +7,7 @@ This branch has code for human game play in an fMRI setting and EMPA theory indu
 Python setup
 ------
 
-See README.md, though it's a bit incomplete. Here is how I got the code working on my Mac (in a virtual environment using [Anaconda](https://docs.anaconda.com/anaconda/install/mac-os/); make sure to install the Python 2.7 version):
+See README.md, though it's a bit incomplete. Here is how I got the code working on my Mac (in a virtual environment using [Anaconda](https://docs.anaconda.com/anaconda/install/mac-os/); make sure to install the Python 2.7 version; you might also need [Homebrew](https://brew.sh/)):
 
     conda deactivate
     conda create -n pedro python=2
@@ -25,7 +25,7 @@ See README.md, though it's a bit incomplete. Here is how I got the code working 
 
 The [PyGame](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) guide might also be helpful.
 
-Also install the [SegoeUISymbol](https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm) font; we use it to visualize symbols. Follow [guide](https://unix.stackexchange.com/questions/415246/how-to-install-fonts-for-centos-7/415249) for CentOS 7 for cluster.
+Also install the [SegoeUISymbol](https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm) font; we use it to visualize symbols. Follow [guide](https://unix.stackexchange.com/questions/415246/how-to-install-fonts-for-centos-7/415249) for CentOS 7 for cluster. Or, just put .tff file in local directory (already in repo, so should just work).
 
 On NCF cluster, install conda using `module load` (see [CBS FAQ](http://cbs.fas.harvard.edu/science/core-facilities/neuroimaging/information-investigators/faq) and `module avail ncf`) and activate env with:
 
@@ -40,8 +40,11 @@ We store all the experimental and behavioral data in [Mongo](https://docs.mongod
 Here is how I installed it on my Mac:
 
     pip install pymongo
-    pip install fmri_requirements.txt
+    pip install -r fmri_requirements.txt
+    brew tap mongodb/brew
     brew install mongodb-community@4.2
+
+    echo 'export PATH="/usr/local/opt/mongodb-community@4.2/bin:$PATH"' >> /Users/gershmanlab/.bash_profile
 
 On NCF cluster, install using `module load`
 

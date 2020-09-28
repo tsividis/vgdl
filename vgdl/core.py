@@ -60,7 +60,9 @@ def pauseForDuration(duration):
         pygame.time.Clock().tick(60)
 
 def dispSymbol(symbol, size, color, center, screen):
-    font = pygame.font.SysFont('SegoeUISymbol', size) # TODO init in constructor
+    #font = pygame.font.SysFont('SegoeUISymbol', size) # TODO init in constructor
+    #font = pygame.font.SysFont('segoe-ui-symbol.ttf', size) # TODO init in constructor
+    font = pygame.font.Font('seguisym.ttf', size)
     textsurf = font.render(symbol, True, color) 
     rect = textsurf.get_rect()
     rect.center = center
