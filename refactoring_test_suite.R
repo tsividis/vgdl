@@ -22,7 +22,7 @@ refactor_lesions1 = load_reward_data('EMPA', c('ablations_aug17'))
 refactor_lesions2 = load_reward_data('EMPA', c('ablations_aug23'))
 refactor_lesions3 = rEMPAdata
 
-boltz = load_reward_data('EMPA', c('boltz_sep19'))
+boltz = load_reward_data('EMPA', c('boltz_sep23'))
 
 
 ## bugfixed EMPA for all games (for 5 or so games the runs are 6 hrs before finishing)
