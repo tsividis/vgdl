@@ -579,28 +579,33 @@ class WBP():
         Given child values, apply boltzmann exploration
         """
 
-        if np.inf in child_values:
-            return child_values.index(np.inf)
-        # Loss node in value array will be None, not -inf
-        npcv = np.array(child_values).astype(float)
-        if np.any(np.isnan(npcv)):
-            i_nan = np.argwhere(np.isnan(npcv))
-            i_nonan = np.argwhere(np.isnan(npcv) == False)
-            nonan = npcv[i_nonan]
-            nonan = (nonan - np.mean(nonan))/(np.std(nonan) + np.finfo(float).eps)
-            npcv[i_nonan] = nonan
-            npcv[i_nan] = -np.inf
-        elif np.any(npcv == -np.inf):
-            i_inf = np.argwhere(a == -np.inf)
-            i_noinf = np.argwhere(a != -np.inf)
-            noinf = npcv[i_noinf]
-            noinf = (noinf - np.mean(noinf)) / (np.std(noinf) + np.finfo(float).eps)
-            npcv[i_noinf] = noinf
-            npcv[i_inf] = -np.inf
-        else:
-            npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + np.finfo(float).eps)
-        npcv = npcv.astype(float)
-        return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
+        try:
+            if np.inf in child_values:
+                return child_values.index(np.inf)
+            # Loss node in value array will be None, not -inf
+            npcv = np.array(child_values).astype(float)
+            if np.any(np.isnan(npcv)):
+                i_nan = np.argwhere(np.isnan(npcv))
+                i_nonan = np.argwhere(np.isnan(npcv) == False)
+                nonan = npcv[i_nonan]
+                nonan = (nonan - np.mean(nonan))/(np.std(nonan) + np.finfo(float).eps)
+                npcv[i_nonan] = nonan
+                npcv[i_nan] = -np.inf
+            elif np.any(npcv == -np.inf):
+                i_inf = np.argwhere(a == -np.inf)
+                i_noinf = np.argwhere(a != -np.inf)
+                noinf = npcv[i_noinf]
+                noinf = (noinf - np.mean(noinf)) / (np.std(noinf) + np.finfo(float).eps)
+                npcv[i_noinf] = noinf
+                npcv[i_inf] = -np.inf
+            else:
+                npcv = (child_values - np.mean(child_values)) / (np.std(child_values) + np.finfo(float).eps)
+            npcv = npcv.astype(float)
+            return np.random.choice(range(len(child_values)), p=softmax(npcv, boltz_temp))
+        except:
+            # if all values are None pick random action
+            print('picking random action (nan values)')
+            return np.random.choice(range(len(child_values)))
 
 
     def EMPAPlanner(self, root_node, n_depth):
@@ -664,7 +669,12 @@ class WBP():
 
                 child_rewards = [c.intrinsic_reward for c in root_node.children]
                 print('CHILD REWARDS: {}'.format(child_rewards))
-                a_i = np.argmax(child_rewards)
+                if len(np.unique(child_rewards)) == 1:
+                    print('picking random action')
+                    a_i = np.random.randint(len(child_rewards))
+                else:
+                    print('picking best action')
+                    a_i = np.argmax(child_rewards)
                 action = current_actions[a_i]
                 child = root_node.children[a_i]
 
