@@ -349,7 +349,8 @@ class Agent:
                  'ended': ended,
                  'win': win,
                  'objects': [(colorDict[str(s.color)], (s.rect.left/gameObject.block_size, s.rect.top/gameObject.block_size), s.resources if s.name=='avatar' else {}) for s in environment.getAliveSprites()],
-                 'events': list(environment.getEffectListByClass())
+                 'events': list(environment.getEffectListByClass()),
+                 'total_game_steps': self.memory.totalGameSteps+gameObject.time
                  }
         self.last_recorded_time = current_time
         return state

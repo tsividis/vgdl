@@ -175,7 +175,7 @@ def process_model_run(data, modelrun_ID):
 				
 				## For Boltzmann ablation we're only recording episode-end data, so acccumulate cumulative timesteps differently
 				if 'BZ=T' in agent_type:
-					cumulative_timestep += timestep
+					cumulative_timestep = state['total_game_steps']
 				else:
 					cumulative_timestep += 1
 

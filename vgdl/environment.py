@@ -15,7 +15,7 @@ import random
 Environment class for running VGDL experiments
 """
 
-MAX_STEPS = 10000
+MAX_STEPS = 20
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
 class Environment:
@@ -175,7 +175,10 @@ class Environment:
 
         # reset level logging file
         if not os.path.exists('logs'):
-            os.mkdir('logs')
+            try:
+                os.mkdir('logs')
+            except:
+                open('logs/levels.log','w').close()
         elif os.path.exists('logs/levels.log'):
             open('logs/levels.log','w').close()
 
@@ -242,11 +245,17 @@ class Environment:
                 ## will write all previous episodes to the file at the end of each episode.
                 if self.agent.record_states:
                     gameInfo = {'gameString':self.gameString, 'levelString':self.levelString, 'gameName':self.gameFilename}
-                    # episodeList = [v for k,v in sorted(episodeCompactStates.items())]
+                    oldEpisodeList = [v for k,v in sorted(episodeCompactStates.items())]
                     ## Boltzmann ablation generates an enormous number of states; just store last state of each episode
-                    episodeList = [[[v[0][-1]]]
-                                   for k, v in sorted(episodeCompactStates.items())]
-
+                    episodeList = []
+                    for k,v in sorted(episodeCompactStates.items()):
+                        levelEpisodes = []
+                        for episode in v:
+                            levelEpisodes.append([episode[-1]])
+                        episodeList.append(levelEpisodes)
+                    # episodeList = [[[v[0][-1]]]
+                                #    for k, v in sorted(episodeCompactStates.items())]
+                    # embed()
                     with open(self.agent.filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.agent.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
 
@@ -267,6 +276,7 @@ class Environment:
                 if self.agent.memory.totalGameSteps > MAX_STEPS:
                     if self.produce_printout:
                         print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.agent.memory.totalGameSteps, MAX_STEPS)
+                        # embed()
                         break
 
                 self.agent.bookkeeping.deleteEpisodeFile()
