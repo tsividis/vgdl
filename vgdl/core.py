@@ -59,10 +59,12 @@ def pauseForDuration(duration):
 
         pygame.time.Clock().tick(60)
 
-def dispSymbol(symbol, size, color, center, screen):
+def dispSymbol(symbol, size, color, center, screen, font=None):
     #font = pygame.font.SysFont('SegoeUISymbol', size) # TODO init in constructor
     #font = pygame.font.SysFont('segoe-ui-symbol.ttf', size) # TODO init in constructor
-    font = pygame.font.Font('seguisym.ttf', size)
+    if font is None:
+        font = pygame.font.Font('seguisym.ttf', size)
+    
     textsurf = font.render(symbol, True, color) 
     rect = textsurf.get_rect()
     rect.center = center
@@ -458,6 +460,7 @@ class VGDLParser(object):
         if not isinstance(tree, Node):
             tree = indentTreeParser(tree).children[0]
         sclass, args = self._parseArgs(tree.content)
+
         self.game = sclass(**args)
         for c in tree.children:
             if c.content == "SpriteSet":
@@ -876,6 +879,7 @@ class BasicGame(object):
                         break
             if anyother:
                 continue
+
             s = sclass(pos=pos, size=(self.block_size, self.block_size), offset=offset, name=key, **args)
             s.stypes = stypes
 
@@ -999,6 +1003,7 @@ class BasicGame(object):
                              'only_active',
                              'airsteering',
                              'strength',
+                             'font',
                              ]
 
     def getAllObjects(self):
@@ -2214,6 +2219,9 @@ class VGDLSprite(object):
         self.rect.width = self.width*self.rect.width
         self.rect.height = self.height*self.rect.height
 
+        self.fontsize = int(self.rect.height * 0.7)
+        self.font = pygame.font.Font('seguisym.ttf', self.fontsize)
+
     def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """
         #print("begin")
@@ -2313,7 +2321,7 @@ class VGDLSprite(object):
             # get font from https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm
             color = (255 - self.color[0], 255 - self.color[1], 255 - self.color[2])
 
-            rect = dispSymbol(self.symbol, int(shrunk.height * 0.7), color, shrunk.center, screen)
+            rect = dispSymbol(self.symbol, None, color, shrunk.center, screen, self.font)
             r = rect.copy() # TODO just rect?
             VGDLSprite.dirtyrects.append(r)
 
