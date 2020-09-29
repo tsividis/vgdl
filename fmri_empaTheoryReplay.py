@@ -112,8 +112,10 @@ if __name__ == '__main__':
         unique_theories_filename = f['unique_theories_filename']
 
         theory_id_seq = []
-        for i in range(len(f['theory_id_seq_best'])):
-            theory_id_seq.append(f['theory_id_seq_best'][i][0])
+        #for i in range(len(f['theory_id_seq_best'])):
+        #    theory_id_seq.append(f['theory_id_seq_best'][i][0])
+        for i in range(len(f['theory_id_seq_orig'])):
+            theory_id_seq.append(f['theory_id_seq_orig'][i][0])
 
         gameStrings = f['gameStrings']
 
@@ -166,7 +168,7 @@ if __name__ == '__main__':
 
         theory = []
         assert len(play_key_seq) == len(theory_id_seq)
-        for i in range(len(theories)):
+        for i in range(len(theory_id_seq)):
             if play_key_seq[i] == play['_id']:
                 theory.append(theories[theory_id_seq[i]])
         assert len(theory) == len(reg['regressors']['theory_change_flag'])
@@ -249,12 +251,11 @@ if __name__ == '__main__':
             plan = plans[i]
 
             # prepare plans for insert into Mongo
+            # only take stuff relevant for planning
             plan['plans'] = curriculumRegressors[i]['plans']
+            plan['avatar_collisions'] = curriculumRegressors[i]['avatar_collisions']
             plan['dt'] = datetime.now()
             plan['ts'] = time.time()
-
-            # special care for theory which does not serialize into BSON for Mongo
-            # use cloudpickle instead & save on disk TODO find better option
 
             theoriesDir = 'theories'
             if theoriesDir not in os.listdir('.'):

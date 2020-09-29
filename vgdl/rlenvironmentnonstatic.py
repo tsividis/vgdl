@@ -145,6 +145,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         """
         ## faster version, but need to figure out how to display 
 
+        # momchil
+        print self._game.getFullStateColorized()['objects']['DARKBLUE']
+
         locs = defaultdict(lambda:[])
         if binary:
             mappedState = [[1 for x in range(self.outdim[1])] for y in range(self.outdim[0])]
@@ -154,7 +157,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         for lst in self._game.sprite_groups.values():
             for sprite in lst:
                 if sprite not in self._game.kill_list:
-                    y,x = sprite.rect.top/30, sprite.rect.left/30
+                    y,x = sprite.rect.top/20, sprite.rect.left/20
                     locs[(y,x)].append(sprite.name)
 
         for k,v in locs.iteritems():
@@ -169,6 +172,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                 else:
                     if 'avatar' in v:
                         symbol = 'A'
+                        # momchil
+                        print 'loc avatar = ', k
                     else:
                         symbol = assign_symbols_to_objects(self, v, self.symbolDict)
                 

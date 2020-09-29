@@ -473,6 +473,9 @@ class Agent:
         if self.re_plan==True:
             self.theoryRLEs = self.VrleInitPhase()
 
+            # momchil
+            print 'virtual avatar', self.theoryRLEs[0]._game.getFullStateColorized()['objects']['DARKBLUE']
+
             self.metacontroller.setMaxNodes()
             self.steps_in_solution = 0
 
@@ -715,9 +718,6 @@ class Agent:
 
             theory_change_flag = self.theory_playback_index > 0 and self.theory[self.theory_playback_index - 1] != theory
 
-            print 'tnhaeu'
-            embed()
-
         else:
             ## Ideally you'd update the model at every step, but it takes a lot of time
             ## so: Update when a new event happens (in which case you definitely need to update it), or when your MAP object-type hypothesis has changed for some class (in which case you definitely need to update it), or if we don't have a super-large number of time-steps in our history, do it sometimes (with probability .2)
@@ -789,6 +789,14 @@ class Agent:
             print "changed theory:"
             hypotheses[0].display()
  
+
+        # momchil rm
+        print '------------------------------------------------------------------ CURRENT THEORY ----------------------------------'
+        print 'step ', self.environment.getTime()
+        hypotheses[0].display()
+        print '------------------------------------------------------------------ END THEORY ----------------------------------'
+
+
         if self.record_fMRIRegressors and self.environment.getTime() > 0: 
             # don't log stuff from before any observations
             # convention is: timestamp = stuff right after frame
@@ -885,6 +893,8 @@ class Agent:
                 self.action = None 
 
             else:
+
+                print 'avatar:', self.environment._game.getFullStateColorized()['objects']['DARKBLUE']  # momchil rm
 
                 # see if avatar interacted with something 
                 ac = []

@@ -451,10 +451,16 @@ class WBP():
 			self.total_nodes_selected += 1
 			self.total_nodes_opened += len(current_actions)
 
+			#print ' w t f'
+			print '            in BFS: current = ', current.rle._game.getFullStateColorized()['objects']['DARKBLUE']
+			#print '                    actions = ', current_actions
+
 			## Node expansion
 			for a in current_actions:
 				child = Node(self.rle, self, current.actionSeq+[a], current)
 				child = self.check_node_for_subgoal_progress(child)
+
+				#print '                                  child = ', child 
 
 				## If we reach a state that the planner should consider a win state (meaning either a real win or a subgoal win in short-term mode, or a curiosity goal in either mode)
 				if child.win:
@@ -1140,6 +1146,8 @@ if __name__ == "__main__":
 		print colored(p.printable_predicted_states[0], 'green')
 		for i,g in enumerate(p.printable_predicted_states[1:]):
 			print actionDict[solution[i]]
+            # momchil
+			print g._game.getFullStateColorized()['objects']['DARKBLUE']
 			print colored(g, 'green')
 		print "============================================="
 
