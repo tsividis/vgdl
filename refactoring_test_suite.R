@@ -22,7 +22,8 @@ refactor_lesions1 = load_reward_data('EMPA', c('ablations_aug17'))
 refactor_lesions2 = load_reward_data('EMPA', c('ablations_aug23'))
 refactor_lesions3 = rEMPAdata
 
-boltz = load_reward_data('EMPA', c('boltz_sep23'))
+e_g = load_reward_data('EMPA', c('apr4'))
+boltz = load_reward_data('EMPA', c('boltz_oct1'))
 
 
 ## bugfixed EMPA for all games (for 5 or so games the runs are 6 hrs before finishing)
@@ -46,9 +47,9 @@ per_subject_df = make_subject_df(rbind(combo, humandata), .1)
 d = bootstrap_human_normed_kappas(per_subject_df, 10) ## increase number
 scatter_data = bootstrap_to_scatter(d)
 
-per_subject_df2 = make_subject_df(rbind(combo, humandata), .01)
-d = bootstrap_human_normed_kappas(filter(per_subject_df, agent_type%in%c('human', 'EMPA')), 10) ## increase number
-d2 = bootstrap_human_normed_kappas(per_subject_df, 10) ## increase number
+per_subject_df2 = make_subject_df(rbind(combo, e_g, boltz, humandata), .01)
+d = bootstrap_human_normed_kappas(filter(per_subject_df2), 10) ## increase number
+scatter_data = bootstrap_to_scatter(filter(d, game_name %in% c('ee', 'helper', 'antagonist', 'chase')))
 
 
 s = filter(d, agent_type=='EMPA')
@@ -201,6 +202,7 @@ names(colors) = c('EMPA', 'EMPA_refactor', 'human')
 
 colors = c('steelblue1', 'slategray2',
            'slateblue1', 'slateblue4', 'mediumpurple1', 'purple1',
+           'red1', 'red2', 'red3', 'red4',
            'firebrick2', 'magenta3',
            'palegreen3',
            'gray50', 'gray65', 'gray80',
@@ -208,6 +210,7 @@ colors = c('steelblue1', 'slategray2',
            'goldenrod1', 'goldenrod2', 'goldenrod3', 'darkslategray2', 'darkolivegreen3')
 names(colors)=c('EMPA', 'EMPA fail',
                 'e-greedy 1k', 'e-greedy 2k', 'e-greedy 1k DS', 'e-greedy 2k DS',
+                'boltzmann 1', 'boltzmann 2', 'boltzmann 3', 'boltzmann 4',
                 'random policy', 'random',
                 'human',
                 'DDQN 100k', 'DDQN 10k', 'DDQN 1k',
@@ -763,7 +766,7 @@ p
 
 p = ggplot(scatter_data, aes(x=log(model_kappa,10), y=log(empa_kappa,10), color=model_name))+geom_point()+
   scale_color_manual(values=colors)+
-  # xlim(-9,-1)+ylim(-9,-1)+
+  xlim(-9,0)+ylim(-9,0)+
   geom_abline(slope=1, intercept=0)+theme_bw()
 # scale_y_continuous(breaks=tickmarks,labels=tickmarks)+scale_x_continuous(breaks=tickmarks,labels=tickmarks)
 p

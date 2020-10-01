@@ -61,10 +61,10 @@ metacontroller_sets = [
     'bfs_range': 0,
     'boltz_init': 8.0,
     'boltz_min': 0.1,
-    'boltz_exploit': 10000,
+    'boltz_exploit': 1000,
     'epsilon_init' : 1.0,
     'epsilon_min' : 0.1,
-    'epsilon_exploit' : 10000,
+    'epsilon_exploit' : 1000,
     'win_bonus': 1000000
     },
     {'idx': 2,
