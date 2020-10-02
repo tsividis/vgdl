@@ -702,7 +702,7 @@ def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
     return onsets, durations
 
 # get squence of unique HRRs for subject's inferred theories
-# faster than gen_subject_HRRs, and also used for decoding (we pass those to MATLAB which recombines them, convolves with the HRF, computes the kernels, and fits the GP in the same loop)
+# faster, and also used for decoding (we pass those to MATLAB which recombines them, convolves with the HRF, computes the kernels, and fits the GP in the same loop)
 # copy of gen_subject_HRRs
 #
 def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False):

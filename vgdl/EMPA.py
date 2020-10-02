@@ -264,6 +264,7 @@ class Agent:
         VRLEs = []
 
         for hypothesis in self.hypotheses[0:1]:
+
             # t1 = time.time()
             tempHypothesis = copy.deepcopy(hypothesis)
             # print "vrleInitPhase1: {}".format(time.time()-t1)
@@ -877,18 +878,22 @@ class Agent:
 
         self.bookkeeping.effectsEncountered.extend(effects)
         self.memory.episodeSteps +=1
-        if theory_change_flag:
+        if theory_change_flag or self.theory_playback:
             self.hypotheses = hypotheses
             # self.hypotheses[0].display()
 
-        self.re_plan = theory_change_flag # momchil: we overwrite it in planAsNeeded?
+        self.re_plan = theory_change_flag # momchil: we overwrite it in planAsNeeded?TODO
 
         # print "phase 11: {}".format(time.time()-t1)
         # t1 = time.time()
 
+        print 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ', self.record_fMRIRegressors
+
         if self.record_fMRIRegressors:
             # we replay the human actions, and plan only on avatar-object interactions
             # in order to compute likelihood of human behavior
+
+            print 'time ', self.environment.getTime()
 
             if self.environment.getTime() <= 0:
                 # TODO make sure we won't need the action anywhere here, e.g. for inference and whatnot

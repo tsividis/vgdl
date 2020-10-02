@@ -1,6 +1,8 @@
 # run after fmri_empaTheoryReplay.py to actually get the plans in convenient form
 # for computing the likelihood and fitting the parameters in MATLAB
 
+# EX: python fmri_empaLik.py 1
+
 from pymongo import MongoClient
 import pprint
 import random
@@ -69,6 +71,7 @@ if __name__ == '__main__':
         # open plans as saved by fmri_empaReplay.py i.e. the original theory sequence
         #
 
+        '''
         # get regressors
         q = {'play_key': play['_id']}
         print q
@@ -82,18 +85,21 @@ if __name__ == '__main__':
         for reg in regs:
             break # just take the latest one
 
+        #if 'plans_filename' not in reg['regressors'].keys():
+        #    continue
+
         # get plans
         with open(reg['regressors']['plans_filename'], 'r') as f:
             reg['regressors']['plans'] = cloudpickle.load(f)
 
         plans = reg['regressors']['plans']
         avatar_collisions = reg['regressors']['avatar_collisions']
+        '''
 
         #
         # open plans as saved by fmri_empaTheoryReplay.py which replays custom theory sequences
         #
 
-        '''
         # get plans
         q = {'play_key': play['_id']}
         print q
@@ -113,7 +119,9 @@ if __name__ == '__main__':
 
         plans = plan['plans'] # all plans for each frame
         avatar_collisions = plan['avatar_collisions']
-        '''
+
+
+
 
         assert len(plans) == len(avatar_collisions)
         assert len(plans) == len(states) - 2 # TODO we skip first and last one in EMPA.py

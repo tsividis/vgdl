@@ -61,41 +61,42 @@ if __name__ == '__main__':
 
     query = {'subj_id': subj_id}
 
-    if len(sys.argv) > 2:
+    assert len(sys.argv) > 3
+    if len(sys.argv) > 3:
         if is_int(sys.argv[2]):
             query['run_id'] = int(sys.argv[2])
         else:
-            assert len(sys.argv) == 3
+            assert len(sys.argv) == 4
             query['game_name'] = sys.argv[2]
-            theory_seq_filename = sys.argv[3]
-    if len(sys.argv) > 3:
+            theory_seq_filename = sys.argv[3] # e.g. ../../matlab/VGDL_fMRI/decode_gp_CV_HRR_subj=1_minint=300_2.mat
+    if len(sys.argv) > 4:
         if is_int(sys.argv[3]):
             query['block_id'] = int(sys.argv[3])
         else:
-            assert len(sys.argv) == 4
+            assert len(sys.argv) == 5
             query['game_name'] = sys.argv[3]
             theory_seq_filename = sys.argv[4]
-    if len(sys.argv) > 4:
+    if len(sys.argv) > 5:
         if is_int(sys.argv[4]):
             query['instance_id'] = int(sys.argv[4])
         else:
-            assert len(sys.argv) == 5
+            assert len(sys.argv) == 6
             query['game_name'] = sys.argv[4]
             theory_seq_filename = sys.argv[5]
-    if len(sys.argv) > 5:
+    if len(sys.argv) > 6:
         if is_int(sys.argv[5]):
             query['play_id'] = int(sys.argv[5])
         else:
-            assert len(sys.argv) == 6
+            assert len(sys.argv) == 7
             query['game_name'] = sys.argv[5]
             theory_seq_filename = sys.argv[6]
-    if len(sys.argv) > 6:
+    if len(sys.argv) > 7:
         query['game_name'] = sys.argv[6]
         theory_seq_filename = sys.argv[7]
 
     plays = db.plays.find(query).sort('start_time')
 
-    print 'Running fmri_empaReplay with query:'
+    print 'Running fmri_empaTheoryReplay with query:'
     print query
     print 'theory_seq_filename', theory_seq_filename
 
@@ -136,8 +137,6 @@ if __name__ == '__main__':
             theories = cloudpickle.load(ff)
 
 
-
-
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
         game = subj['games'][play['game_id']]
@@ -165,12 +164,12 @@ if __name__ == '__main__':
             break # just take the latest one
 
         # get theory sequence for given play
-
         theory = []
         assert len(play_key_seq) == len(theory_id_seq)
         for i in range(len(theory_id_seq)):
             if play_key_seq[i] == play['_id']:
                 theory.append(theories[theory_id_seq[i]])
+
         assert len(theory) == len(reg['regressors']['theory_change_flag'])
 
         # get states
@@ -270,7 +269,7 @@ if __name__ == '__main__':
             plan['plans'] = [] # remove from plans object
 
             # insert plans into mongo
-            #db.plans.insert_one(plan)
+            db.plans.insert_one(plan)
 
     if didSomething:
         print 'Completed!'

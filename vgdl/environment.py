@@ -365,6 +365,7 @@ class Environment:
         ended, win = self.environment._isDone()
         
         quitting = False
+        self.agent.quitting = False # TODO what other stuff do we need to do from __init__() Agent?
         episodeSteps = 0
         ## Main episode loop
         while not quitting:
@@ -401,7 +402,7 @@ class Environment:
             
 
         score = self.environment.getScore()
-            
+
         if win:
             display('win')
         else:
