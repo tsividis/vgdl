@@ -234,6 +234,7 @@ class Agent:
         return
 
     def logfMRIRegressor(self, name, val):
+
         self.bookkeeping.regressors[name].append((val, self.environment._game.time, self.environment._game.playback_ts))
 
     def initializeVrle(self, hypothesis):
@@ -411,6 +412,7 @@ class Agent:
         self.steps_in_solution = 0
 
         if self.record_fMRIRegressors:
+
             self.bookkeeping.regressors = {
                 'spriteKL': [],
                 'sampleKL': [],

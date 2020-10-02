@@ -3,6 +3,8 @@ Human vs. EMPA: fMRI Experimental Setup
 
 This branch has code for human game play in an fMRI setting and EMPA theory induction based on replay of the human-generated state-action sequence.
 
+Also see [resources](https://docs.google.com/document/d/1l9FNjAWZ5R8nJztV9XdIffFbE5X26x9kqAZ4JHUlV-s/edit) doc for pointers to other stuff.
+
 
 Python setup
 ------
@@ -266,3 +268,50 @@ Before running GLMs:
 - run `get_regressors` as script (comment out first line, uncomment stuff right after) to debug
 - (MATLAB) `ccnl_check_multi(vgdl_expt(), 3)` to get theory regressors, then 21 to get everything else
 - `ccnl_check_multi` for all GLMs you intend to run, then `scp_to_ncf.sh` to copy them over (edit first)
+
+
+HRR GP analysis
+-----
+
+- run `fmri_empaReplay.py` / `fmri_empaReplay.sh`: human play -> EMPA theories
+    - EMPA generates theory sequence from human replay
+    - saves it to mongo (metadata in `regressors` collection), disk (`theories/theory_*.pickle`)
+
+- run `HRR.py`: `gen_and_save_subject_kernels_batched` / `HRR.sh`: EMPA theories -> HRR embeddings -> kernel (nTRs x nTRs)
+    - (edit `__main__`)
+    - generates subject-specific HRRs (multiple samples)
+    - embeds EMPA theory sequence
+    - computes kernel for GP
+    - saves to disk (`mat/HRR_subject_kernel_*.mat`)
+
+- (in [MATLAB repo](https://github.com/tomov/VGDL-fMRI-Data-Analysis)) run `fit_gp_CV.m` / `fit_gp_CV.sh`: kernel -> predicted BOLD <-> actual BOLD
+    - (make sure to cp mat file to `mat_vgdl` dir / mat/)
+    - (edit `filename` if necessary)
+    - fits GP to BOLD and evaluates fit in each voxel
+    - saves to disk (`mat/fit_gp_CV_*.mat`)
+
+- run `agg_gp_CV.m`, then `plot_gp_CV.m`: visualize results
+    - (edit file to load from `fit_gp_CV` results)
+    - (edit `filename` if necessary)
+
+
+
+Decoding HRR GP
+-----
+
+- run GP analysis first (see above): human play -> EMPA theories
+
+- run `HRR.py`: `gen_and_save_subject_unique_HRRs` / `HRR.sh`: EMPA theories -> HRR embeddings
+    - (edit `__main__`)
+    - generates subject-specific HRRs (multiple samples)
+    - embeds EMPA theories (only unique ones)
+    - saves HRRs to disk (`mat/unique_HRR_subject_*.mat`)
+    - saves theories to disk (`theories/unique_theories_subject_*.pickle`)
+
+- (in [MATLAB repo](https://github.com/tomov/VGDL-fMRI-Data-Analysis)) run `decode_gp_CV.m` / `decode_gp_CV.sh`: BOLD -> decoded theories
+    - generates EMPA theory sequence that better fits the BOLD than the original EMPA theory sequence
+    - saves to disk (`mat/decode_gp_CV_*.mat`)
+
+- run `fmri_empaTheoryReplay.py`: theories -> subject behavior, EMPA (predicted) behavior
+
+- run `fmri_empaLik.py`: subject, EMPA behavior -> likelihood
