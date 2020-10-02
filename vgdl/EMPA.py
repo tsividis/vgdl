@@ -897,14 +897,22 @@ class Agent:
                 print 'avatar:', self.environment._game.getFullStateColorized()['objects']['DARKBLUE']  # momchil rm
 
                 # see if avatar interacted with something 
-                ac = []
+                acByClass = []
+                acByColor = []
                 for eff in self.environment._game.effectListByClass:
                     if 'avatar' == eff[1]:
-                        ac.append(eff[2])
+                        acByClass.append(eff[2])
                     elif 'avatar' == eff[2]:
-                        ac.append(eff[1])
+                        acByClass.append(eff[1])
+                for eff in self.environment._game.effectListByColor:
+                    if 'DARKBLUE' == eff[1]:
+                        acByColor.append(eff[2])
+                    elif 'DARKBLUE' == eff[2]:
+                        acByColor.append(eff[1])
 
-                if not len(ac) and self.environment.getTime() != 5: # plan at step 5
+                print ':::::::::::::::::::::::::::::::::::::::::::::::: Effects ', self.environment._game.effectListByColor 
+
+                if not len(acByClass) and self.environment.getTime() != 5: # plan at step 5
                     # no avatar collisions => no replanning 
                     # also, not in the very beginning
                     plans = []
@@ -936,12 +944,16 @@ class Agent:
                         # go in reverse to get all interactions
                         # note we skip the starting node
                         effectListByClassSeq = []
+                        effectListByColorSeq = []
                         actionSeq = []
                         while node.parent is not None:
                             effectListByClassSeq.append(node.rle._game.effectListByClass)
+                            effectListByColorSeq.append(node.rle._game.effectListByColor)
+
                             actionSeq.append(node.actionSeq[-1])
                             node = node.parent
                         effectListByClassSeq.reverse()
+                        effectListByColorSeq.reverse()
                         actionSeq.reverse()
 
                         assert len(actionSeq) == len(plan['actionSeq'])
@@ -951,10 +963,15 @@ class Agent:
                         # see BFS() in WBP.py: first we append action, then we compute new effectsa
                         # also, first node has no corresponding action
                         plan['effectListByClassSeq'] = effectListByClassSeq
+                        plan['effectListByColorSeq'] = effectListByColorSeq
                         plans.append(plan)
 
                 # log plans for all states (even when no avatar interactions occurred)
                 self.logfMRIRegressor('plans', plans) 
+
+                ac = {'by_class': acByClass, 'by_color': acByColor}
+                print ac
+                print plans
                 self.logfMRIRegressor('avatar_collisions', ac) 
                     
         else:

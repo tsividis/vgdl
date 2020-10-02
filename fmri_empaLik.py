@@ -65,16 +65,19 @@ if __name__ == '__main__':
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
 
+        #
+        # open plans as saved by fmri_empaReplay.py i.e. the original theory sequence
+        #
+
         # get regressors
-        '''
         q = {'play_key': play['_id']}
         print q
-        print db.regressors_plans_test.count(q)
-        assert db.regressors_plans_test.count(q) <= 1, 'Too many regressors!' 
-        if db.regressors_plans_test.count(q) == 0:
+        print db.regressors.count(q)
+        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.regressors.count(q) == 0:
             print 'skipping (e.g. Sokoban)'
             continue
-        regs = db.regressors_plans_test.find(q).sort('ts', -1)
+        regs = db.regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
@@ -84,23 +87,25 @@ if __name__ == '__main__':
             reg['regressors']['plans'] = cloudpickle.load(f)
 
         plans = reg['regressors']['plans']
-        avatar_collisions = regs['regressors']['avatar_collisions']
+        avatar_collisions = reg['regressors']['avatar_collisions']
+
+        #
+        # open plans as saved by fmri_empaTheoryReplay.py which replays custom theory sequences
+        #
 
         '''
-
         # get plans
         q = {'play_key': play['_id']}
         print q
         print db.plans.count(q) # TODO plans
         assert db.plans.count(q) <= 1, 'Too many plans!' 
         if db.plans.count(q) == 0:
-            print 'skipping (e.g. Sokoban)'
+            print 'skipping'
             continue
         plans = db.plans.find(q).sort('ts', -1)
         plan = None
         for plan in plans:
             break # just take the latest one
-
 
         # actually load plans from disk
         with open(plan['plans_filename'], 'r') as f:
@@ -108,29 +113,34 @@ if __name__ == '__main__':
 
         plans = plan['plans'] # all plans for each frame
         avatar_collisions = plan['avatar_collisions']
+        '''
 
         assert len(plans) == len(avatar_collisions)
         assert len(plans) == len(states) - 2 # TODO we skip first and last one in EMPA.py
 
         # extract predicted avatar-sprite interactions, based on EMPA plans
         #     and actual avatar-sprite interactions
+        # assumes subject replans next interaction immediately after current interaction
         #
-        EMPA_interactions = [None] # we have no prediction for first interaction TODO fix
-        subject_interactions = []
+        subject_interactions = [] # each avatar-sprite interaction
+        EMPA_predictions = [] # predicted next interaction, after current one
+        last_EMPA_prediction = [] # EMPA prediction about current interaction = first nonempty prediction after (or at) last interaction
+
+
+        s_all = []
+        e_all = []
+
         for i in range(len(plans)):
 
-            # get subject avatar collision
+            # get subject avatar collisions
             #
-            subj_ac = avatar_collisions[i][0] 
-
-            if len(subj_ac) == 0:
-                continue
+            subject_interaction = avatar_collisions[i][0]['by_color']
 
             # get EMPA avatar collisions
             #
             if len(plans[i][0]) == 0:
                 # no planning at this frame
-                EMPA_ac = []
+                EMPA_prediction = []
 
             else:
 
@@ -140,20 +150,32 @@ if __name__ == '__main__':
                 assert not best_plan['win'] or best_plan['terminal']
 
                 # for each future time step in the plan
-                EMPA_ac = []
-                for j in range(len(best_plan['effectListByClassSeq'])):
+                EMPA_prediction = []
+                for j in range(len(best_plan['effectListByColorSeq'])):
                     # iterate over effects
-                    for eff in best_plan['effectListByClassSeq'][j]:
-                        if 'avatar' == eff[1]:
-                            EMPA_ac.append(eff[2])
-                        elif 'avatar' == eff[2]:
-                            EMPA_ac.append(eff[1])
+                    for eff in best_plan['effectListByColorSeq'][j]:
+                        if 'DARKBLUE' == eff[1]:
+                            EMPA_prediction.append(eff[2])
+                        elif 'DARKBLUE' == eff[2]:
+                            EMPA_prediction.append(eff[1])
 
-                    if len(EMPA_ac) > 0:
+                    if len(EMPA_prediction) > 0:
                         # first interaction with avatar in plan already logged
                         break
 
-            subject_interactions.append(subj_ac)
-            EMPA_interactions.append(EMPA_ac)
+            s_all.append(subject_interaction)
+            e_all.append(EMPA_prediction)
+            
+            if len(subject_interaction) > 0:
+                subject_interactions.append(subject_interaction) # current subject avatar-object interaction(s)
+                EMPA_predictions.append(last_EMPA_prediction) # first (nonempty) prediction after last interaction
+                last_EMPA_prediction = []
+
+            if len(EMPA_prediction) > 0 and len(last_EMPA_prediction) == 0:
+                last_EMPA_prediction = EMPA_prediction
+
+
+        print subject_interactions
+        print EMPA_predictions
 
         embed()

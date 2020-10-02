@@ -37,7 +37,7 @@ Mongo DB setup
 
 We store all the experimental and behavioral data in [Mongo](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/). You need to have a local server working and the pymongo library installed.
 
-Here is how I installed it on my Mac:
+Here is how I installed it on the lab Macbook Air:
 
     pip install pymongo
     pip install -r fmri_requirements.txt
@@ -51,6 +51,10 @@ On NCF cluster, install using `module load`
 Start Mongo server (don't mess with [ulimits](https://serverfault.com/questions/591812/how-to-set-ulimits-for-mongod)):
 
     mongod --config /usr/local/etc/mongod.conf --fork
+
+Alternatively, to start automatically (on Mac):
+
+    brew services start mongodb/brew/mongodb-community@4.2
 
 Then test by connecting:
 

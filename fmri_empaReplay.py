@@ -107,10 +107,11 @@ if __name__ == '__main__':
         q = {'play_key': play['_id']}
         count = db.regressors.count(q)
         print q, count
+
         # this is so that we can resume from the last savedCurriculum e.g. after a crash
-        #if count > 0:
-        #    print '........................................... found regressors; skipping................................'
-        #    continue
+        if count > 0:
+            print '........................................... found regressors; skipping................................'
+            continue
 
 
 	# get states
@@ -199,7 +200,7 @@ if __name__ == '__main__':
             theoriesDir = 'theories'
             if theoriesDir not in os.listdir('.'):
                 os.makedirs(theoriesDir)
-    
+
             # serialize theory sequence
             filename = os.path.join(theoriesDir, 'theory_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
             with open(filename, 'wb') as f:
@@ -233,7 +234,7 @@ if __name__ == '__main__':
             #reg['regressors']['sprite_distr'] = [] # remove from regressor object
 
             # insert regressor into mongo
-            #db.regressors.insert_one(reg)
+            db.regressors.insert_one(reg)
 
     if didSomething:
         print 'Completed!'

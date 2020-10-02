@@ -2220,7 +2220,13 @@ class VGDLSprite(object):
         self.rect.height = self.height*self.rect.height
 
         self.fontsize = int(self.rect.height * 0.7)
-        self.font = pygame.font.Font('seguisym.ttf', self.fontsize)
+        try:
+            self.font = pygame.font.Font('seguisym.ttf', self.fontsize)
+        except Exception as e:
+            if str(e) != 'font not initialized':
+                # in Vrle mode; no displaying
+                raise
+            self.font = None # TODO momchil maybe fix
 
     def update(self, game, random_npc=False):
         """ The main place where subclasses differ. """
