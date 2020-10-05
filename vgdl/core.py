@@ -411,9 +411,9 @@ class VGDLParser(object):
         if playback_states:
             g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors)
         else:
-            win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
+            win, score, allStates, _, _, _, _, _, _ = g.startGame(headless, persist_movie)
 
-        return g
+        return win, score
 
     @staticmethod
     def fMRI_replayGame(game_str, map_str, playback_states):

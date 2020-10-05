@@ -170,7 +170,7 @@ prerun_interval = 1 # = 10 sec, how long for scanner to settle
 postrun_interval = 10 # = 10 sec, how long for HRF to settle
 nblocks = 3 # = 3 per run
 ninstances = 3 # = 3 per block
-duration = 20 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
+duration = 1200 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
 interplay_interval = 2 # = 2 sec, how long to hold last screen
 interblock_interval = 2 # = 2 sec, how long to show game name
 
