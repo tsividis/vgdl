@@ -64,16 +64,16 @@ actual_fMRI_experiment = False
 #
 
 game_names = [
-    "vgfmri3_sokoban",
-    "vgfmri3_chase",
-    "vgfmri3_helper",
-    "vgfmri3_bait",
-    "vgfmri3_lemmings",
-    "vgfmri3_plaqueAttack",
-    "vgfmri3_zelda"
+    "vgfmri4_sokoban",
+    "vgfmri4_chase",
+    "vgfmri4_helper",
+    "vgfmri4_bait",
+    "vgfmri4_lemmings",
+    "vgfmri4_plaqueAttack",
+    "vgfmri4_zelda",
+    "vgfmri4_avoidgeorge",
 #    "vgfmri3_aliens",
 #    "vgfmri3_sokoban",
-#    "vgfmri3_avoidgeorge",
 #    "vgfmri3_butterflies",
 #    "vgfmri3_jaws",
 #    "vgfmri3_zelda"
@@ -141,11 +141,11 @@ alphabets = [
     range(9451,9471),
     range(8926,8951),
     range(8853,8875),
-#    range(947,972),
-#    range(9015,9039),
-#    range(10675,10700),
-#    range(10675,10700), # TODO new!
-#    range(10675,10700), # TODO new!
+    range(947,972),
+    range(9015,9039),
+    range(10675,10700),
+    range(10675,10700), # TODO new!
+    range(10675,10700), # TODO new!
 ]
 #alphabets = [
 #    [947, 947, 969, 968, 969, 968],
@@ -154,8 +154,9 @@ alphabets = [
 #]
 
 
-assert(len(game_names) == len(fake_names))
-assert(len(alphabets) == len(game_names))
+fake_names = game_names
+#assert(len(game_names) == len(fake_names))
+#assert(len(alphabets) == len(game_names))
 
 # run has blocks
 # each block is the same game, diff levels
@@ -167,12 +168,12 @@ assert(len(alphabets) == len(game_names))
 
 nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
 prerun_interval = 1 # = 10 sec, how long for scanner to settle
-postrun_interval = 10 # = 10 sec, how long for HRF to settle
-nblocks = 3 # = 3 per run
-ninstances = 3 # = 3 per block
-duration = 1200 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
-interplay_interval = 2 # = 2 sec, how long to hold last screen
-interblock_interval = 2 # = 2 sec, how long to show game name
+postrun_interval = 1 # = 10 sec, how long for HRF to settle
+nblocks = 1 # = 3 per run
+ninstances = 1 # = 3 per block
+duration = 60 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
+interplay_interval = 1 # = 2 sec, how long to hold last screen
+interblock_interval = 1 # = 2 sec, how long to show game name
 
 
 def gen_runs_for_actual_experiment(games):
@@ -245,8 +246,11 @@ def gen_runs(games):
         }
         blocks = []
         for b in range(nblocks):
-            g = random.randint(0, len(games) - 1) # TODO actual 
-            g = b + 1 # TODO 
+            #g = random.randint(0, len(games) - 1) # TODO actual 
+            #g = b + 1 # TODO
+            # HERE CHELSEA I LOVE YOU - chill
+            g = 7 # game index in game_names; 0-based
+            l = 0 # level
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -258,7 +262,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': i, # TODO actual
+                    'level_id': l,
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }
@@ -289,6 +293,8 @@ def gen_subj(subj_id):
     fakes = list(fake_names)
     if actual_fMRI_experiment:
         random.shuffle(fakes)
+    else:
+        fakes = game_names
 
     alphs = list(alphabets)
     random.shuffle(alphs)
