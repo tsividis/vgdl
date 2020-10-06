@@ -887,8 +887,6 @@ class Agent:
         # print "phase 11: {}".format(time.time()-t1)
         # t1 = time.time()
 
-        print 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ', self.record_fMRIRegressors
-
         if self.record_fMRIRegressors:
             # we replay the human actions, and plan only on avatar-object interactions
             # in order to compute likelihood of human behavior

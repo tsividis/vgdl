@@ -233,6 +233,8 @@ Careful not to overwrite local scp\*.sh files when copying from NCF
 
 Careful not to overwrite remote theory_files when copying to NCF
 
+Careful not to edit .py files while scripts are running; they might use the latest version
+
 EMPA replay checklist
 -----
 

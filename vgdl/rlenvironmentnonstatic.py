@@ -103,7 +103,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         OLD_GOAL = "oldGl"
         # embed()
         for s in self._obstypes.keys():
-            # colorMapping[s] = colorDict[str(self._game.sprite_constr[s][1]['color'])].lower()
+            colorMapping[s] = colorDict[str(self._game.sprite_constr[s][1]['color'])].lower()
             if not s == "goal":
                 inverseMapping[s] = alnum[idx]
                 idx+=1
@@ -117,7 +117,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         #     inverseMapping["goal"] = "G"
 
         self.symbolDict = inverseMapping
-        # self.colorMapping = colorMapping
+        self.colorMapping = colorMapping
         return
 
     def show_binary(self, thingWeShoot):
@@ -175,7 +175,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                         # momchil
                         print 'loc avatar = ', k
                     else:
-                        symbol = assign_symbols_to_objects(self, v, self.symbolDict)
+                        #symbol = assign_symbols_to_objects(self, v, self.symbolDict)
+                        symbol = assign_symbols_to_objects(self, v, self.colorMapping) # momchil
                 
                 if symbol in ['A', 'X']:
                     symbol = colored(symbol, 'red')

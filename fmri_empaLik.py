@@ -20,7 +20,10 @@ from vgdl.core import VGDLParser, fMRI_screensize
 from vgdl.core import keyPresses as keyNames
 from IPython import embed
 from vgdl.main_agent import Agent
+import scipy.stats
+import scipy.io
 import cPickle, cloudpickle
+import os
 
 import pygame
 
@@ -38,9 +41,10 @@ db = client['heroku_7lzprs54']
 
 if __name__ == '__main__':
     subj_id = sys.argv[1]
+    game_name = sys.argv[2]
 
     # get plays
-    query = {'subj_id': subj_id, 'run_id': {'$lt': 7, '$gt': 0}}
+    query = {'subj_id': subj_id, 'game_name': game_name, 'run_id': {'$lt': 7, '$gt': 0}}
 
     plays = db.plays.find(query, {'_id': 1}).sort('start_time')
     pks = []
@@ -48,6 +52,9 @@ if __name__ == '__main__':
         pks.append(play['_id'])
     del plays # close cursor, o/w screws things up
 
+    
+    behavior = []
+    predictions = []
     
     # for each play
     for pk in pks:
@@ -78,7 +85,7 @@ if __name__ == '__main__':
         print db.regressors.count(q)
         assert db.regressors.count(q) <= 1, 'Too many regressors!' 
         if db.regressors.count(q) == 0:
-            print 'skipping (e.g. Sokoban)'
+            print 'skipping'
             continue
         regs = db.regressors.find(q).sort('ts', -1)
         reg = None
@@ -131,7 +138,7 @@ if __name__ == '__main__':
         # assumes subject replans next interaction immediately after current interaction
         #
         subject_interactions = [] # each avatar-sprite interaction
-        EMPA_predictions = [] # predicted next interaction, after current one
+        EMPA_predictions = [] # predicted interaction
         last_EMPA_prediction = [] # EMPA prediction about current interaction = first nonempty prediction after (or at) last interaction
 
 
@@ -186,4 +193,26 @@ if __name__ == '__main__':
         print subject_interactions
         print EMPA_predictions
 
-        embed()
+        behavior.extend(subject_interactions)
+        predictions.extend(EMPA_predictions)
+
+
+
+    pks = [str(pk) for pk in pks]
+    data = {
+        'behavior': behavior,
+        'predictions': predictions,
+        'subj_id': subj_id,
+        'game_name': game_name,
+        'pks': pks 
+    }
+
+    filename = os.path.join('pickle', 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.pickle')
+    print filename
+    with open(filename, 'wb') as f:
+        cloudpickle.dump(data, f)
+
+
+    filename = os.path.join('mat', 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.mat')
+    print filename
+    scipy.io.savemat(filename, data)
