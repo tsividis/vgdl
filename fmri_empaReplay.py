@@ -109,9 +109,9 @@ if __name__ == '__main__':
         print q, count
 
         # this is so that we can resume from the last savedCurriculum e.g. after a crash
-        #if count > 0:
-        #    print '........................................... found regressors; skipping................................'
-        #    continue
+        if count > 0:
+            print '........................................... found regressors; skipping................................'
+            continue
 
 
 	# get states
@@ -234,7 +234,7 @@ if __name__ == '__main__':
             #reg['regressors']['sprite_distr'] = [] # remove from regressor object
 
             # insert regressor into mongo
-            #db.regressors.insert_one(reg)
+            db.regressors.insert_one(reg)
 
     if didSomething:
         print 'Completed!'

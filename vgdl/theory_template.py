@@ -1621,7 +1621,7 @@ def writeTheoryToTxt(rle, theory, symbolDict, txtFile):
 	def buildArgsString(interactionRule):
 		relevantArgNames = getKeywordsFromOntology(interactionRule.interaction)
 		newInteractionName = interactionRule.interaction
-		if interactionRule.interaction =='killSprite':
+		if interactionRule.interaction in {'killSprite', 'killIfOtherHasMore'}: # TODO momchil
 			oppositeOperatorMap = {"<=": ">", ">=": "<", "<": ">=", ">": "<="}
 			precondition = list(set(interactionRule.preconditions))[0]
 			if precondition:

@@ -110,7 +110,8 @@ if __name__ == '__main__':
     import h5py
     with h5py.File(theory_seq_filename, 'r') as f: # make sure to save with -v7.3, otherwise doesn't work...
         # passed from HRR.py, gen_and_save_subject_unique_HRRs
-        unique_theories_filename = f['unique_theories_filename']
+        maskfile = u''.join(unichr(c) for c in f['maskfile'])
+        unique_theories_filename = u''.join(unichr(c) for c in f['unique_theories_filename'])
 
         theory_id_seq = []
         #for i in range(len(f['theory_id_seq_best'])):
@@ -132,8 +133,7 @@ if __name__ == '__main__':
         with open('fuck_ncf.pickle', 'r') as ff:
             play_key_seq = cloudpickle.load(ff)
 
-        s = u''.join(unichr(c) for c in unique_theories_filename)
-        with open(s, 'r') as ff:
+        with open(unique_theories_filename, 'r') as ff:
             theories = cloudpickle.load(ff)
 
 
@@ -198,6 +198,8 @@ if __name__ == '__main__':
         plan = {
             'play_key': play['_id'],
             'theory_seq_filename': theory_seq_filename,
+            'theory_id_seq': theory_id_seq,
+            'play_key_seq': play_key_seq,
             'subj_id': play['subj_id'],
             'run_id': play['run_id'],
             'block_id': play['block_id'],
@@ -207,7 +209,8 @@ if __name__ == '__main__':
             'level_id': play['level_id'],
             'type': 'fmri_empaReplay',
             'plan_ts': time.time(), # for sanity checks
-            'plan_dts': datetime.now().strftime("%m/%d/%Y, %H:%M:%S") # for sanity checks
+            'plan_dts': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"), # for sanity checks
+            'maskfile': maskfile,
         }
         all_plans[game['name']].append(plan)
 
