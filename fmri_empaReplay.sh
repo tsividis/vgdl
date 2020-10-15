@@ -4,11 +4,11 @@
 
 mkdir output
 
-subjects=( 1 7 )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 1 2 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
-games=( 'vgfmri3_helper'  )
+games=( 'vgfmri3_chase' 'vgfmri3_helper' )
 #games=( 'vgfmri3_chase')
 #games=( 'none' )
 
@@ -19,13 +19,13 @@ head -n 1 gitlog.txt >> jobs.txt
 
 for subj in ${subjects[*]}; do
     for game in ${games[*]}; do
-        outfileprefix="output/fmri_empaReplay_${subj}_${game}"
+        outfileprefix="${MY_SCRATCH}/VGDL/output/fmri_empaReplay_${subj}_${game}"
         echo ---------------------------------------------------------------------------------
         echo Subject ${subj}, game ${game}, file prefix = $outfileprefix
 
         # send the job to NCF
         #
-        sbatch_output=`sbatch -p ncf --mem 90001 -t 0-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
+        sbatch_output=`sbatch -p shared --mem 10001 -t 0-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output

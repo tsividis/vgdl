@@ -36,9 +36,18 @@ def randomString(stringLength=10):
 if 'omchil' in socket.gethostname():
     # local 
     client = MongoClient('localhost', 27017)
+    theoriesDir = 'theories'
 else:
-    # cluster
-    client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+    # Cannon 
+    client = MongoClient('holy2a05206.rc.fas.harvard.edu', 27017)
+    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories') # TODO env var
+print theoriesDir
+    # NCF cluster
+    #client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+
+
+if not os.path.exists(theoriesDir):
+    os.makedirs(theoriesDir)
 
 db = client['heroku_7lzprs54']
 
@@ -105,7 +114,7 @@ if __name__ == '__main__':
         print 'EMPA playing subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
         q = {'play_key': play['_id']}
-        count = db.regressors.count(q)
+        count = db.regressors_cannon_spriteEvery20.count(q)
         print q, count
 
         # this is so that we can resume from the last savedCurriculum e.g. after a crash
@@ -197,10 +206,6 @@ if __name__ == '__main__':
             # special care for theory which does not serialize into BSON for Mongo
             # use cloudpickle instead & save on disk TODO find better option
 
-            theoriesDir = 'theories'
-            if theoriesDir not in os.listdir('.'):
-                os.makedirs(theoriesDir)
-
             # serialize theory sequence
             filename = os.path.join(theoriesDir, 'theory_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
             with open(filename, 'wb') as f:
@@ -234,7 +239,7 @@ if __name__ == '__main__':
             #reg['regressors']['sprite_distr'] = [] # remove from regressor object
 
             # insert regressor into mongo
-            db.regressors.insert_one(reg)
+            db.regressors_cannon_spriteEvery20.insert_one(reg)
 
     if didSomething:
         print 'Completed!'

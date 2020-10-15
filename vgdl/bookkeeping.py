@@ -1,6 +1,6 @@
 import cPickle, cloudpickle
 from datetime import datetime
-import os, subprocess, shutil
+import os, subprocess, shutil, socket
 import time
 from IPython import embed
 
@@ -16,13 +16,17 @@ class Bookkeeping:
         self.param_ID = param_ID
         self.gameFilename = gameFilename
         self.episodeSaveFile = None
-        self.curriculumDir = 'savedCurricula'
+        if 'omchil' in socket.gethostname():
+            self.curriculumDir = 'savedCurricula'
+        else:
+            self.curriculumDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'savedCurricula')
+        print self.curriculumDir
         self.curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
         self.effectsEncountered = []
         self.statesEncountered = []
         self.compactStates = []
 
-        if self.curriculumDir not in os.listdir('.'):
+        if not os.path.exists(self.curriculumDir):
             os.makedirs(self.curriculumDir)
 
     def saveCurriculumState(self, agent, episodeCompactStates, is_fMRI):
