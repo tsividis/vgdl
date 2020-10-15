@@ -28,7 +28,7 @@ import pygame
 # * - optional
 # copied from fmri_empaReplay.py
 
-if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
+if 'omchil' in socket.gethostname() or 'elsea' in socket.gethostname()  or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
     client = MongoClient('localhost', 27017)
 else:

@@ -409,6 +409,8 @@ class VGDLParser(object):
        # else:
         # TODO momchil fMRI playback on cluster (to create movie) needs to be headless
         if playback_states:
+            win = None
+            score = None
             g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors)
         else:
             win, score, allStates, _, _, _, _, _, _ = g.startGame(headless, persist_movie)
@@ -1675,6 +1677,7 @@ class BasicGame(object):
         clock = pygame.time.Clock()
         if self.playback_states:
             self.frame_rate = 1
+
 
         win = False
         i = 0

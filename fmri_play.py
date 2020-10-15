@@ -249,8 +249,8 @@ def gen_runs(games):
             #g = random.randint(0, len(games) - 1) # TODO actual 
             #g = b + 1 # TODO
             # HERE CHELSEA I LOVE YOU - chill
-            g = 7 # game index in game_names; 0-based
-            l = 0 # level
+            g = 4 # game index in game_names; 0-based
+            l = 8 # level
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -371,6 +371,7 @@ if __name__ == '__main__':
     print 'w ', w
     print 's ', s
 
+    """
     i = random.randint(0, len(w)-1)
     print i
    
@@ -382,3 +383,4 @@ if __name__ == '__main__':
 
     i = random.randint(1, 7)
     print 'for bonus, pick run ', i
+    """

@@ -32,8 +32,8 @@ def randomString(stringLength=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
-
-if 'omchil' in socket.gethostname():
+print socket.gethostname()
+if 'omchil' in socket.gethostname() or 'elsea' in socket.gethostname():
     # local 
     client = MongoClient('localhost', 27017)
 else:
@@ -109,10 +109,11 @@ if __name__ == '__main__':
         print q, count
 
         # this is so that we can resume from the last savedCurriculum e.g. after a crash
-        if count > 0:
-            print '........................................... found regressors; skipping................................'
-            continue
+        #if count > 0:
+         #   print '........................................... found regressors; skipping................................'
+          #  continue
 
+          #TODO UNCOMMENT THESE OUT CHELSEA
 
 	# get states
         zstates = play['zstates']
@@ -234,7 +235,7 @@ if __name__ == '__main__':
             #reg['regressors']['sprite_distr'] = [] # remove from regressor object
 
             # insert regressor into mongo
-            db.regressors.insert_one(reg)
+             #db.regressors.insert_one(reg)
 
     if didSomething:
         print 'Completed!'
