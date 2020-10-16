@@ -40,7 +40,7 @@ if 'omchil' in socket.gethostname():
 else:
     # Cannon 
     client = MongoClient('holy2a05206.rc.fas.harvard.edu', 27017)
-    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories') # TODO env var
+    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
 print theoriesDir
     # NCF cluster
     #client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)

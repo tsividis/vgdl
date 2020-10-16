@@ -621,14 +621,19 @@ class Agent:
         # print "phase 3: {}".format(time.time()-t1)
         # t1 = time.time()
 
-        distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        if self.environment.getTime() < 5 or self.environment.getTime() % 20 == 0:
+            distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
-        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
-            # don't log stuff from before any observations
-            # convention is: timestamp = stuff right after frame
-            spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) # momchil: don't do it; super slow for plaqueAttack
-            self.logfMRIRegressor('spriteKL', spriteKL)
-            pass
+            if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+                # don't log stuff from before any observations
+                # convention is: timestamp = stuff right after frame
+                spriteKL = getKL(self.distribution.distribution, spriteDistributionPrev) # momchil: don't do it; super slow for plaqueAttack
+                self.logfMRIRegressor('spriteKL', spriteKL)
+                pass
+
+        else:
+            distributionsHaveChanged = False
+            self.logfMRIRegressor('spriteKL', 0)
         
         # print "phase 4: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -853,7 +858,8 @@ class Agent:
         # t1 = time.time()
 
         ## Setup for next timestep
-        self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
+        if self.environment.getTime() < 5 or self.environment.getTime() % 20 == 0:
+            self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
 
         # print "phase 9: {}".format(time.time()-t1)
         # t1 = time.time()

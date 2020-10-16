@@ -19,7 +19,7 @@ head -n 1 gitlog.txt >> jobs.txt
 
 for subj in ${subjects[*]}; do
     for game in ${games[*]}; do
-        outfileprefix="output/fmri_empaTheoryReplay_${subj}_${game}"
+        outfileprefix="${MY_SCRATCH}/VGDL/output/fmri_empaTheoryReplay_${subj}_${game}"
         echo ---------------------------------------------------------------------------------
         echo Subject ${subj}, game ${game}, file prefix = $outfileprefix
 

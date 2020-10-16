@@ -33,7 +33,8 @@ do
             split=($out)  # split into array based on newline
             IFS=$SAVEIFS   # Restore IFS
 
-            nplays=${split[3]}
+            #nplays=${split[3]} # ncf
+            nplays=${split[2]}
             echo nplays = $nplays
 
             for (( play=0; play<$nplays; play++ ))
@@ -49,7 +50,8 @@ do
                 split=($out)  # split into array based on newline
                 IFS=$SAVEIFS   # Restore IFS
 
-                nregs=${split[3]}
+                #nregs=${split[3]} # ncf
+                nregs=${split[2]}
                 echo tot_plays vs nregs -- $tot_plays vs. $nregs
                 if [ "$tot_plays" -ne "$nregs" ]
                 then

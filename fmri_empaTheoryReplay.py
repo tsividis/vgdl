@@ -42,9 +42,17 @@ def randomString(stringLength=10):
 if 'omchil' in socket.gethostname():
     # local 
     client = MongoClient('localhost', 27017)
+    theoriesDir = 'theories'
 else:
     # cluster
-    client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+    client = MongoClient('holy2a05206.rc.fas.harvard.edu', 27017)
+    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
+    # NCF cluster
+    #client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+print theoriesDir
+
+if not os.path.exists(theoriesDir):
+    os.makedirs(theoriesDir)
 
 db = client['heroku_7lzprs54']
 
@@ -259,10 +267,6 @@ if __name__ == '__main__':
             plan['dt'] = datetime.now()
             plan['ts'] = time.time()
 
-            theoriesDir = 'theories'
-            if theoriesDir not in os.listdir('.'):
-                os.makedirs(theoriesDir)
-    
             # serialize plans
             tmp = os.path.split(theory_seq_filename)[-1]
             filename = os.path.join(theoriesDir, 'plans_' + str(plan['play_key']) + '_'+ tmp + '_' + str(plan['ts'])) + '.pickle'

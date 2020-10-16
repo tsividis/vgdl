@@ -14,7 +14,7 @@ echo ---------------- >> jobs.txt
 head -n 1 gitlog.txt >> jobs.txt
 
 for subj in ${subjects[*]}; do
-        outfileprefix="output/fmri_playsPostproc_${subj}"
+        outfileprefix="${MY_SCRATCH}/VGDL/output/fmri_playsPostproc_${subj}"
         echo ---------------------------------------------------------------------------------
         echo Subject ${subj}, file prefix = $outfileprefix
 

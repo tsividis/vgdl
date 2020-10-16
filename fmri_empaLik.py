@@ -31,9 +31,13 @@ import pygame
 if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
     client = MongoClient('localhost', 27017)
+    matDir = 'mat'
+    pickleDir = 'pickle'
 else:
     # cluster
     client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+    matDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'mat')
+    pickleDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'pickle')
 
 db = client['heroku_7lzprs54']
 
@@ -207,12 +211,12 @@ if __name__ == '__main__':
         'pks': pks 
     }
 
-    filename = os.path.join('pickle', 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.pickle')
+    filename = os.path.join(pickleDir, 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.pickle')
     print filename
     with open(filename, 'wb') as f:
         cloudpickle.dump(data, f)
 
 
-    filename = os.path.join('mat', 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.mat')
+    filename = os.path.join(matDir, 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.mat')
     print filename
     scipy.io.savemat(filename, data)
