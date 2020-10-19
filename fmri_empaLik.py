@@ -42,6 +42,7 @@ db = client['heroku_7lzprs54']
 if __name__ == '__main__':
     subj_id = sys.argv[1]
     game_name = sys.argv[2]
+    orig_or_best = 'orig'
 
     # get plays
     query = {'subj_id': subj_id, 'game_name': game_name, 'run_id': {'$lt': 7, '$gt': 0}}
@@ -55,6 +56,7 @@ if __name__ == '__main__':
     
     behavior = []
     predictions = []
+    play_keys = []
     
     # for each play
     for pk in pks:
@@ -108,7 +110,10 @@ if __name__ == '__main__':
         #
 
         # get plans
-        q = {'play_key': play['_id']}
+        if orig_or_best == 'best':
+            q = {'play_key': play['_id'], 'note': 'best'}
+        else:
+            q = {'play_key': play['_id'], 'note': {'$exists': False} }
         print q
         print db.plans.count(q) # TODO plans
         assert db.plans.count(q) <= 1, 'Too many plans!' 
@@ -185,6 +190,7 @@ if __name__ == '__main__':
                 subject_interactions.append(subject_interaction) # current subject avatar-object interaction(s)
                 EMPA_predictions.append(last_EMPA_prediction) # first (nonempty) prediction after last interaction
                 last_EMPA_prediction = []
+                play_keys.append(str(pk))
 
             if len(EMPA_prediction) > 0 and len(last_EMPA_prediction) == 0:
                 last_EMPA_prediction = EMPA_prediction
@@ -202,17 +208,18 @@ if __name__ == '__main__':
     data = {
         'behavior': behavior,
         'predictions': predictions,
+        'play_keys': play_keys,
         'subj_id': subj_id,
         'game_name': game_name,
-        'pks': pks 
+        'pks': pks,
     }
 
-    filename = os.path.join('pickle', 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.pickle')
+    filename = os.path.join('pickle', 'fmri_empaLik_' + orig_or_best + '_' + subj_id + '_' + game_name + '.pickle')
     print filename
     with open(filename, 'wb') as f:
         cloudpickle.dump(data, f)
 
 
-    filename = os.path.join('mat', 'fmri_empaLik_orig_' + subj_id + '_' + game_name + '.mat')
+    filename = os.path.join('mat', 'fmri_empaLik_' + orig_or_best + '_' + subj_id + '_' + game_name + '.mat')
     print filename
     scipy.io.savemat(filename, data)

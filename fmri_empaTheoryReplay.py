@@ -58,6 +58,7 @@ def is_int(s):
 
 if __name__ == '__main__':
     subj_id = sys.argv[1]
+    orig_or_best = 'orig' # TODO param!
 
     query = {'subj_id': subj_id}
 
@@ -114,10 +115,13 @@ if __name__ == '__main__':
         unique_theories_filename = u''.join(unichr(c) for c in f['unique_theories_filename'])
 
         theory_id_seq = []
-        #for i in range(len(f['theory_id_seq_best'])):
-        #    theory_id_seq.append(f['theory_id_seq_best'][i][0])
-        for i in range(len(f['theory_id_seq_orig'])):
-            theory_id_seq.append(f['theory_id_seq_orig'][i][0])
+        if orig_or_best == 'best':
+            for i in range(len(f['theory_id_seq_best'])):
+                theory_id_seq.append(f['theory_id_seq_best'][i][0])
+        else:
+            assert orig_or_best == 'orig'
+            for i in range(len(f['theory_id_seq_orig'])):
+                theory_id_seq.append(f['theory_id_seq_orig'][i][0])
 
         gameStrings = f['gameStrings']
 
@@ -211,6 +215,7 @@ if __name__ == '__main__':
             'plan_ts': time.time(), # for sanity checks
             'plan_dts': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"), # for sanity checks
             'maskfile': maskfile,
+            'note': orig_or_best
         }
         all_plans[game['name']].append(plan)
 

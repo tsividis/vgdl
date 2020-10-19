@@ -323,3 +323,7 @@ Decoding HRR GP
 - run `fmri_empaTheoryReplay.py`: theories -> subject behavior, EMPA (predicted) behavior
 
 - run `fmri_empaLik.py`: subject, EMPA behavior -> likelihood
+    - run with `orig_or_best` = 'best', then = 'orig'
+    - cp to `mat/fmri_empaLik*.mat` to `../../matlab/VGDL_fMRI/mat/`
+
+- (in [MATLAB repo](https://github.com/tomov/VGDL-fMRI-Data-Analysis)) run `fit_empa.m`

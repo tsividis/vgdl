@@ -621,7 +621,10 @@ class Agent:
         # print "phase 3: {}".format(time.time()-t1)
         # t1 = time.time()
 
-        distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
+        if self.theory_playback:
+            distributionsHaveChanged = False # momchil
+        else:
+            distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
         if self.record_fMRIRegressors and self.environment.getTime() > 0: 
             # don't log stuff from before any observations
