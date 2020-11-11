@@ -785,8 +785,10 @@ class Agent:
             actions.append(0)
             self.action = random.choice(actions)
             # self.action = ## expose legal actions and pick one here.
+            self.drew_random_action = True
         else:
             self.action = self.planAsNeeded()
+            self.drew_random_action = False
 
         # print "phase 12: {}".format(time.time()-t1)
         # t1 = time.time()

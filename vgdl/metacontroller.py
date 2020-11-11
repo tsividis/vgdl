@@ -26,6 +26,9 @@ class Metacontroller:
                 print "No steps remaining in previously-conceived plan; need to re-plan"
             re_plan = True
 
+        if self.agent.drew_random_action:
+            re_plan = True
+
         ended, win = self.agent.environment._isDone()
 
         if ended:
