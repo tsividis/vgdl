@@ -188,6 +188,8 @@ class Environment:
             while not win and not forfeit_level:# and i<15:
                 self.n_level = n_level
                 self.agent.n_level = n_level
+                self.agent.quitting = False
+                self.agent.drew_random_action = True
                 self.within_level_iteration = i
                 self.agent.within_level_iteration = i
                 gameObject, win, score, steps, forfeit_level = self.playEpisode(gameObject, win)
