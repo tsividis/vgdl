@@ -781,9 +781,12 @@ class Agent:
 
         if drew_random_action:
             # get actions from avatar-type definition
-            actions = self.environment._game.getAvatars()[0].declare_possible_actions().values()
-            actions.append(0)
-            self.action = random.choice(actions)
+            try:
+                actions = self.environment._game.getAvatars()[0].declare_possible_actions().values()
+                actions.append(0)
+                self.action = random.choice(actions)
+            except IndexError:
+                self.action = 0
             # self.action = ## expose legal actions and pick one here.
             self.drew_random_action = True
         else:
