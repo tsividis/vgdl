@@ -73,7 +73,8 @@ if __name__ == '__main__':
         ff.write('\n\n\n\n --------------------------------------- ' + game + ' ----------------------- \n\n\n\n')
 
         nplays = db.plays.count(query)
-        nregs = db.regressors.count(query)
+        #nregs = db.regressors.count(query)
+        nregs = db.regressors_cannon_spriteEvery20.count(query)
 
         print query
         print nplays, ' vs. ', nregs
@@ -83,7 +84,8 @@ if __name__ == '__main__':
         plays = db.plays.find(query).sort('start_time')
         for play in plays:
             q = {'play_key': play['_id']}
-            cnt = db.regressors.count(q)
+            #cnt = db.regressors.count(q)
+            cnt = db.regressors_cannon_spriteEvery20.count(q)
             if cnt != 1:
                 print '         wrong # of regressors for ', play['run_id'], play['block_id'], play['instance_id'], play['play_id'], ' = ', cnt
 

@@ -258,7 +258,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': i, # TODO actual
+                    'level_id': 8,# i, # TODO actual
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }
