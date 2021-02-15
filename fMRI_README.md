@@ -111,7 +111,7 @@ Btw seems like the `ncf` and `ncf_interact` nodes are on a different network fro
 Then `mongodump` from a `ncf_interact` node and then `mongorestore` on the VDI node.
 
 
-On Cannon cluster, create [VDI node](https://vdi.rc.fas.harvard.edu/pun/sys/dashboard/batch_connect/sessions) (FAS-RC remote desktop, 28 day, 20 GB) and start with:
+On Cannon cluster, create [VDI node](https://vdi.rc.fas.harvard.edu/pun/sys/dashboard/batch_connect/sessions) (make sure to connect to the VPN with @fasrc; then select FAS-RC remote desktop, 28 day, 20 GB) and start with:
 
     mongod --config /n/gershman_lab/users/mtomov13/mongo/mongod.conf
 

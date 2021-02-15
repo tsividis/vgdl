@@ -63,7 +63,7 @@ actual_fMRI_experiment = False
 #        db.games.insert(game)
 #
 
-game_names = [
+game_names_old = [
     "vgfmri3_sokoban",
     "vgfmri3_chase",
     "vgfmri3_helper",
@@ -77,6 +77,22 @@ game_names = [
 #    "vgfmri3_butterflies",
 #    "vgfmri3_jaws",
 #    "vgfmri3_zelda"
+]
+
+game_names = [
+    "vgfmri4_sokoban",
+    "vgfmri4_chase",
+    "vgfmri4_helper",
+    "vgfmri4_bait",
+    "vgfmri4_lemmings",
+    #"vgfmri4_plaqueAttack",
+    "vgfmri4_zelda",
+#    "vgfmri4_aliens",
+#    "vgfmri4_sokoban",
+    "vgfmri4_avoidgeorge",
+#    "vgfmri4_butterflies",
+#    "vgfmri4_jaws",
+#    "vgfmri4_zelda"
 ]
 
 #real_names = [
@@ -169,10 +185,10 @@ nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
 prerun_interval = 1 # = 10 sec, how long for scanner to settle
 postrun_interval = 10 # = 10 sec, how long for HRF to settle
 nblocks = 3 # = 3 per run
-ninstances = 3 # = 3 per block
-duration = 20 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
+ninstances = 9 # = 3 per block
+duration = 10 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
 interplay_interval = 2 # = 2 sec, how long to hold last screen
-interblock_interval = 2 # = 2 sec, how long to show game name
+interblock_interval = 1 # = 2 sec, how long to show game name
 
 
 def gen_runs_for_actual_experiment(games):
@@ -247,6 +263,7 @@ def gen_runs(games):
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
             g = b + 1 # TODO 
+            g = 5
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -258,7 +275,7 @@ def gen_runs(games):
                 instance = {
                     'instance_id': i,
                     'desc_id': 0,
-                    'level_id': 8,# i, # TODO actual
+                    'level_id': i,# i, # TODO actual
                     'duration': duration,
                     'interplay_interval': interplay_interval
                 }

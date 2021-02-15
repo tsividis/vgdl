@@ -38,6 +38,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 # ---------------------------------------------------------------------
 
 fMRI_screensize = (800,580)
+BLOCK_SIZE = 35
 
 disableContinuousKeyPress = False
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
@@ -142,7 +143,7 @@ class VGDLParser(object):
     def fMRI_showAlphabets(alphabets):
         # display all sprite symbols as a sanity check
         #
-        block_size = (20,20)
+        block_size = (BLOCK_SIZE,BLOCK_SIZE)
         height = len(alphabets)
         width = max([len(a) for a in alphabets])
 
@@ -197,17 +198,19 @@ class VGDLParser(object):
 
 
         def displayScore(name, score, win):
-            fMRI_screen.blit(fMRI_bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[1],120)) # TODO super inefficient...
-            dispText(name, 35, (int(fMRI_screensize[0]/2), 35), fMRI_screen)
-            dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 75), fMRI_screen)
+            fMRI_screen.blit(fMRI_bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[0],60)) # TODO super inefficient...
+            #dispText(name, 35, (int(fMRI_screensize[0]/2), 35), fMRI_screen)
+            #dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 75), fMRI_screen)
+            dispText(name, 35, (int(fMRI_screensize[0] * 0.05), 35), fMRI_screen, align='left')
+            dispText('Score: %d' % score, 35, (int(fMRI_screensize[0] * .95), 35), fMRI_screen, align='right')
             if win is not None:
                 if win == True:
                     text = 'You WON!'
                 elif win == False:
                     text = 'You LOST...'
                 elif win == -1: # TODO const momchil
-                    text = 'TIMEOUT'
-                dispText(text, 45, (int(fMRI_screensize[0]/2), 510), fMRI_screen)
+                    text = 'End of level'
+                dispText(text, 40, (int(fMRI_screensize[0]/2), 540), fMRI_screen)
 
 
         # from https://goshippo.com/blog/measure-real-size-any-python-object/
@@ -709,7 +712,7 @@ class BasicGame(object):
         # assert self.height%2==0, "Level has odd-numbered height."
         # rescale pixels per block to adapt to the level
         # self.block_size = max(2,int(800./max(self.width, self.height)))
-        self.block_size = 20 # TODO dedupe
+        self.block_size = BLOCK_SIZE # TODO dedupe
         margin = 0 # TODO momchil where is it ; jk it's padding
         self.screensize = (self.width*(self.block_size + margin), self.height*(self.block_size + margin)) # TODO undo momchil TODO discrepancy when using fMRI_screensize
         if fMRI_screensize is not None:
