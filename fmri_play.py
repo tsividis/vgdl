@@ -169,9 +169,20 @@ alphabets = [
 #    [947, 947, 969, 968, 969, 968],
 #]
 
+bg_colors = [
+    (0,0,0),
+    (80,0,0),
+    (0,80,0),
+    (0,0,80),
+    (80,80,0),
+    (80,0,80),
+    (0,80,80)
+]
+
 
 assert(len(game_names) == len(fake_names))
 assert(len(alphabets) == len(game_names))
+assert(len(bg_colors) == len(game_names))
 
 # run has blocks
 # each block is the same game, diff levels
@@ -185,8 +196,8 @@ nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
 prerun_interval = 1 # = 10 sec, how long for scanner to settle
 postrun_interval = 10 # = 10 sec, how long for HRF to settle
 nblocks = 3 # = 3 per run
-ninstances = 9 # = 3 per block
-duration = 10 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
+ninstances = 3 # = 3 per block
+duration = 15 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
 interplay_interval = 2 # = 2 sec, how long to hold last screen
 interblock_interval = 1 # = 2 sec, how long to show game name
 
@@ -263,7 +274,7 @@ def gen_runs(games):
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
             g = b + 1 # TODO 
-            g = 5
+            g = 2
             block = {
                 'block_id': b,
                 'game_id': g,
@@ -290,12 +301,13 @@ def gen_runs(games):
     return runs
 
 
-def get_games(fakes, alphs):
+def get_games(fakes, alphs, colors):
     games = []
     for i in range(len(game_names)):
         game = db.games.find_one({'name': game_names[i]})
         game['fake_name'] = fakes[i]
         game['alphabet'] = alphs[i]
+        game['bg_color'] = colors[i]
         games.append(game)
 
     return games
@@ -313,7 +325,10 @@ def gen_subj(subj_id):
         random.shuffle(alphs[i])
         print alphs[i]
 
-    games = get_games(fakes, alphs)
+    colors = list(bg_colors)
+    random.shuffle(colors)
+
+    games = get_games(fakes, alphs, colors)
 
     if actual_fMRI_experiment:
         runs = gen_runs_for_actual_experiment(games)
@@ -366,11 +381,13 @@ if __name__ == '__main__':
 
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
-    wins, scores = VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)
+    wins, scores, best_instance_scores = VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)
 
     print 'wins ', wins
     print 'scores ', scores
+    print 'best_instance_scores ', best_instance_scores 
 
+    """
     w = []
     s = []
     for i in range(len(wins)):
@@ -390,6 +407,10 @@ if __name__ == '__main__':
     else:
         money = 0
     print 'money for run', run_id, '= $', money
+    """
+    i = random.randint(0, len(best_instance_scores)-1)
+    money = best_instance_scores[i]
+    print 'money for run', run_id, '= $', money, '   from instance ', i
 
     i = random.randint(1, 7)
     print 'for bonus, pick run ', i

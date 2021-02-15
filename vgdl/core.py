@@ -190,15 +190,15 @@ class VGDLParser(object):
         fMRI_bg.fill(black)
         fMRI_screen.blit(fMRI_bg, (0, 0))
 
-        def fullScreenText(text, duration, fontsize=50, color=white):
-            fMRI_screen.blit(fMRI_bg, (0, 0))
+        def fullScreenText(text, duration, bg, fontsize=50, color=white):
+            fMRI_screen.blit(bg, (0, 0))
             pos = (int(fMRI_screensize[0]/2), int(fMRI_screensize[1]/2))
             dispText(text, fontsize, pos, fMRI_screen, color)
             pauseForDuration(duration)
 
 
-        def displayScore(name, score, win):
-            fMRI_screen.blit(fMRI_bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[0],60)) # TODO super inefficient...
+        def displayScore(name, score, win, bg):
+            fMRI_screen.blit(bg, (0, 0), pygame.Rect(0,0,fMRI_screensize[0],60)) # TODO super inefficient...
             #dispText(name, 35, (int(fMRI_screensize[0]/2), 35), fMRI_screen)
             #dispText('Score: %d' % score, 30, (int(fMRI_screensize[0]/2), 75), fMRI_screen)
             dispText(name, 35, (int(fMRI_screensize[0] * 0.05), 35), fMRI_screen, align='left')
@@ -243,10 +243,10 @@ class VGDLParser(object):
         run = subj['runs'][run_id]
         blocks = run['blocks']
 
-        fullScreenText('Please keep your head as still as possible', 0, 35)
+        fullScreenText('Please keep your head as still as possible', 0, bg=fMRI_bg, fontsize=35)
         waitForKeypress(clock, ' ') 
 
-        fullScreenText('Waiting for scanner trigger...', 0, 35, (150, 150, 150))
+        fullScreenText('Waiting for scanner trigger...', 0, bg=fMRI_bg, fontsize=35, color=(150, 150, 150))
         waitForKeypress(clock, '=')
 
         run_start_ts = time.time()
@@ -258,11 +258,12 @@ class VGDLParser(object):
         run_time = 0 # estimated run time; used for correcting 
         drift = 0
 
-        fullScreenText('+', run['prerun_interval'])
+        fullScreenText('+', run['prerun_interval'], bg=fMRI_bg)
         run_time += run['prerun_interval']
 
         wins = []
         scores = []
+        best_instance_scores = []
 
         for b in range(len(blocks)):
             block = blocks[b]
@@ -274,11 +275,15 @@ class VGDLParser(object):
             descs = game['descs']
             levels = game['levels']
             alphabet = game['alphabet']
+            bg_color = game['bg_color']
             assert games[block['game_id']] == game
             
             run['blocks'][b]['start_time'] = time.time()
-            fullScreenText(game['fake_name'], interblock_interval)
             run_time += interblock_interval
+
+            block_bg = pygame.Surface(fMRI_screensize)
+            block_bg.fill(bg_color)
+            fullScreenText(game['fake_name'], interblock_interval, bg=block_bg)
 
             for i in range(len(instances)):
                 instance = instances[i]
@@ -298,6 +303,7 @@ class VGDLParser(object):
                 run['blocks'][b]['instances'][i]['start_time'] = instance_start_time 
 
                 play_keys = []
+                best_instance_score = -10000
                 for p in range(100): # TODO const
                     print 'Subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (subj['subj_id'], run_id, b, i, p, game['name'], game['fake_name'], desc_id, level_id)
 
@@ -306,18 +312,20 @@ class VGDLParser(object):
                     g.assignSymbols(alphabet)
                     g.buildLevel(level_str, fMRI_screensize)
 
-                    fMRI_screen.blit(fMRI_bg, (0, 0))
+                    fMRI_screen.blit(block_bg, (0, 0))
 
                     timeleft = instance_end_time - interplay_interval - time.time()
 
                     play_start_time = time.time() 
-                    dispFn = lambda score, win: displayScore(game['fake_name'], score, win)
+                    dispFn = lambda score, win: displayScore(game['fake_name'], score, win, block_bg)
 
                     win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft, fMRI_remap_keys=remap_keys)
                     play_end_time = time.time()
 
                     wins.append(win)
                     scores.append(score)
+                    if win:
+                        best_instance_score = max(best_instance_score, score)
 
                     #print 'events size: ', get_size(events), ' b for ', len(events), ' states'
                     #print '  = ', get_size(events)/1000000/(play_end_time - play_start_time), ' MB/s'
@@ -372,6 +380,9 @@ class VGDLParser(object):
                     if time.time() >= instance_end_time - interplay_interval:
                         break
 
+                # end for play
+                best_instance_scores.append(best_instance_score)
+
                 run['blocks'][b]['instances'][i]['end_time'] = time.time()
                 run['blocks'][b]['instances'][i]['play_keys'] = play_keys # just in case
 
@@ -383,14 +394,14 @@ class VGDLParser(object):
             run['blocks'][b]['end_time'] = time.time()
 
         run['postrun_interval_start_time'] = time.time()
-        fullScreenText('+', run['postrun_interval'])
+        fullScreenText('+', run['postrun_interval'], bg=fMRI_bg)
         run['end_time'] = time.time()
 
         run['subj_id'] = subj['subj_id'] # important!
         run['subj_key'] = subj['_id'] # just in case
         db.runs.insert(run)
 
-        return wins, scores
+        return wins, scores, best_instance_scores
 
 
     @staticmethod
