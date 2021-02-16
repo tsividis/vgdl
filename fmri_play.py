@@ -325,8 +325,10 @@ def gen_subj(subj_id):
         random.shuffle(alphs[i])
         print alphs[i]
 
-    colors = list(bg_colors)
+    colors = list(bg_colors[1:])
     random.shuffle(colors)
+    colors = [bg_colors[0]] + colors
+    print colors
 
     games = get_games(fakes, alphs, colors)
 
