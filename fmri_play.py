@@ -32,7 +32,7 @@ scanner_remap = {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('4'): K_RIGHT, ord('2')
 client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
 
-actual_fMRI_experiment = True
+actual_fMRI_experiment = True 
 
 
 # > db.games.find({'name': /vgfmri3.*/}, {'name': 1})
@@ -274,7 +274,7 @@ def gen_runs(games):
         for b in range(nblocks):
             g = random.randint(0, len(games) - 1) # TODO actual 
             g = b + 1 # TODO 
-            g = 2
+            g = 6
             block = {
                 'block_id': b,
                 'game_id': g,
