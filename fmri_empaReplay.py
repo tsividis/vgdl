@@ -114,7 +114,8 @@ if __name__ == '__main__':
         print 'EMPA playing subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
         q = {'play_key': play['_id']}
-        count = db.regressors_cannon_spriteEvery20.count(q)
+        #count = db.regressors_cannon_spriteEvery20.count(q)
+        count = db.regressors.count(q)
         print q, count
 
         # this is so that we can resume from the last savedCurriculum e.g. after a crash
@@ -239,7 +240,8 @@ if __name__ == '__main__':
             #reg['regressors']['sprite_distr'] = [] # remove from regressor object
 
             # insert regressor into mongo
-            db.regressors_cannon_spriteEvery20.insert_one(reg)
+            #db.regressors_cannon_spriteEvery20.insert_one(reg)
+            db.regressors.insert_one(reg)
 
     if didSomething:
         print 'Completed!'

@@ -621,7 +621,8 @@ class Agent:
         # print "phase 3: {}".format(time.time()-t1)
         # t1 = time.time()
 
-        if self.environment.getTime() < 5 or self.environment.getTime() % 20 == 0:
+        #if self.environment.getTime() < 5 or self.environment.getTime() % 20 == 0:
+        if self.environment.getTime() < 5 or self.environment.getTime() % 1 == 0:
             distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
 
             if self.record_fMRIRegressors and self.environment.getTime() > 0: 
@@ -858,7 +859,8 @@ class Agent:
         # t1 = time.time()
 
         ## Setup for next timestep
-        if self.environment.getTime() < 5 or self.environment.getTime() % 20 == 0:
+        #if self.environment.getTime() < 5 or self.environment.getTime() % 20 == 0:
+        if self.environment.getTime() < 5 or self.environment.getTime() % 1 == 0:
             self.distribution.spriteInduction(self.environment._game, self.memory, step=1, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet, dynamic_type_lesion=self.dynamic_type_lesion)
 
         # print "phase 9: {}".format(time.time()-t1)

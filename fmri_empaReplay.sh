@@ -6,14 +6,15 @@ mkdir output
 
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 1 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=( 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 10 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
-games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' )
-#games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda')
-#games=( 'vgfmri3_helper')
-#games=( 'none' )
+#games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' )
+#games=( 'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda' )
+#games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda' )
+#games=( 'vgfmri3_chase')
+games=( 'none' )
 
 echo ---------------- >> jobs.txt
 echo --- $(date): Running fmri_empaReplay for subjects ${subj_arg} in parallel >> jobs.txt
@@ -31,7 +32,7 @@ for subj in ${subjects[*]}; do
         # OOM helper; up to 50000
         # sprites % 20: time 0-15 for all but lem & PA; for them, 1-15
         #
-        sbatch_output=`sbatch -p shared --mem 90001 -t 1-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
+        sbatch_output=`sbatch -p shared --mem 20001 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output
