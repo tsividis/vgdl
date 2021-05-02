@@ -16,6 +16,7 @@ from IPython import embed
 from vgdl.EMPA import Agent
 import cPickle, cloudpickle
 from vgdl.environment import Environment
+import vgdl.core
 from vgdl.hyperparameters import hyperparameter_sets
 
 import pygame
@@ -135,6 +136,10 @@ if __name__ == '__main__':
     all_pairs = {}
     all_regressors = {}
     all_movie_names = {}
+
+    # Hack: we need to change the block size for the earlier subject, since the block sizes were smaller and the sprite coordinates were correspondingly different
+    if int(subj_id) <= 11:
+        vgdl.core.BLOCK_SIZE = 20
     
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})

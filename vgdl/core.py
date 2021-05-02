@@ -38,7 +38,7 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 # ---------------------------------------------------------------------
 
 fMRI_screensize = (800,580)
-BLOCK_SIZE = 35
+BLOCK_SIZE = 35 #35
 
 disableContinuousKeyPress = False
 actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
