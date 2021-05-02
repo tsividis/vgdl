@@ -62,6 +62,8 @@ class Environment:
             assert len(self.environment._game.playback_states) == len(self.environment._game.playback_keystates)
             # important to set the initial state now -- we getObjects() to initialize the theories in replayEpisode, and the UUIDs of the objects should match up, e.g. for proper event handling
             # important to use default colors -- EMPA relies on colors for stuff, e.g. to detect walls; kinda hacky but let's do that for now
+            #print 'initializeEnvironment'
+            #embed()
             self.environment._game.setFullState(self.environment._game.playback_states[0], cheap=False, default_colors=True)
             self.environment._game.playback_index += 1
         return
@@ -225,6 +227,9 @@ class Environment:
             print self.gameString
             print '---------- level'
             print self.levelString
+
+            #print 'loop'
+            #embed()
 
             if reset_finalTimeStepList:
                 print 'resetting finalTimeStepList'
