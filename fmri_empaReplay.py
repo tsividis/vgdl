@@ -51,6 +51,35 @@ if not os.path.exists(theoriesDir):
 
 db = client['heroku_7lzprs54']
 
+def fix_states(states, game, subj_id):
+    if subj_id not in ['12', '13', '14', '15', '16', '17']:
+        return
+    if game['name'] == 'vgfmri4_chase':
+        assert 'MovingAvatar color=GREEN' in game['descs'][0]
+        avatar_color = 'GREEN'
+    elif game['name'] == 'vgfmri4_bait':
+        assert 'MovingAvatar color=YELLOW' in game['descs'][0]
+        avatar_color = 'YELLOW'
+    else:
+        return
+    print 'Fixing states for ', subj_id, ' ', game['name'], ' - ', avatar_color
+    for i in range(len(states)):
+        state = states[i]
+        for effect in state['effectListByColor']:
+            if effect[1] == avatar_color:
+                effect[1] = 'DARKBLUE'
+            if effect[2] == avatar_color:
+                effect[2] = 'DARKBLUE'
+        for key, s in state['objects']['avatar'].iteritems():
+            s['colorName'] = 'DARKBLUE'
+            s['color'] = [255, 82, 82]
+        if avatar_color in str(state):
+            print 'found avatar color in state'
+            embed()
+
+
+
+
 def is_int(s):
     try:
         int(s)
@@ -128,10 +157,14 @@ if __name__ == '__main__':
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
+        fix_states(states, game, subj_id)
 
         zkeystates = play['zkeystates']
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
+
+        #embed()
+        #continue
 
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
