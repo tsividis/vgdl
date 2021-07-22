@@ -728,7 +728,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
         client = MongoClient('localhost', 27017)
     else:
         # cluster
-        client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+        client = MongoClient('holy7c18111.rc.fas.harvard.edu', 27017)
 
     db = client['heroku_7lzprs54']
 
@@ -896,7 +896,7 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
         client = MongoClient('localhost', 27017)
     else:
         # cluster
-        client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+        client = MongoClient('holy7c18111.rc.fas.harvard.edu', 27017)
 
     db = client['heroku_7lzprs54']
 

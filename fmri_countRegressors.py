@@ -45,9 +45,9 @@ if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncfl
     client = MongoClient('localhost', 27017)
 else:
     # Cannon 
-    client = MongoClient('holy2a05208.rc.fas.harvard.edu', 27017)
+    client = MongoClient('holy7c18111.rc.fas.harvard.edu', 27017)
     # NCF cluster
-    #client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+    #client = MongoClient('holy7c18111.rc.fas.harvard.edu', 27017)
 
 
 db = client['heroku_7lzprs54']
