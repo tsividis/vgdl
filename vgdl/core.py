@@ -405,7 +405,7 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "./tmpl", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None, default_colors=False):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "videos/", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None, default_colors=False, persist_all_images=False, all_images_dir='all_images'):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -423,7 +423,7 @@ class VGDLParser(object):
        # else:
         # TODO momchil fMRI playback on cluster (to create movie) needs to be headless
         if playback_states:
-            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors)
+            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors, persist_all_images=persist_all_images, all_images_dir=all_images_dir)
         else:
             win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -1501,7 +1501,7 @@ class BasicGame(object):
         pygame.display.update()
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir=False, padding=0, gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False):
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir='/tmp/', padding=0, gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False, persist_all_images=False, all_images_dir='/tmp/'):
         """
         Main method to display a previously-run game.
         """
@@ -1550,12 +1550,14 @@ class BasicGame(object):
         ##figure out keypress type:
         disableContinuousKeyPress = False
 
-        allStates = [self.getFullState()]
+        #allStates = [self.getFullState()]
 
         while self.playback_index < len(self.playback_states):
             clock.tick(self.frame_rate)
             self.screen.fill(LIGHTGRAY)
             self.time += 1
+
+            print('idx ', self.playback_index, ' out of ', len(self.playback_states)) 
 
             self._clearAll()
             try:
@@ -1581,6 +1583,12 @@ class BasicGame(object):
             #### in image-making mode ####
             self._drawAll()
 
+            # persistent images for PCA before drawing regressors
+            if persist_all_images:
+                # somewhat redundant with make_images
+                image_file_name = '{}_frame={}.png'.format(video_name, i)
+                pygame.image.save(self.screen, os.path.join(all_images_dir, image_file_name))
+
             # plotting fMRI regressors
             if regressors:
                 self.fMRI_plotStuff(regressors)
@@ -1595,9 +1603,9 @@ class BasicGame(object):
                 elif not current_state['win']:
                     self.message_display('LOSS', fontsize=30, color=RED, location='center')
 
-            allStates.append(self.getFullState())
+            #allStates.append(self.getFullState())
 
-            if(make_images or persist_movie):
+            if(make_images or persist_movie or persist_all_images):
 
                 if make_images:
                     tmp_dir = "images/tmp/"+gameName+"/"
@@ -1624,9 +1632,9 @@ class BasicGame(object):
             
         if(persist_movie):
             if video_name:
-                self.video_file = "./videos/" + video_name + "_" + str(self.uiud) + ".mp4"
+                self.video_file = os.path.join(movie_dir, video_name + "_" + str(self.uiud) + ".mp4")
             else:
-                self.video_file = "./videos/" +  str(self.uiud) + ".mp4"
+                self.video_file = os.path.join(movie_dir, str(self.uiud) + ".mp4")
             #call = ["ffmpeg","-y",  "-r", "30", "-b", "800", "-i", tmpl, self.video_file ]
             call = ["ffmpeg -r 30 -f image2  -i ", tmpl, " -vcodec libx264 -crf 25  -pix_fmt yuv420p ", self.video_file]
             call = ' '.join(call) 

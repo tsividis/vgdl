@@ -31,9 +31,15 @@ import pygame
 if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
     client = MongoClient('localhost', 27017)
+    all_images_dir = 'all_frames'
+    movie_dir = 'videos'
 else:
     # cluster
     client = MongoClient('holy7c22306.rc.fas.harvard.edu', 27017)
+    all_images_dir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'all_frames')
+    movie_dir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
+    print all_images_dir
+    print movie_dir 
 
 
 db = client['heroku_7lzprs54']
@@ -146,7 +152,7 @@ if __name__ == '__main__':
         # in lieu of makeMovie() from main_agent.py
         # use default colors (not the ones the subject saw) b/c that's what EMPA sees
         core.VGDLParser.playGame(play['game_str'], play['level_str'], states, \
-            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+game['name'], padding=10, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True)
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir=movie_dir, padding=10, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True, persist_all_images=True, all_images_dir=all_images_dir)
 
 
     print 'done!'
