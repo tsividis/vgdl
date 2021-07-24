@@ -35,7 +35,7 @@ if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncfl
     movie_dir = 'videos'
 else:
     # cluster
-    client = MongoClient('holy7c18111.rc.fas.harvard.edu', 27017)
+    client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
     all_images_dir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'all_frames')
     movie_dir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
     print all_images_dir

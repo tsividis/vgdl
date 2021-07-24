@@ -11,7 +11,7 @@ subj_arg="${subjects[@]}" # stringify it
 
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
 #games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' )
-games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
+#games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
 #games=( 'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=( 'vgfmri3_chase' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=( 'vgfmri4_helper' 'vgfmri4_bait'  'vgfmri4_zelda'  )
@@ -19,7 +19,7 @@ games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
 #games=( 'vgfmri4_chase' 'vgfmri4_bait' 'vgfmri4_zelda')
 #games=( 'vgfmri3_helper')
 #games=( 'vgfmri4_helper')
-#games=( 'none' )
+games=( 'none' )
 
 echo ---------------- >> jobs.txt
 echo --- $(date): Running fmri_empaReplay for subjects ${subj_arg} in parallel >> jobs.txt

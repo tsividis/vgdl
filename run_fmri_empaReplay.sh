@@ -22,7 +22,7 @@ do
             echo ==== run_fmri_empaReplay: subj ${1}, run $run, block $block, instance $instance, game ${2}
 
             # get # of plays with given run, block, instance
-            out=`mongo --host holy7c18111.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${2}'})"`
+            out=`mongo --host holy2a05207.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${2}'})"`
 
             echo mongo play count -- $out
 
@@ -40,9 +40,9 @@ do
             do
                 # make sure that the thing worked and the regressors got inserted
                 # if not, abort (so we can fix it & resume; o/w savedCurricula gets fucked and we have to start all over
-                #out=`mongo --host holy7c18111.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.regressors.count({'subj_id': '${1}', 'game_name': '${2}'})"`
-                #out=`mongo --host holy7c18111.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.regressors_cannon_spriteEvery20.count({'subj_id': '${1}', 'game_name': '${2}'})"`
-                out=`mongo --host holy7c18111.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.regressors.count({'subj_id': '${1}', 'game_name': '${2}'})"`
+                #out=`mongo --host holy2a05207.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.regressors.count({'subj_id': '${1}', 'game_name': '${2}'})"`
+                #out=`mongo --host holy2a05207.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.regressors_cannon_spriteEvery20.count({'subj_id': '${1}', 'game_name': '${2}'})"`
+                out=`mongo --host holy2a05207.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.regressors.count({'subj_id': '${1}', 'game_name': '${2}'})"`
                 echo mongo total regressor count -- $out
 
                 # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601

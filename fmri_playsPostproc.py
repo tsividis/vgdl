@@ -32,7 +32,7 @@ if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncfl
     client = MongoClient('localhost', 27017)
 else:
     # cluster
-    client = MongoClient('holy7c18111.rc.fas.harvard.edu', 27017)
+    client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
 
 
 db = client['heroku_7lzprs54']
@@ -193,10 +193,10 @@ def playsPostproc(subj_id):
             curr_theory = reg['regressors']['theory'][i][0]
             termination_change_flag = set(prev_theory.terminationSet) != set(curr_theory.terminationSet)
 
-            if termination_change_flag != reg['regressors']['termination_change_flag'][i][0]:
-                print 'sheeeeitttttttttt'
-                embed()
-                time.sleep(10)
+            #if termination_change_flag != reg['regressors']['termination_change_flag'][i][0]:
+            #    print 'sheeeeitttttttttt'
+            #    embed()
+            #    time.sleep(10)
 
             reg['regressors']['termination_change_flag'][i][0] = termination_change_flag 
 
@@ -581,7 +581,7 @@ def playsPostproc(subj_id):
         play_post['keyups'] = keyups
         play_post['keydowns'] = keydowns
 
-        #db.plays_post.insert_one(play_post)
+        db.plays_post.insert_one(play_post)
         
     print 'done!'
     plays.close()

@@ -19,7 +19,7 @@ if 'omchil' in socket.gethostname():
     client = MongoClient('localhost', 27017)
 else:
     # cluster
-    client = MongoClient('holy7c18111.rc.fas.harvard.edu', 27017)
+    client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
 
 db = client['heroku_7lzprs54']
 
