@@ -117,7 +117,7 @@ def playsPostproc(subj_id):
         print db.plays_post.count(q)
         if db.plays_post.count(q) > 0:
             print '..........skipping: already computed'
-            #continue
+            continue
 
         # get regressors
         q = {'play_key': play['_id']}

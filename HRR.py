@@ -22,6 +22,19 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 #logging.disable(logging.CRITICAL)
 logging.disable(logging.ERROR)
 
+if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
+    # local on my Mac, or on a login / VDI node
+    client = MongoClient('localhost', 27017)
+    theoriesDir = 'theories'
+    matDir = 'mat'
+else:
+    # cluster
+    client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
+    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
+    matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
+
+    print theoriesDir, matDir
+
 
 def dim(K, N, E):
     '''
@@ -588,7 +601,6 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
 
     from pymongo import MongoClient
 
-    client = MongoClient('localhost', 27017)
     db = client['heroku_7lzprs54']
 
     # coupled with neurosynth_rsa_HRR.m
@@ -672,7 +684,7 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
 #
 def gen_and_export_RDMs_to_matlab(K, N, E, nsamples, dist):
 
-    filename='mat/HRR_groundtruth_RDM_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (K, N, E, nsamples, dist)
+    filename = os.path.join(matDir, 'HRR_groundtruth_RDM_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (K, N, E, nsamples, dist))
 
     game_RDM, sprite_RDM, interaction_RDM, termination_RDM, game_names = gen_ground_truth_RDMs(K, N, E, nsamples, dist)
 
@@ -686,7 +698,7 @@ def gen_and_export_RDMs_to_matlab(K, N, E, nsamples, dist):
 # helper to read multi from matlab (must have created it first with ccnl_check_multi)
 #
 def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
-    filename = 'mat/vgdl_create_multi_glm%d_subj%d_run%d.mat' % (glmodel, subj_id, run_id)
+    filename = os.path.join(matDir, 'vgdl_create_multi_glm%d_subj%d_run%d.mat' % (glmodel, subj_id, run_id))
     
     import h5py
 
@@ -722,13 +734,6 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
     from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
 
     import pygame
-
-    if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
-        # local on my Mac, or on a login / VDI node
-        client = MongoClient('localhost', 27017)
-    else:
-        # cluster
-        client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
 
     db = client['heroku_7lzprs54']
 
@@ -890,13 +895,6 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
     from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
 
     import pygame
-
-    if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
-        # local on my Mac, or on a login / VDI node
-        client = MongoClient('localhost', 27017)
-    else:
-        # cluster
-        client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
 
     db = client['heroku_7lzprs54']
 
@@ -1382,7 +1380,7 @@ def gen_and_save_subject_RDMs_batched(subj_id):
     # ...or not (memory)
     #
     '''
-    HRR_filename='mat/HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d.mat' % (subj_id, K, N, E, nsamples)
+    HRR_filename = os.path.join(matDir, 'HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d.mat' % (subj_id, K, N, E, nsamples))
 
     d = {
         'theory_HRRs': theory_HRRs,
@@ -1405,7 +1403,7 @@ def gen_and_save_subject_RDMs_batched(subj_id):
 
     # save RDMs
     #
-    RDM_filename='mat/HRR_subject_RDM_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (subj_id, K, N, E, nsamples, dist)
+    RDM_filename = os.path.join(matDir, 'HRR_subject_RDM_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (subj_id, K, N, E, nsamples, dist))
 
     d = {
         'theory_RDM': theory_RDM,
@@ -1497,7 +1495,7 @@ def gen_and_save_subject_kernels_batched(subj_id):
     # ...or not (memory)
     #
     '''
-    HRR_filename='mat/HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_for_ker.mat' % (subj_id, K, N, E, nsamples)
+    HRR_filename = os.path.join(matDir, 'HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_for_ker.mat' % (subj_id, K, N, E, nsamples))
 
     d = {
         'theory_HRRs': theory_HRRs,
@@ -1520,7 +1518,7 @@ def gen_and_save_subject_kernels_batched(subj_id):
 
     # save kernels
     #
-    kernel_filename='mat/HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize)
+    kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize))
 
     d = {
         'theory_kernel': theory_kernel,
@@ -1578,9 +1576,8 @@ def gen_and_save_subject_unique_HRRs(subj_id):
 
     # save unique HRRs and theory sequence
     #
-    HRR_filename='mat/unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.mat' % (subj_id, K, N, E, nsamples, normalize)
-    theoriesDir = 'theories'
-    theories_filename='%s/unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (theoriesDir, subj_id, K, N, E, nsamples, normalize)
+    HRR_filename = os.path.join(matDir, 'unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.mat' % (subj_id, K, N, E, nsamples, normalize))
+    theories_filename = os.path.join(theoriesDir, 'unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (subj_id, K, N, E, nsamples, normalize)
 
     with open(theories_filename, 'wb') as f:
         cloudpickle.dump(theories, f)
@@ -1616,7 +1613,7 @@ if __name__ == '__main__':
     subj_id = int(sys.argv[1])
 
     #gen_and_save_subject_RDMs_batched(subj_id)
-    #gen_and_save_subject_kernels_batched(subj_id)
-    gen_and_save_subject_unique_HRRs(subj_id)
+    gen_and_save_subject_kernels_batched(subj_id)
+    #gen_and_save_subject_unique_HRRs(subj_id)
 
     print 'Done'
