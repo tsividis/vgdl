@@ -24,7 +24,7 @@ games=( 'none' )
 echo ---------------- >> jobs.txt
 echo --- $(date): Running fmri_empaReplay for subjects ${subj_arg} in parallel >> jobs.txt
 echo ---------------- >> jobs.txt
-head -n 1 gitlog.txt >> jobs.txt
+git log | head -n 1 >> jobs.txt 
 
 for subj in ${subjects[*]}; do
     for game in ${games[*]}; do

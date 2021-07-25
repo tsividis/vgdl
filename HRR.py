@@ -13,6 +13,21 @@ from pprint import pprint
 import logging, sys
 import cPickle, cloudpickle
 
+import socket
+from pymongo import MongoClient
+from collections import defaultdict
+from vgdl import core
+from vgdl.core import VGDLParser, fMRI_screensize
+from vgdl.core import keyPresses as keyNames
+from IPython import embed
+from vgdl.EMPA import Agent
+import cPickle, cloudpickle
+from vgdl.environment import Environment
+from vgdl.hyperparameters import hyperparameter_sets
+from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+
+import pygame
+
 # ### Helper functions
 
 # In[5]:
@@ -720,21 +735,6 @@ def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
 def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False):
     subj_id = str(subj_id)
 
-    import socket
-    from pymongo import MongoClient
-    from collections import defaultdict
-    from vgdl import core
-    from vgdl.core import VGDLParser, fMRI_screensize
-    from vgdl.core import keyPresses as keyNames
-    from IPython import embed
-    from vgdl.EMPA import Agent
-    import cPickle, cloudpickle
-    from vgdl.environment import Environment
-    from vgdl.hyperparameters import hyperparameter_sets
-    from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
-
-    import pygame
-
     db = client['heroku_7lzprs54']
 
     subj = db.subjects.find_one({'subj_id': subj_id})
@@ -880,21 +880,6 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
 #
 def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False):
     subj_id = str(subj_id)
-
-    import socket
-    from pymongo import MongoClient
-    from collections import defaultdict
-    from vgdl import core
-    from vgdl.core import VGDLParser, fMRI_screensize
-    from vgdl.core import keyPresses as keyNames
-    from IPython import embed
-    from vgdl.EMPA import Agent
-    import cPickle, cloudpickle
-    from vgdl.environment import Environment
-    from vgdl.hyperparameters import hyperparameter_sets
-    from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
-
-    import pygame
 
     db = client['heroku_7lzprs54']
 
@@ -1577,7 +1562,7 @@ def gen_and_save_subject_unique_HRRs(subj_id):
     # save unique HRRs and theory sequence
     #
     HRR_filename = os.path.join(matDir, 'unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.mat' % (subj_id, K, N, E, nsamples, normalize))
-    theories_filename = os.path.join(theoriesDir, 'unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (subj_id, K, N, E, nsamples, normalize)
+    theories_filename = os.path.join(theoriesDir, 'unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (subj_id, K, N, E, nsamples, normalize))
 
     with open(theories_filename, 'wb') as f:
         cloudpickle.dump(theories, f)

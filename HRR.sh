@@ -5,13 +5,14 @@
 mkdir output
 
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=( 2 3 4 5 6 7 8  )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32  )  #  e.g. subjects=( 1 2 5 6 7 10 )
+#subjects=( 32  )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
 echo ---------------- >> jobs.txt
 echo --- $(date): Running HRR for subjects ${subj_arg} in parallel >> jobs.txt
 echo ---------------- >> jobs.txt
-head -n 1 gitlog.txt >> jobs.txt
+git log | head -n 1 >> jobs.txt 
 
 for subj in ${subjects[*]}; do
         outfileprefix="output/HRR_${subj}"
@@ -20,7 +21,7 @@ for subj in ${subjects[*]}; do
 
         # send the job to NCF
         #
-        sbatch_output=`sbatch -p ncf --mem 40001 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python HRR.py ${subj}"`
+        sbatch_output=`sbatch -p shared --mem 40001 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python HRR.py ${subj}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output
