@@ -235,7 +235,8 @@ class Agent:
         return
 
     def logfMRIRegressor(self, name, val):
-
+        if not self.record_fMRIRegressors:
+            return
         self.bookkeeping.regressors[name].append((val, self.environment._game.time, self.environment._game.playback_ts))
 
     def initializeVrle(self, hypothesis):

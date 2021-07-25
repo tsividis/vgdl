@@ -19,6 +19,7 @@ from vgdl.main_agent import Agent
 import cPickle, cloudpickle
 import os
 import glob
+import vgdl.core
 
 import pygame
 
@@ -41,6 +42,8 @@ else:
     print all_images_dir
     print movie_dir 
 
+show_symbols = False  # optionally did not show symbols, to be consistent with DQN
+vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it was 35
 
 db = client['heroku_7lzprs54']
 
@@ -116,7 +119,7 @@ if __name__ == '__main__':
         for reg in regs:
             break # just take the latest one
 
-        video_name = 'pres_real_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'makeMovie_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
 
         ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
@@ -139,6 +142,7 @@ if __name__ == '__main__':
                 #print 'w000000t interaction_change_flag!'
                 #embed()
             reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
+        #reg['regressors'] = None # -- uncomment this and comment the lines above to run locally
 
         # get states
         zstates = play['zstates']
@@ -149,10 +153,20 @@ if __name__ == '__main__':
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
 
+        # optionally remove symbols
+        # see setFullState()
+        if not show_symbols:
+            for fs in states:
+                for key, ss in fs['objects'].iteritems():
+                    for ID, attrs in ss.iteritems():
+                        attrs['symbol'] = None
+
         # in lieu of makeMovie() from main_agent.py
         # use default colors (not the ones the subject saw) b/c that's what EMPA sees
         core.VGDLParser.playGame(play['game_str'], play['level_str'], states, \
-            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir=movie_dir, padding=10, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True, persist_all_images=True, all_images_dir=all_images_dir)
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir=movie_dir, padding=10, 
+            regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True, 
+            persist_all_images=True, all_images_dir=all_images_dir)
 
 
     print 'done!'

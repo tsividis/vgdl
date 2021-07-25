@@ -3,6 +3,7 @@ from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrin
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
 from core import fMRI_screensize
+from core import VGDLParser
 import cPickle, cloudpickle
 from datetime import datetime
 import os, subprocess, shutil
@@ -118,12 +119,11 @@ class Environment:
         params_to_print_to_video = ''
         game_name_to_print_to_video = self.gameFilename
         VGDLParser.playGame(self.gameString, self.levelString, self.agent.bookkeeping.statesEncountered, \
-            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/"+self.gameFilename, gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10, video_name=self.video_name)
+            persist_movie=True, make_images=True, make_movie=False, movie_dir="videos/", gameName = game_name_to_print_to_video, parameter_string=params_to_print_to_video, padding=10, video_name=self.video_name)
 
     def makeMovie(self, play_movie=False, regressors=None):
-
         VGDLParser.playGame(self.gameString, self.levelString, self.agent.bookkeeping.statesEncountered, \
-            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/"+self.gameFilename, padding=10, regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/", padding=10, regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
  
         # TODO momchil fix -- right now, this uses the wrong images; also playGame already creates a video 
         '''
@@ -218,7 +218,7 @@ class Environment:
             else:
                 assert not theory_playback
 
-                (self.gameString, self.levelString) = level_game
+                (self.gameString, self.levelString, self.video_name, reset_finalTimeStepList) = level_game
                 self.playback_states = None # TODO momchil undo
                 self.playback_keystates = None # TODO momchil undo
                 self.theory = None

@@ -12,13 +12,18 @@ from IPython import embed
 from vgdl.EMPA import Agent
 from vgdl.environment import Environment
 from vgdl.hyperparameters import hyperparameter_sets
+import vgdl.core
 
 # USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
 # * - optional
 # copied from fmri_replay.py
 
+# TODO dedupe with fmri_empaReplay.py
+
 client = MongoClient('localhost', 27017)
 db = client['heroku_7lzprs54']
+
+vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it was 35
 
 if __name__ == '__main__':
     subj_id = sys.argv[1]
@@ -37,6 +42,7 @@ if __name__ == '__main__':
 
     all_pairs = {}
     all_regressors = {}
+    all_movie_names = {}
 
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
@@ -51,7 +57,14 @@ if __name__ == '__main__':
         if game['name'] not in all_pairs:
             all_pairs[game['name']] = [] 
             all_regressors[game['name']] = [] 
-        all_pairs[game['name']].append([play['game_str'], play['level_str']])
+            all_movie_names[game['name']] = [] 
+
+        video_name = 'fmri_empaPlay_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        print 'video_name = ', video_name
+
+        # this is the money that gets passed to playCurriculum
+        reset_finalTimeStepList = play['instance_id'] == 0 and play['play_id'] == 0 # reset finalTimeStepList before every block -- balance between psychological plausibility and practicality (i.e. avoiding OOM in plaqueAttack)
+        all_pairs[game['name']].append((play['game_str'], play['level_str'], video_name, reset_finalTimeStepList)) # TODO momchil OOM? 
 
         # pre-populate regressors object for each play with identifier info
         # extract the regressors later in Agent
@@ -68,6 +81,8 @@ if __name__ == '__main__':
         }
         all_regressors[game['name']].append(reg)
 
+        movie_name = game['name'] + '_lev=' + str(play['level_id']) + '_' + str(play['play_id'])
+        all_movie_names[game['name']].append(movie_name)
 
 
     # for each game, play all instances as part of one curriculum
@@ -79,6 +94,9 @@ if __name__ == '__main__':
         regs = all_regressors[game_name] 
         assert len(regs) == len(level_game_pairs)
 
+        movie_names = all_movie_names[game_name]
+        assert len(movie_names) == len(level_game_pairs)
+
         # defaults from load_games.py 
         # python -m vgdl.load_games --game_name tiny_zelda
         task_ID = '0'
@@ -86,4 +104,4 @@ if __name__ == '__main__':
 
         # TODO momchil CAREFUL with saved curricula! might reload old agent; figure out how to deal with it
         environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=True)
-        environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False)
+        environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=True, heatmap=False, movie_names=movie_names)

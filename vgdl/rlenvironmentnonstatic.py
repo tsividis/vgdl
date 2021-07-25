@@ -47,7 +47,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
     recordingEnabled = False
 
     def __init__(self, gameDef, levelDef, observationType=OBSERVATION_GLOBAL, visualize=False, screensize=None, actionset=BASEDIRS, **kwargs):
-        game = _createVGDLGame( gameDef, levelDef )
+        game = _createVGDLGame( gameDef, levelDef, screensize )
         StateObsHandlerNonStatic.__init__(self, game, **kwargs)
         self._actionset = actionset
         self.visualize = visualize
@@ -792,12 +792,12 @@ def defInputGame(filename, randomize=False, index=None):
     else:
         return (game_file.game, game_file.level)
 
-def _createVGDLGame( gameSpec, levelSpec ):
+def _createVGDLGame( gameSpec, levelSpec, fMRI_screensize=None):
     import uuid
     from vgdl.core import VGDLParser
     # parse, run and play.
     game = VGDLParser().parseGame(gameSpec)
-    game.buildLevel(levelSpec)
+    game.buildLevel(levelSpec, fMRI_screensize)
     game.uiud = uuid.uuid4()
     return game
 
@@ -849,7 +849,7 @@ def createRLInputGame(filename, obsType=OBSERVATION_GLOBAL):
 
 def createRLInputGameFromStrings(game, level, visualize=False, screensize=None):
     return RLEnvironmentNonStatic(game, level, \
-            observationType = OBSERVATION_GLOBAL, visualize=visualize, screensize=screensize)
+            observationType = OBSERVATION_GLOBAL, visualize=visualize, screensize=screensize, fMRI_screensize=screensize)
 
 def testMaze(numEpisodes, numJogOnSpot, verify, reuseGame, obsType):
     rle = createRLMaze( obsType )

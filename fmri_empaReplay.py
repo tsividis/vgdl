@@ -181,7 +181,7 @@ if __name__ == '__main__':
             all_regressors[game['name']] = [] 
             all_movie_names[game['name']] = [] 
 
-        video_name = 's={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'empaReplay_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
 
         # this is the money that gets passed to playCurriculum
