@@ -1,0 +1,55 @@
+# random agent
+# TODO ideally, there should be an abstract agent class; in practice, it is easiest to just inherit from EMPA
+
+import os
+import subprocess
+import shutil
+import numpy as np
+import random
+import time
+import copy
+from collections import defaultdict
+from core import colorDict, VGDLParser, sys, fMRI_screensize
+from datetime import datetime
+from math import log
+from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+from termcolor import colored
+from util import *
+from ontology import *
+from hyperparameters import hyperparameter_sets, metacontroller_sets
+from agent_utils import translate_events, findNearestSprite, getSpritesByColor
+from theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict, getPosterior
+from theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule
+from metacontroller import Metacontroller
+from dynamic_type_inference import dynamicTypeDistribution_VGDL1, getKL
+import WBP
+from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
+from bookkeeping import Bookkeeping
+from pprint import pprint
+from EMPA import Agent, actionDict, AvatarTypes
+from vgdl.hyperparameters import hyperparameter_sets
+
+class RandomAgent(Agent):
+    def __init__(self, gameFilename):
+        # initialize with default parameters 
+        super(RandomAgent, self).__init__('full', gameFilename, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
+            metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
+
+    def step(self, action):
+        ended, win = self.environment._isDone()
+
+        if self.environment.getTime() == 0:
+            self.bookkeeping.statesEncountered = []
+
+        # bookkeeping
+        if self.make_movie or self.record_video_info:
+            self.bookkeeping.statesEncountered.append(self.environment.getFullState())
+
+        # choose random action
+        available_actions = actionDict.keys()
+        # duplicate NOOP (0 and None); use None
+        assert None in available_actions
+        available_actions.remove(0)
+
+        action = random.choice(available_actions)
+        return action, ended

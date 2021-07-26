@@ -15,7 +15,8 @@ Environment class for running VGDL experiments
 """
 
 
-MAX_STEPS = 10000
+MAX_STEPS_PER_LEVEL = 60 * 20 # momchil: fMRI max steps per instance (i.e. until end of level) = 60 s x 20 fps
+MAX_STEPS = MAX_STEPS_PER_LEVEL * 9 + 10000 # momchil: nine levels per game + some buffer
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
 class Environment:
@@ -177,7 +178,9 @@ class Environment:
             os.makedirs("images/tmp/"+self.gameFilename)
 
         if self.record_fMRIRegressors:
-            curriculumRegressors = []
+            curriculumRegressors = [] # regressors from replay for analyzing fMRI data
+        else:
+            curriculumResults = [] # summary results from generative play for analyzing behavioral data
 
         loaded_n_level=0
         curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.agent.param_ID+'_'+self.task_ID
@@ -253,13 +256,33 @@ class Environment:
             t1 = time.time()
 
             forfeit_level = False
-            while not win and not forfeit_level:# and i<15:
+            # momchil: if running in generative mode (i.e. not replay), # steps = # frames in 1 minute, just like in the fMRI design
+            remaining_steps_for_level = None if self.record_fMRIRegressors else MAX_STEPS_PER_LEVEL 
+
+            #while not win and not forfeit_level:# and i<15 :
+            while remaining_steps_for_level > 0: # momchil: emulate fMRI design
                 self.n_level = n_level
                 self.agent.n_level = n_level
                 self.within_level_iteration = i
                 self.agent.within_level_iteration = i
 
-                gameObject, win, score, steps, forfeit_level = self.playEpisode(gameObject, win)
+                gameObject, win, score, steps, forfeit_level, episodeSteps, ended = self.playEpisode(gameObject, win, remaining_steps_for_level)
+
+                # momchil: fMRI
+                if not self.record_fMRIRegressors:
+                    # generative play
+                    assert episodeSteps <= remaining_steps_for_level
+                    remaining_steps_for_level -= episodeSteps 
+                    print '         steps, remaining ', episodeSteps, remaining_steps_for_level
+                    curriculumResults.append({
+                        'game_name': self.gameFilename,
+                        'level': n_level,
+                        'win': win,
+                        'score': score,
+                        'ended': ended,
+                        'steps': episodeSteps,
+                        'agent': str(type(self.agent))
+                    })
                 
                 ## TODO: clean up below stuff, too.
                 statesEncountered = self.agent.bookkeeping.statesEncountered
@@ -350,8 +373,10 @@ class Environment:
 
         if self.record_fMRIRegressors:
             return curriculumRegressors
+        else:
+            return curriculumResults
 
-    def playEpisode(self, gameObject, win=False):
+    def playEpisode(self, gameObject, win=False, max_steps=None):
 
         ## Initialize external environment
         self.initializeEnvironment()
@@ -382,6 +407,7 @@ class Environment:
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
             action, quitting = self.agent.step(None)
+            #print('================================================================================== agent action, quitting ', action, quitting)
 
 
             ### TODO: environment step should overload rle and produce a blue printout.
@@ -404,6 +430,10 @@ class Environment:
             episodeSteps += 1
 
             ended, win = self.environment._isDone()
+
+            if max_steps and episodeSteps >= max_steps:
+                # momchil: for simulating fMRI subjects who have a limit per level
+                break
             
 
         score = self.environment.getScore()
@@ -413,7 +443,7 @@ class Environment:
         else:
             display('loss')
 
-        return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level
+        return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level, episodeSteps, ended
 
 
 
