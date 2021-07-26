@@ -30,10 +30,11 @@ vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it 
 
 if __name__ == '__main__':
     subj_id = sys.argv[1]
-    run_id = int(sys.argv[2])
 
-    query = {'subj_id': subj_id, 'run_id': run_id}
+    query = {'subj_id': subj_id}
 
+    if len(sys.argv) > 2:
+        query['run_id'] = int(sys.argv[2])
     if len(sys.argv) > 3:
         query['block_id'] = int(sys.argv[3])
     if len(sys.argv) > 4:
