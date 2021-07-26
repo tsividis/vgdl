@@ -43,7 +43,6 @@ else:
     print movie_dir 
 
 show_symbols = False  # optionally did not show symbols, to be consistent with DQN
-vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it was 35
 
 db = client['heroku_7lzprs54']
 
@@ -98,6 +97,10 @@ if __name__ == '__main__':
     all_regressors = {}
     all_movie_names = {}
 
+    # Hack: we need to change the block size for the earlier subject, since the block sizes were smaller and the sprite coordinates were correspondingly different
+    if int(subj_id) <= 11:
+        vgdl.core.BLOCK_SIZE = 20
+    
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
         game = subj['games'][play['game_id']]
@@ -119,7 +122,7 @@ if __name__ == '__main__':
         for reg in regs:
             break # just take the latest one
 
-        video_name = 'makeMovie_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'fmri_makeMovie_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
 
         ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
