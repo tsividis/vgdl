@@ -398,7 +398,7 @@ class SubjectHRR(object):
 
     def embedGame(self, gameDesc, normalize):
         
-        pprint(gameDesc)
+        #pprint(gameDesc)
 
         game_HRR = np.zeros(self.D)
         spriteSet_HRR = np.zeros(self.D)
@@ -1036,8 +1036,10 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
     import h5py
 
     with h5py.File(filename, 'r') as f:
-        nruns = len(f['SPM']['nscan'])
-        assert nruns == 6
+        assert len(f['SPM']['nscan']) == 6
+
+    nruns = max(run_id)
+    assert nruns <= 6
 
     Xx = []
     r_id = [] 

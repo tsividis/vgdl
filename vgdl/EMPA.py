@@ -546,6 +546,10 @@ class Agent:
             action = 0
             self.quitting = True
 
+        if self.record_fMRIRegressors:
+            # momchil: NEVER quit prematurely during replay in fMRI mode
+            self.quitting = False
+
         return action
 
 

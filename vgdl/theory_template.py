@@ -1154,7 +1154,6 @@ class Theory(object):
 			tc.display()
 
 	def display(self, as_string=False):
-
                 if as_string:
                     # from https://stackoverflow.com/questions/1218933/can-i-redirect-the-stdout-in-python-into-some-sort-of-string-buffer
                     from cStringIO import StringIO # Python3 use: from io import StringIO
