@@ -535,15 +535,17 @@ class Agent:
         if self.metacontroller.quitting:
             print "Metacontroller suggests quitting:", self.metacontroller.quitting
             self.metacontroller.quitting = False
-            if not self.record_fMRIRegressors:
-                # momchil: NEVER quit prematurely during replay in fMRI mode
-                self.quitting = True
+            self.quitting = True
             action = 0
 
         if not ended:
             if not self.quitting:
                 action = self.solution[self.steps_in_solution]
                 self.steps_in_solution += 1
+            if self.record_fMRIRegressors:
+                # momchil: NEVER quit prematurely during replay in fMRI mode
+                # do it here because of snippets above and below
+                self.quitting = False
         else:
             action = 0
             self.quitting = True
