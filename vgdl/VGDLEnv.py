@@ -325,6 +325,6 @@ class VGDLEnv():
 
 
 
-game_name = 'VGDL_tiny_zelda'
-env = VGDLEnvAndres(game_name)
-embed()
+#game_name = 'VGDL_tiny_zelda'
+#env = VGDLEnvAndres(game_name)
+#embed()

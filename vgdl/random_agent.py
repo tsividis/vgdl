@@ -1,6 +1,8 @@
 # random agent
 # TODO ideally, there should be an abstract agent class; in practice, it is easiest to just inherit from EMPA
 
+# TODO copy pasted from https://github.com/ACampero/RC_RL and then adapted (necessary because of small differences)
+
 import os
 import subprocess
 import shutil
@@ -26,7 +28,7 @@ import WBP
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from bookkeeping import Bookkeeping
 from pprint import pprint
-from EMPA import Agent, actionDict, AvatarTypes
+from EMPA import Agent, actionDict, availableActions, AvatarTypes
 from vgdl.hyperparameters import hyperparameter_sets
 
 class RandomAgent(Agent):
@@ -35,21 +37,14 @@ class RandomAgent(Agent):
         super(RandomAgent, self).__init__('full', gameFilename, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
             metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
 
-    def step(self, action):
+    def step(self, action, env_results=None):
         ended, win = self.environment._isDone()
 
+        # bookkeeping
         if self.environment.getTime() == 0:
             self.bookkeeping.statesEncountered = []
-
-        # bookkeeping
         if self.make_movie or self.record_video_info:
             self.bookkeeping.statesEncountered.append(self.environment.getFullState())
 
-        # choose random action
-        available_actions = actionDict.keys()
-        # duplicate NOOP (0 and None); use None
-        assert None in available_actions
-        available_actions.remove(0)
-
-        action = random.choice(available_actions)
+        action = random.choice(availableActions)
         return action, ended

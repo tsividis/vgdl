@@ -751,7 +751,7 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             print 'ENDED'
             #embed()
 
-        return{'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
+        return {'observation':observation, 'reward':reward, 'pcontinue':pcontinue, 'effectList':events, 'ended':ended, 'win':won, 'termination':termination}
 
     def check_that_avatar_is_alive(self):
         return len(self._game.sprite_groups['avatar']) > 0

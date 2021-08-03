@@ -2,6 +2,7 @@ from bookkeeping import Bookkeeping
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
+import pygame
 from core import fMRI_screensize
 from core import VGDLParser
 import cPickle, cloudpickle
@@ -15,7 +16,7 @@ Environment class for running VGDL experiments
 """
 
 
-MAX_STEPS_PER_LEVEL = 60 * 20 # momchil: fMRI max steps per instance (i.e. until end of level) = 60 s x 20 fps
+MAX_STEPS_PER_LEVEL = 1 + 60 * 20 # momchil: fMRI max steps per instance (i.e. until end of level) = 60 s x 20 fps, + 1 for debugging
 MAX_STEPS = MAX_STEPS_PER_LEVEL * 9 + 10000 # momchil: nine levels per game + some buffer
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
@@ -55,6 +56,10 @@ class Environment:
             self.gameString, self.levelString = defInputGame(self.gameFilename, randomize=False)
         self.rleCreateFunc = lambda: createRLInputGameFromStrings(self.gameString, self.levelString, visualize=False, screensize=fMRI_screensize)
         self.environment = self.rleCreateFunc()
+
+        # momchil: for DQN
+        self.environment._game._initScreen(fMRI_screensize, True, None, self.environment._game.offset)
+        pygame.display.flip()
 
         if self.playback_states: # fMRI theory induction from human replay
             self.environment._game.playback_states = self.playback_states
@@ -159,7 +164,8 @@ class Environment:
 
         return
 
-    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False, movie_names = [], theory_playback=False):
+    def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False, 
+        movie_names = [], theory_playback=False, steps_per_level=None):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -257,7 +263,7 @@ class Environment:
 
             forfeit_level = False
             # momchil: if running in generative mode (i.e. not replay), # steps = # frames in 1 minute, just like in the fMRI design
-            remaining_steps_for_level = None if self.record_fMRIRegressors else MAX_STEPS_PER_LEVEL 
+            remaining_steps_for_level = None if self.record_fMRIRegressors else steps_per_level
 
             #while not win and not forfeit_level:# and i<15 :
             while remaining_steps_for_level > 0: # momchil: emulate fMRI design
@@ -397,8 +403,15 @@ class Environment:
         quitting = False
         self.agent.quitting = False # TODO what other stuff do we need to do from __init__() Agent?
         episodeSteps = 0
+        env_results = {'reward': 0}  # SARS tuples, for learning
         ## Main episode loop
         while not quitting:
+
+            # momchil: rendering, for DQN; from core.py
+            pygame.time.Clock().tick()
+            from ontology import LIGHTGRAY
+            self.environment._game.screen.fill(LIGHTGRAY)
+            self.environment._game._drawAll()
 
             ### ENVIRONMENT ###
             if self.agent.memory.totalGameSteps+episodeSteps > MAX_STEPS and not self.record_fMRIRegressors:
@@ -406,7 +419,7 @@ class Environment:
 
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
-            action, quitting = self.agent.step(None)
+            action, quitting = self.agent.step(None, env_results)
             #print('================================================================================== agent action, quitting ', action, quitting)
 
 
@@ -421,7 +434,7 @@ class Environment:
                     # TODO momchil better alternative?
                     break
             else:
-                self.environment.step(action)
+                env_results = self.environment.step(action)
 
             if self.produce_printout:
                 print ""
@@ -443,6 +456,9 @@ class Environment:
         else:
             display('loss')
 
+        # momchil: rendering for DQN
+        pygame.display.quit()
+        pygame.quit()
         return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level, episodeSteps, ended
 
 

@@ -1500,8 +1500,32 @@ class BasicGame(object):
         self.screen.blit(TextSurf, TextRect)
         pygame.display.update()
 
+    def render(self):
+        # convert screen to standardized numpy array for DL / PCA
+        import cv2
+        from PIL import Image
+        # create image from screen
+        screen = pygame.surfarray.array3d(self.screen).transpose(1, 0, 2)
+        image = Image.fromarray(screen)
+        # resize image, so that the block (i.e. sprite) sizes are the same
+        # Note that this might result in differently sized images
+        dim = (int(2 * screen.shape[1] / BLOCK_SIZE), int(2 * screen.shape[0] / BLOCK_SIZE))
+        small_screen = cv2.resize(screen, dim, interpolation=cv2.INTER_NEAREST)
+        # pad image to the same size, to account for different block sizes, for DQN and PCA
+        target_dim = (80, 60)
+        assert target_dim[0] >= dim[0]
+        assert target_dim[1] >= dim[1]
+        top = (target_dim[1] - dim[1]) / 2
+        bottom = target_dim[1] - dim[1] - top
+        left = (target_dim[0] - dim[0]) / 2
+        right = target_dim[0] - dim[0] - left
+        padded_screen = cv2.copyMakeBorder(small_screen, top, bottom, left, right, cv2.BORDER_REPLICATE)
+        return padded_screen
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir='/tmp/', padding=0, gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False, persist_all_images=False, all_images_dir='/tmp/'):
+
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir='/tmp/', padding=0, 
+            gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False, 
+            persist_all_images=False, all_images_dir='/tmp/'):
         """
         Main method to display a previously-run game.
         """
@@ -1513,7 +1537,7 @@ class BasicGame(object):
         pygame.display.flip()
         self.reset()
         clock = pygame.time.Clock()
-        self.frame_rate = 5
+        self.frame_rate = 5  # TODO increase dramatically, or just remove for very fast playback
 
         win = False
         i = 0
@@ -1588,26 +1612,9 @@ class BasicGame(object):
                 # somewhat redundant with make_images
                 image_file_name = '{}_frame={}.png'.format(video_name, i)
                 #pygame.image.save(self.screen, os.path.join(all_images_dir, image_file_name))
-                import cv2
-                from PIL import Image
-                # create image from screen
-                screen = pygame.surfarray.array3d(self.screen).transpose(1, 0, 2)
-                image = Image.fromarray(screen)
-                # resize image, so that the block (i.e. sprite) sizes are the same
-                # Note that this might result in differently sized images
-                dim = (int(2 * screen.shape[1] / BLOCK_SIZE), int(2 * screen.shape[0] / BLOCK_SIZE))
-                small_screen = cv2.resize(screen, dim, interpolation=cv2.INTER_NEAREST)
-                # pad image to the same size, to account for different block sizes, for DQN and PCA
-                target_dim = (80, 60)
-                assert target_dim[0] >= dim[0]
-                assert target_dim[1] >= dim[1]
-                top = (target_dim[1] - dim[1]) / 2
-                bottom = target_dim[1] - dim[1] - top
-                left = (target_dim[0] - dim[0]) / 2
-                right = target_dim[0] - dim[0] - left
-                padded_screen = cv2.copyMakeBorder(small_screen, top, bottom, left, right, cv2.BORDER_REPLICATE)
+                screen = self.render()
                 # save image
-                Image.fromarray(padded_screen).save(os.path.join(all_images_dir, image_file_name))
+                Image.fromarray(screen).save(os.path.join(all_images_dir, image_file_name))
 
 
             # plotting fMRI regressors

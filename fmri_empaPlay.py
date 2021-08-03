@@ -12,12 +12,15 @@ from vgdl import agent_utils, core
 from IPython import embed
 from vgdl.EMPA import Agent
 from vgdl.random_agent import RandomAgent
+from vgdl.dqn_agent import DQNAgent
 from vgdl.environment import Environment
 from vgdl.hyperparameters import hyperparameter_sets
 import vgdl.core
 import pandas as pd
 
-# USAGE: python fmri_empaPlay.py [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
+FMRI_STEPS_PER_LEVEL = 60 * 20  # momchil: fMRI max steps per instance (i.e. until end of level) = 60 s x 20 fps
+
+# USAGE: python fmri_empaPlay.py [agent_name] [subj_id] [run_id] [block_id] [instance_id*] [play_id*]
 # * - optional
 # copied from fmri_replay.py
 
@@ -29,18 +32,19 @@ db = client['heroku_7lzprs54']
 vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it was 35
 
 if __name__ == '__main__':
-    subj_id = sys.argv[1]
+    agent_name = sys.argv[1]
+    subj_id = sys.argv[2]
 
     query = {'subj_id': subj_id}
 
-    if len(sys.argv) > 2:
-        query['run_id'] = int(sys.argv[2])
     if len(sys.argv) > 3:
-        query['block_id'] = int(sys.argv[3])
+        query['run_id'] = int(sys.argv[3])
     if len(sys.argv) > 4:
-        query['instance_id'] = int(sys.argv[4])
+        query['block_id'] = int(sys.argv[4])
     if len(sys.argv) > 5:
-        query['play_id'] = int(sys.argv[5])
+        query['instance_id'] = int(sys.argv[5])
+    if len(sys.argv) > 6:
+        query['play_id'] = int(sys.argv[6])
 
     query['play_id'] = 0 # for generative play, only pass one play per instance, and then the agent can potentially play multiple plays
     plays = db.plays.find(query)
@@ -85,21 +89,27 @@ if __name__ == '__main__':
         # defaults from load_games.py 
         # python -m vgdl.load_games --game_name tiny_zelda
         task_ID = '0'
-        #agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
-        #    metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
-        agent = RandomAgent(game_name)
+        if agent_name == 'EMPA':
+            agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
+                metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
+        elif agent_name == 'Random':
+            agent = RandomAgent(game_name)
+        elif agent_name == 'DQN':
+            agent = DQNAgent(game_name, (80, 60, 3)) # TODO params 
+        else:
+            assert False, 'Invalid agent name ' + agent_name
 
         # play
         # TODO momchil CAREFUL with saved curricula! might reload old agent; figure out how to deal with it
         environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
         curriculumResults = environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, 
-            heatmap=False, movie_names=movie_names)
+            heatmap=False, movie_names=movie_names, steps_per_level=FMRI_STEPS_PER_LEVEL)
 
         # insert into Mongo
         res = {
             'subj_id': subj_id,
             'game_name': game_name,
-            'model_name': 'RandomAgent',
+            'agent_name': agent_name,
             'dt': datetime.now(),
             'ts': time.time(),
             'results': curriculumResults,

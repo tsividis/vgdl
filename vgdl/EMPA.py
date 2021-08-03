@@ -26,6 +26,8 @@ from pprint import pprint
 
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
+availableActions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, 0]
+
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 
@@ -557,7 +559,7 @@ class Agent(object):
         return action
 
 
-    def step(self, action):
+    def step(self, action, env_results=None):
 
         t1 = time.time()
 
