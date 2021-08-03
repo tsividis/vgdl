@@ -53,6 +53,8 @@ if not os.path.exists(theoriesDir):
 db = client['heroku_7lzprs54']
 
 def fix_states(states, game, subj_id, play):
+    # Chelsea's color mess up fix
+    # change avatar color to default color
     if subj_id not in ['12', '13', '14', '15', '16', '17']:
         return
     assert play['game_str'] == game['descs'][play['desc_id']]

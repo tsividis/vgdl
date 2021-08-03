@@ -47,8 +47,8 @@ class Bookkeeping:
         savedState = {'agent':agent,
                       'episodeCompactStates': episodeCompactStates}
         with open(filename, 'wb') as f:
-            #cloudpickle.dump(savedState, f)
-            torch.save(savedState, f)
+            cloudpickle.dump(savedState, f)
+            #torch.save(savedState, f)
 
         #if is_fMRI:
         #    agent.finalTimeStepList = finalTimeStepList
@@ -89,22 +89,22 @@ class Bookkeeping:
                       }
         filepath = 'savedCurricula/'+filename
         with open(filepath, 'wb') as f:
-            #cloudpickle.dump(savedState, f)
-            torch.save(savedState, f)
+            cloudpickle.dump(savedState, f)
+            #torch.save(savedState, f)
         print "done saving state"
 
     def loadState(self, filename):
         with open(filename, 'r') as f:
-            #loadedState = cloudpickle.load(f)
-            loadedState = torch.load(f)
+            loadedState = cloudpickle.load(f)
+            #loadedState = torch.load(f)
         # f.close()
         return loadedState
 
     def saveState(self):
         filename = 'saved_state'
         with open(filename, 'wb') as f:
-            #cloudpickle.dump(self, f)
-            torch.save(self, f)
+            cloudpickle.dump(self, f)
+            #torch.save(self, f)
         return
 
     def deleteEpisodeFile(self):

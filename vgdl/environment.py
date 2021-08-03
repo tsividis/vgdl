@@ -423,7 +423,7 @@ class Environment:
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
             action, quitting = self.agent.step(None, env_results)
-            print('================================================================================== agent action, quitting ', action, quitting)
+            print('============================== step ' , episodeSteps, ' agent action, quitting ', action, quitting)
 
 
             ### TODO: environment step should overload rle and produce a blue printout.
