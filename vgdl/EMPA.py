@@ -26,7 +26,7 @@ from pprint import pprint
 
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
-availableActions = [K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT, 0]
+availableActions = [K_SPACE, K_LEFT, K_UP, K_DOWN, K_RIGHT, 0]  # momchil: to match the fMRI buttons
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
 

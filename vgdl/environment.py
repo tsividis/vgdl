@@ -9,6 +9,7 @@ import cPickle, cloudpickle
 from datetime import datetime
 import os, subprocess, shutil
 import time
+from vgdl.dqn_agent import DQNAgent
 from IPython import embed
 
 """
@@ -58,8 +59,9 @@ class Environment:
         self.environment = self.rleCreateFunc()
 
         # momchil: for DQN
-        self.environment._game._initScreen(fMRI_screensize, True, None, self.environment._game.offset)
-        pygame.display.flip()
+        if isinstance(self.agent, DQNAgent):
+            self.environment._game._initScreen(fMRI_screensize, True, None, self.environment._game.offset)
+            pygame.display.flip()
 
         if self.playback_states: # fMRI theory induction from human replay
             self.environment._game.playback_states = self.playback_states
@@ -408,10 +410,11 @@ class Environment:
         while not quitting:
 
             # momchil: rendering, for DQN; from core.py
-            pygame.time.Clock().tick()
-            from ontology import LIGHTGRAY
-            self.environment._game.screen.fill(LIGHTGRAY)
-            self.environment._game._drawAll()
+            if isinstance(self.agent, DQNAgent):
+                pygame.time.Clock().tick()
+                from ontology import LIGHTGRAY
+                self.environment._game.screen.fill(LIGHTGRAY)
+                self.environment._game._fMRI_drawAll()
 
             ### ENVIRONMENT ###
             if self.agent.memory.totalGameSteps+episodeSteps > MAX_STEPS and not self.record_fMRIRegressors:
@@ -420,7 +423,7 @@ class Environment:
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
             action, quitting = self.agent.step(None, env_results)
-            #print('================================================================================== agent action, quitting ', action, quitting)
+            print('================================================================================== agent action, quitting ', action, quitting)
 
 
             ### TODO: environment step should overload rle and produce a blue printout.
@@ -457,8 +460,9 @@ class Environment:
             display('loss')
 
         # momchil: rendering for DQN
-        pygame.display.quit()
-        pygame.quit()
+        if isinstance(self.agent, DQNAgent):
+            pygame.display.quit()
+            pygame.quit()
         return gameObject, win, score, self.agent.memory.episodeSteps, self.agent.forfeit_level, episodeSteps, ended
 
 
