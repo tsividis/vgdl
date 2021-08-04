@@ -37,7 +37,8 @@ from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 #     Constants
 # ---------------------------------------------------------------------
 
-fMRI_screensize = (800,580)
+fMRI_screensize = (800,580)  # dimension of the screen shown to participants
+render_screensize = (80,60)  # dimensions of the renders used for training the DQN, PCA, etc.
 BLOCK_SIZE = 35 #35
 
 disableContinuousKeyPress = False
@@ -1512,7 +1513,7 @@ class BasicGame(object):
         dim = (int(2 * screen.shape[1] / BLOCK_SIZE), int(2 * screen.shape[0] / BLOCK_SIZE))
         small_screen = cv2.resize(screen, dim, interpolation=cv2.INTER_NEAREST)
         # pad image to the same size, to account for different block sizes, for DQN and PCA
-        target_dim = (80, 60)
+        target_dim = render_screensize
         assert target_dim[0] >= dim[0]
         assert target_dim[1] >= dim[1]
         top = (target_dim[1] - dim[1]) / 2

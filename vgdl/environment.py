@@ -268,12 +268,12 @@ class Environment:
             remaining_steps_for_level = None if self.record_fMRIRegressors else steps_per_level
 
             #while not win and not forfeit_level:# and i<15 :
-            while remaining_steps_for_level > 0: # momchil: emulate fMRI design
+            while remaining_steps_for_level is None or remaining_steps_for_level > 0: # momchil: emulate fMRI design
                 self.n_level = n_level
                 self.agent.n_level = n_level
                 self.within_level_iteration = i
                 self.agent.within_level_iteration = i
-
+                
                 gameObject, win, score, steps, forfeit_level, episodeSteps, ended = self.playEpisode(gameObject, win, remaining_steps_for_level)
 
                 # momchil: fMRI
@@ -367,7 +367,9 @@ class Environment:
         # e.g. if we replay each block as one set of levels, and if some part of replay fails, we want to restart the whole block,
         # but we won't be able to if curriculum states were being saved along the way; we have to start from the state as it was at the beginning
         if self.record_fMRIRegressors:
+            then = time.time()
             self.agent.bookkeeping.saveCurriculumState(self.agent, {}, self.record_fMRIRegressors)
+            print 'saving curriculum state took', (time.time() - then)
 
         if make_movie:
             if self.record_fMRIRegressors:
@@ -423,7 +425,7 @@ class Environment:
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
             action, quitting = self.agent.step(None, env_results)
-            print('============================== step ' , episodeSteps, ' agent action, quitting ', action, quitting)
+            #print('============================== step ' , episodeSteps, ' agent action, quitting ', action, quitting)
 
 
             ### TODO: environment step should overload rle and produce a blue printout.

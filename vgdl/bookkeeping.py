@@ -11,18 +11,19 @@ Class for supporting interrupted runs on cluster. Saves where we are in the curr
 """
 
 class Bookkeeping:
-    def __init__(self, saveMidEpisode, task_ID, param_ID, gameFilename):
+    def __init__(self, saveMidEpisode, task_ID, param_ID, gameFilename, agent_name):
         self.saveMidEpisode = saveMidEpisode
         self.task_ID = task_ID
         self.param_ID = param_ID
         self.gameFilename = gameFilename
+        self.agent_name = agent_name
         self.episodeSaveFile = None
         if 'omchil' in socket.gethostname():
             self.curriculumDir = 'savedCurricula'
         else:
             self.curriculumDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'savedCurricula')
         print self.curriculumDir
-        self.curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        self.curriculumSaveFile = 'curriculum_' + self.agent_name + '_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
         self.effectsEncountered = []
         self.statesEncountered = []
         self.compactStates = []

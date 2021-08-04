@@ -15,15 +15,17 @@ from vgdl import core
 from IPython import embed
 from vgdl.EMPA import Agent
 import cPickle, cloudpickle
+from vgdl.random_agent import RandomAgent
+from vgdl.dqn_agent import DQNAgent
 from vgdl.environment import Environment
 import vgdl.core
 from vgdl.hyperparameters import hyperparameter_sets
 
 import pygame
 
-# USAGE: python fmri_empaReplay.py [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*]
-#        python fmri_empaReplay.py [subj_id] [game_name]
-#        python fmri_empaReplay.py [subj_id] [run_id] [game_name]
+# USAGE: python fmri_empaReplay.py [agent_name] [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*]
+#        python fmri_empaReplay.py [agent_name] [subj_id] [game_name]
+#        python fmri_empaReplay.py [agent_name] [subj_id] [run_id] [game_name]
 # * - optional
 # copied from fmri_empaPlay.py
 
@@ -38,17 +40,21 @@ if 'omchil' in socket.gethostname():
     # local 
     client = MongoClient('localhost', 27017)
     theoriesDir = 'theories'
+    layersDir = 'layers'
 else:
     # Cannon 
     client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
     theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
-    print theoriesDir
+    layersDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'layers')
+    print theoriesDir, layersDir
     # NCF cluster
     #client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
 
 
 if not os.path.exists(theoriesDir):
     os.makedirs(theoriesDir)
+if not os.path.exists(layersDir):
+    os.makedirs(layersDir)
 
 db = client['heroku_7lzprs54']
 
@@ -97,36 +103,37 @@ def is_int(s):
     assert False
 
 if __name__ == '__main__':
-    subj_id = sys.argv[1]
+    agent_name = sys.argv[1]
+    subj_id = sys.argv[2]
 
     query = {'subj_id': subj_id}
 
-    if len(sys.argv) > 2:
-        if is_int(sys.argv[2]):
-            query['run_id'] = int(sys.argv[2])
-        else:
-            assert len(sys.argv) == 3
-            query['game_name'] = sys.argv[2]
     if len(sys.argv) > 3:
         if is_int(sys.argv[3]):
-            query['block_id'] = int(sys.argv[3])
+            query['run_id'] = int(sys.argv[3])
         else:
             assert len(sys.argv) == 4
             query['game_name'] = sys.argv[3]
     if len(sys.argv) > 4:
         if is_int(sys.argv[4]):
-            query['instance_id'] = int(sys.argv[4])
+            query['block_id'] = int(sys.argv[4])
         else:
             assert len(sys.argv) == 5
             query['game_name'] = sys.argv[4]
     if len(sys.argv) > 5:
         if is_int(sys.argv[5]):
-            query['play_id'] = int(sys.argv[5])
+            query['instance_id'] = int(sys.argv[5])
         else:
             assert len(sys.argv) == 6
             query['game_name'] = sys.argv[5]
     if len(sys.argv) > 6:
-        query['game_name'] = sys.argv[6]
+        if is_int(sys.argv[6]):
+            query['play_id'] = int(sys.argv[6])
+        else:
+            assert len(sys.argv) == 7
+            query['game_name'] = sys.argv[6]
+    if len(sys.argv) > 7:
+        query['game_name'] = sys.argv[7]
 
     plays = db.plays.find(query).sort('start_time')
 
@@ -156,7 +163,12 @@ if __name__ == '__main__':
 
         q = {'play_key': play['_id']}
         #count = db.regressors_cannon_spriteEvery20.count(q)
-        count = db.regressors.count(q)
+        if agent_name == 'EMPA':
+            count = db.regressors.count(q)
+        elif agent_name == 'DQN':
+            count = db.dqn_regressors.count(q)
+        else:
+            assert False, 'Invalid agent name ' + agent_name
         print q, count
 
         # this is so that we can resume from the last savedCurriculum e.g. after a crash
@@ -231,10 +243,20 @@ if __name__ == '__main__':
         movie_names = all_movie_names[game_name]
         assert len(movie_names) == len(level_game_pairs)
 
-        # defaults from load_games.py 
-        # python -m vgdl.load_games --game_name tiny_zelda
         task_ID = 'subj={}'.format(subj_id)
-        agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
+
+        # create agent
+        if agent_name == 'EMPA':
+            # defaults from load_games.py 
+            # python -m vgdl.load_games --game_name tiny_zelda
+            agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
+                metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
+        elif agent_name == 'DQN':
+            agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3))
+        else:
+            assert False, 'Invalid agent name ' + agent_name
+
+        # fMRI mode
         agent.record_fMRIRegressors = True
 
         environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
@@ -252,41 +274,56 @@ if __name__ == '__main__':
             # special care for theory which does not serialize into BSON for Mongo
             # use cloudpickle instead & save on disk TODO find better option
 
-            # serialize theory sequence
-            filename = os.path.join(theoriesDir, 'theory_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
-            with open(filename, 'wb') as f:
-                cloudpickle.dump(reg['regressors']['theory'], f)
-            reg['regressors']['theory_filename'] = filename
-            reg['regressors']['theory'] = [] # remove from regressor object
+            if agent_name == 'EMPA':
+                # serialize theory sequence
+                filename = os.path.join(theoriesDir, 'theory_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+                with open(filename, 'wb') as f:
+                    cloudpickle.dump(reg['regressors']['theory'], f)
+                reg['regressors']['theory_filename'] = filename
+                reg['regressors']['theory'] = [] # remove from regressor object
 
-            # serialize time steps (used to calculate likelihood) 
-            for j in range(len(reg['regressors']['newTimeStep'])):
-                reg['regressors']['newTimeStep'][j][0].rle = None # delete RLE's before saving; they're huge and we don't need them for computing likelihoods
-            filename = os.path.join(theoriesDir, 'newTimeStep_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
-            with open(filename, 'wb') as f:
-                cloudpickle.dump(reg['regressors']['newTimeStep'], f)
-            reg['regressors']['newTimeStep_filename'] = filename
-            reg['regressors']['newTimeStep'] = [] # remove from regressor object
+                # serialize time steps (used to calculate likelihood) 
+                for j in range(len(reg['regressors']['newTimeStep'])):
+                    reg['regressors']['newTimeStep'][j][0].rle = None # delete RLE's before saving; they're huge and we don't need them for computing likelihoods
+                filename = os.path.join(theoriesDir, 'newTimeStep_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+                with open(filename, 'wb') as f:
+                    cloudpickle.dump(reg['regressors']['newTimeStep'], f)
+                reg['regressors']['newTimeStep_filename'] = filename
+                reg['regressors']['newTimeStep'] = [] # remove from regressor object
 
-            # serialize plans
-            filename = os.path.join(theoriesDir, 'plans_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
-            with open(filename, 'wb') as f:
-                cloudpickle.dump(reg['regressors']['plans'], f)
-            reg['regressors']['plans_filename'] = filename
-            reg['regressors']['plans'] = [] # remove from regressor object
+                # serialize plans
+                filename = os.path.join(theoriesDir, 'plans_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+                with open(filename, 'wb') as f:
+                    cloudpickle.dump(reg['regressors']['plans'], f)
+                reg['regressors']['plans_filename'] = filename
+                reg['regressors']['plans'] = [] # remove from regressor object
 
-            # same deal with sprite distribution
-            # TODO too big -- risks running out of disk space; shelve for now
-            #
-            #filename = os.path.join(theoriesDir, 'sprite_distr_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
-            #with open(filename, 'wb') as f:
-            #    cloudpickle.dump(reg['regressors']['sprite_distr'], f)
-            #reg['regressors']['sprite_distr_filename'] = filename
-            #reg['regressors']['sprite_distr'] = [] # remove from regressor object
+                # same deal with sprite distribution
+                # TODO too big -- risks running out of disk space; shelve for now
+                #
+                #filename = os.path.join(theoriesDir, 'sprite_distr_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+                #with open(filename, 'wb') as f:
+                #    cloudpickle.dump(reg['regressors']['sprite_distr'], f)
+                #reg['regressors']['sprite_distr_filename'] = filename
+                #reg['regressors']['sprite_distr'] = [] # remove from regressor object
 
-            # insert regressor into mongo
-            #db.regressors_cannon_spriteEvery20.insert_one(reg)
-            db.regressors.insert_one(reg)
+                # insert regressor into mongo
+                #db.regressors_cannon_spriteEvery20.insert_one(reg)
+                db.regressors.insert_one(reg)
+
+            elif agent_name == 'DQN':
+
+                # serialize layer sequences
+                for regressor_name in reg['regressors'].keys():
+                    if regressor_name.startswith('layer_'):
+                        filename = os.path.join(layersDir, regressor_name + '_' + str(reg['play_key']) + '_' + str(reg['ts'])) + '.pickle'
+                        with open(filename, 'wb') as f:
+                            cloudpickle.dump(reg['regressors'][regressor_name], f)
+                        reg['regressors'][regressor_name + '_filename'] = filename
+                        reg['regressors'][regressor_name] = [] # remove from regressor object
+
+            else:
+                assert False, 'Invalid agent name ' + agent_name
 
     if didSomething:
         print 'Completed!'

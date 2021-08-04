@@ -96,16 +96,18 @@ if __name__ == '__main__':
         movie_names = all_movie_names[game_name]
         assert len(movie_names) == len(level_game_pairs)
 
-        # defaults from load_games.py 
-        # python -m vgdl.load_games --game_name tiny_zelda
         task_ID = '0'
+
+        # create agent
         if agent_name == 'EMPA':
+            # defaults from load_games.py 
+            # python -m vgdl.load_games --game_name tiny_zelda
             agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
                 metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
         elif agent_name == 'Random':
             agent = RandomAgent(game_name)
         elif agent_name == 'DQN':
-            agent = DQNAgent(game_name, (80, 60, 3)) # TODO params 
+            agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3))
         else:
             assert False, 'Invalid agent name ' + agent_name
 

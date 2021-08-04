@@ -35,7 +35,7 @@ class RandomAgent(Agent):
     def __init__(self, gameFilename):
         # initialize with default parameters 
         super(RandomAgent, self).__init__('full', gameFilename, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
-            metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0')
+            metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0', agent_name='Random')
 
     def step(self, action, env_results=None):
         ended, win = self.environment._isDone()

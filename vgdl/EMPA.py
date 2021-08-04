@@ -24,15 +24,19 @@ from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrin
 from bookkeeping import Bookkeeping
 from pprint import pprint
 
-actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
+NOOP = 0
 
-availableActions = [K_SPACE, K_LEFT, K_UP, K_DOWN, K_RIGHT, 0]  # momchil: to match the fMRI buttons
+actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', NOOP: 'none', None: 'none'}
+
+availableActions = [K_SPACE, K_LEFT, K_UP, K_DOWN, K_RIGHT, NOOP]  # momchil: to match the fMRI buttons
 
 AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, AimedFlakAvatar, OrientedAvatar,RotatingAvatar, RotatingFlippingAvatar, NoisyRotatingFlippingAvatar, ShootAvatar, AimedAvatar,AimedFlakAvatar, InertialAvatar, MarioAvatar]
 
 
 class Agent(object):
-    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index='short-term', metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None):
+    def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index='short-term', 
+        metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None,
+        agent_name='EMPA'):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -47,6 +51,7 @@ class Agent(object):
         self.saveMidEpisode = False
         self.filename = None
         self.timestamp = False
+        self.agent_name = agent_name
         self.task_ID = task_ID
         self.loaded_n_level = 0
         self.produce_printout = produce_printout
@@ -148,7 +153,7 @@ class Agent(object):
         self.printable_predicted_states = []
         self.planner_nodes_opened_on_most_recent_step = 0
         self.memory = Memory()
-        self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename)
+        self.bookkeeping = Bookkeeping(self.saveMidEpisode, self.task_ID, self.param_ID, self.gameFilename, self.agent_name)
         self.metacontroller = Metacontroller(self)
 
         self.total_planner_steps = 0
@@ -763,7 +768,8 @@ class Agent(object):
                 hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
                 verbose=False, existingTheories=hypotheses))
 
-                if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+                if self.record_fMRIRegressors and self.environment.getTime() > 0:  # record regressors after each frame, which means excluding the initial frame
+ 
                     # don't log stuff from before any observations
                     # convention is: timestamp = stuff right after frame
 
@@ -816,7 +822,8 @@ class Agent(object):
         print '------------------------------------------------------------------ END THEORY ----------------------------------'
 
 
-        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+        if self.record_fMRIRegressors and self.environment.getTime() > 0: # record regressors after each frame, which means excluding the initial frame
+
             # don't log stuff from before any observations
             # convention is: timestamp = stuff right after frame
             # hypotheses[0] = new theory
@@ -911,7 +918,8 @@ class Agent(object):
 
             print 'time ', self.environment.getTime()
 
-            if self.environment.getTime() <= 0:
+            if self.environment.getTime() <= 0:  # record regressors after each frame, which means excluding the initial frame
+
                 # TODO make sure we won't need the action anywhere here, e.g. for inference and whatnot
                 self.action = None 
 
@@ -1011,7 +1019,8 @@ class Agent(object):
 
 
 
-        if self.record_fMRIRegressors and self.environment.getTime() > 0: 
+        if self.record_fMRIRegressors and self.environment.getTime() > 0:  # record regressors after each frame, which means excluding the initial frame
+
             # log planning stuff; now, self.hypotheses[0] is the new theory 
             # do it here to make sure the Vrle uses the new theory
             #
