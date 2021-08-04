@@ -322,6 +322,8 @@ if __name__ == '__main__':
                         reg['regressors'][regressor_name + '_filename'] = filename
                         reg['regressors'][regressor_name] = [] # remove from regressor object
 
+                db.dqn_regressors.insert_one(reg)
+
             else:
                 assert False, 'Invalid agent name ' + agent_name
 
