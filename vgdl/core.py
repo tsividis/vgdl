@@ -32,6 +32,8 @@ import zlib
 import bisect
 import atexit
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
+import cv2
+from PIL import Image
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -406,7 +408,7 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "videos/", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None, default_colors=False, persist_all_images=False, all_images_dir='all_images'):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "videos/", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None, default_colors=False, use_renders=False):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -424,7 +426,7 @@ class VGDLParser(object):
        # else:
         # TODO momchil fMRI playback on cluster (to create movie) needs to be headless
         if playback_states:
-            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors, persist_all_images=persist_all_images, all_images_dir=all_images_dir)
+            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors, use_renders=use_renders)
         else:
             win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -449,7 +451,7 @@ class VGDLParser(object):
         g.buildLevel(map_str, fMRI_screensize)
         g.uiud = uuid.uuid4()
         g.playback_states = playback_states
-        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen)
+        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen, use_renders=False)
 
  
 
@@ -1186,19 +1188,22 @@ class BasicGame(object):
     def fMRI_plotStuff(self, regressors):
         # plot regressors and stuff for fMRI analysis 
 
-        # plot theory
-        times = [t[1] for t in regressors['theory']]
-        ix = bisect.bisect(times, self.time) - 1 # find latest theory inferred up to (and including) current time
-        if ix >= 0:
-            dispTheory(regressors['theory'][ix][0], 10, (20,20+30), self.screen, color=black)
+        if 'theory_change_flag' in regressors:
+            # make sure this is EMPA
 
-        # plot theory_change_flag 
-        plotRegressor(regressors, 'theory_change_flag', self.time, (400,15+30), self.screen, color=(0,100,0))
-        plotRegressor(regressors, 'sprite_change_flag', self.time, (400,30+30), self.screen, color=(100,100,0))
-        plotRegressor(regressors, 'interaction_change_flag', self.time, (400,45+30), self.screen, color=(0,100,100))
-        plotRegressor(regressors, 'termination_change_flag', self.time, (400,60+30), self.screen, color=(100,0,100))
-        #plotRegressor(regressors, 'sampleKL', self.time, (400,75+30), self.screen, color=(100,0,0)) same
-        #plotRegressor(regressors, 'spriteKL', self.time, (400,90+30), self.screen, color=(0,0,100)) we don't log it anymore
+            # plot theory
+            times = [t[1] for t in regressors['theory']]
+            ix = bisect.bisect(times, self.time) - 1 # find latest theory inferred up to (and including) current time
+            if ix >= 0:
+                dispTheory(regressors['theory'][ix][0], 10, (20,20+30), self.screen, color=black)
+
+            # plot theory_change_flag 
+            plotRegressor(regressors, 'theory_change_flag', self.time, (400,15+30), self.screen, color=(0,100,0))
+            plotRegressor(regressors, 'sprite_change_flag', self.time, (400,30+30), self.screen, color=(100,100,0))
+            plotRegressor(regressors, 'interaction_change_flag', self.time, (400,45+30), self.screen, color=(0,100,100))
+            plotRegressor(regressors, 'termination_change_flag', self.time, (400,60+30), self.screen, color=(100,0,100))
+            #plotRegressor(regressors, 'sampleKL', self.time, (400,75+30), self.screen, color=(100,0,0)) same
+            #plotRegressor(regressors, 'spriteKL', self.time, (400,90+30), self.screen, color=(0,0,100)) we don't log it anymore
 
 
     def _fMRI_clearAll(self, onscreen=True):
@@ -1503,8 +1508,6 @@ class BasicGame(object):
 
     def render(self):
         # convert screen to standardized numpy array for DL / PCA
-        import cv2
-        from PIL import Image
         # create image from screen
         screen = pygame.surfarray.array3d(self.screen).transpose(1, 0, 2)
         image = Image.fromarray(screen)
@@ -1521,12 +1524,13 @@ class BasicGame(object):
         left = (target_dim[0] - dim[0]) / 2
         right = target_dim[0] - dim[0] - left
         padded_screen = cv2.copyMakeBorder(small_screen, top, bottom, left, right, cv2.BORDER_REPLICATE)
+        #Image.fromarray(screen).save('images/wtf_screen_' + str(self.time) + '.png')
+        #Image.fromarray(padded_screen).save('images/wtf_padded_screen_' + str(self.time) + '.png')
         return padded_screen
 
 
     def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir='/tmp/', padding=0, 
-            gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False, 
-            persist_all_images=False, all_images_dir='/tmp/'):
+            gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False, use_renders=False):
         """
         Main method to display a previously-run game.
         """
@@ -1609,16 +1613,6 @@ class BasicGame(object):
             #### in image-making mode ####
             self._drawAll()
 
-            # persistent images for PCA before drawing regressors
-            if persist_all_images:
-                # somewhat redundant with make_images
-                image_file_name = '{}_frame={}.png'.format(video_name, i)
-                #pygame.image.save(self.screen, os.path.join(all_images_dir, image_file_name))
-                screen = self.render()
-                # save image
-                Image.fromarray(screen).save(os.path.join(all_images_dir, image_file_name))
-
-
             # plotting fMRI regressors
             if regressors:
                 self.fMRI_plotStuff(regressors)
@@ -1635,22 +1629,34 @@ class BasicGame(object):
 
             #allStates.append(self.getFullState())
 
-            if(make_images or persist_movie or persist_all_images):
+            if(make_images or persist_movie):
 
                 if make_images:
                     tmp_dir = "images/tmp/"+gameName+"/"
-                    img_index = len([d for d in os.listdir(tmp_dir) if d != '.DS_Store'])
-                    tmpl = '{tmp_dir}%09d.png'.format(img_index, tmp_dir = tmp_dir)
-                    if padding and (i==0 or i==len(self.playback_states)-1): ## add padding to first and last frame.
-                        for j in range(padding):
-                            pygame.image.save(self.screen, tmpl%(img_index+j))
+                    tmpl = '{tmp_dir}_{video_name}_%09d.png'.format(tmp_dir = tmp_dir, video_name = video_name)
+                    if use_renders:
+                        # render image as it would be seen by the DQN
+                        screen = self.render()
+                        Image.fromarray(screen).save(tmpl % i)
                     else:
-                        pygame.image.save(self.screen, tmpl%img_index)
+                        # regular images like the ones the subject saw
+                        if padding and (i==0 or i==len(self.playback_states)-1): ## add padding to first and last frame.
+                            sign = -1 if i == 0 else 1
+                            for j in range(padding):
+                                pygame.image.save(self.screen, tmpl%(i + (j + 1) * sign))
+                        else:
+                            pygame.image.save(self.screen, tmpl%i)
 
                 if persist_movie:
                     tmp_dir = "./temp/"
                     tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
-                    pygame.image.save(self.screen, tmpl%i)
+                    if use_renders:
+                        # render image as it would be seen by the DQN
+                        screen = self.render()
+                        Image.fromarray(screen).save(tmpl % i)
+                    else:
+                        # regular images like the ones the subject saw
+                        pygame.image.save(self.screen, tmpl%i)
 
                 i+=1
 

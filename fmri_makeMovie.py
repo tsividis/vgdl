@@ -42,7 +42,8 @@ else:
     print all_images_dir
     print movie_dir 
 
-show_symbols = False  # optionally did not show symbols, to be consistent with DQN
+show_symbols = False  # optionally do not show symbols, to be consistent with DQN
+use_renders = True # optionally render the screen like we do for DQN
 
 db = client['heroku_7lzprs54']
 
@@ -122,7 +123,9 @@ if __name__ == '__main__':
         for reg in regs:
             break # just take the latest one
 
-        video_name = 'fmri_makeMovie_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'fmri_makeMovie_s={}_r={}_b={}_i={}_p={}_{}{}'.format(
+            play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'],
+            '_render' if use_renders else '')
         print 'video_name = ', video_name
 
         ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
@@ -132,6 +135,7 @@ if __name__ == '__main__':
             continue
 
         # load theories from disk
+        '''
         with open(reg['regressors']['theory_filename'], 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
 
@@ -145,7 +149,8 @@ if __name__ == '__main__':
                 #print 'w000000t interaction_change_flag!'
                 #embed()
             reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
-        #reg['regressors'] = None # -- uncomment this and comment the lines above to run locally
+        '''
+        reg['regressors'] = None # -- uncomment this and comment the lines above to run locally
 
         # get states
         zstates = play['zstates']
@@ -169,7 +174,7 @@ if __name__ == '__main__':
         core.VGDLParser.playGame(play['game_str'], play['level_str'], states, \
             headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir=movie_dir, padding=10, 
             regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True, 
-            persist_all_images=True, all_images_dir=all_images_dir)
+            use_renders=use_renders)
 
 
     print 'done!'

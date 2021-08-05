@@ -745,9 +745,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
         # momchil: TODO rm ?
         if self._game.playback_states and self._game.playback_index == len(self._game.playback_states):
             ended = True
-            won = True
+            #won = True
             self._game.ended = ended
-            self._game.win = won
+            #self._game.win = won
             print 'ENDED'
             #embed()
 

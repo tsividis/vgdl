@@ -131,7 +131,8 @@ class Environment:
 
     def makeMovie(self, play_movie=False, regressors=None):
         VGDLParser.playGame(self.gameString, self.levelString, self.agent.bookkeeping.statesEncountered, \
-            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/", padding=10, regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir="videos/", padding=10, 
+            regressors=regressors, screensize=fMRI_screensize, video_name=self.video_name)
  
         # TODO momchil fix -- right now, this uses the wrong images; also playGame already creates a video 
         '''
@@ -167,7 +168,7 @@ class Environment:
         return
 
     def playCurriculum(self, heatmap=False, level_game_pairs=None, make_movie=False, play_movie=False, playback=False, 
-        movie_names = [], theory_playback=False, steps_per_level=None):
+        theory_playback=False, steps_per_level=None):
         """ Plays a game level until it wins, then moves to the next one until
         completion. """
         starttime = time.time()
@@ -373,7 +374,6 @@ class Environment:
 
         if make_movie:
             if self.record_fMRIRegressors:
-                self.movieName = movie_names[n_level]
                 self.makeMovie(play_movie=play_movie, regressors=self.agent.bookkeeping.regressors)
             else:
                 self.makeMovie(play_movie=play_movie)
@@ -407,7 +407,7 @@ class Environment:
         quitting = False
         self.agent.quitting = False # TODO what other stuff do we need to do from __init__() Agent?
         episodeSteps = 0
-        env_results = {'reward': 0}  # SARS tuples, for learning
+        env_results = {'reward': 0, 'ended': False, 'win': False}  # SARS tuples, for learning
         ## Main episode loop
         while not quitting:
 
@@ -421,7 +421,7 @@ class Environment:
             ### ENVIRONMENT ###
             if self.agent.memory.totalGameSteps+episodeSteps > MAX_STEPS and not self.record_fMRIRegressors:
                 score = self.environment.getScore()
-
+                print '                  MAX_STEPS ', self.agent.memory.totalGameSteps+episodeSteps, MAX_STEPS
                 return gameObject, win, score, episodeSteps, self.agent.forfeit_level
 
             action, quitting = self.agent.step(None, env_results)
@@ -434,9 +434,13 @@ class Environment:
                 # notice that the _game "knows" it's replaying (from initializeEnvironment), so it handles stuff inside
                 # TODO maybe be more explicit here about replay vs play
                 # pass regressors for optional visualization
-                self.environment.step(action, regressors=self.agent.bookkeeping.regressors)
+                env_results = self.environment.step(action, regressors=self.agent.bookkeeping.regressors)
                 if self.environment._game.playback_index == len(self.environment._game.playback_states):
-                    # TODO momchil better alternative?
+                    # interrupt episode if you run out of states to replay TODO momchil better alternative?
+                    print '                   no more states to replay'
+                    if isinstance(self.agent, DQNAgent) and not quitting:
+                        # we need to do one extra step for the DQN on timeouts TODO better -- _isDone, ended, quitting, _game.ended
+                        _, _ = self.agent.step(None, env_results)
                     break
             else:
                 env_results = self.environment.step(action)
@@ -451,8 +455,8 @@ class Environment:
 
             if max_steps and episodeSteps >= max_steps:
                 # momchil: for simulating fMRI subjects who have a limit per level
+                print '                  max steps', episodeSteps, max_steps
                 break
-            
 
         score = self.environment.getScore()
 

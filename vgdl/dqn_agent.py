@@ -24,10 +24,12 @@ import cloudpickle
 import os
 import subprocess
 import shutil
+import glob
 import numpy as np
 import random
 import time
 import copy
+from PIL import Image
 from collections import defaultdict
 from core import colorDict, VGDLParser, sys, fMRI_screensize
 from datetime import datetime
@@ -52,6 +54,10 @@ from EMPA import Agent, actionDict, availableActions, AvatarTypes, NOOP
 from vgdl.hyperparameters import hyperparameter_sets
 import os
 from pygame.locals import K_RIGHT, K_LEFT, K_UP, K_DOWN, K_SPACE
+import string
+
+def random_string(N=10):
+  return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
 
 
 class Struct:
@@ -212,7 +218,7 @@ def rl_model(player):
 # modified copy of Player()
 #
 class DQNAgent(Agent):
-    def __init__(self, gameFilename, game_size):
+    def __init__(self, gameFilename, game_size, make_videos=False, movie_names=None, videos_dir=None, images_dir=None):
         # initialize with default parameters 
         super(DQNAgent, self).__init__('full', gameFilename, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
             metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0', agent_name='DQN')
@@ -238,13 +244,20 @@ class DQNAgent(Agent):
             'cuda': 1,
             'doubleq': 1,
             'level_switch': 'sequential',
-            'timeout': 2000,
+            'timeout': 20000,
             'criteria': '1/1',
             'game_name': 'aliens',
             'num_trials': 1,
             'random_seed': 7,
         }
         self.config = Struct(**config)
+        self.make_videos = make_videos
+        self.videos_dir = videos_dir
+        self.images_dir = images_dir
+        self.tmp_images_dir = os.path.join(images_dir, 'tmp')
+        self.random_tag = random_string()
+        self.tmp_images_tmpl = os.path.join(self.tmp_images_dir, 'dqn_screen_' + self.random_tag + '_%09d.png')
+        self.movie_names = movie_names
 
         # momchil
         #self.Env = VGDLEnv(self.config.game_name, 'all_games')
@@ -326,6 +339,14 @@ class DQNAgent(Agent):
                   handle = layer.register_forward_hook(save_hidden_layer_output)
                   self.hook_handles.append(handle)
 
+        if self.make_videos:
+          if not os.path.exists(self.videos_dir):
+            os.makedirs(self.videos_dir)
+          if not os.path.exists(self.images_dir):
+            os.makedirs(self.images_dir)
+          if not os.path.exists(self.tmp_images_dir):
+            os.makedirs(self.tmp_images_dir)
+
 
     def logfMRIRegressor(self, name, val):
         if not self.record_fMRIRegressors:
@@ -339,10 +360,10 @@ class DQNAgent(Agent):
         #pdb.set_trace()
         screen = self.environment._game.render()
 
-        from PIL import Image
-        # TODO (momchil) comment out debug image saving
-        #Image.fromarray(screen).save('/tmp/dqn_screen_' + str(self.steps) + '.png')
-        #embed()
+        if self.make_videos:
+          image_file_name = self.tmp_images_tmpl % self.steps
+          Image.fromarray(screen).save(image_file_name)
+          #embed()
 
         screen = screen.transpose((2, 0, 1)) # CxHxW
         screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
@@ -350,8 +371,17 @@ class DQNAgent(Agent):
         # Resize, and add a batch dimension (BCHW)
         return self.resize(screen).unsqueeze(0).to(self.device)
 
+    def makeVideo(self):
+      video_filename = self.movie_names[self.episode - 1] + '_' + self.random_tag + '.mp4'
+      video_filename = os.path.join(self.videos_dir, video_filename)
+      call = ["ffmpeg -r 30 -f image2  -i ", self.tmp_images_tmpl, " -vcodec libx264 -crf 25  -pix_fmt yuv420p ", video_filename]
+      call = ' '.join(call) 
+      print call
+      subprocess.call(call, shell=True)
+      [os.remove(f) for f in glob.glob(self.tmp_images_tmpl + "*" + str(self.random_tag) + "*")]
 
-    def step(self, action, env_results=None):
+
+    def step(self, action, env_results):
         # from the inner loop of Player::train_model()
         # note that we pass the env_results for the previous action (self.action), taken at the previous state (self.state)
         self.steps += 1
@@ -362,7 +392,12 @@ class DQNAgent(Agent):
             self.beginningOfEpisodeManagement()
       
         # episode over?
-        self.ended, self.win = self.environment._isDone()
+        self.ended, self.win = env_results['ended'], env_results['win']
+        # ...vs...
+        #self.ended, self.win = self.environment._isDone()
+        # ...vs...
+        #self.ended = self.environment._game.ended
+        #self.win = self.environment._game.win
         #score = self.environment.getScore()
 
         # get current state
@@ -395,6 +430,8 @@ class DQNAgent(Agent):
           self.episode += 1
           self.episode_steps = 0
           self.episode_reward = 0
+          if self.make_videos:
+            self.makeVideo()
           
           # Update the target network
           #self.model_update()
@@ -425,7 +462,7 @@ class DQNAgent(Agent):
         if self.record_fMRIRegressors and self.environment.getTime() > 0: # record regressors after each frame, which means excluding the initial frame
           self.logfMRIRegressor('action', VGDL_action)
 
-        print self.steps, ' --> ', self.action, VGDL_action, self.reward
+        print self.steps, ' --> ', self.action, VGDL_action, self.reward, ' -- ended, win', self.ended, self.win
         return VGDL_action, self.ended
 
 

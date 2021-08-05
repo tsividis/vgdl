@@ -66,7 +66,6 @@ if __name__ == '__main__':
         game_str = game['descs'][play['desc_id']]
         level_str = game['levels'][play['level_id']]
         if subj_id not in ['12', '13', '14', '15', '16', '17']:
-
             assert game_str == play['game_str']
         assert level_str == play['level_str']
 
@@ -76,7 +75,8 @@ if __name__ == '__main__':
             all_pairs[game['name']] = [] 
             all_movie_names[game['name']] = [] 
 
-        video_name = 'fmri_empaPlay_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'fmri_empaPlay_{}_s={}_r={}_b={}_i={}_p={}_{}'.format(agent_name, play['subj_id'], 
+            play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
 
         # this is the money that gets passed to playCurriculum

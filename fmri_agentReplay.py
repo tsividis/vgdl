@@ -9,6 +9,7 @@ import uuid
 import csv
 import os
 import socket
+import glob
 from collections import defaultdict
 from vgdl import core
 from IPython import embed
@@ -30,6 +31,8 @@ import pygame
 # copied from fmri_empaPlay.py
 
 
+show_symbols = False  # optionally do not show symbols, for DQN; It's important, since there are no symbols during training
+
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
@@ -41,10 +44,14 @@ if 'omchil' in socket.gethostname():
     # local 
     theoriesDir = 'theories'
     layersDir = 'layers'
+    imagesDir = 'images'
+    videosDir = 'videos'
 else:
     # Cannon 
     theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
     layersDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'layers')
+    videosDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'videos')
+    imagesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'images')
     print theoriesDir, layersDir
     # NCF cluster
     #client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
@@ -185,6 +192,14 @@ if __name__ == '__main__':
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
 
+        # optionally remove symbols, for DQN/PCA/etc
+        # see setFullState()
+        if not show_symbols:
+            for fs in states:
+                for key, ss in fs['objects'].iteritems():
+                    for ID, attrs in ss.iteritems():
+                        attrs['symbol'] = None
+
         #embed()
         #continue
 
@@ -193,7 +208,8 @@ if __name__ == '__main__':
             all_regressors[game['name']] = [] 
             all_movie_names[game['name']] = [] 
 
-        video_name = 'empaReplay_s={}_r={}_b={}_i={}_p={}_{}'.format(play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        video_name = 'fmri_agentReplay_{}_s={}_r={}_b={}_i={}_p={}_{}'.format(agent_name, play['subj_id'], 
+            play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
         print 'video_name = ', video_name
 
         # this is the money that gets passed to playCurriculum
@@ -216,9 +232,7 @@ if __name__ == '__main__':
             'reg_dts': datetime.now().strftime("%m/%d/%Y, %H:%M:%S") # for sanity checks
         }
         all_regressors[game['name']].append(reg)
-
-        movie_name = game['name'] + '_lev=' + str(play['level_id']) + '_' + str(play['play_id'])
-        all_movie_names[game['name']].append(movie_name)
+        all_movie_names[game['name']].append(video_name)
 
 
     # for each game, play all instances as part of one curriculum
@@ -242,6 +256,8 @@ if __name__ == '__main__':
         assert len(movie_names) == len(level_game_pairs)
 
         task_ID = 'subj={}'.format(subj_id)
+        subj_game_videos_dir = os.path.join(videosDir, 'DQN', 'subj_'+str(subj_id), game_name)
+        subj_game_images_dir = os.path.join(imagesDir, 'DQN', 'subj_'+str(subj_id), game_name)
 
         # create agent
         if agent_name == 'EMPA':
@@ -250,7 +266,9 @@ if __name__ == '__main__':
             agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
                 metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
         elif agent_name == 'DQN':
-            agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3))
+            # render videos based on the DQN inputs, as a sanity check
+            agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3),
+                make_videos=True, movie_names=movie_names, videos_dir=subj_game_videos_dir, images_dir=subj_game_images_dir)
         else:
             assert False, 'Invalid agent name ' + agent_name
 
@@ -258,7 +276,8 @@ if __name__ == '__main__':
         agent.record_fMRIRegressors = True
 
         environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
-        curriculumRegressors = environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, playback=True, movie_names=movie_names)
+        curriculumRegressors = environment.playCurriculum(
+            level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, playback=True)
         assert len(curriculumRegressors) == len(regs)
 
         for i in range(len(curriculumRegressors)): # for each play
