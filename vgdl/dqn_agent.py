@@ -388,7 +388,7 @@ class DQNAgent(Agent):
         self.state = self.next_state
 
         # Perform one step of the optimization (on the target network)
-        self.optimize_model()  # TODO (momchil) enable on GPU; crashes locally sometimes
+        #self.optimize_model()  # TODO (momchil) enable on GPU; crashes locally sometimes
 
         # end of episode
         if self.ended or self.episode_steps > self.config.timeout:
@@ -397,7 +397,7 @@ class DQNAgent(Agent):
           self.episode_reward = 0
           
           # Update the target network
-          self.model_update()
+          #self.model_update()
 
         # bookkeeping
         if self.environment.getTime() == 0:

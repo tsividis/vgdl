@@ -20,6 +20,7 @@ import csv
 from collections import defaultdict
 from vgdl import core
 from IPython import embed
+import utils
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
@@ -29,7 +30,8 @@ scanner_remap = {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('4'): K_RIGHT, ord('2')
 
 # USAGE: python fmri_play.py [subj_id] [run_id]
 
-client = MongoClient('localhost', 27017)
+client = utils.get_mongo_client()
+
 db = client['heroku_7lzprs54']
 
 actual_fMRI_experiment = True 

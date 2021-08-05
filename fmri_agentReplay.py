@@ -1,4 +1,3 @@
-from pymongo import MongoClient
 import pprint
 import random
 from datetime import datetime
@@ -20,6 +19,7 @@ from vgdl.dqn_agent import DQNAgent
 from vgdl.environment import Environment
 import vgdl.core
 from vgdl.hyperparameters import hyperparameter_sets
+import utils
 
 import pygame
 
@@ -35,21 +35,19 @@ def randomString(stringLength=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
+client = utils.get_mongo_client()
 
 if 'omchil' in socket.gethostname():
     # local 
-    client = MongoClient('localhost', 27017)
     theoriesDir = 'theories'
     layersDir = 'layers'
 else:
     # Cannon 
-    client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
     theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
     layersDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'layers')
     print theoriesDir, layersDir
     # NCF cluster
     #client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
-
 
 if not os.path.exists(theoriesDir):
     os.makedirs(theoriesDir)

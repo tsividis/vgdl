@@ -27,7 +27,7 @@ See README.md, though it's a bit incomplete. Here is how I got the code working 
 
 The [PyGame](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) guide might also be helpful.
 
-Also install the [SegoeUISymbol](https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm) font; we use it to visualize symbols. Follow [guide](https://unix.stackexchange.com/questions/415246/how-to-install-fonts-for-centos-7/415249) for CentOS 7 for cluster. Or, just put .tff file in local directory (already in repo, so should just work).
+Also install the [SegoeUISymbol](https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm) font; we use it to visualize symbols. Follow [guide](https://unix.stackexchange.com/questions/415246/how-to-install-fonts-for-centos-7/415249) for CentOS 7 for cluster. Or, just put .ttf file in local directory (already in repo, so should just work).
 
 On NCF cluster, install conda using `module load` (see [CBS FAQ](http://cbs.fas.harvard.edu/science/core-facilities/neuroimaging/information-investigators/faq) and `module avail ncf`) and activate env with:
 
@@ -63,6 +63,8 @@ Then test by connecting:
     mongo
     show dbs
     exit
+
+To allow connections from other machines, set `bindIp` to `0.0.0.0` in `/usr/local/etc/mongod.conf`.
 
 Then load the experiment db (dump is in the `dump` directory):
 

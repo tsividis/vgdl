@@ -1578,7 +1578,8 @@ class BasicGame(object):
         #allStates = [self.getFullState()]
 
         while self.playback_index < len(self.playback_states):
-            clock.tick(self.frame_rate)
+            #clock.tick(self.frame_rate)
+            clock.tick()  # go as fast as possible
             self.screen.fill(LIGHTGRAY)
             self.time += 1
 
