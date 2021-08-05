@@ -140,6 +140,7 @@ class Agent:
         self.steps_in_solution = 0
         self.action = None
         self.quitting = False
+        self.metacontroller_decided_to_quit = False
         self.re_plan = False
         self.predicted_states = [] ##TODO: Pass to memory
         self.printable_predicted_states = []
@@ -350,6 +351,7 @@ class Agent:
     def beginningOfEpisodeManagement(self):
         ### AGENT EPISODE INIT STUFF ###
         self.forfeit_level = False
+        self.metacontroller_decided_to_quit = False
 
         self.longHorizonObservations = 0
         self.previous_objects = self.all_objects if self.all_objects else {}
@@ -536,6 +538,7 @@ class Agent:
             print "Metacontroller suggests quitting:", self.metacontroller.quitting
             self.metacontroller.quitting = False
             self.quitting = True
+            self.metacontroller_decided_to_quit = True # fMRI: Remember if the metacontroller decided to quit, to avoid any further planning because it OOMs (note that we still want to replay all the subsequent frames)
             action = 0
 
         if not ended:
@@ -544,7 +547,7 @@ class Agent:
                 self.steps_in_solution += 1
             if self.record_fMRIRegressors:
                 # momchil: NEVER quit prematurely during replay in fMRI mode
-                # do it here because of snippets above and below
+                # do it here because of snippets above and below.
                 self.quitting = False
         else:
             action = 0
@@ -932,6 +935,13 @@ class Agent:
                 if not len(acByClass) and self.environment.getTime() != 5: # plan at step 5
                     # no avatar collisions => no replanning 
                     # also, not in the very beginning
+                    plans = []
+                    self.action = None
+
+                elif self.metacontroller_decided_to_quit:
+                    # meta controller decided to quit some point
+                    # This usually means that there no good plans, which means that planning takes forever and OOMs 
+                    # => do not plan in that case
                     plans = []
                     self.action = None
 

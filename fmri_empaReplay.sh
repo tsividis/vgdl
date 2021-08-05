@@ -6,7 +6,7 @@ mkdir output
 
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 1 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=( 14 21 24 )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 20  )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 3 5 6 7 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 12 13 14 15 17 18 19 20 22 23 25 26 27 28 29 30 31 32 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
@@ -14,13 +14,13 @@ subj_arg="${subjects[@]}" # stringify it
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
 #games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' )
 #games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
-#games=( 'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=( 'vgfmri3_chase' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=( 'vgfmri4_helper' 'vgfmri4_bait'  'vgfmri4_zelda'  )
 #games=( 'vgfmri4_chase' 'vgfmri4_helper' 'vgfmri4_bait'  'vgfmri4_zelda' )
 #games=( 'vgfmri4_chase' 'vgfmri4_bait' 'vgfmri4_zelda')
 #games=( 'vgfmri3_helper')
-games=( 'vgfmri4_bait')
+games=( 'vgfmri4_helper')
+#games=( 'vgfmri4_bait')
 #games=( 'none' )
 
 echo ---------------- >> jobs.txt
@@ -39,7 +39,7 @@ for subj in ${subjects[*]}; do
         # OOM helper; up to 50000 (2 days)
         # sprites % 20: time 0-15 for all but lem & PA; for them, 1-15
         #
-        sbatch_output=`sbatch -p shared --mem 20001 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
+        sbatch_output=`sbatch -p shared --mem 50001 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_empaReplay.sh ${subj} ${game}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output
