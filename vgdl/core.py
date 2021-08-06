@@ -408,7 +408,8 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, make_images=False, make_movie=False, movie_dir = "videos/", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None, default_colors=False, use_renders=False):
+    def playGame(game_str, map_str, playback_states = None, headless = False, persist_movie = False, 
+        make_images=False, make_movie=False, movie_dir = "videos/", images_dir = "images/", gameName='', parameter_string='', padding=0,positions=None, regressors=None, screensize=None, video_name=None, default_colors=False, use_renders=False):
         """ Parses the game and level map strings, and starts the game. """
         g = VGDLParser().parseGame(game_str)
         if positions is not None:
@@ -426,7 +427,7 @@ class VGDLParser(object):
        # else:
         # TODO momchil fMRI playback on cluster (to create movie) needs to be headless
         if playback_states:
-            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors, use_renders=use_renders)
+            g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, images_dir=images_dir, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors, use_renders=use_renders)
         else:
             win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
 
@@ -451,7 +452,7 @@ class VGDLParser(object):
         g.buildLevel(map_str, fMRI_screensize)
         g.uiud = uuid.uuid4()
         g.playback_states = playback_states
-        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", padding=0, screen=fMRI_screen, use_renders=False)
+        g.startPlaybackGame(headless=False, persist_movie=True, make_images=False, make_movie=True, movie_dir="videos/", images_dir = "images/", padding=0, screen=fMRI_screen, use_renders=False)
 
  
 
@@ -1529,7 +1530,7 @@ class BasicGame(object):
         return padded_screen
 
 
-    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir='/tmp/', padding=0, 
+    def startPlaybackGame(self, headless, persist_movie, make_images=False, make_movie=False, movie_dir='/tmp/', padding=0, images_dir='/tmp/',
             gameName='', parameter_string='', screen=None, regressors=None, video_name=None, default_colors=False, use_renders=False):
         """
         Main method to display a previously-run game.
@@ -1631,6 +1632,8 @@ class BasicGame(object):
 
             if(make_images or persist_movie):
 
+                # TODO (momchil) remove
+                '''
                 if make_images:
                     tmp_dir = "images/tmp/"+gameName+"/"
                     tmpl = '{tmp_dir}_{video_name}_%09d.png'.format(tmp_dir = tmp_dir, video_name = video_name)
@@ -1646,6 +1649,18 @@ class BasicGame(object):
                                 pygame.image.save(self.screen, tmpl%(i + (j + 1) * sign))
                         else:
                             pygame.image.save(self.screen, tmpl%i)
+                '''
+                if make_images: 
+                    image_filename = 'frame_{}.png'.format(self.playback_index)
+                    image_filename = os.path.join(images_dir, image_filename)
+                    if use_renders:
+                        # render image as it would be seen by the DQN
+                        screen = self.render()
+                        Image.fromarray(screen).save(image_filename)
+                    else:
+                        # regular images like the ones the subject saw
+                        pygame.image.save(self.screen, image_filename)
+                    
 
                 if persist_movie:
                     tmp_dir = "./temp/"

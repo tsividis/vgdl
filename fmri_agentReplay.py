@@ -50,9 +50,9 @@ else:
     # Cannon 
     theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
     layersDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'layers')
-    videosDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'videos')
-    imagesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'images')
-    print theoriesDir, layersDir
+    videosDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
+    imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
+    print theoriesDir, layersDir, videosDir, imagesDir
     # NCF cluster
     #client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
 
@@ -182,7 +182,7 @@ if __name__ == '__main__':
             continue
 
 
-	# get states
+	    # get states
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict

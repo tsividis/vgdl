@@ -20,6 +20,7 @@ import cPickle, cloudpickle
 import os
 import glob
 import vgdl.core
+import utils
 
 import pygame
 
@@ -29,18 +30,18 @@ import pygame
 # * - optional
 # copied from fmri_empaReplay.py
 
+
+client = utils.get_mongo_client()
+
 if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
-    client = MongoClient('localhost', 27017)
-    all_images_dir = 'all_frames'
-    movie_dir = 'videos'
+    videosDir = 'videos'
+    imagesDir = 'images'
 else:
     # cluster
-    client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
-    all_images_dir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'all_frames')
-    movie_dir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
-    print all_images_dir
-    print movie_dir 
+    videosDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
+    imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
+    print videosDir, imagesDir 
 
 show_symbols = False  # optionally do not show symbols, to be consistent with DQN
 use_renders = True # optionally render the screen like we do for DQN
@@ -169,11 +170,19 @@ if __name__ == '__main__':
                     for ID, attrs in ss.iteritems():
                         attrs['symbol'] = None
 
+        # output directories
+        subj_game_videos_dir = os.path.join(videosDir, 'makeMovie', 'subj_'+str(subj_id), play['game_name'])
+        subj_game_images_dir = os.path.join(imagesDir, 'makeMovie', 'subj_'+str(subj_id), play['game_name'], video_name)
+        if not os.path.exists(subj_game_videos_dir):
+            os.makedirs(subj_game_videos_dir)
+        if not os.path.exists(subj_game_images_dir):
+            os.makedirs(subj_game_images_dir)
+
         # in lieu of makeMovie() from main_agent.py
         # use default colors (not the ones the subject saw) b/c that's what EMPA sees
         core.VGDLParser.playGame(play['game_str'], play['level_str'], states, \
-            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir=movie_dir, padding=10, 
-            regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True, 
+            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir=subj_game_videos_dir, images_dir=subj_game_images_dir,
+            padding=0, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True, 
             use_renders=use_renders)
 
 
