@@ -64,7 +64,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         s_ids = [int(sys.argv[1])]
     else:
-        s_ids = list(range(1,32))
+        s_ids = list(range(1,33))
 
     for s in s_ids:
         subj_id = str(s)

@@ -6,7 +6,7 @@ mkdir output
 
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 1 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=( 20  )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 10  )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 3 5 6 7 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 12 13 14 15 17 18 19 20 22 23 25 26 27 28 29 30 31 32 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
@@ -19,9 +19,9 @@ subj_arg="${subjects[@]}" # stringify it
 #games=( 'vgfmri4_chase' 'vgfmri4_helper' 'vgfmri4_bait'  'vgfmri4_zelda' )
 #games=( 'vgfmri4_chase' 'vgfmri4_bait' 'vgfmri4_zelda')
 #games=( 'vgfmri3_helper')
-games=( 'vgfmri4_helper')
+#games=( 'vgfmri4_helper')
 #games=( 'vgfmri4_bait')
-#games=( 'none' )
+games=( 'none' )
 
 echo ---------------- >> jobs.txt
 echo --- $(date): Running fmri_empaReplay for subjects ${subj_arg} in parallel >> jobs.txt

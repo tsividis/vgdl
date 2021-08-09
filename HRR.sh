@@ -6,7 +6,7 @@ mkdir output
 
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32  )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=( 2 3 4 5 6 7 8 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 1 2 3 4 5 6 7 8 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
 echo ---------------- >> jobs.txt
@@ -15,7 +15,7 @@ echo ---------------- >> jobs.txt
 git log | head -n 1 >> jobs.txt 
 
 for subj in ${subjects[*]}; do
-        outfileprefix="output/HRR_${subj}"
+        outfileprefix="${MY_SCRATCH}/VGDL/output/HRR_${subj}"
         echo ---------------------------------------------------------------------------------
         echo Subject ${subj}, file prefix = $outfileprefix
 
