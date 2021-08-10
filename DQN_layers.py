@@ -17,6 +17,9 @@ from pprint import pprint
 import logging, sys
 import cPickle, cloudpickle
 from HRR import gen_subject_kernels
+import utils
+import socket
+from pymongo import MongoClient
 
 # ### Helper functions
 
@@ -71,17 +74,14 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
         pks.append(play['_id'])
     del plays # close cursor, o/w screws things up
 
-    # "subject" embeddings: have multiple (nsamples), for robustness
-    samples = [SubjectHRR(K, N, E) for _ in range(nsamples)]
-   
     # regressor name (as defined in dqn_agent.py) -> sequence of layer activations
     # notice that here we only have a single "sample", unlike in HRRs
     layers = {
         'layer_conv1_output': [],
         'layer_conv2_output': [],
         'layer_conv3_output': [],
-        'layer_linear1_output': [],
-        'layer_linear2_output': [],
+       # 'layer_linear1_output': [], # TODO enable after we replay again
+      #  'layer_linear2_output': [],
     }
     ts = []
     run_id = []
@@ -150,7 +150,7 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
 
             for i in range(0, len(reg['regressors'][regressor_name])):
                 layer = reg['regressors'][regressor_name][i][0]
-                layers[regressor_name].append(layer)
+                layers[regressor_name].append(layer.flatten())
 
                 if regressor_name == layers.keys()[0]:
                     # only insert these for one layer, since this should be identical across layers
@@ -161,7 +161,7 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
                     run_id.append(play['run_id'])
 
             print 'layer', regressor_name, ' time: ', (time.time() - then)
-
+        
 
     block_offs_idx.append(len(ts))
 
@@ -179,24 +179,26 @@ def gen_and_save_subject_kernels(subj_id):
 
     sigma_w = 1; # TODO parameter
 
+    # get sequences of DQN layer activations
     layers, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_DQN_layers(subj_id, normalize)
 
+    # generate GP kernels
     layer_kernels = dict()
     layer_Xx = dict()
     layer_sf = dict()
     for regressor_name, layer_sequence in layers.iteritems():
         # note that we are reusing the HRR kernel code which expects several samples; here we create a single sample
         layer_kernels[regressor_name], r_id, layer_Xx[regressor_name], layer_sf[regressor_name] = \
-            gen_subject_kernels(subj_id, [layer_sequence], ts, run_id, block_ons_idx, block_offs_idx, sigma_w)[0]
-
+            gen_subject_kernels(subj_id, [layer_sequence], ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
+        layer_kernels[regressor_name] = layer_kernels[regressor_name][0] # single sample
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
 
-    d = layer_kernels
-    d.update(layer_Xx)
-    d.update(layer_sf)
+    d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernels.iteritems()}
+    d.update({regressor_name + '_Xx': Xx for regressor_name, Xx in layer_Xx.iteritems()}) 
+    #d.update({regressor_name + '_sf': sf for regressor_name, sf in layer_sf.iteritems()}) - there are too big
     d.update({
         'r_id': r_id,
         'ts': ts,
@@ -207,3 +209,11 @@ def gen_and_save_subject_kernels(subj_id):
     })
 
     scipy.io.savemat(kernel_filename, d)
+
+
+if __name__ == '__main__':
+    subj_id = int(sys.argv[1])
+
+    gen_and_save_subject_kernels(subj_id)
+
+    print 'Done'

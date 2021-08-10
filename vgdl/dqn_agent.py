@@ -335,7 +335,7 @@ class DQNAgent(Agent):
 
           self.hook_handles = []
           for layer in self.policy_net.modules():
-              if isinstance(layer, torch.nn.modules.conv.Conv2d): # or isinstance(layer, torch.nn.modules.Linear):
+              if isinstance(layer, torch.nn.modules.conv.Conv2d) or isinstance(layer, torch.nn.modules.Linear):
                   handle = layer.register_forward_hook(save_hidden_layer_output)
                   self.hook_handles.append(handle)
 
@@ -446,7 +446,7 @@ class DQNAgent(Agent):
         '''
         if self.record_fMRIRegressors and self.environment.getTime() > 0: # record regressors after each frame, which means excluding the initial frame
           for layer in self.policy_net.modules():
-            if isinstance(layer, torch.nn.modules.conv.Conv2d): # or isinstance(layer, torch.nn.modules.Linear):
+            if isinstance(layer, torch.nn.modules.conv.Conv2d) or isinstance(layer, torch.nn.modules.Linear):
               regressor_name = 'layer_' + LAYER_TO_LAYER_NAME[str(layer)] + '_params'
               params = [param.detach().cpu().numpy() for param in layer.parameters()]
               self.logfMRIRegressor(regressor_name, params)

@@ -17,6 +17,7 @@ import time
 from pprint import pprint
 import logging, sys
 import cPickle, cloudpickle
+import utils
 
 import socket
 from pymongo import MongoClient
@@ -42,14 +43,14 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 #logging.disable(logging.CRITICAL)
 logging.disable(logging.ERROR)
 
+client = utils.get_mongo_client()
+
 if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
-    client = MongoClient('localhost', 27017)
     theoriesDir = 'theories'
     matDir = 'mat'
 else:
     # cluster
-    client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
     theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
 
