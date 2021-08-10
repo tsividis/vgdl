@@ -1,5 +1,10 @@
 # from https://github.com/yl3508/heroku_vgdl/tree/master/HRR_Analysis
 
+# embed EMPA theory sequences from human replay into holographic reduced representations (HRRs)
+# generate kernels for Gaussian process regression
+# optionally also generate representational dissimilarity matrices for RSA
+# optionally also generate the unique theory sequences and also the corresponding holographic reduced representations, for fiddling around in Matlab 
+
 import numpy as np
 import math
 import os 
