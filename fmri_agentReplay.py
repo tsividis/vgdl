@@ -24,11 +24,11 @@ import utils
 
 import pygame
 
-# USAGE: python fmri_empaReplay.py [agent_name] [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*]
-#        python fmri_empaReplay.py [agent_name] [subj_id] [game_name]
-#        python fmri_empaReplay.py [agent_name] [subj_id] [run_id] [game_name]
+# USAGE: python fmri_agentReplay.py [agent_name] [subj_id] [run_id*] [block_id*] [instance_id*] [play_id*]
+#        python fmri_agentReplay.py [agent_name] [subj_id] [game_name]
+#        python fmri_agentReplay.py [agent_name] [subj_id] [run_id] [game_name]
 # * - optional
-# copied from fmri_empaPlay.py
+# copied from fmri_agentPlay.py
 
 
 show_symbols = False  # optionally do not show symbols, for DQN; It's important, since there are no symbols during training
@@ -142,10 +142,10 @@ if __name__ == '__main__':
 
     plays = db.plays.find(query).sort('start_time')
 
-    print 'Running fmri_empaReplay with query:'
+    print 'Running fmri_agentReplay with query:'
     print query
 
-    # TODO dedupe with fmri_empaPlay
+    # TODO dedupe with fmri_agentPlay
 
     all_pairs = {}
     all_regressors = {}
@@ -227,7 +227,7 @@ if __name__ == '__main__':
             'play_id': play['play_id'],
             'game_name': play['game_name'],
             'level_id': play['level_id'],
-            'type': 'fmri_empaReplay',
+            'type': 'fmri_agentReplay',
             'reg_ts': time.time(), # for sanity checks
             'reg_dts': datetime.now().strftime("%m/%d/%Y, %H:%M:%S") # for sanity checks
         }

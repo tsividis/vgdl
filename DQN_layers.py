@@ -80,8 +80,8 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
         'layer_conv1_output': [],
         'layer_conv2_output': [],
         'layer_conv3_output': [],
-       # 'layer_linear1_output': [], # TODO enable after we replay again
-      #  'layer_linear2_output': [],
+        'layer_linear1_output': [], # TODO enable after we replay again
+        'layer_linear2_output': [],
     }
     ts = []
     run_id = []
@@ -148,9 +148,14 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
             else:
                 assert num_frames == len(reg['regressors'][regressor_name])
 
+            # insert layer for each time step
             for i in range(0, len(reg['regressors'][regressor_name])):
-                layer = reg['regressors'][regressor_name][i][0]
-                layers[regressor_name].append(layer.flatten())
+                layer = reg['regressors'][regressor_name][i][0].flatten()
+
+                if normalize:
+                    layer = layer / np.sqrt(np.sum(np.square(layer)))
+
+                layers[regressor_name].append(layer)
 
                 if regressor_name == layers.keys()[0]:
                     # only insert these for one layer, since this should be identical across layers
