@@ -16,7 +16,7 @@ import time
 from pprint import pprint
 import logging, sys
 import cPickle, cloudpickle
-from HRR import gen_subject_kernels
+from HRR import gen_subject_kernels, gen_subject_kernels_multisigma
 import utils
 import socket
 from pymongo import MongoClient
@@ -182,7 +182,7 @@ def gen_and_save_subject_kernels(subj_id):
 
     normalize = True
 
-    sigma_w = 1; # TODO parameter
+    sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
     # get sequences of DQN layer activations
     layers, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_DQN_layers(subj_id, normalize)
@@ -199,7 +199,7 @@ def gen_and_save_subject_kernels(subj_id):
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3e_norm=%d.mat' % (subj_id, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
 
     d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernels.iteritems()}
     d.update({regressor_name + '_Xx': Xx for regressor_name, Xx in layer_Xx.iteritems()}) 
@@ -216,9 +216,52 @@ def gen_and_save_subject_kernels(subj_id):
     scipy.io.savemat(kernel_filename, d)
 
 
+# copy of gen_and_save_subject_kernels but for multiple sigma_w's
+# notice that this might not be necessary - sigma_w is a constant factor that gets absorbed in the noise variance (see equation 2.23 in the GP book)
+def gen_and_save_subject_kernels_multisigma(subj_id):
+
+    normalize = True
+
+    sigma_ws = np.logspace(-10, 10) # grid search the parameter space
+
+    # get sequences of DQN layer activations
+    layers, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_DQN_layers(subj_id, normalize)
+
+    # generate GP kernels
+    layer_kernelss = dict()
+    layer_Xx = dict()
+    layer_sf = dict()
+    for regressor_name, layer_sequence in layers.iteritems():
+        # note that we are reusing the HRR kernel code which expects several samples; here we create a single sample
+        layer_kernelss[regressor_name], r_id, layer_Xx[regressor_name], layer_sf[regressor_name] = \
+            gen_subject_kernels_multisigma(subj_id, [layer_sequence], ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
+
+    for i in range(len(sigma_ws)):
+        sigma_w = sigma_ws[i]
+
+        # save kernels
+        #
+        kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3e_norm=%d.mat' % (subj_id, sigma_w, normalize))
+
+        d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernelss[i][0].iteritems()}
+        d.update({regressor_name + '_Xx': Xx for regressor_name, Xx in layer_Xx.iteritems()}) 
+        #d.update({regressor_name + '_sf': sf for regressor_name, sf in layer_sf.iteritems()}) - there are too big
+        d.update({
+            'r_id': r_id,
+            'ts': ts,
+            'block_ons_idx': block_ons_idx,
+            'block_offs_idx': block_offs_idx,
+            'sigma_w': sigma_w,
+            'subj_id': subj_id,
+        })
+
+        scipy.io.savemat(kernel_filename, d)
+
+
 if __name__ == '__main__':
     subj_id = int(sys.argv[1])
 
     gen_and_save_subject_kernels(subj_id)
+    #gen_and_save_subject_kernels_multisigma(subj_id)
 
     print 'Done'
