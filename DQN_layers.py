@@ -199,7 +199,7 @@ def gen_and_save_subject_kernels(subj_id):
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3e_norm=%d.mat' % (subj_id, sigma_w, normalize))
 
     d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernels.iteritems()}
     d.update({regressor_name + '_Xx': Xx for regressor_name, Xx in layer_Xx.iteritems()}) 

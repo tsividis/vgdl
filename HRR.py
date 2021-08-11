@@ -36,8 +36,6 @@ import pygame
 
 # ### Helper functions
 
-# In[5]:
-
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 #logging.disable(logging.CRITICAL)
@@ -55,6 +53,36 @@ else:
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
 
     print theoriesDir, matDir
+
+
+## Welford's online algorithm for computing variance
+# https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Welford's_online_algorithm
+
+# For a new value newValue, compute the new count, new mean, the new M2.
+# mean accumulates the mean of the entire dataset
+# M2 aggregates the squared distance from the mean
+# count aggregates the number of samples seen so far
+def Welford_update(existingAggregate, newValue):
+    if existingAggregate is None:
+        existingAggregate = (0, np.zeros(newValue.shape), np.zeros(newValue.shape))
+    (count, mean, M2) = existingAggregate
+    count += 1
+    delta = newValue - mean
+    mean += delta / count
+    delta2 = newValue - mean
+    M2 += delta * delta2
+    return (count, mean, M2)
+
+# Retrieve the mean, standard deviation from an aggregate
+def Welford_finalize(existingAggregate):
+    (count, mean, M2) = existingAggregate
+    if count < 2:
+        return float("nan")
+    else:
+        (mean, std) = (mean, np.sqrt(M2 / count))
+        return (mean, std)
+
+
 
 
 def dim(K, N, E):
@@ -1153,6 +1181,7 @@ def convolve_HRRs(HRRs, ts, run_id, block_ons_idx, block_offs_idx):
 
 
 # generate kernel from output of convolve_HRRs, after gen_subject_HRRs
+# Ks = [nsamples x TRs x TRs]
 #
 def gen_subject_kernels(subj_id, HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w):
 
@@ -1173,6 +1202,36 @@ def gen_subject_kernels(subj_id, HRRs, ts, run_id, block_ons_idx, block_offs_idx
     Ks = np.concatenate(Ks, axis=0)
 
     return Ks, r_id, Xx, sf
+
+
+# generate kernel from output of convolve_HRRs, after gen_subject_HRRs
+# Kss = sigma_ws x [nsamples x TRs x TRs]
+#
+def gen_subject_kernels_multisigma(subj_id, HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws):
+
+    # copy of gen_subject_kernels but for multiple sigma_w's
+
+    nsamples = len(HRRs)
+
+    Kss = []
+
+    for sigma_w in sigma_ws:
+        Ks = []
+
+        for j in range(nsamples):
+            Xx, r_id, sf = convolve_HRRs(HRRs[j], ts, run_id, block_ons_idx, block_offs_idx)
+            Sigma_w = np.identity(Xx.shape[1]) * sigma_w # Sigma_p in Rasmussen, Eq. 2.4
+
+            K = np.matmul(np.matmul(Xx, Sigma_w), np.transpose(Xx)) # K in Rasmussen, Eq. 2.12
+
+            Ks.append(K)
+
+        Ks = [K.reshape((1, K.shape[0], K.shape[1])) for K in Ks]
+        Ks = np.concatenate(Ks, axis=0)
+
+        Kss.append(Ks)
+
+    return Kss, r_id, Xx, sf
 
 
 # generate RDMs from output of gen_subject_HRRs
@@ -1325,6 +1384,8 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
 
 
 
+
+
 def gen_and_save_subject_RDMs_batched(subj_id):
 
     # generate HRRs and RDMs in batches, b/c of OOM (HRRs are too big)
@@ -1428,8 +1489,6 @@ def gen_and_save_subject_RDMs_batched(subj_id):
     scipy.io.savemat(RDM_filename, d)
 
 
-
-
 def gen_and_save_subject_kernels_batched(subj_id):
 
     # copy of gen_and_save_subject_RDMs_batched but for kernels
@@ -1444,7 +1503,7 @@ def gen_and_save_subject_kernels_batched(subj_id):
     nsamples = 100
     normalize = True
 
-    sigma_w = 1; # TODO parameter
+    sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
     batch_size = 10
     assert nsamples % batch_size == 0
@@ -1551,6 +1610,115 @@ def gen_and_save_subject_kernels_batched(subj_id):
 
 
 
+def gen_and_save_subject_kernels_batched_multisigma(subj_id):
+
+    # copy of gen_and_save_subject_kernels_batched but for multiple sigma_w's 
+    # notice that this might not be necessary - sigma_w is a constant factor that gets absorbed in the noise variance (see equation 2.23 in the GP book)
+
+    # generate HRRs and kernels in batches, b/c of OOM (HRRs are too big)
+    # batches is better than 1 by 1 b/c of overhead of querying mongo
+    #
+
+    K = 10 
+    N = 10
+    E = 0.05
+    nsamples = 100
+    normalize = True
+
+    sigma_ws = np.logspace(-10, 10) # grid search the parameter space
+
+    batch_size = 10
+    assert nsamples % batch_size == 0
+
+    theory_kernel_aggregate = [None] * len(sigma_ws)
+    sprite_kernel_aggregate = [None] * len(sigma_ws)
+    interaction_kernel_aggregate = [None] * len(sigma_ws)
+    termination_kernel_aggregate = [None] * len(sigma_ws)
+
+    for batch in range(nsamples / batch_size):
+        print 'BATCH ', batch
+
+        # theory_HRRs = batch_size x TRs x HRR_dim
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize)
+
+        # theory_kernelss = sigma_ws x [batch_size x TRs x TRs]
+        theory_kernelss, r_id, theory_Xx, theory_sf = gen_subject_kernels_multisigma(subj_id, theory_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
+        sprite_kernelss, _, sprite_Xx, sprite_sf = gen_subject_kernels_multisigma(subj_id, sprite_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
+        interaction_kernelss, _, interaction_Xx, interaction_sf = gen_subject_kernels_multisigma(subj_id, interaction_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
+        termination_kernelss, _, termination_Xx, termination_sf = gen_subject_kernels_multisigma(subj_id, termination_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
+
+        # use online algorithm for computing mean and std kernels 
+        assert len(theory_kernelss) == len(sigma_ws)
+        assert len(sprite_kernelss) == len(sigma_ws)
+        assert len(interaction_kernelss) == len(sigma_ws)
+        assert len(termination_kernelss) == len(sigma_ws)
+        # compute separate aggregate for each sigma_w
+        for i in range(len(sigma_ws)):
+            assert len(theory_kernelss[i]) == batch_size
+            assert len(sprite_kernelss[i]) == batch_size
+            assert len(interaction_kernelss[i]) == batch_size
+            assert len(termination_kernelss[i]) == batch_size
+            # update aggregate for each sample in the batch
+            for j in range(batch_size):
+                theory_kernel_aggregate[i] = Welford_update(theory_kernel_aggregate[i], theory_kernelss[i][j])
+                sprite_kernel_aggregate[i] = Welford_update(sprite_kernel_aggregate[i], sprite_kernelss[i][j])
+                interaction_kernel_aggregate[i] = Welford_update(interaction_kernel_aggregate[i], interaction_kernelss[i][j])
+                termination_kernel_aggregate[i] = Welford_update(termination_kernel_aggregate[i], termination_kernelss[i][j])
+
+    # save kernels separately for each sigma_w
+    #
+    for i in range(len(sigma_ws)):
+        sigma_w = sigma_ws[i]
+
+        theory_kernel, theory_kernel_std = Welford_finalize(theory_kernel_aggregate[i])
+        sprite_kernel, sprite_kernel_std = Welford_finalize(sprite_kernel_aggregate[i])
+        interaction_kernel, interaction_kernel_std = Welford_finalize(interaction_kernel_aggregate[i])
+        termination_kernel, termination_kernel_std = Welford_finalize(termination_kernel_aggregate[i])
+
+        kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3e_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize))
+
+        d = {
+            #'theory_HRRs': theory_HRRs, # -- too much memory
+            #'sprite_HRRs': sprite_HRRs,
+            #'interaction_HRRs': interaction_HRRs,
+            #'termination_HRRs': termination_HRRs,
+            'theory_kernel': theory_kernel,
+            'sprite_kernel': sprite_kernel,
+            'interaction_kernel': interaction_kernel,
+            'termination_kernel': termination_kernel,
+            'theory_kernel_std': theory_kernel_std,
+            'sprite_kernel_std': sprite_kernel_std,
+            'interaction_kernel_std': interaction_kernel_std,
+            'termination_kernel_std': termination_kernel_std,
+            #'theory_kernels': theory_kernels, # -- too much memory
+            #'sprite_kernels': sprite_kernels,
+            #'interaction_kernels': interaction_kernels,
+            #'termination_kernels': termination_kernels,
+            'theory_Xx': theory_Xx,
+            'sprite_Xx': sprite_Xx,
+            'interaction_Xx': interaction_Xx,
+            'termination_Xx': termination_Xx,
+            #'theory_sf': theory_sf, # -- too much memory
+            #'sprite_sf': sprite_sf,
+            #'interaction_sf': interaction_sf,
+            #'termination_sf': termination_sf,
+            'r_id': r_id,
+            'ts': ts,
+            'block_ons_idx': block_ons_idx,
+            'block_offs_idx': block_offs_idx,
+            'K': K,
+            'N': N,
+            'E': E,
+            'sigma_w': sigma_w,
+            'nsamples': nsamples,
+            'subj_id': subj_id,
+        }
+
+        scipy.io.savemat(kernel_filename, d)
+
+
+
+
 def gen_and_save_subject_unique_HRRs(subj_id):
 
     # copy of gen_and_save_subject_kernels_batched but for unique HRRs
@@ -1607,6 +1775,7 @@ if __name__ == '__main__':
 
     #gen_and_save_subject_RDMs_batched(subj_id)
     gen_and_save_subject_kernels_batched(subj_id)
+    #gen_and_save_subject_kernels_batched_multisigma(subj_id)
     #gen_and_save_subject_unique_HRRs(subj_id)
 
     print 'Done'
