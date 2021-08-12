@@ -1,4 +1,5 @@
 import pprint
+import argparse
 import random
 from datetime import datetime
 import time
@@ -21,6 +22,7 @@ from vgdl.environment import Environment
 import vgdl.core
 from vgdl.hyperparameters import hyperparameter_sets
 import utils
+import string
 
 import pygame
 
@@ -108,37 +110,33 @@ def is_int(s):
     assert False
 
 if __name__ == '__main__':
-    agent_name = sys.argv[1]
-    subj_id = sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--agent-name', required=True)
+    parser.add_argument('--subj-id', required=True)
+    parser.add_argument('--run-id', default=None)
+    parser.add_argument('--block-id', default=None)
+    parser.add_argument('--instance-id', default=None)
+    parser.add_argument('--play-id', default=None)
+    parser.add_argument('--game-name', default=None)
+
+    config = parser.parse_args()
+    print(config)
+
+    agent_name = config.agent_name
+    subj_id = config.subj_id
 
     query = {'subj_id': subj_id}
 
-    if len(sys.argv) > 3:
-        if is_int(sys.argv[3]):
-            query['run_id'] = int(sys.argv[3])
-        else:
-            assert len(sys.argv) == 4
-            query['game_name'] = sys.argv[3]
-    if len(sys.argv) > 4:
-        if is_int(sys.argv[4]):
-            query['block_id'] = int(sys.argv[4])
-        else:
-            assert len(sys.argv) == 5
-            query['game_name'] = sys.argv[4]
-    if len(sys.argv) > 5:
-        if is_int(sys.argv[5]):
-            query['instance_id'] = int(sys.argv[5])
-        else:
-            assert len(sys.argv) == 6
-            query['game_name'] = sys.argv[5]
-    if len(sys.argv) > 6:
-        if is_int(sys.argv[6]):
-            query['play_id'] = int(sys.argv[6])
-        else:
-            assert len(sys.argv) == 7
-            query['game_name'] = sys.argv[6]
-    if len(sys.argv) > 7:
-        query['game_name'] = sys.argv[7]
+    if config.run_id is not None:
+        query['run_id'] = int(config.run_id)
+    if config.block_id is not None:
+        query['block_id'] = int(config.block_id)
+    if config.instance_id is not None:
+        query['instance_id'] = int(config.instance_id)
+    if config.play_id is not None:
+        query['play_id'] = int(config.play_id)
+    if config.game_name is not None:
+        query['game_name'] = config.game_name
 
     plays = db.plays.find(query).sort('start_time')
 

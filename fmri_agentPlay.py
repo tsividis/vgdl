@@ -2,6 +2,7 @@ from pymongo import MongoClient
 import pprint
 import random
 from datetime import datetime
+import argparse
 import time
 
 import json
@@ -32,21 +33,37 @@ db = client['heroku_7lzprs54']
 vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it was 35
 
 if __name__ == '__main__':
-    agent_name = sys.argv[1]
-    subj_id = sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--agent-name', required=True)
+    parser.add_argument('--subj-id', required=True)
+    parser.add_argument('--run-id', default=None)
+    parser.add_argument('--block-id', default=None)
+    parser.add_argument('--instance-id', default=None)
+    #parser.add_argument('--play-id', default=None)
+    parser.add_argument('--game-name', default=None)
+    parser.add_argument('--steps-per-level', default=FMRI_STEPS_PER_LEVEL)
+    parser.add_argument('--insert', action='store_true', default=True)
+
+    config = parser.parse_args()
+    print(config)
+
+    agent_name = config.agent_name
+    subj_id = config.subj_id
 
     query = {'subj_id': subj_id}
 
-    if len(sys.argv) > 3:
-        query['run_id'] = int(sys.argv[3])
-    if len(sys.argv) > 4:
-        query['block_id'] = int(sys.argv[4])
-    if len(sys.argv) > 5:
-        query['instance_id'] = int(sys.argv[5])
-    if len(sys.argv) > 6:
-        query['play_id'] = int(sys.argv[6])
-
+    if config.run_id is not None:
+        query['run_id'] = int(config.run_id)
+    if config.block_id is not None:
+        query['block_id'] = int(config.block_id)
+    if config.instance_id is not None:
+        query['instance_id'] = int(config.instance_id)
+    #if config.play_id is not None:
+    #    query['play_id'] = int(config.play_id)
     query['play_id'] = 0 # for generative play, only pass one play per instance, and then the agent can potentially play multiple plays
+    if config.game_name is not None:
+        query['game_name'] = config.game_name
+
     plays = db.plays.find(query)
 
     all_pairs = {}
@@ -115,15 +132,16 @@ if __name__ == '__main__':
         # TODO momchil CAREFUL with saved curricula! might reload old agent; figure out how to deal with it
         environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
         curriculumResults = environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, 
-            heatmap=False, movie_names=movie_names, steps_per_level=FMRI_STEPS_PER_LEVEL)
+            heatmap=False, movie_names=movie_names, steps_per_level=config.steps_per_level)
 
-        # insert into Mongo
-        res = {
-            'subj_id': subj_id,
-            'game_name': game_name,
-            'agent_name': agent_name,
-            'dt': datetime.now(),
-            'ts': time.time(),
-            'results': curriculumResults,
-        }
-        db.sim_results.insert_one(res)
+        # optionally insert into Mongo
+        if config.insert:
+            res = {
+                'subj_id': subj_id,
+                'game_name': game_name,
+                'agent_name': agent_name,
+                'dt': datetime.now(),
+                'ts': time.time(),
+                'results': curriculumResults,
+            }
+            db.sim_results.insert_one(res)

@@ -86,7 +86,7 @@ do
 
                 # run agentReplay
                 echo ---- run_fmri_agentReplay: agent ${1}, subj ${2}, run $run, block $block, instance $instance, play $play, game ${3}
-                cmd="python -m cProfile -s cumtime fmri_agentReplay.py ${1} ${2} ${run} ${block} ${instance} ${play} ${3}"
+                cmd="python -m cProfile -s cumtime fmri_agentReplay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play} --game-name=${3}"
                 echo ${cmd}
                 eval ${cmd}
 
