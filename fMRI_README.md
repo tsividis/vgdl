@@ -325,3 +325,4 @@ Decoding HRR GP
 - run `fmri_empaTheoryReplay.py`: theories -> subject behavior, EMPA (predicted) behavior
 
 - run `fmri_empaLik.py`: subject, EMPA behavior -> likelihood
+
