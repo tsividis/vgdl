@@ -1,6 +1,6 @@
 # from https://github.com/yl3508/heroku_vgdl/tree/master/HRR_Analysis
 
-# embed EMPA theory sequences from human replay into holographic reduced representations (HRRs)
+# embed EMPA theory sequences from human replay into holographic reduced representations (HRRs), (fmri_agentReplay.py)
 # generate kernels for Gaussian process regression
 # optionally also generate representational dissimilarity matrices for RSA
 # optionally also generate the unique theory sequences and also the corresponding holographic reduced representations, for fiddling around in Matlab 
@@ -31,6 +31,7 @@ import cPickle, cloudpickle
 from vgdl.environment import Environment
 from vgdl.hyperparameters import hyperparameter_sets
 from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+from fmri_agentReplay import theoriesDir
 
 import pygame
 
@@ -45,11 +46,9 @@ client = utils.get_mongo_client()
 
 if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
-    theoriesDir = 'theories'
     matDir = 'mat'
 else:
     # cluster
-    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
 
     print theoriesDir, matDir
@@ -1589,10 +1588,10 @@ def gen_and_save_subject_kernels_batched(subj_id):
         'sprite_Xx': sprite_Xx,
         'interaction_Xx': interaction_Xx,
         'termination_Xx': termination_Xx,
-        'theory_sf': theory_sf,
-        'sprite_sf': sprite_sf,
-        'interaction_sf': interaction_sf,
-        'termination_sf': termination_sf,
+        #'theory_sf': theory_sf, # -- too much memory
+        #'sprite_sf': sprite_sf,
+        #'interaction_sf': interaction_sf,
+        #'termination_sf': termination_sf,
         'r_id': r_id,
         'ts': ts,
         'block_ons_idx': block_ons_idx,
@@ -1600,6 +1599,7 @@ def gen_and_save_subject_kernels_batched(subj_id):
         'K': K,
         'N': N,
         'E': E,
+        'normalize': normalize,
         'sigma_w': sigma_w,
         'nsamples': nsamples,
         'subj_id': subj_id,
@@ -1709,6 +1709,7 @@ def gen_and_save_subject_kernels_batched_multisigma(subj_id):
             'K': K,
             'N': N,
             'E': E,
+            'normalize': normalize,
             'sigma_w': sigma_w,
             'nsamples': nsamples,
             'subj_id': subj_id,

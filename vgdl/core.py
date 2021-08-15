@@ -179,6 +179,12 @@ class VGDLParser(object):
         waitForKeypress(clock, ' ')
 
     @staticmethod
+    def get_image_filename(playback_index):
+        image_filename = 'frame_{}.png'.format(playback_index)
+        return image_filename
+
+
+    @staticmethod
     def fMRI_playRun(subj, run_id, db, seed, remap_keys=None):
         # Play a given fMRI run for given subject
         #
@@ -1651,7 +1657,7 @@ class BasicGame(object):
                             pygame.image.save(self.screen, tmpl%i)
                 '''
                 if make_images: 
-                    image_filename = 'frame_{}.png'.format(self.playback_index)
+                    image_filename = VGDLParser.get_image_filename(self.playback_index)
                     image_filename = os.path.join(images_dir, image_filename)
                     if use_renders:
                         # render image as it would be seen by the DQN

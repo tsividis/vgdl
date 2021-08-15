@@ -1,6 +1,6 @@
 # from https://github.com/yl3508/heroku_vgdl/tree/master/HRR_Analysis
 
-# generate kernels for Gaussian process regression from DQN layers from human replay
+# generate kernels for Gaussian process regression from DQN layers from human replay (fmri_agentReplay.py)
 # optionally also generate representational dissimilarity matrices for RSA
 # optionally also generate the unique theory sequences and also the corresponding holographic reduced representations, for fiddling around in Matlab 
 
@@ -20,6 +20,7 @@ from HRR import gen_subject_kernels, gen_subject_kernels_multisigma
 import utils
 import socket
 from pymongo import MongoClient
+from fmri_agentReplay import layersDir
 
 # ### Helper functions
 
@@ -33,11 +34,9 @@ client = utils.get_mongo_client()
 
 if 'omchil' in socket.gethostname():
     # local 
-    layersDir = 'layers'
     matDir = 'mat'
 else:
     # Cannon 
-    layersDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'layers')
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
     print layersDir, matDir
     # NCF cluster
@@ -74,13 +73,13 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
         pks.append(play['_id'])
     del plays # close cursor, o/w screws things up
 
-    # regressor name (as defined in dqn_agent.py) -> sequence of layer activations
+    # regressor name (as defined in dqn_agent.py; see LAYER_TO_LAYER_NAME and save_hidden_layer_output) -> sequence of layer activations
     # notice that here we only have a single "sample", unlike in HRRs
     layers = {
         'layer_conv1_output': [],
         'layer_conv2_output': [],
         'layer_conv3_output': [],
-        'layer_linear1_output': [], # TODO enable after we replay again
+        'layer_linear1_output': [],
         'layer_linear2_output': [],
     }
     ts = []
@@ -103,7 +102,7 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
         assert play['subj_id'] == subj_id
 
         game = subj['games'][play['game_id']]
-        print 'gen_subject_HRRs: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+        print 'gen_subject_DQN_layers: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
         # get regressors
         q = {'play_key': play['_id']}
@@ -247,6 +246,7 @@ def gen_and_save_subject_kernels_multisigma(subj_id):
         d.update({regressor_name + '_Xx': Xx for regressor_name, Xx in layer_Xx.iteritems()}) 
         #d.update({regressor_name + '_sf': sf for regressor_name, sf in layer_sf.iteritems()}) - there are too big
         d.update({
+            'normalize': normalize,
             'r_id': r_id,
             'ts': ts,
             'block_ons_idx': block_ons_idx,

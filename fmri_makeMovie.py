@@ -41,12 +41,25 @@ else:
     # cluster
     videosDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
     imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
-    print videosDir, imagesDir 
+
+print 'fmri_makeMovie dirs: ', videosDir, imagesDir 
 
 show_symbols = False  # optionally do not show symbols, to be consistent with DQN
 use_renders = True # optionally render the screen like we do for DQN
 
 db = client['heroku_7lzprs54']
+
+def get_video_name(play, use_renders):
+    video_name = 'fmri_makeMovie_s={}_r={}_b={}_i={}_p={}_{}{}'.format(
+        play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'],
+        '_render' if use_renders else '')
+    return video_name
+
+def get_subj_game_videos_dir(videosDir, subj_id, play):
+    return os.path.join(videosDir, 'makeMovie', 'subj_'+str(subj_id), play['game_name'])
+    
+def get_subj_game_images_dir(imagesDir, subj_id, play, video_name):
+    return os.path.join(imagesDir, 'makeMovie', 'subj_'+str(subj_id), play['game_name'], video_name)
 
 def is_int(s):
     try:
@@ -124,9 +137,7 @@ if __name__ == '__main__':
         for reg in regs:
             break # just take the latest one
 
-        video_name = 'fmri_makeMovie_s={}_r={}_b={}_i={}_p={}_{}{}'.format(
-            play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'],
-            '_render' if use_renders else '')
+        video_name = get_video_name(play, use_renders) 
         print 'video_name = ', video_name
 
         ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
@@ -171,8 +182,8 @@ if __name__ == '__main__':
                         attrs['symbol'] = None
 
         # output directories
-        subj_game_videos_dir = os.path.join(videosDir, 'makeMovie', 'subj_'+str(subj_id), play['game_name'])
-        subj_game_images_dir = os.path.join(imagesDir, 'makeMovie', 'subj_'+str(subj_id), play['game_name'], video_name)
+        subj_game_videos_dir = get_subj_game_videos_dir(videosDir, subj_id, play)
+        subj_game_images_dir = get_subj_game_images_dir(imagesDir, subj_id, play, video_name)
         if not os.path.exists(subj_game_videos_dir):
             os.makedirs(subj_game_videos_dir)
         if not os.path.exists(subj_game_images_dir):
