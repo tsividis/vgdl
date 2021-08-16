@@ -126,7 +126,6 @@ if __name__ == '__main__':
     subj_id = config.subj_id
 
     query = {'subj_id': subj_id}
-
     if config.run_id is not None:
         query['run_id'] = int(config.run_id)
     if config.block_id is not None:
@@ -253,7 +252,7 @@ if __name__ == '__main__':
         movie_names = all_movie_names[game_name]
         assert len(movie_names) == len(level_game_pairs)
 
-        task_ID = 'subj={}'.format(subj_id)
+        task_ID = 'subj={}'.format(subj_id) # This is crucial to make sure the curriculum is subject-specific
         subj_game_videos_dir = os.path.join(videosDir, 'DQN', 'subj_'+str(subj_id), game_name)
         subj_game_images_dir = os.path.join(imagesDir, 'DQN', 'subj_'+str(subj_id), game_name)
 
@@ -266,7 +265,8 @@ if __name__ == '__main__':
         elif agent_name == 'DQN':
             # render videos based on the DQN inputs, as a sanity check
             agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3),
-                make_videos=True, movie_names=movie_names, videos_dir=subj_game_videos_dir, images_dir=subj_game_images_dir)
+                make_videos=True, movie_names=movie_names, videos_dir=subj_game_videos_dir, 
+                images_dir=subj_game_images_dir, task_ID=task_ID)
         else:
             assert False, 'Invalid agent name ' + agent_name
 

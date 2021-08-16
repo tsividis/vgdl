@@ -218,10 +218,10 @@ def rl_model(player):
 # modified copy of Player()
 #
 class DQNAgent(Agent):
-    def __init__(self, gameFilename, game_size, make_videos=False, movie_names=None, videos_dir=None, images_dir=None):
+    def __init__(self, gameFilename, game_size, task_ID, make_videos=False, movie_names=None, videos_dir=None, images_dir=None):
         # initialize with default parameters 
         super(DQNAgent, self).__init__('full', gameFilename, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
-            metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0', agent_name='DQN')
+            metacontroller_index=0, IW_k=1, extra_atom_allowed=True, agent_name='DQN', task_ID=task_ID)
 
         # momchil
         config = {

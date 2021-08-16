@@ -18,6 +18,7 @@ from IPython import embed
 from vgdl.main_agent import Agent
 import cPickle, cloudpickle
 import os
+import argparse
 import glob
 import vgdl.core
 import utils
@@ -44,9 +45,6 @@ else:
 
 print 'fmri_makeMovie dirs: ', videosDir, imagesDir 
 
-show_symbols = False  # optionally do not show symbols, to be consistent with DQN
-use_renders = True # optionally render the screen like we do for DQN
-
 db = client['heroku_7lzprs54']
 
 def get_video_name(play, use_renders):
@@ -70,38 +68,48 @@ def is_int(s):
     assert False
 
 if __name__ == '__main__':
-    subj_id = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--subj-id', required=True)
+    parser.add_argument('--run-id', default=None)
+    parser.add_argument('--block-id', default=None)
+    parser.add_argument('--instance-id', default=None)
+    parser.add_argument('--play-id', default=None)
+    parser.add_argument('--game-name', default=None)
+    parser.add_argument('--make-images', default=True, help='Whether to generate images')
+    parser.add_argument('--make-movie', default=True, help='Whether to generate a movie')
+    parser.add_argument('--show-symbols', default=False, help='Whether to display the sprite symbols inside the boxes like the subjects saw them')
+    parser.add_argument('--use-renders', default=True, help='Whether to render each screen as a 80x60 image, for e.g. DQN or PCA')
+    parser.add_argument('--default-colors', default=True, help='Whether to use the default colors for each game (e.g. for EMPA, DQN, PCA), or the ones that the subject saw')
 
+    config = parser.parse_args()
+    print(config)
+
+    subj_id = config.subj_id
+    show_symbols = config.show_symbols
+    use_renders = config.use_renders
+    default_colors = config.default_colors
+    make_images = config.make_images
+    make_movie = config.make_movie
+
+    # construct query
     query = {'subj_id': subj_id}
+    if config.run_id is not None:
+        query['run_id'] = int(config.run_id)
+    if config.block_id is not None:
+        query['block_id'] = int(config.block_id)
+    if config.instance_id is not None:
+        query['instance_id'] = int(config.instance_id)
+    if config.play_id is not None:
+        query['play_id'] = int(config.play_id)
+    if config.game_name is not None:
+        query['game_name'] = config.game_name
 
-    if len(sys.argv) > 2:
-        if is_int(sys.argv[2]):
-            query['run_id'] = int(sys.argv[2])
-        else:
-            assert len(sys.argv) == 3
-            query['game_name'] = sys.argv[2]
-    if len(sys.argv) > 3:
-        if is_int(sys.argv[3]):
-            query['block_id'] = int(sys.argv[3])
-        else:
-            assert len(sys.argv) == 4
-            query['game_name'] = sys.argv[3]
-    if len(sys.argv) > 4:
-        if is_int(sys.argv[4]):
-            query['instance_id'] = int(sys.argv[4])
-        else:
-            assert len(sys.argv) == 5
-            query['game_name'] = sys.argv[4]
-    if len(sys.argv) > 5:
-        if is_int(sys.argv[5]):
-            query['play_id'] = int(sys.argv[5])
-        else:
-            assert len(sys.argv) == 6
-            query['game_name'] = sys.argv[5]
-    if len(sys.argv) > 6:
-        query['game_name'] = sys.argv[6]
-
-    plays = db.plays.find(query, no_cursor_timeout=True).sort('start_time')
+    # get plays
+    plays = db.plays.find(query, {'_id': 1}).sort('start_time')
+    pks = []
+    for play in plays:
+        pks.append(play['_id'])
+    del plays # close cursor, o/w screws things up
 
     print 'Running fmri_makeMovie with query:'
     print query
@@ -116,7 +124,12 @@ if __name__ == '__main__':
     if int(subj_id) <= 11:
         vgdl.core.BLOCK_SIZE = 20
     
-    for play in plays:
+    for pk in pks:
+        # find play
+        query = {'_id': pk}
+        play = db.plays.find_one(query)
+        assert play['subj_id'] == subj_id
+
         subj = db.subjects.find_one({'subj_id': subj_id})
         game = subj['games'][play['game_id']]
         game_str = game['descs'][play['desc_id']]
@@ -192,10 +205,8 @@ if __name__ == '__main__':
         # in lieu of makeMovie() from main_agent.py
         # use default colors (not the ones the subject saw) b/c that's what EMPA sees
         core.VGDLParser.playGame(play['game_str'], play['level_str'], states, \
-            headless=False, persist_movie=True, make_images=True, make_movie=True, movie_dir=subj_game_videos_dir, images_dir=subj_game_images_dir,
-            padding=0, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=True, 
-            use_renders=use_renders)
-
+            headless=False, persist_movie=make_movie, make_images=True, make_movie=None, movie_dir=subj_game_videos_dir, images_dir=subj_game_images_dir,
+            padding=0, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=default_colors, 
+            use_renders=use_renders) # make_movie doesn't do anything right now
 
     print 'done!'
-    plays.close()

@@ -10,6 +10,17 @@ from IPython import embed
 Class for supporting interrupted runs on cluster. Saves where we are in the curriculum as well as the agent state and allows for re-setting a run to a recent game/agent state.
 """
 
+def get_curriculum_directory():
+    if 'omchil' in socket.gethostname():
+        # local
+        return 'savedCurricula'
+    # Cannon cluster
+    return os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'savedCurricula')
+
+def get_curriculum_filename(agent_name, game_name, param_ID, task_ID):
+    return 'curriculum_' + agent_name + '_'+game_name+'_'+param_ID+'_'+task_ID
+
+
 class Bookkeeping:
     def __init__(self, saveMidEpisode, task_ID, param_ID, gameFilename, agent_name):
         self.saveMidEpisode = saveMidEpisode
@@ -18,12 +29,9 @@ class Bookkeeping:
         self.gameFilename = gameFilename
         self.agent_name = agent_name
         self.episodeSaveFile = None
-        if 'omchil' in socket.gethostname():
-            self.curriculumDir = 'savedCurricula'
-        else:
-            self.curriculumDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'savedCurricula')
-        print self.curriculumDir
-        self.curriculumSaveFile = 'curriculum_' + self.agent_name + '_'+self.gameFilename+'_'+self.param_ID+'_'+self.task_ID
+        self.curriculumDir = get_curriculum_directory() 
+        self.curriculumSaveFile = get_curriculum_filename(self.agent_name, self.gameFilename, self.param_ID, self.task_ID)
+        print 'curriculum bookkeeping __init__: ', self.curriculumDir, self.curriculumSaveFile
         self.effectsEncountered = []
         self.statesEncountered = []
         self.compactStates = []

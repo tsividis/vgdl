@@ -25,7 +25,13 @@ See README.md, though it's a bit incomplete. Here is how I got the code working 
     pip install IPython line_profiler ipdb
     python -m examples.gridphysics.aliens
 
+    pip install -r fmri_requirements.txt
+
 The [PyGame](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) guide might also be helpful.
+
+If getting errors installing `ataripy`, try doing:
+
+    brew install cmake
 
 Also install the [SegoeUISymbol](https://freefontsdownload.net/free-segoeuisymbol-font-135679.htm) font; we use it to visualize symbols. Follow [guide](https://unix.stackexchange.com/questions/415246/how-to-install-fonts-for-centos-7/415249) for CentOS 7 for cluster. Or, just put .ttf file in local directory (already in repo, so should just work).
 
@@ -190,11 +196,11 @@ fMRI EMPA Replay
 
 To have EMPA replay the human state-action sequence and learn a theory (as if it was playing), do:
 
-    python fmri_empaReplay.py [subj_id] [run_id] [block_id*] [instance_id*] [play_id*]
+    python fmri_agentReplay.py EMPA [subj_id] [run_id] [block_id*] [instance_id*] [play_id*]
 
 E.g.
 
-    rm savedCurricula/*; python fmri_empaReplay.py 0 0
+    rm savedCurricula/*; python fmri_agentReplay.py EMPA 0 0
         
 This will be used to generate independent variables for the fMRI analysis. The idea is that, if humans have something like EMPA in their heads, then they should be inferring theories like those that EMPA would infer. 
 
@@ -220,7 +226,7 @@ Then open the file (the .py, not .pyc file) and somewhere after line 487 add:
 Other scripts
 ----
 
-`fmri_makeMovie.py` -- create movies with EMPA replay after running fmri_empaReplay; run it in an browser [interactive session](https://ncfoodnode02.rc.fas.harvard.edu/pun/sys/dashboard/batch_connect/sessions) (need VPN), on a Cannon Compute node (need memory -- 50 G)
+`fmri_makeMovie.py` -- create movies with EMPA replay after running fmri_agentReplay; run it in an browser [interactive session](https://ncfoodnode02.rc.fas.harvard.edu/pun/sys/dashboard/batch_connect/sessions) (need VPN), on a Cannon Compute node (need memory -- 50 G)
 
 `fmri_playsPostproc.py` -- generate nuisance regressors for GLMs
 
@@ -233,7 +239,7 @@ To see where you `embed()`ed, do:
     import sys, traceback
     traceback.print_stack()
 
-Python time profiling: [cProfile](https://stackoverflow.com/questions/582336/how-can-you-profile-a-python-script), e.g. `python -m cProfile -s cumtime fmri_empaReplay.py 1 0 0 0 0 > chase_profile.txt`
+Python time profiling: [cProfile](https://stackoverflow.com/questions/582336/how-can-you-profile-a-python-script), e.g. `python -m cProfile -s cumtime fmri_agentReplay.py EMPA 1 0 0 0 0 > chase_profile.txt`
 
 Python memory profiling: [memory-profiler](https://pypi.org/project/memory-profiler/), or `get_size` in `utils.py`
 
@@ -243,14 +249,15 @@ Careful not to overwrite remote theory_files when copying to NCF
 
 Careful not to edit .py files while scripts are running; they might use the latest version
 
-EMPA replay checklist
+EMPA replay checklist (see also DQN replay)
 -----
 
-Before running `fmri_empaReplay.sh`, make sure to check:
-- `run_fmri_empaReplay.sh`: `rm savedCurricula/*` if replaying from scratch (or not, if we're continuing replay)
-- `fmri_empaReplay.sh`: subjects, games, memory, time limit (start small, e.g. subj 1 chase only)
+Before running `fmri_agentReplay.sh`, make sure to check:
+- `fmri_agentReplay.sh`: `agent='EMPA'`
+- `run_fmri_agentReplay.sh`: `rm ${curriculum_file}` if replaying from scratch (or not, if we're continuing replay)
+- `fmri_agentReplay.sh`: subjects, games, memory, time limit (start small, e.g. subj 1 chase only)
 - `mongo`: `db.regressors.remove({})` (dump first, tar gzip and mv to `../backups`)
-- `fmri_empaReplay.py`: `db.regressors.insert` and `continue` are uncommented
+- `fmri_agentReplay.py`: `db.regressors.insert` and `continue` are uncommented
 
 
 EMPA postprocessing checklist 
@@ -263,6 +270,8 @@ Before running `fmri_playsPostproc.sh`, make sure to:
 - `scp_from_ncf.sh` edit and copy over regressors jsons (make sure the ones you have already are archived locally)
 - `mongo`: `db.plays_post.remove({})`
 - `fmri_playsPostproc.py`: `db.plays_post.insert` and `continue` are uncommented
+- `fmri_playsPostproc.sh`: edit subjects accordingly
+- run `fmri_playsPostproc.sh`
 
 
 EMPA GLMs
@@ -278,12 +287,14 @@ Before running GLMs:
 - run `get_regressors` as script (comment out first line, uncomment stuff right after) to debug
 - (MATLAB) `ccnl_check_multi(vgdl_expt(), 3)` to get theory regressors, then 21 to get everything else
 - `ccnl_check_multi` for all GLMs you intend to run, then `scp_to_ncf.sh` to copy them over (edit first)
+- `ccnl_fmri_glm.sh`: edit subjects and models accordingly
+- run `ccnl_fmri_glm.sh`
 
 
 HRR GP analysis
 -----
 
-- run `fmri_empaReplay.py` / `fmri_empaReplay.sh`: human play -> EMPA theories
+- run `fmri_agentReplay.py` / `fmri_agentReplay.sh`: human play -> EMPA theories
     - EMPA generates theory sequence from human replay
     - saves it to mongo (metadata in `regressors` collection), disk (`theories/theory_*.pickle`)
 
@@ -326,3 +337,31 @@ Decoding HRR GP
 
 - run `fmri_empaLik.py`: subject, EMPA behavior -> likelihood
 
+
+Generating videos and images
+-----
+
+Via `fmri_makeMovie.py`, called via `fmri_makeMovie.sh`. Checklist:
+
+- `fmri_makeMovie.sh`: edit `subjects` and `game_names`
+- `run_fmri_makeMovie.sh`: optionally add arguments to the call to `fmri_makeMovie.py`, e.g. `use_renders`
+- run `fmri_makeMovie.sh`
+
+
+Running PCA
+-----
+
+- generate renders using `fmri_makeMovie.py`/`fmri_makeMovie.sh`
+- run PCA with `images_pca.py` (homologous to `fmri_agentReplay.py`)
+- generate projections for GP/regression with `PCA_projections.py/sh` (homologous to `HRR.py/sh`, `DQN_layers.py/sh`)
+
+
+DQN replay
+-----
+
+Via `fmri_agentReplay.py`, called via `fmri_agentReplay.sh`. Checklist:
+
+- `fmri_agentReplay.sh`: `agent='DQN'`
+- `run_fmri_agentReplay.sh`: `rm ${curriculum_file}` if replaying from scratch (or not, if we're continuing replay)
+- `fmri_agentReplay.sh`: subjects, games, memory, time limit (start small, e.g. subj 1 chase only)
+- run `fmri_agentReplay.sh`

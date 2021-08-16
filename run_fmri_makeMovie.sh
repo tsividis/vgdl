@@ -6,6 +6,16 @@ echo running make movie for subj ${1}, game ${2}
 
 source activate pedro
 
+# figure out host based on machine (RC, NCF, local)
+if [[ `hostname` == *"Momchil"* ]]; then
+    host='localhost'
+    nplays_idx=4
+else
+    host='holy2a05207.rc.fas.harvard.edu'
+    nplays_idx=2
+fi
+
+
 # run separately for each run, block, and instance, otherwise we OOM (notice most of them will be empty for given game)
 for run in {1..6}
 do
@@ -16,7 +26,7 @@ do
             echo ==== run_fmri_makeMovie: subj ${1}, run $run, block $block, instance $instance, game ${2}
 
             # get # of plays with given run, block, instance
-            out=`mongo --host holy2a05208.rc.fas.harvard.edu heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${2}'})"`
+            out=`mongo --host ${host} heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${2}'})"`
             echo mongo play count -- $out
 
             # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601
@@ -27,14 +37,15 @@ do
 
             #nplays=${split[3]} #ncf
             #nplays=${split[4]} #local
-            nplays=${split[2]}
+            #nplays=${split[2]}
+            nplays=${split[$nplays_idx]}
             echo nplays = $nplays
 
             for (( play=0; play<$nplays; play++ ))
             do
                 # run makeMovie 
                 echo ---- run_fmri_makeMovie: subj ${1}, run $run, block $block, instance $instance, play $play, game ${2}
-                cmd="python -m cProfile -s cumtime fmri_makeMovie.py ${1} ${run} ${block} ${instance} ${play} ${2}"
+                cmd="python -m cProfile -s cumtime fmri_makeMovie.py --subj-id=${1} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play} --game-name=${2}"
                 echo ${cmd}
                 eval ${cmd}
             done

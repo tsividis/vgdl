@@ -21,13 +21,19 @@ fi
 if [[ `hostname` == *"Momchil"* ]]; then
     host='localhost'
     nplays_idx=4
+    curriculum_dir=savedCurricula
 else
     host='holy2a05207.rc.fas.harvard.edu'
     nplays_idx=2
+    curriculum_dir=${MY_SCRATCH}/VGDL/savedCurricula
 fi
 
-# TODO string coupling with main_agent.py 
-rm ${MY_SCRATCH}/VGDL/savedCurricula/curriculum_${3}_*_subj=${2}*
+# remove current agent state
+# TODO string coupling with bookkeeping.py, dqn_agent.py, EMPA.py, fmri_agentReplay.py
+curriculum_file=${curriculum_dir}/curriculum_${1}_${3}_*_subj=${2}*
+echo Curriculum file:
+ls -latch ${curriculum_file}
+rm ${curriculum_file}
 
 tot_plays=0
 
@@ -86,7 +92,8 @@ do
 
                 # run agentReplay
                 echo ---- run_fmri_agentReplay: agent ${1}, subj ${2}, run $run, block $block, instance $instance, play $play, game ${3}
-                cmd="python -m cProfile -s cumtime fmri_agentReplay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play} --game-name=${3}"
+                #cmd="python -m cProfile -s cumtime fmri_agentReplay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play} --game-name=${3}"
+                cmd="python fmri_agentReplay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play} --game-name=${3}"
                 echo ${cmd}
                 eval ${cmd}
 

@@ -44,6 +44,8 @@ if __name__ == '__main__':
             img = cv2.imread(path)
             all_frames.append(process_frame(img))
 
+            print 'frame ', len(all_frames), ': ', path
+
     all_frames = np.concatenate([np.reshape(frame, (1,len(frame))) for frame in all_frames], axis=0)
     unique_frames = np.unique(all_frames, axis=0)
     del all_frames
