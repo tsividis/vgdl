@@ -39,6 +39,18 @@ On NCF cluster, install conda using `module load` (see [CBS FAQ](http://cbs.fas.
 
     source activate pedro
 
+To synchronize with github on NCF and FASSE use the [proxy](https://docs.rc.fas.harvard.edu/kb/proxy-settings/) (also see [here](https://cms-sw.github.io/tutorial-proxy.html) and [here](https://gist.github.com/evantoli/f8c23a37eb3558ab8765)):
+
+    export http_proxy=http://rcproxy.rc.fas.harvard.edu:3128
+    export https_proxy=https://rcproxy.rc.fas.harvard.edu:3128
+    git config --global http.proxy https://rcproxy.rc.fas.harvard.edu:3128
+
+and used the HTTPS protocol, e.g.:
+
+    git clone https://github.com/tomov/VGDL-fMRI-Data-Analysis.git mat_vgdl
+
+
+
 
 Mongo DB setup
 ------
@@ -122,6 +134,17 @@ Then `mongodump` from a `ncf_interact` node and then `mongorestore` on the VDI n
 On Cannon cluster, create [VDI node](https://vdi.rc.fas.harvard.edu/pun/sys/dashboard/batch_connect/sessions) (make sure to connect to the VPN with @fasrc or @odyssey; then select FAS-RC remote desktop, 28 day, 20 GB) and start with:
 
     mongod --config /n/gershman_lab/users/mtomov13/mongo/mongod.conf
+
+Example config file on the Cannon cluster:
+
+    systemLog:
+      destination: file
+      path: /n/gershman_lab/users/mtomov13/mongo/mongo.log
+      logAppend: true
+    storage:
+      dbPath: /n/gershman_lab/users/mtomov13/mongo/data
+    #net:
+    #  bindIp: 127.0.0.1
 
 
 fMRI Human Play
@@ -353,6 +376,7 @@ Running PCA
 
 - generate renders using `fmri_makeMovie.py`/`fmri_makeMovie.sh`
 - run PCA with `images_pca.py` (homologous to `fmri_agentReplay.py`)
+    - requires python 3: `source deactivate pedro`, `source activate pedro3` (or create one with python3), `pip install -r fmri_requirements_python3.txt`
 - generate projections for GP/regression with `PCA_projections.py/sh` (homologous to `HRR.py/sh`, `DQN_layers.py/sh`)
 
 

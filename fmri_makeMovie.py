@@ -43,7 +43,7 @@ else:
     videosDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
     imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
 
-print 'fmri_makeMovie dirs: ', videosDir, imagesDir 
+print('fmri_makeMovie dirs: ', videosDir, imagesDir)
 
 db = client['heroku_7lzprs54']
 
@@ -80,6 +80,7 @@ if __name__ == '__main__':
     parser.add_argument('--show-symbols', default=False, help='Whether to display the sprite symbols inside the boxes like the subjects saw them')
     parser.add_argument('--use-renders', default=True, help='Whether to render each screen as a 80x60 image, for e.g. DQN or PCA')
     parser.add_argument('--default-colors', default=True, help='Whether to use the default colors for each game (e.g. for EMPA, DQN, PCA), or the ones that the subject saw')
+    parser.add_argument('--headless', default=False, help='Whether to actually display the screen (otherwise, weird things happen)')
 
     config = parser.parse_args()
     print(config)
@@ -90,6 +91,7 @@ if __name__ == '__main__':
     default_colors = config.default_colors
     make_images = config.make_images
     make_movie = config.make_movie
+    headless = config.headless
 
     # construct query
     query = {'subj_id': subj_id}
@@ -111,8 +113,8 @@ if __name__ == '__main__':
         pks.append(play['_id'])
     del plays # close cursor, o/w screws things up
 
-    print 'Running fmri_makeMovie with query:'
-    print query
+    print('Running fmri_makeMovie with query:')
+    print(query)
 
     # TODO dedupe with fmri_empaReplay
 
@@ -138,12 +140,12 @@ if __name__ == '__main__':
         assert level_str == play['level_str']
         assert game['name'] == play['game_name']
 
-        print 'Making video for subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+        print('Making video for subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id']))
 
         # get regressors
         q = {'play_key': play['_id']}
-        print q
-        print db.regressors.count(q)
+        print(q)
+        print(db.regressors.count(q))
         #assert db.regressors.count(q) == 1, 'Too many regressors!' 
         regs = db.regressors.find(q).sort('ts', -1)
         reg = None
@@ -151,12 +153,12 @@ if __name__ == '__main__':
             break # just take the latest one
 
         video_name = get_video_name(play, use_renders) 
-        print 'video_name = ', video_name
+        print('video_name = ', video_name)
 
         ls = glob.glob(os.path.join('videos', video_name + '*')) # TODO coupling with startPlaybackGame() video saving logic
         if len(ls) > 0:
-            print '....found video files with prefix; skipping this one'
-            print ls
+            print( '....found video files with prefix; skipping this one')
+            print(ls)
             continue
 
         # load theories from disk
@@ -205,8 +207,8 @@ if __name__ == '__main__':
         # in lieu of makeMovie() from main_agent.py
         # use default colors (not the ones the subject saw) b/c that's what EMPA sees
         core.VGDLParser.playGame(play['game_str'], play['level_str'], states, \
-            headless=False, persist_movie=make_movie, make_images=True, make_movie=None, movie_dir=subj_game_videos_dir, images_dir=subj_game_images_dir,
+            headless=headless, persist_movie=make_movie, make_images=True, make_movie=None, movie_dir=subj_game_videos_dir, images_dir=subj_game_images_dir,
             padding=0, regressors=reg['regressors'], screensize=fMRI_screensize, video_name=video_name, default_colors=default_colors, 
             use_renders=use_renders) # make_movie doesn't do anything right now
 
-    print 'done!'
+    print('done!')

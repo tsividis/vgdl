@@ -10,16 +10,27 @@ import time
 from glob import iglob
 import pandas as pd
 from IPython import embed
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, IncrementalPCA
 import socket
 import os
 import cloudpickle
-from fmri_makeMovie import videosDir, imagesDir
 
-print(videosDir, imagesDir) 
+if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
+    # local on my Mac, or on a login / VDI node
+    videosDir = 'videos'
+    imagesDir = 'images'
+else:
+    # cluster
+    videosDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
+    imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
+print('images_pca dirs: ', videosDir, imagesDir)
 
 filename = 'images_pca.pkl'
 filepath = os.path.join(imagesDir, filename)
+print('images_pca output filepath: ', filepath)
+
+batch_size = 10000 # how many frames to accumulate before running PCA
+n_components = 30 # TODO param
 
 def process_frame(img):
     # convert and resize
@@ -31,6 +42,7 @@ if __name__ == '__main__':
 
     rootDir = os.path.join(imagesDir, 'makeMovie')
 
+    frames_pca = IncrementalPCA(n_components=n_components, batch_size=batch_size)
     all_frames = []
 
     for dirName, subdirList, fileList in os.walk(rootDir):
@@ -44,32 +56,42 @@ if __name__ == '__main__':
             img = cv2.imread(path)
             all_frames.append(process_frame(img))
 
-            print 'frame ', len(all_frames), ': ', path
+            # optionally run PCA
+            print('frame ', len(all_frames), ': ', path)
+            if len(all_frames) >= batch_size:
+                then = time.time()
 
-    all_frames = np.concatenate([np.reshape(frame, (1,len(frame))) for frame in all_frames], axis=0)
-    unique_frames = np.unique(all_frames, axis=0)
-    del all_frames
+                all_frames = np.concatenate([np.reshape(frame, (1,len(frame))) for frame in all_frames], axis=0)
+                # remove duplicates & clear original array
+                unique_frames = np.unique(all_frames, axis=0)
+                all_frames = []
+                # convert to pd
+                frames = pd.DataFrame(unique_frames)
+                del unique_frames
 
-    frames = pd.DataFrame(unique_frames)
-    del unique_frames
+                # run incremental PCA
+                print('   running incremental PCA with ', len(frames), 'unique frames')
+                frames_pca.partial_fit(frames)
+
+                print('         PCA took ', time.time() - then, 's')
 
     # visualize
     #
-    fig, axes = plt.subplots(9,9,figsize=(9,9),
-    subplot_kw={'xticks':[], 'yticks':[]},
-    gridspec_kw=dict(hspace=0.01, wspace=0.01))
-    for i, ax in enumerate(axes.flat):
-    ax.imshow(frames.iloc[i].values.reshape(*img.shape))
-    plt.show()
+    #fig, axes = plt.subplots(9,9,figsize=(9,9),
+    #subplot_kw={'xticks':[], 'yticks':[]},
+    #gridspec_kw=dict(hspace=0.01, wspace=0.01))
+    #for i, ax in enumerate(axes.flat):
+    #    ax.imshow(frames.iloc[i].values.reshape(*img.shape))
+    #plt.show()
     
 
-    # run PCA
-    #
-    frames_pca = PCA(n_components=0.9)
-    #frames_pca = PCA(n_components=30)
-    frames_pca.fit(frames)
+    ## run PCA
+    ##
+    #frames_pca = PCA(n_components=0.9)
+    ##frames_pca = PCA(n_components=30)
+    #frames_pca.fit(frames)
 
-    embed()
+    #embed()
 
     with open(filepath, 'wb') as f:
         cloudpickle.dump(frames_pca, f)
@@ -80,5 +102,3 @@ if __name__ == '__main__':
     for i, ax in enumerate(axes.flat):
         ax.imshow(frames_pca.components_[i].reshape(*img.shape))
     plt.show()
-
-
