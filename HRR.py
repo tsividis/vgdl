@@ -1386,21 +1386,16 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
 
 
 
-def gen_and_save_subject_RDMs_batched(subj_id):
+def gen_and_save_subject_RDMs_batched(subj_id,  K=10, N=10, E=0.05, nsamples=100, batch_size=10, normalize=True, 
+    dist='correlation', glmodel=24, agg='avg'):
 
     # generate HRRs and RDMs in batches, b/c of OOM (HRRs are too big)
     # batches is better than 1 by 1 b/c of overhead of querying mongo
     #
+    RDM_filename = os.path.join(matDir, 'HRR_subject_RDM_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s_glmodel=%d_agg=%s_norm=%d.mat' % (
+        subj_id, K, N, E, nsamples, dist, glmodel, agg, normalize))
+    print 'filename', RDM_filename
 
-    K = 10 
-    N = 10
-    E = 0.05
-    nsamples = 10
-    dist = 'correlation'
-    glmodel = 24
-    agg = 'avg'
-
-    batch_size = 10
     assert nsamples % batch_size == 0
 
     all_theory_RDMs = []
@@ -1457,8 +1452,6 @@ def gen_and_save_subject_RDMs_batched(subj_id):
 
     # save RDMs
     #
-    RDM_filename = os.path.join(matDir, 'HRR_subject_RDM_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (subj_id, K, N, E, nsamples, dist))
-
     d = {
         'theory_RDM': theory_RDM,
         'sprite_RDM': sprite_RDM,
@@ -1481,6 +1474,7 @@ def gen_and_save_subject_RDMs_batched(subj_id):
         'E': E,
         'dist': dist,
         'nsamples': nsamples,
+        'normalize': normalize,
         'subj_id': subj_id,
         'glmodel': glmodel,
         'agg': agg
@@ -1496,8 +1490,10 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
     # generate HRRs and kernels in batches, b/c of OOM (HRRs are too big)
     # batches is better than 1 by 1 b/c of overhead of querying mongo
     #
-
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
+
+    kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize))
+    print 'filename', kernel_filename
 
     assert nsamples % batch_size == 0
 
@@ -1563,8 +1559,6 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize))
-
     d = {
         'theory_kernel': theory_kernel,
         'sprite_kernel': sprite_kernel,
@@ -1721,14 +1715,14 @@ def gen_and_save_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=1, no
     # generate HRRs for each unique theory only, assign unique ID to each theory,
     # and pass to MATLAB to modify theory sequence and recompute kernels easily in the same loop as fittitg the GP, for decoding
     #
+    HRR_filename = os.path.join(matDir, 'unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.mat' % (subj_id, K, N, E, nsamples, normalize))
+    theories_filename = os.path.join(theoriesDir, 'unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (subj_id, K, N, E, nsamples, normalize))
+    print 'filenames', HRR_filename, theories_filename
 
     theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names = gen_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
 
     # save unique HRRs and theory sequence
     #
-    HRR_filename = os.path.join(matDir, 'unique_HRR_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.mat' % (subj_id, K, N, E, nsamples, normalize))
-    theories_filename = os.path.join(theoriesDir, 'unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (subj_id, K, N, E, nsamples, normalize))
-
     with open(theories_filename, 'wb') as f:
         cloudpickle.dump(theories, f)
 
@@ -1769,6 +1763,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', default=10, help='batch size')
     parser.add_argument('--normalize', default=True, help='whether to normalize the HRRs')
     parser.add_argument('--type', default='kernel')
+    parser.add_argument('--dist', default='correlation')
+    parser.add_argument('--glmodel', default=24)
+    parser.add_argument('--agg', default='avg')
 
     config = parser.parse_args()
     print(config)
@@ -1780,13 +1777,16 @@ if __name__ == '__main__':
     nsamples = int(config.nsamples)
     batch_size = int(config.batch_size)
     normalize = int(config.normalize)
+    dist = config.dist
+    glmodel = int(config.glmodel)
+    agg = config.agg
 
     if config.type == 'RDM':
-        gen_and_save_subject_RDMs_batched(subj_id)
+        gen_and_save_subject_RDMs_batched(subj_id, K, N, E, nsamples, batch_size, normalize, dist, glmodel, agg)
     elif config.type == 'kernel':
         gen_and_save_subject_kernels_batched(subj_id, K, N, E, nsamples, batch_size, normalize)
     elif config.type == 'unique':
         gen_and_save_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
-    gen_and_save_subject_kernels_batched_multisigma(subj_id)
+    #gen_and_save_subject_kernels_batched_multisigma(subj_id)
 
     print 'Done'
