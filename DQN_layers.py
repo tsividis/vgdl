@@ -40,7 +40,7 @@ else:
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
     print layersDir, matDir
     # NCF cluster
-    #client = MongoClient('holy2a05207.rc.fas.harvard.edu', 27017)
+    #client = MongoClient('holy2a03301.rc.fas.harvard.edu', 27017)
 
 
 db = client['heroku_7lzprs54']

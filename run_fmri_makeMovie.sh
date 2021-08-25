@@ -2,7 +2,7 @@
 # necessary because of memory leak
 # copy of run_fmri_empaReplay.sh
 
-echo running make movie for subj ${1}, game ${2}
+echo running make movie for subj ${1}
 
 source activate pedro
 
@@ -11,22 +11,22 @@ if [[ `hostname` == *"Momchil"* ]]; then
     host='localhost'
     nplays_idx=4
 else
-    host='holy2a05207.rc.fas.harvard.edu'
+    host='holy2a03301.rc.fas.harvard.edu'
     nplays_idx=2
 fi
 
 
-# run separately for each run, block, and instance, otherwise we OOM (notice most of them will be empty for given game)
+# run separately for each run, block, and instance, otherwise we error out 
 for run in {1..6}
 do
     for block in {0..2}
     do
         for instance in {0..2}
         do
-            echo ==== run_fmri_makeMovie: subj ${1}, run $run, block $block, instance $instance, game ${2}
+            echo ==== run_fmri_makeMovie: subj ${1}, run $run, block $block, instance $instance
 
             # get # of plays with given run, block, instance
-            out=`mongo --host ${host} heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${2}'})"`
+            out=`mongo --host ${host} heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}})"`
             echo mongo play count -- $out
 
             # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601
@@ -44,8 +44,9 @@ do
             for (( play=0; play<$nplays; play++ ))
             do
                 # run makeMovie 
-                echo ---- run_fmri_makeMovie: subj ${1}, run $run, block $block, instance $instance, play $play, game ${2}
-                cmd="python -m cProfile -s cumtime fmri_makeMovie.py --subj-id=${1} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play} --game-name=${2}"
+                echo ---- run_fmri_makeMovie: subj ${1}, run $run, block $block, instance $instance, play $play
+                #cmd="python -m cProfile -s cumtime fmri_makeMovie.py --subj-id=${1} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play}"
+                cmd="python fmri_makeMovie.py --subj-id=${1} --run-id=${run} --block-id=${block} --instance-id=${instance} --play-id=${play}"
                 echo ${cmd}
                 eval ${cmd}
             done
