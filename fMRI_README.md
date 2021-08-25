@@ -364,12 +364,9 @@ Decoding HRR GP
 Generating videos and images
 -----
 
-Via `fmri_makeMovie.py`, called via `fmri_makeMovie.sh`. Checklist:
-
-- `fmri_makeMovie.sh`: edit `subjects` and `game_names`
-- `run_fmri_makeMovie.sh`: optionally add arguments to the call to `fmri_makeMovie.py`, e.g. `use_renders`
-- run `fmri_makeMovie.sh`
-
+- Start an interactive [VDI session](https://vdi.rc.fas.harvard.edu/pun/sys/dashboard/batch_connect/sessions) on the Cannon cluster
+- `./run_fmri_makeMovie.sh 1` (e.g. for subj 1)
+- note that ideally we would use `fmri_makeMovie.sh`, however we need a GUI for the pygame screen (going headless results in weird images)
 
 Running PCA
 -----

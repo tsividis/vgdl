@@ -23,6 +23,7 @@ import socket
 from pymongo import MongoClient
 from collections import defaultdict
 from vgdl import core
+import argparse
 from vgdl.core import VGDLParser, fMRI_screensize
 from vgdl.core import keyPresses as keyNames
 from IPython import embed
@@ -1488,7 +1489,7 @@ def gen_and_save_subject_RDMs_batched(subj_id):
     scipy.io.savemat(RDM_filename, d)
 
 
-def gen_and_save_subject_kernels_batched(subj_id):
+def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1, batch_size=1, normalize=True):
 
     # copy of gen_and_save_subject_RDMs_batched but for kernels
 
@@ -1496,15 +1497,8 @@ def gen_and_save_subject_kernels_batched(subj_id):
     # batches is better than 1 by 1 b/c of overhead of querying mongo
     #
 
-    K = 10 
-    N = 10
-    E = 0.05
-    nsamples = 100
-    normalize = True
-
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
-    batch_size = 10
     assert nsamples % batch_size == 0
 
     all_theory_kernels = []
@@ -1720,19 +1714,13 @@ def gen_and_save_subject_kernels_batched_multisigma(subj_id):
 
 
 
-def gen_and_save_subject_unique_HRRs(subj_id):
+def gen_and_save_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=1, normalize=True):
 
     # copy of gen_and_save_subject_kernels_batched but for unique HRRs
 
     # generate HRRs for each unique theory only, assign unique ID to each theory,
     # and pass to MATLAB to modify theory sequence and recompute kernels easily in the same loop as fittitg the GP, for decoding
     #
-
-    K = 10 
-    N = 10
-    E = 0.05
-    nsamples = 1
-    normalize = True
 
     theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names = gen_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
 
@@ -1772,11 +1760,33 @@ def gen_and_save_subject_unique_HRRs(subj_id):
 
 
 if __name__ == '__main__':
-    subj_id = int(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--subj-id', required=True)
+    parser.add_argument('--K', default=10, help='the maximum number of terms to be combined')
+    parser.add_argument('--N', default=10, help='the number of atomic values in the language')
+    parser.add_argument('--E', default=0.05, help='the probability of error')
+    parser.add_argument('--nsamples', default=100, help='number of HRR samples; must be a multiple of batch_size')
+    parser.add_argument('--batch-size', default=10, help='batch size')
+    parser.add_argument('--normalize', default=True, help='whether to normalize the HRRs')
+    parser.add_argument('--type', default='kernel')
 
-    #gen_and_save_subject_RDMs_batched(subj_id)
-    gen_and_save_subject_kernels_batched(subj_id)
-    #gen_and_save_subject_kernels_batched_multisigma(subj_id)
-    #gen_and_save_subject_unique_HRRs(subj_id)
+    config = parser.parse_args()
+    print(config)
+
+    subj_id = int(config.subj_id)
+    K = int(config.K)
+    N = int(config.N)
+    E = float(config.E)
+    nsamples = int(config.nsamples)
+    batch_size = int(config.batch_size)
+    normalize = int(config.normalize)
+
+    if config.type == 'RDM':
+        gen_and_save_subject_RDMs_batched(subj_id)
+    elif config.type == 'kernel':
+        gen_and_save_subject_kernels_batched(subj_id, K, N, E, nsamples, batch_size, normalize)
+    elif config.type == 'unique':
+        gen_and_save_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
+    gen_and_save_subject_kernels_batched_multisigma(subj_id)
 
     print 'Done'
