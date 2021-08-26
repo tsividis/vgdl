@@ -1028,6 +1028,8 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
 
         print 'HRR time: ', (time.time() - then)
 
+        #break # TODO !!!!!!!! rm
+
 
     block_offs_idx.append(len(ts))
 
@@ -1233,6 +1235,16 @@ def gen_subject_kernels_multisigma(subj_id, HRRs, ts, run_id, block_ons_idx, blo
 
     return Kss, r_id, Xx, sf
 
+# from vgdl_getSubjectsDirsAndRuns.m
+#
+goodRuns = [np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,0]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,0,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,0,0,0]), np.array([1,1,1,1,0,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,0,1,1]), np.array([1,1,1,0,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([0,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1])]
 
 # generate RDMs from output of gen_subject_HRRs
 #
@@ -1251,6 +1263,23 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
 
     nsamples = len(theory_HRRs)
 
+    # 
+    # subset good runs only
+    #
+    which_run_ids = np.where(goodRuns[subj_id - 1])[0] + 1
+    run_id_mask = np.isin(run_id, which_run_ids)
+    print 'which_run_ids', which_run_ids
+    print 'run_id_mask', run_id_mask
+
+    SPM_nruns = len(which_run_ids)
+    run_id = np.array(run_id)[run_id_mask]
+    ts = np.array(ts)[run_id_mask]
+    for j in range(nsamples):
+        theory_HRRs[j] = np.array(theory_HRRs[j])[run_id_mask]
+        sprite_HRRs[j] = np.array(sprite_HRRs[j])[run_id_mask]
+        interaction_HRRs[j] = np.array(interaction_HRRs[j])[run_id_mask]
+        termination_HRRs[j] = np.array(termination_HRRs[j])[run_id_mask]
+
     #
     # first aggregate HRRs according to boxcars from beta series GLM
     #
@@ -1261,6 +1290,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
     agg_interaction_HRRs = [[] for _ in range(nsamples)]
     agg_termination_HRRs = [[] for _ in range(nsamples)] 
     agg_run_id = []
+    agg_SPM_run_id = []
     beta_id = [] # boxcar/beta idx within run, before aggregation
 
     r = 1 # current run id
@@ -1283,7 +1313,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
         # or we're about to move to the next boxcar,
         # or we're about to move to the next run,
         # compute aggregate theory until now
-        if en + 1 == len(theory_HRRs[0]) or run_id[en + 1] == r + 1 or ts[en + 1] > onsets[b] + durations[b]:
+        if en + 1 == len(theory_HRRs[0]) or run_id[en + 1] > run_id[en] or ts[en + 1] > onsets[b] + durations[b]:
 
             #print '          end of boxcar!!! aggregate [', st, ',', en, ']; b =', b, ' r =', r
            
@@ -1300,7 +1330,8 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
                 termination_HRR = aggregate_HRRs(termination_HRRs[j], st, en + 1, agg)
                 agg_termination_HRRs[j].append(termination_HRR)
                 
-            agg_run_id.append(r)
+            agg_SPM_run_id.append(r)
+            agg_run_id.append(run_id[en])
 
             st = en + 1
 
@@ -1308,7 +1339,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
                 #print '               ...last iter!'
                 pass # last iteration
 
-            elif run_id[en + 1] == r + 1:
+            elif run_id[en + 1] > run_id[en]:
                 #print '               ...next run!'
 
                 # end of run => go to next one
@@ -1317,25 +1348,26 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
 
                 b = 0
                 r += 1
-                if r < 7:
+                if r <= SPM_nruns:
                     onsets, durations = get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, r)
 
             else:
                 #print '               ...next boxcar!'
                 # go to next boxcar
                 assert ts[en + 1] > onsets[b] + durations[b]
-                assert run_id[en + 1] == r
+                assert run_id[en + 1] == run_id[en]
+                assert run_id[en + 1] == which_run_ids[r - 1]
                 assert b + 1 < len(onsets)
 
                 b += 1
 
         else:
             assert ts[en] >= onsets[b] and ts[en] <= onsets[b] + durations[b]
-            assert run_id[en] == r
+            assert run_id[en] == which_run_ids[r - 1]
        
     assert b == len(onsets) - 1
-    assert r == 6
-    assert len(agg_theory_HRRs[0]) == len(onsets) * 6
+    assert r == SPM_nruns
+    assert len(agg_theory_HRRs[0]) == len(onsets) * SPM_nruns
 
     #
     # second, compute RDMs
@@ -1380,7 +1412,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
     interaction_RDM = np.mean(interaction_RDMs, axis=0)
     termination_RDM = np.mean(termination_RDMs, axis=0)
 
-    return theory_RDM, sprite_RDM, interaction_RDM, termination_RDM, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_run_id, beta_id
+    return theory_RDM, sprite_RDM, interaction_RDM, termination_RDM, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_SPM_run_id, beta_id, agg_run_id
 
 
 
@@ -1408,7 +1440,7 @@ def gen_and_save_subject_RDMs_batched(subj_id,  K=10, N=10, E=0.05, nsamples=100
 
         theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
 
-        _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_run_id, beta_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist, agg, glmodel)
+        _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_SPM_run_id, beta_id, agg_run_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist, agg, glmodel)
 
         all_theory_RDMs.append(theory_RDMs)
         all_sprite_RDMs.append(sprite_RDMs)
@@ -1468,7 +1500,8 @@ def gen_and_save_subject_RDMs_batched(subj_id,  K=10, N=10, E=0.05, nsamples=100
         'ts': ts,
         'run_id': run_id,
         'beta_id': beta_id,
-        'agg_run_id': agg_run_id,
+        'agg_SPM_run_id': agg_SPM_run_id, # SPM run id
+        'agg_run_id': agg_run_id,  # behavioral run id
         'K': K,
         'N': N,
         'E': E,
