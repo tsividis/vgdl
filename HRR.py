@@ -36,6 +36,18 @@ from fmri_agentReplay import theoriesDir
 
 import pygame
 
+# from vgdl_getSubjectsDirsAndRuns.m
+#
+goodRuns = [np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,0]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,0,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,0,0,0]), np.array([1,1,1,1,0,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,0,1,1]), np.array([1,1,1,0,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([0,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
+            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1])]
+
+
 # ### Helper functions
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
@@ -744,10 +756,17 @@ def gen_and_export_RDMs_to_matlab(K, N, E, nsamples, dist):
 
 
 
+def get_behavioral_run_id(subj_id, SPM_run_id):
+    run_ids = np.where(goodRuns[subj_id - 1])[0] + 1
+    return run_ids[SPM_run_id - 1]
+
 # helper to read multi from matlab (must have created it first with ccnl_check_multi)
 #
-def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, run_id):
+def get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, SPM_run_id):
+
+    run_id = get_behavioral_run_id(subj_id, SPM_run_id)
     filename = os.path.join(matDir, 'vgdl_create_multi_glm%d_subj%d_run%d.mat' % (glmodel, subj_id, run_id))
+    print 'get_onsets_and_durs_from_beta_series_GLM: ', subj_id, SPM_run_id, '(', run_id, ') -- ', filename
     
     import h5py
 
@@ -950,7 +969,9 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
         then = time.time()
 
         query = {'_id': pk}
-        play = db.plays.find_one(query)
+        projection = {'subj_id': 1, 'run_id': 1, 'block_id': 1, 'instance_id': 1, 'play_id': 1, 'game_id': 1, '_id': 1, 
+                'desc_id': 1, 'level_id': 1, 'game_str': 1, 'level_str': 1, 'run_start_ts': 1}
+        play = db.plays.find_one(query, projection)
         assert play['subj_id'] == subj_id
 
         game = subj['games'][play['game_id']]
@@ -958,6 +979,8 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
 
         # get regressors
         q = {'play_key': play['_id']}
+        proj = {'regressors.theory_filename': 1}
+
         print q
         print db.regressors.count(q)
         assert db.regressors.count(q) <= 1, 'Too many regressors!' 
@@ -975,10 +998,12 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
             block_ons_idx.append(len(ts))
             last_block_id = play['block_id']
 
+        '''
         # get states
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
+        '''
 
         # load theories from disk
         with open(reg['regressors']['theory_filename'], 'r') as f:
@@ -1235,17 +1260,6 @@ def gen_subject_kernels_multisigma(subj_id, HRRs, ts, run_id, block_ons_idx, blo
 
     return Kss, r_id, Xx, sf
 
-# from vgdl_getSubjectsDirsAndRuns.m
-#
-goodRuns = [np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
-            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
-            np.array([1,1,1,1,1,0]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,0,1]), np.array([1,1,1,1,1,1]), 
-            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,0,0,0]), np.array([1,1,1,1,0,1]), 
-            np.array([1,1,1,1,1,1]), np.array([1,1,1,0,1,1]), np.array([1,1,1,0,1,1]), np.array([1,1,1,1,1,1]), 
-            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([0,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
-            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), 
-            np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1])]
-
 # generate RDMs from output of gen_subject_HRRs
 #
 def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist='correlation', agg='avg', glmodel=24, shuffle=False):
@@ -1300,11 +1314,8 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
     st = 0 # index of first theory for current boxcar
     for en in range(len(theory_HRRs[0])):
 
-        #print st
-        #print en
-        #print ts[st]
-        #print onsets[b]
-        #print onsets[b] + durations[b]
+        print 'st', st, 'en', en, 'b', b, 'r', r, 'ts[st]', ts[st], 'ts[en]', ts[en], 'onsets[b]', onsets[b], 'durations[b]', durations[b], 'ts+dur', onsets[b] + durations[b]
+        print 'run_id[en]', run_id[en], 'run_id[en+1]', run_id[en+1], 'ts[en+1]', ts[en+1], 'which_run_ids[r-1]', which_run_ids[r-1]
         assert ts[st] >= onsets[b] and ts[st] <= onsets[b] + durations[b]
 
         beta_id.append(b)
@@ -1315,7 +1326,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
         # compute aggregate theory until now
         if en + 1 == len(theory_HRRs[0]) or run_id[en + 1] > run_id[en] or ts[en + 1] > onsets[b] + durations[b]:
 
-            #print '          end of boxcar!!! aggregate [', st, ',', en, ']; b =', b, ' r =', r
+            print '          end of boxcar!!! aggregate [', st, ',', en, ']; b =', b, ' r =', r
            
             for j in range(nsamples):
                 theory_HRR = aggregate_HRRs(theory_HRRs[j], st, en + 1, agg)
@@ -1336,11 +1347,11 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
             st = en + 1
 
             if en + 1 == len(theory_HRRs[0]):
-                #print '               ...last iter!'
+                print '               ...last iter!'
                 pass # last iteration
 
             elif run_id[en + 1] > run_id[en]:
-                #print '               ...next run!'
+                print '               ...next run!'
 
                 # end of run => go to next one
                 assert b + 1 == len(onsets)
@@ -1352,7 +1363,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
                     onsets, durations = get_onsets_and_durs_from_beta_series_GLM(glmodel, subj_id, r)
 
             else:
-                #print '               ...next boxcar!'
+                print '               ...next boxcar!'
                 # go to next boxcar
                 assert ts[en + 1] > onsets[b] + durations[b]
                 assert run_id[en + 1] == run_id[en]
