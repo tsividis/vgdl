@@ -589,15 +589,31 @@ class SubjectHRR(object):
                     termination_embedding = np.add(termination_embedding, embedding)
             terminationSet_HRR = np.add(terminationSet_HRR, termination_embedding)
 
-        if normalize:
+        if normalize == 2:
+            # Z score
+            spriteSet_HRR = scipy.stats.zscore(spriteSet_HRR)   
+            interactionSet_HRR = scipy.stats.zscore(interactionSet_HRR)   
+            terminationSet_HRR = scipy.stats.zscore(terminationSet_HRR)   
+        elif normalize == 1:
+            # normalized to unit vector length
             # see X.E in Plate 1995
             spriteSet_HRR = spriteSet_HRR / np.sqrt(np.sum(np.square(spriteSet_HRR)))
             interactionSet_HRR = interactionSet_HRR / np.sqrt(np.sum(np.square(interactionSet_HRR)))
             terminationSet_HRR = terminationSet_HRR / np.sqrt(np.sum(np.square(terminationSet_HRR)))
+        else:
+            assert False, 'bad normalize'
 
         game_HRR = np.add(game_HRR, spriteSet_HRR)
         game_HRR = np.add(game_HRR, interactionSet_HRR)
         game_HRR = np.add(game_HRR, terminationSet_HRR)
+
+        if normalize == 2:
+            game_HRR = scipy.stats.zscore(game_HRR)    
+        elif normalize == 1:
+            game_HRR = game_HRR / np.sqrt(np.sum(np.square(game_HRR)))
+        else:
+            assert False, 'bad normalize'
+
                 
         return game_HRR, spriteSet_HRR, interactionSet_HRR, terminationSet_HRR
 
@@ -1805,7 +1821,7 @@ if __name__ == '__main__':
     parser.add_argument('--E', default=0.05, help='the probability of error')
     parser.add_argument('--nsamples', default=100, help='number of HRR samples; must be a multiple of batch_size')
     parser.add_argument('--batch-size', default=10, help='batch size')
-    parser.add_argument('--normalize', default=True, help='whether to normalize the HRRs')
+    parser.add_argument('--normalize', default=2, help='whether/how to normalize the HRRs (0 = no, 1 = Z score, 2 = unit vector')
     parser.add_argument('--type', default='kernel')
     parser.add_argument('--dist', default='correlation')
     parser.add_argument('--glmodel', default=24)
