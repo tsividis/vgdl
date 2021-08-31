@@ -19,6 +19,8 @@ Environment class for running VGDL experiments
 
 MAX_STEPS_PER_LEVEL = 1 + 60 * 20 # momchil: fMRI max steps per instance (i.e. until end of level) = 60 s x 20 fps, + 1 for debugging
 MAX_STEPS = MAX_STEPS_PER_LEVEL * 9 + 10000 # momchil: nine levels per game + some buffer
+MAX_STEPS = 100000000 #  ...jk override for DQN training
+
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
 class Environment:
@@ -192,8 +194,8 @@ class Environment:
             curriculumResults = [] # summary results from generative play for analyzing behavioral data
 
         loaded_n_level=0
-        curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.agent.param_ID+'_'+self.task_ID
-        loadedState = self.agent.bookkeeping.loadCurriculumState(curriculumSaveFile)
+        #curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.agent.param_ID+'_'+self.task_ID
+        loadedState = self.agent.bookkeeping.loadCurriculumState(self.agent.bookkeeping.curriculumSaveFile)
         if loadedState is not None:
             self.agent = loadedState['agent']
 
@@ -230,7 +232,7 @@ class Environment:
             else:
                 assert not theory_playback
 
-                (self.gameString, self.levelString, self.video_name, reset_finalTimeStepList) = level_game
+                (self.gameString, self.levelString, self.video_name, reset_finalTimeStepList, level_id) = level_game
                 self.playback_states = None # TODO momchil undo
                 self.playback_keystates = None # TODO momchil undo
                 self.theory = None
@@ -285,7 +287,7 @@ class Environment:
                     print '         steps, remaining ', episodeSteps, remaining_steps_for_level
                     curriculumResults.append({
                         'game_name': self.gameFilename,
-                        'level': n_level,
+                        'level': level_id,
                         'win': win,
                         'score': score,
                         'ended': ended,

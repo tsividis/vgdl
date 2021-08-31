@@ -8,6 +8,9 @@ import time
 import json
 import sys
 import csv
+import os
+import socket
+import utils
 from collections import defaultdict
 from vgdl import agent_utils, core
 from IPython import embed
@@ -27,7 +30,29 @@ FMRI_STEPS_PER_LEVEL = 60 * 20  # momchil: fMRI max steps per instance (i.e. unt
 
 # TODO dedupe with fmri_empaReplay.py
 
-client = MongoClient('localhost', 27017)
+client = utils.get_mongo_client()
+
+if 'omchil' in socket.gethostname():
+    # local 
+    theoriesDir = 'theories'
+    layersDir = 'layers'
+    imagesDir = 'images'
+    videosDir = 'videos'
+else:
+    # Cannon 
+    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
+    layersDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'layers')
+    videosDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
+    imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
+    print theoriesDir, layersDir, videosDir, imagesDir
+    # NCF cluster
+    #client = MongoClient('holy7c22211.rc.fas.harvard.edu', 27017)
+
+if not os.path.exists(theoriesDir):
+    os.makedirs(theoriesDir)
+if not os.path.exists(layersDir):
+    os.makedirs(layersDir)
+
 db = client['heroku_7lzprs54']
 
 vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it was 35
@@ -41,8 +66,9 @@ if __name__ == '__main__':
     parser.add_argument('--instance-id', default=None)
     #parser.add_argument('--play-id', default=None)
     parser.add_argument('--game-name', default=None)
+    parser.add_argument('--tag', default='')
     parser.add_argument('--steps-per-level', default=FMRI_STEPS_PER_LEVEL)
-    parser.add_argument('--insert', action='store_true', default=True)
+    parser.add_argument('--insert', action='store_true', default=False)
 
     config = parser.parse_args()
     print(config)
@@ -54,6 +80,8 @@ if __name__ == '__main__':
 
     if config.run_id is not None:
         query['run_id'] = int(config.run_id)
+    else:
+        query['run_id'] = { '$gt': 0, '$lt': 7 }
     if config.block_id is not None:
         query['block_id'] = int(config.block_id)
     if config.instance_id is not None:
@@ -98,7 +126,7 @@ if __name__ == '__main__':
 
         # this is the money that gets passed to playCurriculum
         reset_finalTimeStepList = play['instance_id'] == 0 and play['play_id'] == 0 # reset finalTimeStepList before every block -- balance between psychological plausibility and practicality (i.e. avoiding OOM in plaqueAttack)
-        all_pairs[game['name']].append((game_str, play['level_str'], video_name, reset_finalTimeStepList)) # TODO momchil OOM? 
+        all_pairs[game['name']].append((game_str, play['level_str'], video_name, reset_finalTimeStepList, play['level_id'])) # TODO momchil OOM? 
 
         movie_name = game['name'] + '_lev=' + str(play['level_id']) + '_' + str(play['play_id'])
         all_movie_names[game['name']].append(movie_name)
@@ -113,7 +141,10 @@ if __name__ == '__main__':
         movie_names = all_movie_names[game_name]
         assert len(movie_names) == len(level_game_pairs)
 
-        task_ID = '0'
+        task_ID = 'subj={}'.format(subj_id) # This is crucial to make sure the curriculum is subject-specific
+        subj_game_videos_dir = os.path.join(videosDir, 'DQN', 'subj_'+str(subj_id), game_name)
+        subj_game_images_dir = os.path.join(imagesDir, 'DQN', 'subj_'+str(subj_id), game_name)
+
 
         # create agent
         if agent_name == 'EMPA':
@@ -124,15 +155,16 @@ if __name__ == '__main__':
         elif agent_name == 'Random':
             agent = RandomAgent(game_name)
         elif agent_name == 'DQN':
-            agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3))
+            agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3),
+                make_videos=True, movie_names=movie_names, videos_dir=subj_game_videos_dir, 
+                images_dir=subj_game_images_dir, task_ID=task_ID)
         else:
             assert False, 'Invalid agent name ' + agent_name
 
         # play
         # TODO momchil CAREFUL with saved curricula! might reload old agent; figure out how to deal with it
         environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
-        curriculumResults = environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, 
-            heatmap=False, movie_names=movie_names, steps_per_level=config.steps_per_level)
+        curriculumResults = environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, steps_per_level=int(config.steps_per_level))
 
         # optionally insert into Mongo
         if config.insert:
@@ -140,6 +172,7 @@ if __name__ == '__main__':
                 'subj_id': subj_id,
                 'game_name': game_name,
                 'agent_name': agent_name,
+                'tag': config.tag,
                 'dt': datetime.now(),
                 'ts': time.time(),
                 'results': curriculumResults,

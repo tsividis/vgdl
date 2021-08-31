@@ -21,7 +21,7 @@ import sys
 from VGDLEnv import VGDLEnv
 import csv
 import cloudpickle
-import os
+import os, shutil
 import subprocess
 import shutil
 import glob
@@ -344,8 +344,12 @@ class DQNAgent(Agent):
             os.makedirs(self.videos_dir)
           if not os.path.exists(self.images_dir):
             os.makedirs(self.images_dir)
-          if not os.path.exists(self.tmp_images_dir):
-            os.makedirs(self.tmp_images_dir)
+          # empty and re-create temporary directory
+          # NOTE: assumes nobody else is using this directory!
+          if os.path.exists(self.tmp_images_dir):
+            shutil.rmtree(self.tmp_images_dir)
+          os.makedirs(self.tmp_images_dir)
+         
 
 
     def logfMRIRegressor(self, name, val):
@@ -372,7 +376,7 @@ class DQNAgent(Agent):
         return self.resize(screen).unsqueeze(0).to(self.device)
 
     def makeVideo(self):
-      video_filename = self.movie_names[self.episode - 1] + '_' + self.random_tag + '.mp4'
+      video_filename = self.movie_names[0] + '_ep=' + str(self.episode) + '_tag=' + self.random_tag + '.mp4'
       video_filename = os.path.join(self.videos_dir, video_filename)
       call = ["ffmpeg -r 30 -f image2  -i ", self.tmp_images_tmpl, " -vcodec libx264 -crf 25  -pix_fmt yuv420p ", video_filename]
       call = ' '.join(call) 
@@ -387,7 +391,7 @@ class DQNAgent(Agent):
         self.steps += 1
         self.episode_steps += 1
 
-        print 'self.environment.getTime()', self.environment.getTime()
+        #print 'self.environment.getTime()', self.environment.getTime()
         if self.environment.getTime() == 0:
             self.beginningOfEpisodeManagement()
       
@@ -423,7 +427,7 @@ class DQNAgent(Agent):
         self.state = self.next_state
 
         # Perform one step of the optimization (on the target network)
-        #self.optimize_model()  # TODO (momchil) enable on GPU; crashes locally sometimes
+        self.optimize_model()  # TODO (momchil) enable on GPU; crashes locally sometimes
 
         # end of episode
         if self.ended or self.episode_steps > self.config.timeout:
@@ -434,7 +438,7 @@ class DQNAgent(Agent):
             self.makeVideo()
           
           # Update the target network
-          #self.model_update()
+          self.model_update()
 
         # bookkeeping
         if self.environment.getTime() == 0:
@@ -462,7 +466,7 @@ class DQNAgent(Agent):
         if self.record_fMRIRegressors and self.environment.getTime() > 0: # record regressors after each frame, which means excluding the initial frame
           self.logfMRIRegressor('action', VGDL_action)
 
-        print self.steps, ' --> ', self.action, VGDL_action, self.reward, ' -- ended, win', self.ended, self.win
+        #print self.steps, ' --> ', self.action, VGDL_action, self.reward, ' -- ended, win', self.ended, self.win
         return VGDL_action, self.ended
 
 

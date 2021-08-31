@@ -36,7 +36,7 @@ def get_mongo_client():
         print 'get_mongo_client: harvard mac'
     else:
         # cannon
-        client = MongoClient('holy2a03301.rc.fas.harvard.edu', 27017)
+        client = MongoClient('holy7c22211.rc.fas.harvard.edu', 27017)
         print 'get_mongo_client: Cannon'
 
     return client
