@@ -1,6 +1,7 @@
 import sys
 import socket
 from pymongo import MongoClient
+from IPython import embed
 
 def get_size(obj, seen=None):
     """Recursively finds size of objects"""
@@ -36,8 +37,8 @@ def get_mongo_client():
         print 'get_mongo_client: harvard mac'
     else:
         # cannon
-        client = MongoClient('holy7c22211.rc.fas.harvard.edu', 27017)
-        print 'get_mongo_client: Cannon'
+        client = MongoClient('holy7c22211.rc.fas.harvard.edu', 27017, username='root', password='parolatabe', authSource='admin')
+        print 'get_mongo_client: Cannon or FASSE'
 
     return client
 
