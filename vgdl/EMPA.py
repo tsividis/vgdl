@@ -371,7 +371,7 @@ class Agent(object):
         self.bookkeeping.compactStates = []
 
         if self.make_movie or self.record_video_info:
-            self.bookkeeping.statesEncountered.append(self.environment.getFullState())
+            self.bookkeeping.statesEncountered.append(self.environment.getFullState(as_string=True))
         
         self.last_recorded_time = time.time()
         if self.record_states:
@@ -627,7 +627,7 @@ class Agent(object):
         hypotheses = self.manageNewObjects(hypotheses)
 
         if self.make_movie or self.record_video_info:
-            self.bookkeeping.statesEncountered.append(self.environment.getFullState())
+            self.bookkeeping.statesEncountered.append(self.environment.getFullState(as_string=True))
         if self.record_states:
             self.bookkeeping.compactStates.append(self.compactify(self.environment, self.planner_nodes_opened_on_most_recent_step))
 
@@ -1171,7 +1171,7 @@ class Agent(object):
                 # self.distribution.spriteInduction(environment._game, self.memory, step=2, bestSpriteTypeDict=bestSpriteTypeDict, dynamic_type_lesion=self.dynamic_type_lesion)
                 environment.step((0,0)) # TODO momchil ensure this works with replay; probs not -- it assumes no action was taken, when in fact it might have been taken in replay
                 if self.make_movie or self.record_video_info:
-                    self.bookkeeping.statesEncountered.append(self.environment.getFullState(observe_state=True)) # momchil
+                    self.bookkeeping.statesEncountered.append(self.environment.getFullState(as_string=True, observe_state=True)) # momchil
                 if self.record_states:
                     self.bookkeeping.compactStates.append(self.compactify(self.environment))
                 if self.produce_printout:

@@ -5,6 +5,7 @@ Video game description language -- parser, framework and core game classes.
 '''
 import pygame
 import random
+import copy
 import hashlib
 from tools import Node, indentTreeParser
 from collections import defaultdict
@@ -1075,6 +1076,7 @@ class BasicGame(object):
                     pass
 
                 attrs = {}
+                #print 'as_string', as_string
                 while pos in ss:
                     # two objects of the same type in the same location, we need to disambiguate
                     pos = (pos, None)
@@ -1096,7 +1098,16 @@ class BasicGame(object):
         new_sprites_ID = []
         for s in self.new_sprites:
             new_sprites_ID.append(s.ID)
- 
+
+        if as_string and type(self.keystate) == defaultdict and len(self.keystate.keys()) > 0 and type(self.keystate.keys()[0]) == int:
+            # TODO (mom) this happens during generative play and messes up state serialization
+            # see _performAction in rlenvironmentnonstatic.py
+            # not sure what's not an issue during human play
+            # anyway, fix the issue
+            keystate = {str(k): v for k, v in self.keystate.iteritems()}
+        else:
+            keystate = self.keystate
+
         fs = {'score': self.score,
               'ended': self.ended,
               'win': self.win,
@@ -1105,7 +1116,7 @@ class BasicGame(object):
               'dt': datetime.now(),
               'ts': time.time(),
               'gt': self.time,
-              'keystate': self.keystate,
+              'keystate': copy.copy(keystate), # copy because it changes in _performAction() ...
               'keyPressType': keyPressType,
               'effectList': self.effectList,
               'effectListByColor': list(self.effectListByColor),
@@ -1120,6 +1131,7 @@ class BasicGame(object):
               'list': [str(s) for s in list(self)] # sanity
             #  'new_sprites': self.new_sprites
               }
+ 
         return fs
 
     def setFullState(self, fs, as_string=True, cheap=True, default_colors=False):

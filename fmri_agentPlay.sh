@@ -7,13 +7,18 @@ mkdir output
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subjects=( 1 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
+insert='--insert' # whether to insert any results in the db
+#insert=''
+record_video_info='--record-video-info'  # whether to save the encountered states
+#record_video_info=''
+
 
 #agent='DQN'
 #tag='train'
 #steps_per_level=100000
 
 agent='Random'
-tag=''
+tag='insert_no_states_fuck'
 steps_per_level=1200 # fMRI level # frames in a minute
 
 games=( 'vgfmri3_chase' )
@@ -33,7 +38,7 @@ for subj in ${subjects[*]}; do
         # send the job to NCF
         #
         #sbatch_output=`sbatch -p fasse --mem 20001 -t 1-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python fmri_agentPlay.py --agent-name=${agent} --subj-id=${subj} --steps-per-level=${steps_per_level} --game-name=${game}"`
-        sbatch_output=`sbatch -p fasse --mem 20001 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag}"`
+        sbatch_output=`sbatch -p fasse --mem 20001 -t 0-2:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output

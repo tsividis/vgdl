@@ -47,7 +47,7 @@ do
             echo ==== run_fmri_agentReplay: subj ${2}, run $run, block $block, instance $instance, game ${3}
 
             # get # of plays with given run, block, instance
-            out=`mongo --host ${host} heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${2}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${3}'})"`
+            out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.plays.count({'subj_id': '${2}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${3}'})"`
 
             echo mongo play count -- $out
 

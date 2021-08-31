@@ -32,10 +32,10 @@ from EMPA import Agent, actionDict, availableActions, AvatarTypes
 from vgdl.hyperparameters import hyperparameter_sets
 
 class RandomAgent(Agent):
-    def __init__(self, gameFilename):
+    def __init__(self, gameFilename, task_ID):
         # initialize with default parameters 
         super(RandomAgent, self).__init__('full', gameFilename, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
-            metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID='0', agent_name='Random')
+            metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID, agent_name='Random')
 
     def step(self, action, env_results=None):
         ended, win = self.environment._isDone()
@@ -44,7 +44,8 @@ class RandomAgent(Agent):
         if self.environment.getTime() == 0:
             self.bookkeeping.statesEncountered = []
         if self.make_movie or self.record_video_info:
-            self.bookkeeping.statesEncountered.append(self.environment.getFullState())
+            state = self.environment.getFullState(as_string=True)
+            self.bookkeeping.statesEncountered.append(state)
 
         action = random.choice(availableActions)
         return action, ended

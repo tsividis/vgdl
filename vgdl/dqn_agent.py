@@ -444,7 +444,7 @@ class DQNAgent(Agent):
         if self.environment.getTime() == 0:
             self.bookkeeping.statesEncountered = []
         if self.make_movie or self.record_video_info:
-            self.bookkeeping.statesEncountered.append(self.environment.getFullState())
+            self.bookkeeping.statesEncountered.append(self.environment.getFullState(as_string=True))
 
         # log hidden layer parameters
         '''

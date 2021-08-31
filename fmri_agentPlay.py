@@ -69,6 +69,7 @@ if __name__ == '__main__':
     parser.add_argument('--tag', default='')
     parser.add_argument('--steps-per-level', default=FMRI_STEPS_PER_LEVEL)
     parser.add_argument('--insert', action='store_true', default=False)
+    parser.add_argument('--record-video-info', action='store_true', default=False)
 
     config = parser.parse_args()
     print(config)
@@ -126,9 +127,9 @@ if __name__ == '__main__':
 
         # this is the money that gets passed to playCurriculum
         reset_finalTimeStepList = play['instance_id'] == 0 and play['play_id'] == 0 # reset finalTimeStepList before every block -- balance between psychological plausibility and practicality (i.e. avoiding OOM in plaqueAttack)
-        all_pairs[game['name']].append((game_str, play['level_str'], video_name, reset_finalTimeStepList, play['level_id'])) # TODO momchil OOM? 
+        all_pairs[game['name']].append((game_str, play['level_str'], video_name, reset_finalTimeStepList, play['level_id'] + 1)) # TODO momchil OOM? 
 
-        movie_name = game['name'] + '_lev=' + str(play['level_id']) + '_' + str(play['play_id'])
+        movie_name = game['name'] + '_lev=' + str(play['level_id'] + 1) + '_' + str(play['play_id'])
         all_movie_names[game['name']].append(movie_name)
 
 
@@ -153,7 +154,7 @@ if __name__ == '__main__':
             agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
                 metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
         elif agent_name == 'Random':
-            agent = RandomAgent(game_name)
+            agent = RandomAgent(game_name, task_ID=task_ID)
         elif agent_name == 'DQN':
             agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3),
                 make_videos=True, movie_names=movie_names, videos_dir=subj_game_videos_dir, 
@@ -161,9 +162,16 @@ if __name__ == '__main__':
         else:
             assert False, 'Invalid agent name ' + agent_name
 
+        # create environment
+        environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
+
+        # do not save statesEncountered
+        # NOTE we need to do this after initializing the environment... because it overwrites this... this code is shit
+        agent.record_video_info = bool(config.record_video_info)
+        agent.write_video_info = agent.record_video_info
+
         # play
         # TODO momchil CAREFUL with saved curricula! might reload old agent; figure out how to deal with it
-        environment = Environment(game_name, agent, task_ID=task_ID, produce_printout=False)
         curriculumResults = environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, steps_per_level=int(config.steps_per_level))
 
         # optionally insert into Mongo

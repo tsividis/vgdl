@@ -18,6 +18,7 @@ from vgdl.main_agent import Agent
 import cPickle, cloudpickle
 import os
 import glob
+import utils
 
 import pygame
 
@@ -40,15 +41,8 @@ def dispTheory(theory):
     text = '\n'.join(l)
     return text
 
-if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
-    # local on my Mac, or on a login / VDI node
-    client = MongoClient('localhost', 27017)
-else:
-    # Cannon 
-    client = MongoClient('holy7c22211.rc.fas.harvard.edu', 27017)
-    # NCF cluster
-    #client = MongoClient('holy7c22211.rc.fas.harvard.edu', 27017)
 
+client = utils.get_mongo_client()
 
 db = client['heroku_7lzprs54']
 

@@ -11,6 +11,7 @@ import os, subprocess, shutil
 import time
 from vgdl.dqn_agent import DQNAgent
 from IPython import embed
+import bson
 
 """
 Environment class for running VGDL experiments
@@ -285,6 +286,9 @@ class Environment:
                     assert episodeSteps <= remaining_steps_for_level
                     remaining_steps_for_level -= episodeSteps 
                     print '         steps, remaining ', episodeSteps, remaining_steps_for_level
+
+                    zstates = VGDLParser.compress({'states': self.agent.bookkeeping.statesEncountered})
+
                     curriculumResults.append({
                         'game_name': self.gameFilename,
                         'level': level_id,
@@ -292,7 +296,8 @@ class Environment:
                         'score': score,
                         'ended': ended,
                         'steps': episodeSteps,
-                        'agent': str(type(self.agent))
+                        'agent': str(type(self.agent)),
+                        'zstates': bson.binary.Binary(zstates)
                     })
                 
                 ## TODO: clean up below stuff, too.
