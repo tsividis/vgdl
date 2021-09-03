@@ -278,6 +278,7 @@ class Environment:
                 self.within_level_iteration = i
                 self.agent.within_level_iteration = i
                 
+                print 'checkpoint 0'
                 gameObject, win, score, steps, forfeit_level, episodeSteps, ended = self.playEpisode(gameObject, win, remaining_steps_for_level)
 
                 # momchil: fMRI
@@ -285,7 +286,7 @@ class Environment:
                     # generative play
                     assert episodeSteps <= remaining_steps_for_level
                     remaining_steps_for_level -= episodeSteps 
-                    print '         steps, remaining ', episodeSteps, remaining_steps_for_level
+                    print '         steps, remaining ', episodeSteps, remaining_steps_for_level, len(self.agent.bookkeeping.statesEncountered)
 
                     zstates = VGDLParser.compress({'states': self.agent.bookkeeping.statesEncountered})
 
@@ -310,6 +311,8 @@ class Environment:
                 episode_results = (n_level, steps, win, score, self.agent.total_planner_steps)
                 episodes.append(episode_results)
 
+                print 'checkpoint 1'
+
                 if self.make_movie:
                     # self.statesEncountered = statesEncountered
                     #self.makeImages() # TODO momchil why is this necessary when we call makeMovie which does the same thing? also this doesn't really work it seems
@@ -319,6 +322,7 @@ class Environment:
                     allStatesEncountered.extend(statesEncountered)
 
                 i += 1
+                print 'checkpoint 2'
 
                 episodeCompactStates[n_level] = allCompactStates
                 fullStateEpisodes[n_level] = allStatesEncountered
@@ -338,11 +342,15 @@ class Environment:
                     with open(self.agent.filename, 'wb') as f:
                         cPickle.dump({'gameInfo':gameInfo,'modelParams':self.agent.param_ID, 'episodes':episodeList, 'time_elapsed':time.time()-starttime}, f)
 
+                print 'checkpoint 3'
+
                 if win:
                     self.n_level += 1
                     self.agent.n_level += 1
                     self.within_level_iteration = 0
                     self.agent.within_level_iteration = 0
+
+                print 'checkpoint 4'
                     
                 ## will write video data at the end of each episode
                 if self.agent.record_video_info:
@@ -356,6 +364,7 @@ class Environment:
                     if self.produce_printout:
                         print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.agent.memory.totalGameSteps, MAX_STEPS)
 
+                print 'checkpoint 5'
                 self.agent.bookkeeping.deleteEpisodeFile()
 
                 if self.record_fMRIRegressors:
@@ -363,6 +372,7 @@ class Environment:
                     # TODO better way?
                     break
 
+                print 'checkpoint 6'
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.agent.param_ID))
 
@@ -395,13 +405,16 @@ class Environment:
 
     def playEpisode(self, gameObject, win=False, max_steps=None):
 
+        print 'playEpisode checkpoint 0'
         ## Initialize external environment
         self.initializeEnvironment()
+        print 'playEpisode checkpoint 1'
         self.agent.environment = self.environment
         self.agent.make_movie = self.make_movie
         self.agent.theory = self.theory
         self.agent.theory_playback = self.theory_playback
         self.agent.theory_playback_index = 0
+        print 'playEpisode checkpoint 2'
         
         print "Playing level {}".format(self.n_level + 1)
 

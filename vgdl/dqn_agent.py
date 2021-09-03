@@ -391,6 +391,8 @@ class DQNAgent(Agent):
         self.steps += 1
         self.episode_steps += 1
 
+        #return availableActions[0], env_results['ended']
+
         #print 'self.environment.getTime()', self.environment.getTime()
         if self.environment.getTime() == 0:
             self.beginningOfEpisodeManagement()
@@ -479,7 +481,7 @@ class DQNAgent(Agent):
             if self.episode_reward > self.best_reward or self.steps % 50000:
                 self.best_reward = self.episode_reward
                 print("New Best Reward: {}".format(self.best_reward))
-                self.save_model()
+                #self.save_model()
 
     def select_action(self):
 

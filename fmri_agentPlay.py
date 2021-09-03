@@ -58,6 +58,8 @@ db = client['heroku_7lzprs54']
 vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it was 35
 
 if __name__ == '__main__':
+    #sys.settrace()
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--agent-name', required=True)
     parser.add_argument('--subj-id', required=True)
@@ -157,7 +159,7 @@ if __name__ == '__main__':
             agent = RandomAgent(game_name, task_ID=task_ID)
         elif agent_name == 'DQN':
             agent = DQNAgent(game_name, (vgdl.core.render_screensize[0], vgdl.core.render_screensize[1], 3),
-                make_videos=True, movie_names=movie_names, videos_dir=subj_game_videos_dir, 
+                make_videos=False, movie_names=movie_names, videos_dir=subj_game_videos_dir, 
                 images_dir=subj_game_images_dir, task_ID=task_ID)
         else:
             assert False, 'Invalid agent name ' + agent_name

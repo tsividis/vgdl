@@ -68,7 +68,7 @@ do
                 # if not, abort (so we can fix it & resume; o/w savedCurricula gets fucked and we have to start all over
                 #out=`mongo --host ${host} heroku_7lzprs54 --eval "db.${collection}.count({'subj_id': '${2}', 'game_name': '${3}'})"`
                 #out=`mongo --host ${host} heroku_7lzprs54 --eval "db.regressors_cannon_spriteEvery20.count({'subj_id': '${2}', 'game_name': '${3}'})"`
-                out=`mongo --host ${host} heroku_7lzprs54 --eval "db.${collection}.count({'subj_id': '${2}', 'game_name': '${3}'})"`
+                out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'subj_id': '${2}', 'game_name': '${3}'})"`
                 echo mongo total ${collection} count -- $out
 
                 # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601

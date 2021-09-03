@@ -452,7 +452,7 @@ class WBP():
 			self.total_nodes_opened += len(current_actions)
 
 			#print ' w t f'
-			print '            in BFS: current = ', current.rle._game.getFullStateColorized()['objects']['DARKBLUE']
+			#print '            in BFS: current = ', current.rle._game.getFullStateColorized()['objects']['DARKBLUE']
 			#print '                    actions = ', current_actions
 
 			## Node expansion
