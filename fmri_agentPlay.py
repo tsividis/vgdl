@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+import faulthandler
 import pprint
 import random
 from datetime import datetime
@@ -59,6 +60,7 @@ vgdl.core.BLOCK_SIZE = 20  # for subjects 1..11, the block_size was 20; then it 
 
 if __name__ == '__main__':
     #sys.settrace()
+    faulthandler.enable()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--agent-name', required=True)

@@ -198,6 +198,7 @@ class Environment:
         #curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.agent.param_ID+'_'+self.task_ID
         loadedState = self.agent.bookkeeping.loadCurriculumState(self.agent.bookkeeping.curriculumSaveFile)
         if loadedState is not None:
+            print '----------- loading curriculum state from ', self.agent.bookkeeping.curriculumSaveFile
             self.agent = loadedState['agent']
 
             # momchil: for fMRI playback, we give a completely new set of levels every time (b/c we split up the inference into batches on the cluster, b/c of memory issues w/ having all states in memory), and we start curriculum from "level 0" every time
@@ -330,8 +331,8 @@ class Environment:
                 # print "about to save state"
                 # embed()
 
-                if not self.record_fMRIRegressors: # we save it later in fMRI mode -- see below
-                    self.agent.bookkeeping.saveCurriculumState(self.agent, episodeCompactStates, self.record_fMRIRegressors)
+                #if not self.record_fMRIRegressors: # we save it later in fMRI mode -- see below
+                #    self.agent.bookkeeping.saveCurriculumState(self.agent, episodeCompactStates, self.record_fMRIRegressors)
                 # print "saved state"
                 # embed()
                 ## will write all previous episodes to the file at the end of each episode.
@@ -384,10 +385,10 @@ class Environment:
         # it is easier if we match the granularity at which we load/save curriculum, in case of errors during replay
         # e.g. if we replay each block as one set of levels, and if some part of replay fails, we want to restart the whole block,
         # but we won't be able to if curriculum states were being saved along the way; we have to start from the state as it was at the beginning
-        if self.record_fMRIRegressors:
-            then = time.time()
-            self.agent.bookkeeping.saveCurriculumState(self.agent, {}, self.record_fMRIRegressors)
-            print 'saving curriculum state took', (time.time() - then)
+        #if self.record_fMRIRegressors:
+        then = time.time()
+        self.agent.bookkeeping.saveCurriculumState(self.agent, {}, self.record_fMRIRegressors)
+        print 'saving curriculum state took', (time.time() - then)
 
         if make_movie:
             if self.record_fMRIRegressors:

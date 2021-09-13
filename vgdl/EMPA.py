@@ -400,6 +400,7 @@ class Agent(object):
         self.bookkeeping.episodeSaveFile = 'episode_'+self.gameFilename+'_'+self.task_ID
         loadedState = self.bookkeeping.loadCurriculumState(self.bookkeeping.episodeSaveFile)
         if loadedState is not None:
+            print '----------- loading episode save file from self.bookkeeping.episodeSaveFile', self.bookkeeping.episodeSaveFile
             assert not self.record_fMRIRegressors, 'should never be here in fMRI mode'
             self, self.bookkeeping.effectsEncountered, self.bookkeeping.statesEncountered, self.bookkeeping.compactStates, loadedState['effectsEncountered'], loadedState['statesEncountered'], loadedState['compactStates'], loadedState['annealing']
 
@@ -553,10 +554,11 @@ class Agent(object):
             if not self.quitting:
                 action = self.solution[self.steps_in_solution]
                 self.steps_in_solution += 1
-            if self.record_fMRIRegressors:
+            #if self.record_fMRIRegressors:
                 # momchil: NEVER quit prematurely during replay in fMRI mode
                 # do it here because of snippets above and below.
-                self.quitting = False
+            # nevermind, do not quit even during play since the subjects cannot quit
+            self.quitting = False
         else:
             action = 0
             self.quitting = True

@@ -6,6 +6,7 @@
 # import gym
 # import gym_gvgai
 import torch
+import random
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
@@ -248,7 +249,7 @@ class DQNAgent(Agent):
             'criteria': '1/1',
             'game_name': 'aliens',
             'num_trials': 1,
-            'random_seed': 7,
+            'random_seed': 171,
         }
         self.config = Struct(**config)
         self.make_videos = make_videos
@@ -259,10 +260,17 @@ class DQNAgent(Agent):
         self.tmp_images_tmpl = os.path.join(self.tmp_images_dir, 'dqn_screen_' + self.random_tag + '_%09d.png')
         self.movie_names = movie_names
 
+        torch.backends.cudnn.deterministic = True
+        #torch.manual_seed = (self.config.random_seed)
+        torch.manual_seed(self.config.random_seed)
+        np.random.seed(self.config.random_seed)
+        random.seed(self.config.random_seed)
+
         # momchil
         #self.Env = VGDLEnv(self.config.game_name, 'all_games')
         #self.Env.set_level(0)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print('device ', self.device)
 
         print('DQN Training at seed = {}'.format(self.config.random_seed))
 
@@ -306,8 +314,7 @@ class DQNAgent(Agent):
         self.best_reward = 0
         self.episode_reward = 0
 
-        torch.backends.cudnn.deterministic = True
-        torch.manual_seed = (self.config.random_seed)
+
 
 
     def beginningOfEpisodeManagement(self):
@@ -369,11 +376,14 @@ class DQNAgent(Agent):
           Image.fromarray(screen).save(image_file_name)
           #embed()
 
-        screen = screen.transpose((2, 0, 1)) # CxHxW
-        screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
-        screen = torch.from_numpy(screen)
+        screen2 = screen.transpose((2, 0, 1)) # CxHxW
+        screen3 = np.ascontiguousarray(screen2, dtype=np.float32) / 255
+        screen4 = torch.from_numpy(screen3)
+        screen5 = self.resize(screen4).unsqueeze(0).to(self.device)
         # Resize, and add a batch dimension (BCHW)
-        return self.resize(screen).unsqueeze(0).to(self.device)
+        #embed()
+        #Barbara
+        return screen5 
 
     def makeVideo(self):
       video_filename = self.movie_names[0] + '_ep=' + str(self.episode) + '_tag=' + self.random_tag + '.mp4'
@@ -430,6 +440,9 @@ class DQNAgent(Agent):
 
         # Perform one step of the optimization (on the target network)
         self.optimize_model()  # TODO (momchil) enable on GPU; crashes locally sometimes
+          
+        # Update the target network
+        self.model_update()
 
         # end of episode
         if self.ended or self.episode_steps > self.config.timeout:
@@ -438,9 +451,6 @@ class DQNAgent(Agent):
           self.episode_reward = 0
           if self.make_videos:
             self.makeVideo()
-          
-          # Update the target network
-          self.model_update()
 
         # bookkeeping
         if self.environment.getTime() == 0:
@@ -462,7 +472,7 @@ class DQNAgent(Agent):
         if self.state is not None:
           self.action = self.select_action()
         else:
-          self.action = torch.tensor([[availableActions.index(NOOP)]]) # NOOP if end of episode
+          self.action = torch.tensor([[availableActions.index(NOOP)]], device=self.device) # NOOP if end of episode
         VGDL_action = availableActions[self.action.item()]
 
         if self.record_fMRIRegressors and self.environment.getTime() > 0: # record regressors after each frame, which means excluding the initial frame
@@ -474,8 +484,10 @@ class DQNAgent(Agent):
 
     def model_update(self):
 
+        print('model_update', self.steps, self.config.target_update, self.steps % self.config.target_update)
         if self.steps > 1000 and not self.steps % self.config.target_update:
 
+            print('episode_reward ', self.episode_reward, self.best_reward)
             self.target_net.load_state_dict(self.policy_net.state_dict())
 
             if self.episode_reward > self.best_reward or self.steps % 50000:
@@ -495,7 +507,7 @@ class DQNAgent(Agent):
         if sample > eps_threshold:
             return optimal_action
         else:
-            return torch.tensor([[np.random.choice(list(range(len(availableActions))))]], device=self.device, dtype=torch.long)
+            return torch.tensor([[np.random.choice(list(range(self.n_actions)))]], device=self.device, dtype=torch.long)
 
     def optimize_model(self):
 
@@ -546,11 +558,17 @@ class DQNAgent(Agent):
         loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
         # ()
         self.loss_history = loss
-        # print(loss)
+        #print(loss)
 
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
+        #print(' loss', loss)
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+        #embed()
+        #Barbara
+
+        del state_action_values
+        del loss
