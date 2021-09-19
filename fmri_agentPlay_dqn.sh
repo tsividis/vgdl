@@ -22,7 +22,7 @@ record_video_info=''
 
 agent='DQN'
 tag='train_1_gpu'
-steps_per_level=10000
+steps_per_level=100000
 
 #agent='Random'
 #tag='attempt_1'
@@ -35,7 +35,7 @@ steps_per_level=10000
 #games=(  'vgfmri4_lemmings' 'vgfmri4_zelda') # 90000, 2 days
 #games=( 'vgfmri4_avoidgeorge' ) # 50000, 2 days
 
-games=( 'vgfmri4_helper' ) # 140000 , 4 days
+games=(   'vgfmri4_lemmings'  'vgfmri4_avoidgeorge') # 140000 , 4 days
 #games=( 'vgfmri4_bait' ) # 140000, 4 days
 #games=( 'vgfmri4_chase' ) # 50000, 4 days
 
