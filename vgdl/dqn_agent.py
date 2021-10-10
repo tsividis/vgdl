@@ -6,6 +6,7 @@
 # import gym
 # import gym_gvgai
 import torch
+from vgdl import colors
 import random
 import torch.nn as nn
 import torch.optim as optim
@@ -29,6 +30,7 @@ import glob
 import numpy as np
 import random
 import time
+import imageio
 import copy
 from PIL import Image
 from collections import defaultdict
@@ -276,6 +278,7 @@ class DQNAgent(Agent):
 
         #self.game_size = np.shape(self.Env.render())
         self.game_size = game_size # momchil
+        self.game_name = gameFilename
 
         self.input_channels = self.game_size[2]
         #self.n_actions = len(self.Env.actions)
@@ -314,6 +317,18 @@ class DQNAgent(Agent):
         self.best_reward = 0
         self.episode_reward = 0
 
+        self.model_path = os.path.join(os.environ.get('MY_HOME'), 'RC_RL', 'model_weights/{}_trial{}_{}.pt'.format(self.game_name, 1, 'repeated'))
+        print('model_path', self.model_path)
+
+        self.load_model()
+
+        self.train = False #  we only use the dqn agent in inference mode, we train it separately
+
+
+    def load_model(self):
+        print(' loading model')
+        self.policy_net.load_state_dict(torch.load(self.model_path))
+        self.target_net.load_state_dict(torch.load(self.model_path))
 
 
 
@@ -365,6 +380,46 @@ class DQNAgent(Agent):
         if name not in self.bookkeeping.regressors:
             self.bookkeeping.regressors[name] = []
         self.bookkeeping.regressors[name].append((val, self.environment._game.time, self.environment._game.playback_ts))
+
+    def VGDLEnv_render(self, gif = False):
+        # render as it is implemented in RC_RL/VGDLEnv.py
+
+        game = self.environment._game
+
+        # import pdb; pdb.set_trace()
+
+        # returns numpy array of pixel values based on the sprites in the game
+        im = np.empty([game.screensize[1], game.screensize[0], 3], dtype=np.uint8)
+        bg = np.array(colors.LIGHTGRAY, dtype=np.uint8) # background
+        im[:] = bg
+
+        for className in game.sprite_order:
+            if className in game.sprite_groups:
+                for sprite in game.sprite_groups[className]:
+                    r, c, h, w = sprite.rect.top , sprite.rect.left , sprite.rect.height , sprite.rect.width
+                    im[r:r+h, c:c+w, :] = np.array(sprite.color, dtype=np.uint8)
+
+        if gif: im = resize(im, (64, 64, 3))
+        return im
+
+
+    def player_get_screen(self):
+        # get_screen as implemented n RC_RL/player.py
+        # imageio.imsave('sample.png', self.Env.render())
+        #pdb.set_trace()
+        screen = self.VGDLEnv_render()
+
+        if self.make_videos:
+          image_file_name = self.tmp_images_tmpl % self.steps
+          Image.fromarray(screen).save(image_file_name)
+          #embed()
+        #import pdb; pdb.set_trace()
+
+        screen = screen.transpose((2, 0, 1))
+        screen = np.ascontiguousarray(screen, dtype=np.float32) / 255
+        screen = torch.from_numpy(screen)
+        # Resize, and add a batch dimension (BCHW)
+        return self.resize(screen).unsqueeze(0).to(self.device)
 
     def get_screen(self):
         # imageio.imsave('sample.png', self.Env.render())
@@ -418,7 +473,8 @@ class DQNAgent(Agent):
 
         # get current state
         if not self.ended:
-          self.next_state = self.get_screen()  # TODO try diff ? like in player.py
+          #self.next_state = self.get_screen()  # TODO try diff ? like in player.py
+          self.next_state = self.player_get_screen()  # TODO try diff ? like in player.py
         else:
           self.next_state = None
 
@@ -431,18 +487,19 @@ class DQNAgent(Agent):
         #print '                    state ', self.state
 
         # Store the (previous) transition in memory -- note that we are one transition behind always, because we can't look into the future
-        if self.state is not None:
+        if self.state is not None and self.train:
           assert self.action is not None
           self.replay_memory.push(self.state, self.action, self.next_state, self.reward)
 
         # Move to the next state
         self.state = self.next_state
 
-        # Perform one step of the optimization (on the target network)
-        self.optimize_model()  # TODO (momchil) enable on GPU; crashes locally sometimes
+        if  self.train:
+            # Perform one step of the optimization (on the target network)
+            self.optimize_model()  # TODO (momchil) enable on GPU; crashes locally sometimes
           
-        # Update the target network
-        self.model_update()
+            # Update the target network
+            self.model_update()
 
         # end of episode
         if self.ended or self.episode_steps > self.config.timeout:

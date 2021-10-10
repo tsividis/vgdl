@@ -23,13 +23,13 @@ if [[ `hostname` == *"Momchil"* ]]; then
     nplays_idx=4
     curriculum_dir=savedCurricula
 else
-    host='holy7c22211.rc.fas.harvard.edu'
+    host='holy7c22103.rc.fas.harvard.edu'
     nplays_idx=2
     curriculum_dir=${MY_SCRATCH}/VGDL/savedCurricula
 fi
 
 # remove current agent state
-# TODO string coupling with bookkeeping.py, dqn_agent.py, EMPA.py, fmri_agentReplay.py
+# TODO strong coupling with bookkeeping.py, dqn_agent.py, EMPA.py, fmri_agentReplay.py
 curriculum_file=${curriculum_dir}/curriculum_${1}_${3}_*_subj=${2}*
 echo Curriculum file:
 ls -latch ${curriculum_file}

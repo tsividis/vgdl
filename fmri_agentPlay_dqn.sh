@@ -21,8 +21,8 @@ record_video_info=''
 #steps_per_level=1200 # fMRI level # frames in a minute
 
 agent='DQN'
-tag='train_1_gpu'
-steps_per_level=100000
+tag='eval1_gpu'
+steps_per_level=1200
 
 #agent='Random'
 #tag='attempt_1'
@@ -35,8 +35,8 @@ steps_per_level=100000
 #games=(  'vgfmri4_lemmings' 'vgfmri4_zelda') # 90000, 2 days
 #games=( 'vgfmri4_avoidgeorge' ) # 50000, 2 days
 
-games=(   'vgfmri4_lemmings'  'vgfmri4_avoidgeorge') # 140000 , 4 days
-#games=( 'vgfmri4_bait' ) # 140000, 4 days
+#games=(   'vgfmri4_lemmings'  'vgfmri4_avoidgeorge') # 140000 , 4 days
+games=( 'vgfmri4_bait' ) # 140000, 4 days
 #games=( 'vgfmri4_chase' ) # 50000, 4 days
 
 echo ---------------- >> jobs.txt

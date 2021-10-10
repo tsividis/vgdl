@@ -79,7 +79,8 @@ if __name__ == '__main__':
 
             nplays = db.plays.count(query)
             #nregs = db.plays_post.count(query)
-            nregs = db.regressors.count(query)
+            #nregs = db.regressors.count(query)
+            nregs = db.dqn_regressors.count(query)
             #nregs = db.regressors_cannon_spriteEvery20.count(query)
 
             print query

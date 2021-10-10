@@ -197,7 +197,8 @@ class Environment:
         loaded_n_level=0
         #curriculumSaveFile = 'curriculum_'+self.gameFilename+'_'+self.agent.param_ID+'_'+self.task_ID
         loadedState = self.agent.bookkeeping.loadCurriculumState(self.agent.bookkeeping.curriculumSaveFile)
-        if loadedState is not None:
+        if loadedState is not None and not isinstance(self.agent, DQNAgent):
+            # we only use the dqn agent in inference mode, we train it separately
             print '----------- loading curriculum state from ', self.agent.bookkeeping.curriculumSaveFile
             self.agent = loadedState['agent']
 

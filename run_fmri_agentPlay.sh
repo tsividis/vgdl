@@ -17,7 +17,7 @@ if [[ `hostname` == *"Momchil"* ]]; then
     nplays_idx=4
     curriculum_dir=savedCurricula
 else
-    host='holy7c22211.rc.fas.harvard.edu'
+    host='holy7c22103.rc.fas.harvard.edu'
     nplays_idx=2
     curriculum_dir=${MY_SCRATCH}/VGDL/savedCurricula
 fi
@@ -98,7 +98,7 @@ do
                 # run agentPlay
                 echo ---- run_fmri_agentPlay: agent ${1}, subj ${2}, run $run, block $block, instance $instance, game ${3}
                 #cmd="python -m cProfile -s cumtime fmri_agentPlay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance}  --game-name=${3}"
-                cmd="python -W ignore::UserWarning fmri_agentPlay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --game-name=${3} --steps-per-level=${4} --tag=${5} ${6} ${7}"
+                cmd="python -W ignore::UserWarning -m cProfile -o fmri_agentPlay_${1}_${3}.prof fmri_agentPlay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --game-name=${3} --steps-per-level=${4} --tag=${5} ${6} ${7}"
                 echo ${cmd}
                 eval ${cmd}
 
