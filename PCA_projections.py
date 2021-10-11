@@ -22,8 +22,9 @@ import utils
 import socket
 from pymongo import MongoClient
 import images_pca
-from fmri_makeMovie import imagesDir, get_video_name, get_subj_game_images_dir
-import core
+#from fmri_makeMovie import imagesDir, get_video_name, get_subj_game_images_dir
+from fmri_agentReplay import imagesDir
+from vgdl import core
 
 # ### Helper functions
 
@@ -119,16 +120,20 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
         print 'loading play time: ', (time.time() - then)
 
         # get directory where the frames are
-        video_name = get_video_name(play, use_renders=True)
-        subj_game_images_dir = get_subj_game_images_dir(imagesDir, subj_id, play, video_name)
+        # based on fmri_agentReplay.py DQN replay
+        video_name = 'fmri_agentReplay_{}_s={}_r={}_b={}_i={}_p={}_{}'.format('DQN', play['subj_id'], 
+            play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'])
+        subj_game_images_dir = os.path.join(imagesDir, 'DQN', 'subj_'+str(subj_id), game['name'])
 
         then = time.time()
 
         # loop over layers
         for i in range(len(states)):
             # load and preprocess image for frame
-            image_filename = core.VGDLParser.get_image_filename(i)
-            image_filename = os.path.join(subj_game_images_dir, image_filename)
+            #image_filename = core.VGDLParser.get_image_filename(i)
+            #image_filename = os.path.join(subj_game_images_dir, image_filename)
+            # tight coupling with dqn_agent.py saveImage
+            image_file_name = os.path.join(subj_game_images_dir, video_name + '_step=' + str(i + 1) + '.png')
 
             img = cv2.imread(image_filename)
             img = images_pca.process_frame(img)

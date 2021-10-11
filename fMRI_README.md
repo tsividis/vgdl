@@ -375,6 +375,7 @@ Running PCA
 - run PCA with `images_pca.py` (homologous to `fmri_agentReplay.py`)
     - requires python 3: `source deactivate pedro`, `source activate pedro3` (or create one with python3), `pip install -r fmri_requirements_python3.txt`
 - generate projections for GP/regression with `PCA_projections.py/sh` (homologous to `HRR.py/sh`, `DQN_layers.py/sh`)
+- run GP/regression with `fit_gp_CV.m/sh`, `fit_ridge_CV.m/sh` (Matlab repo)
 
 
 DQN replay
@@ -386,3 +387,5 @@ Via `fmri_agentReplay.py`, called via `fmri_agentReplay.sh`. Checklist:
 - `run_fmri_agentReplay.sh`: `rm ${curriculum_file}` if replaying from scratch (or not, if we're continuing replay)
 - `fmri_agentReplay.sh`: subjects, games, memory, time limit (start small, e.g. subj 1 chase only)
 - run `fmri_agentReplay.sh`
+- generate projections for GP/regression with `DQN_layers.py/sh` (homologous to `HRR.py/sh`)
+- run GP/regression with `fit_gp_CV.m/sh`, `fit_ridge_CV.m/sh` (Matlab repo)

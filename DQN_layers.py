@@ -130,6 +130,10 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
 
         print 'loading play time: ', (time.time() - then)
 
+        if len(states) <= 2:
+            print('skipping because of too few states', len(states),  reg['regressors'])
+            continue
+
         # loop over layers
         num_frames = None
         for regressor_name in layers.keys():

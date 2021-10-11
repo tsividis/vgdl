@@ -117,7 +117,7 @@ class NoisyLinear(nn.Module):
     self.std_init = std_init
     self.weight_mu = nn.Parameter(torch.empty(out_features, in_features))
     self.weight_sigma = nn.Parameter(torch.empty(out_features, in_features))
-    self.register_buffer('weight_epsilon', torch.empty(out_features, in_features))
+    s, level_idelf.register_buffer('weight_epsilon', torch.empty(out_features, in_features))
     self.bias_mu = nn.Parameter(torch.empty(out_features))
     self.bias_sigma = nn.Parameter(torch.empty(out_features))
     self.register_buffer('bias_epsilon', torch.empty(out_features))
@@ -259,7 +259,7 @@ class DQNAgent(Agent):
         self.images_dir = images_dir
         self.tmp_images_dir = os.path.join(images_dir, 'tmp')
         self.random_tag = random_string()
-        self.tmp_images_tmpl = os.path.join(self.tmp_images_dir, 'dqn_screen_' + self.random_tag + '_%09d.png')
+        self.tmp_images_tmpl = os.path.join(self.tmp_images_dir, 'dqn_screen_' + self.random_tag + '_%09d.png') # for generating videos
         self.movie_names = movie_names
 
         torch.backends.cudnn.deterministic = True
@@ -410,9 +410,7 @@ class DQNAgent(Agent):
         screen = self.VGDLEnv_render()
 
         if self.make_videos:
-          image_file_name = self.tmp_images_tmpl % self.steps
-          Image.fromarray(screen).save(image_file_name)
-          #embed()
+            self.saveImage(screen)
         #import pdb; pdb.set_trace()
 
         screen = screen.transpose((2, 0, 1))
@@ -427,9 +425,7 @@ class DQNAgent(Agent):
         screen = self.environment._game.render()
 
         if self.make_videos:
-          image_file_name = self.tmp_images_tmpl % self.steps
-          Image.fromarray(screen).save(image_file_name)
-          #embed()
+            self.saveImage(screen)
 
         screen2 = screen.transpose((2, 0, 1)) # CxHxW
         screen3 = np.ascontiguousarray(screen2, dtype=np.float32) / 255
@@ -441,13 +437,23 @@ class DQNAgent(Agent):
         return screen5 
 
     def makeVideo(self):
-      video_filename = self.movie_names[0] + '_ep=' + str(self.episode) + '_tag=' + self.random_tag + '.mp4'
+      video_filename = self.movie_names[0] + '_ep=' + str(self.episode) + '_tag=' + self.random_tag + '.mp4' # TODO relies heavily on replaying plays one by one
       video_filename = os.path.join(self.videos_dir, video_filename)
       call = ["ffmpeg -r 30 -f image2  -i ", self.tmp_images_tmpl, " -vcodec libx264 -crf 25  -pix_fmt yuv420p ", video_filename]
       call = ' '.join(call) 
       print call
       subprocess.call(call, shell=True)
       [os.remove(f) for f in glob.glob(self.tmp_images_tmpl + "*" + str(self.random_tag) + "*")]
+
+    def saveImage(self, screen):
+          image = Image.fromarray(screen)
+          # safe temporary image for video generation
+          tmp_image_file_name = self.tmp_images_tmpl % self.steps
+          image.save(tmp_image_file_name)
+          # save image for PCA
+          image_file_name = os.path.join(self.images_dir, self.movie_names[0] + '_step=' + str(self.steps) + '.png')
+          image.save(image_file_name)
+          #embed()
 
 
     def step(self, action, env_results):

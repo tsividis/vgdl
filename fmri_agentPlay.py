@@ -131,7 +131,8 @@ if __name__ == '__main__':
 
         # this is the money that gets passed to playCurriculum
         reset_finalTimeStepList = play['instance_id'] == 0 and play['play_id'] == 0 # reset finalTimeStepList before every block -- balance between psychological plausibility and practicality (i.e. avoiding OOM in plaqueAttack)
-        all_pairs[game['name']].append((game_str, play['level_str'], video_name, reset_finalTimeStepList, play['level_id'] + 1)) # TODO momchil OOM? 
+        level_game = (game_str, play['level_str'], video_name, reset_finalTimeStepList, play['level_id'] + 1)
+        all_pairs[game['name']].append(level_game) # TODO momchil OOM? 
 
         movie_name = game['name'] + '_lev=' + str(play['level_id'] + 1) + '_' + str(play['play_id'])
         all_movie_names[game['name']].append(movie_name)

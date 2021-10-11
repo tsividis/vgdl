@@ -40,7 +40,7 @@ class Environment:
         self.agent = agent
         self.record_fMRIRegressors = agent.record_fMRIRegressors
         self.agent.record_video_info = True
-        self.agent.write_video_info = True
+        self.agent.write_video_info = False
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
@@ -227,10 +227,10 @@ class Environment:
                 # fMRI playback from human play
                 if theory_playback:
                     # replaying theories and states/actions
-                    (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList, self.theory) = level_game
+                    (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList, self.theory, level_id) = level_game
                 else:
                     # replaying states/actions only
-                    (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList) = level_game
+                    (self.gameString, self.levelString, self.playback_states, self.playback_keystates, self.video_name, reset_finalTimeStepList, level_id) = level_game
                     self.theory = None
             else:
                 assert not theory_playback
@@ -253,6 +253,7 @@ class Environment:
                 self.agent.finalTimeStepList = []
                 self.agent.finalEventList = []
 
+            self.agent.level_id = level_id
 
             self.agent.max_nodes = self.agent.starting_max_nodes
             self.agent.stored_max_nodes = self.agent.max_nodes

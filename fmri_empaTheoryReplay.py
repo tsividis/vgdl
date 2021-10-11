@@ -199,7 +199,8 @@ if __name__ == '__main__':
 
         # this is the money that gets passed to playCurriculum
         reset_finalTimeStepList = play['instance_id'] == 0 and play['play_id'] == 0 # reset finalTimeStepList before every block -- balance between psychological plausibility and practicality (i.e. avoiding OOM in plaqueAttack)
-        all_pairs[game['name']].append((play['game_str'], play['level_str'], states, keystates, video_name, reset_finalTimeStepList, theory)) # TODO momchil OOM? 
+        level_game = (play['game_str'], play['level_str'], states, keystates, video_name, reset_finalTimeStepList, theory, play['level_id'] + 1)
+        all_pairs[game['name']].append(level_game) # TODO momchil OOM? 
 
         # pre-populate plans object for each play with identifier info
         # extract the plans later in Agent
