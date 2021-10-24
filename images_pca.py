@@ -102,13 +102,21 @@ if __name__ == '__main__':
             # save results so far
             n_unique_frames_total += len(frames)
             if is_game_specific:
-                filename = 'images_pca_game={}_frame={}_frame={}.pkl'.format(game_name, i)
+                filename = 'images_pca_game={}_frame={}.pkl'.format(game_name, i)
+                filename_python_2 = 'images_pca_game={}_frame={}_python_2.pkl'.format(game_name, i)
             else:
                 filename = 'images_pca_frame={}.pkl'.format(i)
+                filename_python_2 = 'images_pca_frame={}_python_2.pkl'.format(i)
             filepath = os.path.join(imagesDir, filename)
             print('saving to filepath: ', filepath)
             with open(filepath, 'wb') as f:
                 cloudpickle.dump(frames_pca, f)
+            filepath_python_2 = os.path.join(imagesDir, filename_python_2)
+            print('saving to filepath: ', filepath_python_2)
+            with open(filepath_python_2, 'wb') as f:
+                cloudpickle.dump({'components': frames_pca.components_,
+                     'mean': frames_pca.mean_}, f, protocol=2)
+
 
 
     # visualize

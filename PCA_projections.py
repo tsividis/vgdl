@@ -30,6 +30,7 @@ from IPython import embed
 # ### Helper functions
 
 IMAGES_PCA_FILE_PATH = '/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/images/images_pca_frame=429999.pkl'
+IMAGES_PCA_FILE_PATH_PYTHON_2 = '/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/images/images_pca_frame=429999_python_2.pkl'
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
@@ -80,8 +81,10 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
     del plays # close cursor, o/w screws things up
 
     # load PCA results
-    with open(IMAGES_PCA_FILE_PATH, 'rb') as f:
-        frames_pca = cloudpickle.load(f)
+    with open(IMAGES_PCA_FILE_PATH_PYTHON_2, 'rb') as f:
+        d = cloudpickle.load(f)
+    PCA_components = d['components']
+    PCA_mean = d['mean']
 
     # notice that here we only have a single "sample", unlike in HRRs
     projections = []
@@ -108,6 +111,15 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
         game = subj['games'][play['game_id']]
         print('gen_subject_PCA: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id']))
 
+        # get regressors
+        q = {'play_key': play['_id']}
+        print q
+        print db.regressors.count(q)
+        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.regressors.count(q) == 0:
+            print 'skipping (e.g. Sokoban)'
+            continue
+
         if last_block_id != play['block_id']:
             if last_block_id is not None:
                 block_offs_idx.append(len(ts))
@@ -130,19 +142,21 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
         then = time.time()
 
         # loop over layers
-        for i in range(len(states)):
+        for i in range(len(states) - 1):
             # load and preprocess image for frame
             #image_filename = core.VGDLParser.get_image_filename(i)
             #image_filename = os.path.join(subj_game_images_dir, image_filename)
             # tight coupling with dqn_agent.py saveImage
-            embed()
-            image_file_name = os.path.join(subj_game_images_dir, video_name + '_step=' + str(i + 1) + '.png')
+            print(i)
+            image_filename = os.path.join(subj_game_images_dir, video_name + '_step=' + str(i + 1) + '.png')
 
             img = cv2.imread(image_filename)
             img = images_pca.process_frame(img)
 
             # project into PCA space
-            projection = frames_pca.transform([img])
+            #projection = frames_pca.transform([img]) # only supported by Python 3, but we need to use python 2 because of vgdl
+            # do projection manually instead; see https://github.com/scikit-learn/scikit-learn/blob/d9e24f493c621648f45b5630ae1c0b645bffbf72/sklearn/decomposition/_base.py#L97
+            projection = np.dot([img - PCA_mean], PCA_components.T)[0]
 
             # potentially normalize
             if normalize:
