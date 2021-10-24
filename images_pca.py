@@ -10,11 +10,13 @@ import matplotlib.pyplot as plt
 import time
 from glob import iglob
 import pandas as pd
+from skimage.transform import resize
 from IPython import embed
 from sklearn.decomposition import PCA, IncrementalPCA
 import socket
 import os
 import cloudpickle
+import pdb
 
 if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
@@ -26,23 +28,25 @@ else:
     imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
 print('images_pca dirs: ', videosDir, imagesDir)
 
+render_screensize = (80,60)  # dimensions of the renders used for training the DQN, PCA, etc ; duplicate with vgdl/core.py
+image_size = (render_screensize[0], render_screensize[1], 3)
 batch_size = 10000 # how many frames to accumulate before running PCA
-n_components = 30 # TODO param
+n_components = 100 # TODO param
+is_game_specific = False
 
 def process_frame(img):
     # convert and resize
     img = img.astype(np.uint8)
     img = img / 255
-    return img.flatten()
+    img = resize(img, image_size)
+    img = img.flatten()
+    return img
 
 random.seed(0)
 
 if __name__ == '__main__':
-    game_name = int(sys.argv[1])
-
-    filename = 'images_pca_{}.pkl'.format(game_name)
-    filepath = os.path.join(imagesDir, filename)
-    print('images_pca output filepath: ', filepath)
+    if is_game_specific:
+        game_name = int(sys.argv[1])
 
     #rootDir = os.path.join(imagesDir, 'makeMovie')
     rootDir = os.path.join(imagesDir, 'DQN')
@@ -56,11 +60,13 @@ if __name__ == '__main__':
                 continue
             if not fname.startswith('fmri_agentReplay_DQN'):
                 continue
-            if not fname.contains(game_name):
+            if is_game_specific and not fname.contains(game_name):
                 continue
             path = os.path.join(dirName, fname)
             print('\t%s' % path)
             all_frame_files.append(path)
+        #if len(all_frame_files) > 1000:
+        #    break
 
     # go in random order because of autocorrelation 
     random.shuffle(all_frame_files)
@@ -69,6 +75,7 @@ if __name__ == '__main__':
     #
     frames_pca = IncrementalPCA(n_components=n_components, batch_size=batch_size)
     all_frames = []
+    n_unique_frames_total = 0
     for i, path in enumerate(all_frame_files): 
         img = cv2.imread(path)
         all_frames.append(process_frame(img))
@@ -93,6 +100,13 @@ if __name__ == '__main__':
             print('         PCA took ', time.time() - then, 's')
 
             # save results so far
+            n_unique_frames_total += len(frames)
+            if is_game_specific:
+                filename = 'images_pca_game={}_frame={}_frame={}.pkl'.format(game_name, i)
+            else:
+                filename = 'images_pca_frame={}.pkl'.format(i)
+            filepath = os.path.join(imagesDir, filename)
+            print('saving to filepath: ', filepath)
             with open(filepath, 'wb') as f:
                 cloudpickle.dump(frames_pca, f)
 

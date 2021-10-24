@@ -20,14 +20,16 @@ import cPickle, cloudpickle
 from HRR import gen_subject_kernels, gen_subject_kernels_multisigma
 import utils
 import socket
-from pymongo import MongoClient
 import images_pca
+from pymongo import MongoClient
 #from fmri_makeMovie import imagesDir, get_video_name, get_subj_game_images_dir
 from fmri_agentReplay import imagesDir
 from vgdl import core
+from IPython import embed
 
 # ### Helper functions
 
+IMAGES_PCA_FILE_PATH = '/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/images/images_pca_frame=429999.pkl'
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
@@ -42,7 +44,7 @@ if 'omchil' in socket.gethostname():
 else:
     # Cannon 
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
-    print matDir
+    print(matDir)
     # NCF cluster
     #client = MongoClient('holy7c22103.rc.fas.harvard.edu', 27017)
 
@@ -78,7 +80,7 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
     del plays # close cursor, o/w screws things up
 
     # load PCA results
-    with open(images_pca.filepath, 'rb') as f:
+    with open(IMAGES_PCA_FILE_PATH, 'rb') as f:
         frames_pca = cloudpickle.load(f)
 
     # notice that here we only have a single "sample", unlike in HRRs
@@ -104,7 +106,7 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
         assert play['subj_id'] == subj_id
 
         game = subj['games'][play['game_id']]
-        print 'gen_subject_PCA: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+        print('gen_subject_PCA: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id']))
 
         if last_block_id != play['block_id']:
             if last_block_id is not None:
@@ -117,7 +119,7 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
 
-        print 'loading play time: ', (time.time() - then)
+        print('loading play time: ', (time.time() - then))
 
         # get directory where the frames are
         # based on fmri_agentReplay.py DQN replay
@@ -133,6 +135,7 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
             #image_filename = core.VGDLParser.get_image_filename(i)
             #image_filename = os.path.join(subj_game_images_dir, image_filename)
             # tight coupling with dqn_agent.py saveImage
+            embed()
             image_file_name = os.path.join(subj_game_images_dir, video_name + '_step=' + str(i + 1) + '.png')
 
             img = cv2.imread(image_filename)
@@ -153,12 +156,12 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
             play_key.append(str(play['_id']))
             run_id.append(play['run_id'])
 
-        print 'pca frames time: ', (time.time() - then)
+        print('pca frames time: ', (time.time() - then))
         
 
     block_offs_idx.append(len(ts))
 
-    print 'total time: ', (time.time() - then0)
+    print('total time: ', (time.time() - then0))
 
     return projections, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx
 
@@ -207,4 +210,4 @@ if __name__ == '__main__':
 
     gen_and_save_subject_kernels(subj_id)
 
-    print 'Done'
+    print('Done')
