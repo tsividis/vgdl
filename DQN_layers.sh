@@ -7,9 +7,12 @@ mkdir output
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32  )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31  32 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=( 3 5 7 9 10 20  26   )  #  e.g. subjects=( 1 2 5 6 7 10 )
-#subjects=(  28   )  #  e.g. subjects=( 1 2 5 6 7 10 )
+#subjects=( 3 5 7 9 10 20  26   )  #  e.g. subjects=( 1 2 5 6 7 10 )
+#subjects=(  1   )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=(  2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
+
+normalize=2
 
 echo ---------------- >> jobs.txt
 echo --- $(date): Running DQN_layers for subjects ${subj_arg} in parallel >> jobs.txt
@@ -23,7 +26,7 @@ for subj in ${subjects[*]}; do
 
         # send the job to NCF
         #
-        sbatch_output=`sbatch -p fasse --mem 20001 -t 0-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python DQN_layers.py ${subj}"`
+        sbatch_output=`sbatch -p fasse --mem 20001 -t 0-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python DQN_layers.py --subj-id=${subj} --normalize=${normalize}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output

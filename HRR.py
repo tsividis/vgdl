@@ -32,9 +32,13 @@ import cPickle, cloudpickle
 from vgdl.environment import Environment
 from vgdl.hyperparameters import hyperparameter_sets
 from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
-from fmri_agentReplay import theoriesDir
+#from fmri_agentReplay import theoriesDir
 
 import pygame
+
+# fasse
+theoriesDir = os.path.join(os.environ.get('MY_CANNON_SCRATCH'), 'VGDL', 'theories')
+print theoriesDir
 
 # from vgdl_getSubjectsDirsAndRuns.m
 #
@@ -600,6 +604,8 @@ class SubjectHRR(object):
             spriteSet_HRR = spriteSet_HRR / np.sqrt(np.sum(np.square(spriteSet_HRR)))
             interactionSet_HRR = interactionSet_HRR / np.sqrt(np.sum(np.square(interactionSet_HRR)))
             terminationSet_HRR = terminationSet_HRR / np.sqrt(np.sum(np.square(terminationSet_HRR)))
+        elif normalize == 0:
+            pass
         else:
             assert False, 'bad normalize'
 
@@ -1022,7 +1028,10 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
         '''
 
         # load theories from disk
-        with open(reg['regressors']['theory_filename'], 'r') as f:
+        theory_filename = reg['regressors']['theory_filename']
+        # from Canon to fasse
+        theory_filename = theory_filename.replace('/n/holyscratch01/gershman_lab/Users/mtomov13', os.environ.get('MY_CANNON_SCRATCH'))
+        with open(theory_filename, 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
 
         # create temporary environment just to convert theory to VGDL description

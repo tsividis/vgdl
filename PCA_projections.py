@@ -16,6 +16,7 @@ from IPython import embed
 import time
 from pprint import pprint
 import logging, sys
+import argparse
 import cPickle, cloudpickle
 from HRR import gen_subject_kernels, gen_subject_kernels_multisigma
 import utils
@@ -142,13 +143,12 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
         then = time.time()
 
         # loop over layers
-        for i in range(len(states) - 1):
+        for i in range(1, len(states) - 1):
             # load and preprocess image for frame
             #image_filename = core.VGDLParser.get_image_filename(i)
             #image_filename = os.path.join(subj_game_images_dir, image_filename)
             # tight coupling with dqn_agent.py saveImage
-            print(i)
-            image_filename = os.path.join(subj_game_images_dir, video_name + '_step=' + str(i + 1) + '.png')
+            image_filename = os.path.join(subj_game_images_dir, video_name + '_step=' + str(i) + '.png')
 
             img = cv2.imread(image_filename)
             img = images_pca.process_frame(img)
@@ -159,8 +159,14 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
             projection = np.dot([img - PCA_mean], PCA_components.T)[0]
 
             # potentially normalize
-            if normalize:
+            if normalize == 2:
+                projection = scipy.stats.zscore(projection)
+            elif normalize == 1:
                 projection = projection / np.sqrt(np.sum(np.square(projection)))
+            elif normalize == 0:
+                pass
+            else:
+                assert False, 'bad normalize'
 
             projections.append(projection)
 
@@ -183,9 +189,7 @@ def gen_subject_PCA_projections(subj_id, normalize=False):
 
 
 # copy of HRR.gen_and_save_subject_kernels_batched but for DQN
-def gen_and_save_subject_kernels(subj_id):
-
-    normalize = False
+def gen_and_save_subject_kernels(subj_id, normalize):
 
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
@@ -201,6 +205,7 @@ def gen_and_save_subject_kernels(subj_id):
     # save kernels
     #
     kernel_filename = os.path.join(matDir, 'PCA_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
+    print('kernel_filename', kernel_filename)
 
     d = {
         'projections': projections,
@@ -220,8 +225,16 @@ def gen_and_save_subject_kernels(subj_id):
 
 
 if __name__ == '__main__':
-    subj_id = int(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--subj-id', required=True)
+    parser.add_argument('--normalize', default=2, help='whether/how to normalize the HRRs (0 = no, 1 = Z score, 2 = unit vector')
 
-    gen_and_save_subject_kernels(subj_id)
+    config = parser.parse_args()
+    print(config)
+
+    subj_id = int(config.subj_id)
+    normalize = int(config.normalize)
+
+    gen_and_save_subject_kernels(subj_id, normalize)
 
     print('Done')

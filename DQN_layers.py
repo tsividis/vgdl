@@ -13,6 +13,7 @@ import scipy.io
 import sklearn.metrics.pairwise as k
 from IPython import embed
 import time
+import argparse
 from pprint import pprint
 import logging, sys
 import cPickle, cloudpickle
@@ -155,8 +156,15 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
             for i in range(0, len(reg['regressors'][regressor_name])):
                 layer = reg['regressors'][regressor_name][i][0].flatten()
 
-                if normalize:
+                # potentially normalize
+                if normalize == 2:
+                    layer = scipy.stats.zscore(layer)
+                elif normalize == 1:
                     layer = layer / np.sqrt(np.sum(np.square(layer)))
+                elif normalize == 0:
+                    pass
+                else:
+                    assert False, 'bad normalize'
 
                 layers[regressor_name].append(layer)
 
@@ -181,9 +189,7 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
 
 
 # copy of HRR.gen_and_save_subject_kernels_batched but for DQN
-def gen_and_save_subject_kernels(subj_id):
-
-    normalize = True
+def gen_and_save_subject_kernels(subj_id, normalize):
 
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
@@ -263,9 +269,17 @@ def gen_and_save_subject_kernels_multisigma(subj_id):
 
 
 if __name__ == '__main__':
-    subj_id = int(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--subj-id', required=True)
+    parser.add_argument('--normalize', default=2, help='whether/how to normalize the HRRs (0 = no, 1 = Z score, 2 = unit vector')
 
-    gen_and_save_subject_kernels(subj_id)
+    config = parser.parse_args()
+    print(config)
+
+    subj_id = int(config.subj_id)
+    normalize = int(config.normalize)
+
+    gen_and_save_subject_kernels(subj_id, normalize)
     #gen_and_save_subject_kernels_multisigma(subj_id)
 
     print 'Done'
