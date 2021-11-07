@@ -166,7 +166,8 @@ if __name__ == '__main__':
         q = {'play_key': play['_id']}
         #count = db.regressors_cannon_spriteEvery20.count(q)
         if agent_name == 'EMPA':
-            count = db.regressors.count(q)
+            #count = db.regressors.count(q)
+            count = db.empa_regressors.count(q)
         elif agent_name == 'DQN':
             count = db.dqn_regressors.count(q)
         else:
@@ -325,7 +326,8 @@ if __name__ == '__main__':
 
                 # insert regressor into mongo
                 #db.regressors_cannon_spriteEvery20.insert_one(reg)
-                db.regressors.insert_one(reg)
+                #db.regressors.insert_one(reg)
+                db.empa_regressors.insert_one(reg)
 
             elif agent_name == 'DQN':
 

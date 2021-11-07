@@ -9,7 +9,7 @@ source activate pedro
 
 # figure out collection based on agent
 if [ ${1} == "EMPA" ]; then
-    collection='regressors'
+    collection='empa_regressors'
 elif [ ${1} == "DQN" ]; then
     collection='dqn_regressors'
 else
