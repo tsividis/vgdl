@@ -46,7 +46,7 @@ if 'omchil' in socket.gethostname():
 else:
     # cluster
     client = MongoClient('holy7c22103.rc.fas.harvard.edu', 27017)
-    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
+    theoriesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'theories')
     # NCF cluster
     #client = MongoClient('holy7c22103.rc.fas.harvard.edu', 27017)
 print theoriesDir

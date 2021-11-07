@@ -50,8 +50,8 @@ if 'omchil' in socket.gethostname():
     videosDir = 'videos'
 else:
     # Cannon 
-    theoriesDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'theories')
-    layersDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'layers')
+    theoriesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'theories')
+    layersDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'layers')
     videosDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'videos')
     imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
     print theoriesDir, layersDir, videosDir, imagesDir

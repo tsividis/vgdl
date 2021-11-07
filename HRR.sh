@@ -16,7 +16,7 @@ N=100
 E=0.05
 nsamples=100
 batch_size=10
-normalize=1
+normalize=2
 type='kernel'
 
 # RDM
