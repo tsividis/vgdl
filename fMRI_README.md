@@ -281,6 +281,7 @@ Before running `fmri_agentReplay.sh`, make sure to check:
 - `fmri_agentReplay.sh`: subjects, games, memory, time limit (start small, e.g. subj 1 chase only)
 - `mongo`: `db.regressors.remove({})` (dump first, tar gzip and mv to `../backups`)
 - `fmri_agentReplay.py`: `db.regressors.insert` and `continue` are uncommented
+- rm gpu 
 
 
 EMPA postprocessing checklist 
@@ -389,3 +390,4 @@ Via `fmri_agentReplay.py`, called via `fmri_agentReplay.sh`. Checklist:
 - run `fmri_agentReplay.sh`
 - generate projections for GP/regression with `DQN_layers.py/sh` (homologous to `HRR.py/sh`)
 - run GP/regression with `fit_gp_CV.m/sh`, `fit_ridge_CV.m/sh` (Matlab repo)
+- `-p fasse_gpu --gres=gpu`

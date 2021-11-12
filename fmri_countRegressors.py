@@ -80,7 +80,8 @@ if __name__ == '__main__':
             nplays = db.plays.count(query)
             #nregs = db.plays_post.count(query)
             #nregs = db.regressors.count(query)
-            nregs = db.dqn_regressors.count(query)
+            #nregs = db.dqn_regressors.count(query)
+            nregs = db.empa_regressors.count(query)
             #nregs = db.regressors_cannon_spriteEvery20.count(query)
 
             print query
@@ -92,7 +93,8 @@ if __name__ == '__main__':
             for play in plays:
                 q = {'play_key': play['_id']}
                 #cnt = db.plays_post.count(q)
-                cnt = db.regressors.count(q)
+                #cnt = db.regressors.count(q)
+                cnt = db.empa_regressors.count(q)
                 #cnt = db.regressors_cannon_spriteEvery20.count(q)
                 if cnt != 1:
                     print '         wrong # of regressors for ', play['run_id'], play['block_id'], play['instance_id'], play['play_id'], ' = ', cnt
