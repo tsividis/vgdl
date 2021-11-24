@@ -11,7 +11,7 @@ if [[ `hostname` == *"Momchil"* ]]; then
     host='localhost'
     nplays_idx=4
 else
-    host='holy7c22103.rc.fas.harvard.edu'
+    host='holy7c22101.rc.fas.harvard.edu'
     nplays_idx=2
 fi
 

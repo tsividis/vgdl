@@ -56,7 +56,7 @@ else:
     imagesDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'images')
     print theoriesDir, layersDir, videosDir, imagesDir
     # NCF cluster
-    #client = MongoClient('holy7c22103.rc.fas.harvard.edu', 27017)
+    #client = MongoClient('holy7c22101.rc.fas.harvard.edu', 27017)
 
 if not os.path.exists(theoriesDir):
     os.makedirs(theoriesDir)

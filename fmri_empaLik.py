@@ -35,7 +35,7 @@ if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncfl
     pickleDir = 'pickle'
 else:
     # cluster
-    client = MongoClient('holy7c22103.rc.fas.harvard.edu', 27017)
+    client = MongoClient('holy7c22101.rc.fas.harvard.edu', 27017)
     matDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'mat')
     pickleDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'pickle')
 
