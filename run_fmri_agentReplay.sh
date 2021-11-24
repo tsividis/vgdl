@@ -33,7 +33,7 @@ fi
 curriculum_file=${curriculum_dir}/curriculum_${1}_${3}_*_subj=${2}*
 echo Curriculum file:
 ls -latch ${curriculum_file}
-#rm ${curriculum_file}
+rm ${curriculum_file}
 
 tot_plays=0
 

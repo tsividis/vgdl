@@ -19,7 +19,7 @@ subj_arg="${subjects[@]}" # stringify it
 #games=(  'vgfmri4_helper' 'vgfmri4_bait' 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' 'vgfmri4_zelda')
 #games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack')
 #games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' )
-#games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
+games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
 #games=( 'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=( 'vgfmri3_chase' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=(  'vgfmri3_bait'  'vgfmri3_zelda' )
@@ -28,7 +28,7 @@ subj_arg="${subjects[@]}" # stringify it
 #games=( 'vgfmri4_chase' 'vgfmri4_helper' 'vgfmri4_bait'  'vgfmri4_zelda' )
 #games=( 'vgfmri4_chase' 'vgfmri4_bait' 'vgfmri4_zelda')
 #games=( 'vgfmri3_chase')
-games=( 'vgfmri4_chase')
+#games=( 'vgfmri4_zelda')
 #games=( 'none' )
 
 echo ---------------- >> jobs.txt
@@ -47,7 +47,7 @@ for subj in ${subjects[*]}; do
         # OOM helper; up to 50000
         # sprites % 20: time 0-15 for all but lem & PA; for them, 1-15
         #
-        sbatch_output=`sbatch -p fasse --mem 20001 -t 2-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentReplay.sh ${agent} ${subj} ${game}"`
+        sbatch_output=`sbatch -p fasse --mem 90001 -t 5-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentReplay.sh ${agent} ${subj} ${game}"`
         #sbatch_output=`sbatch -p fasse_gpu --gres=gpu --mem 20001 -t 1-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentReplay.sh ${agent} ${subj} ${game}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
