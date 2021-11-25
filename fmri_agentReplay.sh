@@ -10,7 +10,8 @@ agent='EMPA'
 #subjects=( 1 2 3 4 5 6 7 8 9 10 11 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 1  )
 #subjects=( 1 9          10  11 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=(  12 13 14 15 16 17 18 19 20 21 22 23 24 25 26  27 28 29 30 31 32)  #  e.g. subjects=( 1 2 5 6 7 10 )
+#subjects=(  12 13 14 15 16 17 18 19 20 21 22 23 24 25 26  27 28 29 30 31 32)  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=(  32 )
 #subjects=(  16 17 18 19 20 21 22 23 24 25 26  27 28 29 30 31 32)  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
@@ -19,7 +20,9 @@ subj_arg="${subjects[@]}" # stringify it
 #games=(  'vgfmri4_helper' 'vgfmri4_bait' 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' 'vgfmri4_zelda')
 #games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack')
 #games=( 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' )
-games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
+#games=( 'vgfmri4_lemmings' 'vgfmri4_avoidgeorge' )
+games=( 'vgfmri4_lemmings'  )
+#games=(  'vgfmri4_avoidgeorge' )
 #games=( 'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=( 'vgfmri3_chase' 'vgfmri3_bait'  'vgfmri3_zelda' )
 #games=(  'vgfmri3_bait'  'vgfmri3_zelda' )

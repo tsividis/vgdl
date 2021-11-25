@@ -71,7 +71,7 @@ if __name__ == '__main__':
             games = ['vgfmri3_chase', 'vgfmri3_helper', 'vgfmri3_bait', 'vgfmri3_lemmings', 'vgfmri3_plaqueAttack', 'vgfmri3_zelda']
         else:
             games = ['vgfmri4_chase', 'vgfmri4_helper', 'vgfmri4_bait', 'vgfmri4_lemmings', 'vgfmri4_avoidgeorge', 'vgfmri4_zelda']
-        games = ['vgfmri4_zelda']
+        games = ['vgfmri4_helper']
 
         for game in games:
             query['game_name'] = game

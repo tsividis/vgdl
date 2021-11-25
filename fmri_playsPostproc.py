@@ -18,6 +18,8 @@ from vgdl.core import keyPresses as keyNames
 from IPython import embed
 from vgdl.main_agent import Agent
 import cPickle, cloudpickle
+import utils
+from vgdl.theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, NoveltyRule, generateTheoryFromGame
 
 import pygame
 
@@ -27,13 +29,7 @@ import pygame
 # * - optional
 # copied from fmri_makeMovie.py
 
-if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
-    # local on my Mac, or on a login / VDI node
-    client = MongoClient('localhost', 27017)
-else:
-    # cluster
-    client = MongoClient('holy7c22101.rc.fas.harvard.edu', 27017)
-
+client = utils.get_mongo_client()
 
 db = client['heroku_7lzprs54']
 
@@ -58,6 +54,68 @@ def is_int(s):
     except ValueError:
         return False
     assert False
+
+
+def get_theory_stype_to_state_stype_dict(theory, state):
+    color_to_theory_stype = {s.color: s.className for s in theory.spriteSet}
+    color_to_state_stype = {list(ss.values())[0]['colorName']: key for key, ss in state['objects'].iteritems() if len(ss) > 0}
+    theory_stype_to_state_stype = {}
+    for color, theory_stype in color_to_theory_stype.iteritems():
+        if color in color_to_state_stype:
+            state_stype = color_to_state_stype[color]
+            theory_stype_to_state_stype[theory_stype] = state_stype
+    return theory_stype_to_state_stype
+
+def get_active_sprites(state, stype):
+    if stype in state['objects'].keys():
+        return state['objects'][stype]
+    return []
+
+def get_starting_stype_n(theory, state):
+    theory_stype_to_state_stype = get_theory_stype_to_state_stype_dict(theory, state)
+
+    # copy pasted from WBP.y __init__
+	## Used to track subgoals. If we start planning in an episode with, say, 8 object tokens of a type we want to get to 0 of, subgoal progress occurs if any node we open has <8 of them.
+    starting_stype_n = {}
+    for term in theory.terminationSet:
+        if isinstance(term, SpriteCounterRule):
+            stype = theory_stype_to_state_stype.get(term.termination.stype)
+            if stype is None:
+                continue
+            objs = get_active_sprites(state, stype)
+            n_stypes = len(objs)
+            starting_stype_n[stype] = n_stypes
+        elif isinstance(term, MultiSpriteCounterRule):
+            stypes = [theory_stype_to_state_stype[stype] for stype in term.termination.stypes if stype in theory_stype_to_state_stype.keys()]
+            n_stypes = sum([len(get_active_sprites(state, stype)) for stype in stypes])
+            starting_stype_n[tuple(stypes)] = n_stypes
+
+    return starting_stype_n
+
+
+def check_for_subgoal_progress(theory, prev_state, state):
+    starting_stype_n = get_starting_stype_n(theory, prev_state)
+
+    theory_stype_to_state_stype = get_theory_stype_to_state_stype_dict(theory, state)
+
+    # copy pasted from WBP.py check_node_for_subgoal_progress
+    for term in theory.terminationSet:
+        if isinstance(term, SpriteCounterRule) and term.termination.win==True:
+            stype = theory_stype_to_state_stype.get(term.termination.stype)
+            if stype is None:
+                continue
+            objs = get_active_sprites(state, stype)
+            n_stypes = len(objs)
+            if stype in starting_stype_n.keys() and starting_stype_n[stype] > n_stypes:
+                return True
+
+        elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
+            stypes = [theory_stype_to_state_stype[stype] for stype in term.termination.stypes if stype in theory_stype_to_state_stype.keys()]
+            n_stypes = sum([len(get_active_sprites(state, stype)) for stype in stypes])
+            if tuple(stypes) in starting_stype_n.keys() and starting_stype_n[tuple(stypes)] > n_stypes:
+                return True
+
+    return False
 
 
 def playsPostproc(subj_id):
@@ -114,20 +172,20 @@ def playsPostproc(subj_id):
 
         q = {'play_key': play['_id']}
         print q
-        print db.plays_post.count(q)
-        if db.plays_post.count(q) > 0:
+        print db.empa_plays_post.count(q)
+        if db.empa_plays_post.count(q) > 0:
             print '..........skipping: already computed'
             continue
 
         # get regressors
         q = {'play_key': play['_id']}
         print q
-        print db.regressors.count(q)
-        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
-        if db.regressors.count(q) == 0:
+        print db.empa_regressors.count(q)
+        assert db.empa_regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.empa_regressors.count(q) == 0:
             print 'skipping (e.g. Sokoban)'
             continue
-        regs = db.regressors.find(q).sort('ts', -1)
+        regs = db.empa_regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
@@ -431,9 +489,16 @@ def playsPostproc(subj_id):
 
             avatar_collision_flag.append(acf)
 
+            # extract rewards
+            #
+
             win.append(state['win'])
             score.append(state['score'])
             ended.append(state['ended'])
+
+            # extract subgoals
+            #
+            embed()
 
 
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
@@ -581,7 +646,7 @@ def playsPostproc(subj_id):
         play_post['keyups'] = keyups
         play_post['keydowns'] = keydowns
 
-        db.plays_post.insert_one(play_post)
+        #db.empa_plays_post.insert_one(play_post)
         
     print 'done!'
     plays.close()
