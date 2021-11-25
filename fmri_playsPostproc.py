@@ -98,6 +98,11 @@ def check_for_subgoal_progress(theory, prev_state, state):
 
     theory_stype_to_state_stype = get_theory_stype_to_state_stype_dict(theory, state)
 
+    ending_stype_n = get_starting_stype_n(theory, state)
+    print('check_for_subgoal_progress:')
+    print('before', starting_stype_n)
+    print('after', ending_stype_n)
+
     # copy pasted from WBP.py check_node_for_subgoal_progress
     for term in theory.terminationSet:
         if isinstance(term, SpriteCounterRule) and term.termination.win==True:
@@ -106,15 +111,22 @@ def check_for_subgoal_progress(theory, prev_state, state):
                 continue
             objs = get_active_sprites(state, stype)
             n_stypes = len(objs)
+            print('1 term', term, n_stypes)
             if stype in starting_stype_n.keys() and starting_stype_n[stype] > n_stypes:
+                print('           1  subgoal!')
+                embed()
                 return True
 
         elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
             stypes = [theory_stype_to_state_stype[stype] for stype in term.termination.stypes if stype in theory_stype_to_state_stype.keys()]
             n_stypes = sum([len(get_active_sprites(state, stype)) for stype in stypes])
+            print('2 term', term, n_stypes)
             if tuple(stypes) in starting_stype_n.keys() and starting_stype_n[tuple(stypes)] > n_stypes:
+                print('           2  subgoal!')
+                embed()
                 return True
 
+    print('           ...nosubgoal')
     return False
 
 
@@ -388,6 +400,7 @@ def playsPostproc(subj_id):
         win = []
         score = []
         ended = []
+        subgoal_flag = []
 
         sprite_poss = [] # sprite positions in each state, as UUID => x, y
         grids = [] # grid squares in each state, as (x,y) => UUID
@@ -498,7 +511,15 @@ def playsPostproc(subj_id):
 
             # extract subgoals
             #
-            embed()
+            if t <= 1:
+                # off-by-one from core.py vs. EMPA.py (skips initial state); also, need previous theory & state
+                subgoal_flag.append(0)
+            else:
+                prev_theory = reg['regressors']['theory'][t - 2][0] # off-by-one
+                prev_state = states[t - 1]
+                subgoal = check_for_subgoal_progress(prev_theory, prev_state, state)
+                subgoal_flag.append(0)
+                #embed()
 
 
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
@@ -522,6 +543,7 @@ def playsPostproc(subj_id):
         play_post['win'] = win 
         play_post['score'] = score
         play_post['ended'] = ended
+        play_post['subgoal_flag'] = subgoal_flag # whether we reached a subgoal
         play_post['play_post_ts'] = time.time() # for sanity checks
         play_post['play_post_dts'] = datetime.now().strftime("%m/%d/%Y, %H:%M:%S") # for sanity checks
 
