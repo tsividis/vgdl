@@ -20,6 +20,7 @@ from vgdl.main_agent import Agent
 import cPickle, cloudpickle
 import utils
 from vgdl.theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, NoveltyRule, generateTheoryFromGame
+from fmri_agentReplay import chelsea_fix_states_avatar_only
 
 import pygame
 
@@ -58,7 +59,9 @@ def is_int(s):
 
 def get_theory_stype_to_state_stype_dict(theory, state):
     color_to_theory_stype = {s.color: s.className for s in theory.spriteSet}
+    print('color_to_theory_stype', color_to_theory_stype)
     color_to_state_stype = {list(ss.values())[0]['colorName']: key for key, ss in state['objects'].iteritems() if len(ss) > 0}
+    print('color_to_state_stype', color_to_state_stype)
     theory_stype_to_state_stype = {}
     for color, theory_stype in color_to_theory_stype.iteritems():
         if color in color_to_state_stype:
@@ -66,28 +69,43 @@ def get_theory_stype_to_state_stype_dict(theory, state):
             theory_stype_to_state_stype[theory_stype] = state_stype
     return theory_stype_to_state_stype
 
+
 def get_active_sprites(state, stype):
     if stype in state['objects'].keys():
         return state['objects'][stype]
     return []
 
+
+def get_sprite_counter_rule_sprite_count(stype, state, theory_stype_to_state_stype):
+    if stype not in theory_stype_to_state_stype:
+        # the sprite type is not present in the state -> 0 count
+        return 0
+    objs = get_active_sprites(state, theory_stype_to_state_stype[stype])
+    return len(objs)
+
+
+def get_multi_sprite_counter_rule_sprite_count(stypes, state, theory_stype_to_state_stype):
+    #stypes = [theory_stype_to_state_stype[stype] for stype in term.termination.stypes if stype in theory_stype_to_state_stype.keys()]
+    n_stypes = sum([len(get_active_sprites(state, theory_stype_to_state_stype[stype])) for stype in stypes if stype in theory_stype_to_state_stype])
+    return n_stypes
+
+
 def get_starting_stype_n(theory, state):
     theory_stype_to_state_stype = get_theory_stype_to_state_stype_dict(theory, state)
+    print('theory_stype_to_state_stype', theory_stype_to_state_stype)
 
     # copy pasted from WBP.y __init__
 	## Used to track subgoals. If we start planning in an episode with, say, 8 object tokens of a type we want to get to 0 of, subgoal progress occurs if any node we open has <8 of them.
     starting_stype_n = {}
     for term in theory.terminationSet:
         if isinstance(term, SpriteCounterRule):
-            stype = theory_stype_to_state_stype.get(term.termination.stype)
-            if stype is None:
-                continue
-            objs = get_active_sprites(state, stype)
-            n_stypes = len(objs)
+            #stype = theory_stype_to_state_stype.get(term.termination.stype)
+            stype = term.termination.stype
+            n_stypes = get_sprite_counter_rule_sprite_count(stype, state, theory_stype_to_state_stype)
             starting_stype_n[stype] = n_stypes
         elif isinstance(term, MultiSpriteCounterRule):
-            stypes = [theory_stype_to_state_stype[stype] for stype in term.termination.stypes if stype in theory_stype_to_state_stype.keys()]
-            n_stypes = sum([len(get_active_sprites(state, stype)) for stype in stypes])
+            stypes = term.termination.stypes
+            n_stypes = get_multi_sprite_counter_rule_sprite_count(stypes, state, theory_stype_to_state_stype)
             starting_stype_n[tuple(stypes)] = n_stypes
 
     return starting_stype_n
@@ -97,6 +115,7 @@ def check_for_subgoal_progress(theory, prev_state, state):
     starting_stype_n = get_starting_stype_n(theory, prev_state)
 
     theory_stype_to_state_stype = get_theory_stype_to_state_stype_dict(theory, state)
+    print('theory_stype_to_state_stype state', theory_stype_to_state_stype)
 
     ending_stype_n = get_starting_stype_n(theory, state)
     print('check_for_subgoal_progress:')
@@ -106,24 +125,19 @@ def check_for_subgoal_progress(theory, prev_state, state):
     # copy pasted from WBP.py check_node_for_subgoal_progress
     for term in theory.terminationSet:
         if isinstance(term, SpriteCounterRule) and term.termination.win==True:
-            stype = theory_stype_to_state_stype.get(term.termination.stype)
-            if stype is None:
-                continue
-            objs = get_active_sprites(state, stype)
-            n_stypes = len(objs)
-            print('1 term', term, n_stypes)
+            stype = term.termination.stype
+            n_stypes = get_sprite_counter_rule_sprite_count(stype, state, theory_stype_to_state_stype)
+            print('1 term', term.termination.stype, n_stypes)
             if stype in starting_stype_n.keys() and starting_stype_n[stype] > n_stypes:
                 print('           1  subgoal!')
-                embed()
                 return True
 
         elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
-            stypes = [theory_stype_to_state_stype[stype] for stype in term.termination.stypes if stype in theory_stype_to_state_stype.keys()]
-            n_stypes = sum([len(get_active_sprites(state, stype)) for stype in stypes])
-            print('2 term', term, n_stypes)
+            stypes = term.termination.stypes
+            n_stypes = get_multi_sprite_counter_rule_sprite_count(stypes, state, theory_stype_to_state_stype)
+            print('2 term', term.termination.stypes, n_stypes)
             if tuple(stypes) in starting_stype_n.keys() and starting_stype_n[tuple(stypes)] > n_stypes:
                 print('           2  subgoal!')
-                embed()
                 return True
 
     print('           ...nosubgoal')
@@ -210,6 +224,9 @@ def playsPostproc(subj_id):
         zkeystates = play['zkeystates']
         keystates = core.VGDLParser.decompress(zkeystates)
         keystates = keystates['keystates'] # dummy dict
+
+        # Fix game & state colors for subjects 12..32  ...
+        chelsea_fix_states_avatar_only(states, game, subj_id, play)
 
         # load theories from disk
         with open(reg['regressors']['theory_filename'], 'r') as f:
@@ -402,6 +419,9 @@ def playsPostproc(subj_id):
         ended = []
         subgoal_flag = []
 
+        state_default_colors = None
+        prev_state_default_colors = None
+
         sprite_poss = [] # sprite positions in each state, as UUID => x, y
         grids = [] # grid squares in each state, as (x,y) => UUID
         assert(len(states) == len(keystates))
@@ -426,6 +446,12 @@ def playsPostproc(subj_id):
             effects.append(state['effectListLen'])
             effectsByCol.append(len(state['effectListByColor']))
             sprite_groups.append(state['sprite_groupsLen'])
+
+            # set the game state, using default colors (just like EMPA -- see environment.py)
+            #
+            g.setFullState(state, cheap=False, default_colors=True)
+            prev_state_default_colors = state_default_colors
+            state_default_colors = g.getFullState() # used to cross reference EMPA and states sprites by color
 
             # extract stuff from sprites themselves
             #
@@ -516,10 +542,15 @@ def playsPostproc(subj_id):
                 subgoal_flag.append(0)
             else:
                 prev_theory = reg['regressors']['theory'][t - 2][0] # off-by-one
-                prev_state = states[t - 1]
-                subgoal = check_for_subgoal_progress(prev_theory, prev_state, state)
+                subgoal = check_for_subgoal_progress(
+                        prev_theory, 
+                        prev_state_default_colors, 
+                        state_default_colors)
                 subgoal_flag.append(0)
-                #embed()
+
+                if t + 2 == len(states):
+                    print('second to last one')
+                    #embed()
 
 
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM

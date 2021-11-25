@@ -65,7 +65,7 @@ if not os.path.exists(layersDir):
 
 db = client['heroku_7lzprs54']
 
-def fix_states(states, game, subj_id, play):
+def chelsea_fix_states_avatar_only(states, game, subj_id, play):
     # Chelsea's color mess up fix
     # change avatar color to default color
     if subj_id not in ['12', '13', '14', '15', '16', '17']:
@@ -184,7 +184,7 @@ if __name__ == '__main__':
         zstates = play['zstates']
         states = core.VGDLParser.decompress(zstates)
         states = states['states'] # dummy dict
-        fix_states(states, game, subj_id, play)
+        chelsea_fix_states_avatar_only(states, game, subj_id, play)
 
         zkeystates = play['zkeystates']
         keystates = core.VGDLParser.decompress(zkeystates)
