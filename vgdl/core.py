@@ -1079,6 +1079,9 @@ class BasicGame(object):
                 #print 'as_string', as_string
                 while pos in ss:
                     # two objects of the same type in the same location, we need to disambiguate
+                    # TODO FIXME (mom) BUG! does not work if as_string=True....
+                    # luckily that doesn't matter during replay because we are replaying keys, using the same RNG seed => the game ends up being the same
+                    # But be careful when using, e.g. to count sprites in lemmings
                     pos = (pos, None)
                 if(as_string):
                     ss[str(pos)] = attrs
