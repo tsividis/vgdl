@@ -59,9 +59,7 @@ def is_int(s):
 
 def get_theory_stype_to_state_stype_dict(theory, state):
     color_to_theory_stype = {s.color: s.className for s in theory.spriteSet}
-    print('color_to_theory_stype', color_to_theory_stype)
     color_to_state_stype = {list(ss.values())[0]['colorName']: key for key, ss in state['objects'].iteritems() if len(ss) > 0}
-    print('color_to_state_stype', color_to_state_stype)
     theory_stype_to_state_stype = {}
     for color, theory_stype in color_to_theory_stype.iteritems():
         if color in color_to_state_stype:
@@ -76,14 +74,12 @@ def get_active_sprites_from_objects(state, stype):
         objs = state['objects'][stype]
     else:
         objs = []
-    #print('get_active_sprites_from_objects', stype, objs)
     return objs
 
 
 def get_active_sprites_from_list(state, stype):
     # include sprites there were killed; no way to cross-reference them with the kill_list from here...
     objs = [s for s in state['list'] if s.startswith(stype)] 
-    #print('get_active_sprites_from_list', stype, objs)
     return objs
 
 
@@ -103,7 +99,6 @@ def get_multi_sprite_counter_rule_sprite_count(stypes, state, theory_stype_to_st
 
 def get_starting_stype_n(theory, state, get_active_sprites):
     theory_stype_to_state_stype = get_theory_stype_to_state_stype_dict(theory, state)
-    print('theory_stype_to_state_stype', theory_stype_to_state_stype)
 
     # copy pasted from WBP.y __init__
 	## Used to track subgoals. If we start planning in an episode with, say, 8 object tokens of a type we want to get to 0 of, subgoal progress occurs if any node we open has <8 of them.
@@ -123,37 +118,26 @@ def get_starting_stype_n(theory, state, get_active_sprites):
 
 
 def check_for_subgoal_progress(theory, prev_state, state, get_active_sprites):
+    # Get initial sprites type counts (from previous state)
     starting_stype_n = get_starting_stype_n(theory, prev_state, get_active_sprites)
 
     theory_stype_to_state_stype = get_theory_stype_to_state_stype_dict(theory, state)
-    print('theory_stype_to_state_stype state', theory_stype_to_state_stype)
 
-    ending_stype_n = get_starting_stype_n(theory, state, get_active_sprites)
-    print('check_for_subgoal_progress:', get_active_sprites)
-    print('before', starting_stype_n)
-    print('after', ending_stype_n)
-
+    # Get current sprite type counts (from current state), see if any relevant counts decreased
     # copy pasted from WBP.py check_node_for_subgoal_progress
     for term in theory.terminationSet:
         if isinstance(term, SpriteCounterRule) and term.termination.win==True:
             stype = term.termination.stype
             n_stypes = get_sprite_counter_rule_sprite_count(stype, state, theory_stype_to_state_stype, get_active_sprites)
-            print('1 term', term.termination.stype, n_stypes)
             if stype in starting_stype_n.keys() and starting_stype_n[stype] > n_stypes:
-                print('           1  subgoal!')
-                #embed()
                 return True
 
         elif isinstance(term, MultiSpriteCounterRule) and term.termination.win==True:
             stypes = term.termination.stypes
             n_stypes = get_multi_sprite_counter_rule_sprite_count(stypes, state, theory_stype_to_state_stype, get_active_sprites)
-            print('2 term', term.termination.stypes, n_stypes)
             if tuple(stypes) in starting_stype_n.keys() and starting_stype_n[tuple(stypes)] > n_stypes:
-                print('           2  subgoal!')
-                #embed()
                 return True
 
-    print('           ...nosubgoal')
     return False
 
 
@@ -565,39 +549,23 @@ def playsPostproc(subj_id):
                 # Pro: includes all sprites, including overlapping ones
                 # Con: includes dead sprites as well, and cannot cross reference with state['kill_list_ID'] (except when there are no sprites left of a given kind, in which case it correctly counts them as 0)
                 # => useful for transforms, pretty conservative
-                print('SUBGOAL 1: ', get_active_sprites_from_list)
                 subgoal1 = check_for_subgoal_progress(
                         prev_theory, 
                         prev_state_default_colors, 
                         state_default_colors,
                         get_active_sprites_from_list)
-                subgoal_flag1.append(0)
+                subgoal_flag1.append(subgoal1)
 
                 # version 2: use state['objects'] for sprites
                 # Pro: excludes dead sprites
                 # Con: does not account for overlapping sprites
                 # => might want to cross-reference with kill_list, to exclude false positives (e.g. sprite disappeared behind another sprite)
-                print('SUBGOAL 2: ', get_active_sprites_from_objects)
                 subgoal2 = check_for_subgoal_progress(
                         prev_theory, 
                         prev_state_default_colors, 
                         state_default_colors,
                         get_active_sprites_from_objects)
-                subgoal_flag2.append(0)
-
-                # debugging
-                if t + 2 == len(states):
-                    print('near the end', t, len(states))
-                    #embed()
-                if len(state['kill_list_ID']) > 0:
-                    print('kill_list')
-                    #embed()
-                if subgoal1:
-                    print('external sg 1')
-                    #embed()
-                if subgoal2:
-                    print('external sg 2')
-                    #embed()
+                subgoal_flag2.append(subgoal2)
 
 
         new_sprites[0] = 0 # let that be absorbed by play start regressor; o/w, it will dominate GLM
@@ -747,7 +715,7 @@ def playsPostproc(subj_id):
         play_post['keyups'] = keyups
         play_post['keydowns'] = keydowns
 
-        #db.empa_plays_post.insert_one(play_post)
+        db.empa_plays_post.insert_one(play_post)
         
     print 'done!'
     plays.close()
