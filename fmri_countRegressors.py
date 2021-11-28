@@ -71,7 +71,7 @@ if __name__ == '__main__':
             games = ['vgfmri3_chase', 'vgfmri3_helper', 'vgfmri3_bait', 'vgfmri3_lemmings', 'vgfmri3_plaqueAttack', 'vgfmri3_zelda']
         else:
             games = ['vgfmri4_chase', 'vgfmri4_helper', 'vgfmri4_bait', 'vgfmri4_lemmings', 'vgfmri4_avoidgeorge', 'vgfmri4_zelda']
-        games = ['vgfmri4_helper']
+        #games = ['vgfmri4_helper']
 
         for game in games:
             query['game_name'] = game
@@ -94,8 +94,9 @@ if __name__ == '__main__':
             for play in plays:
                 q = {'play_key': play['_id']}
                 #cnt = db.plays_post.count(q)
+                cnt = db.empa_plays_post.count(q)
                 #cnt = db.regressors.count(q)
-                cnt = db.empa_regressors.count(q)
+                #cnt = db.empa_regressors.count(q)
                 #cnt = db.regressors_cannon_spriteEvery20.count(q)
                 if cnt != 1:
                     print '         wrong # of regressors for ', play['run_id'], play['block_id'], play['instance_id'], play['play_id'], ' = ', cnt

@@ -540,8 +540,8 @@ def playsPostproc(subj_id):
             #
             if t <= 1:
                 # off-by-one from core.py vs. EMPA.py (skips initial state); also, need previous theory & state
-                subgoal_flag1.append(0)
-                subgoal_flag2.append(0)
+                subgoal_flag1.append(False)
+                subgoal_flag2.append(False)
             else:
                 prev_theory = reg['regressors']['theory'][t - 2][0] # off-by-one
 
