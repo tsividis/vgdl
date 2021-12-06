@@ -5,6 +5,8 @@
 # pip install semopy==2.0.0a4
 # follow http://semopy.com/tutorial.html not https://pypi.org/project/semopy/
 
+# source activate sem
+
 # old:
 # had to vi ~/anaconda3/lib/python3.7/site-packages/semopy/model_base.py 
 # and sys.path.append('/Users/momchil/anaconda3/lib/python3.7/site-packages/semopy')
@@ -14,19 +16,18 @@ from semopy import stats
 import numpy as np
 import os
 import pandas as pd
-from IPython import embed
 import scipy.io
 from scipy.stats import wishart
 
 
 names = ['top_down', 'bottom_up']
 
-descs_confirm = [
+descs_confirm_no_ambiguous = [
         # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
          """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
              SOG ~ MOG
              MOG ~ SFG + IFGoperc
-             FFG ~ IFGtriang + IFGoperc + SOG + IOG
+             FFG ~ IFGtriang + MFG + SOG + IOG
              LING ~ MOG + SOG + FFG + IOG
              IOG ~ MOG + IFGoperc
              CUN ~ CAL + SOG + MOG + FFG
@@ -44,6 +45,207 @@ descs_confirm = [
          ]
 
 
+descs_confirm_bidirectional_ambiguous = [
+        # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
+         """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
+             SOG ~ MOG
+             MOG ~ SFG + IFGoperc
+             FFG ~ IFGtriang + MFG + SOG + IOG
+             LING ~ MOG + SOG + FFG + IOG
+             IOG ~ MOG + IFGoperc
+             CUN ~ CAL + SOG + MOG + FFG
+             CAL ~ SOG + LING + FFG
+             MFG ~ SFG + IFGoperc + IFGtriang
+             SFG ~ MFG + IFGtriang
+             IFGoperc ~ MFG + IFGtriang
+             IFGtriang ~ IFGoperc + MFG + SFG
+         """,
+        # tetrad IMAGES winner for GLM 120 beta series (@ theory updates + 2s)
+         """ SMA ~ SFG + MFG + IFGoperc
+             SFG ~ MFG
+             MFG ~ SOG + IFGoperc
+             IFGoperc ~ FFG + IOG
+             IFGtriang ~ MFG + IFGoperc + SFG + SMA + CUN
+             SOG ~ IFGoperc + MOG + IOG + CUN
+             IOG ~ FFG + MOG + LING + CUN
+             MOG ~ FFG
+             FFG ~ MOG + LING + CAL
+             LING ~ FFG + CAL
+             CAL ~ LING + CUN + FFG
+             CUN ~ CAL
+         """,
+         ]
+
+
+descs_confirm_ambiguous_from_the_other = [
+        # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
+         """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
+             SOG ~ MOG
+             MOG ~ SFG + IFGoperc
+             FFG ~ IFGtriang + MFG + SOG + IOG
+             LING ~ MOG + SOG + FFG + IOG
+             IOG ~ MOG + IFGoperc
+             CUN ~ CAL + SOG + MOG + FFG
+             CAL ~ SOG + LING + FFG
+             MFG ~ IFGoperc
+             SFG ~ MFG
+             IFGtriang ~ IFGoperc + MFG + SFG
+         """,
+        # tetrad IMAGES winner for GLM 120 beta series (@ theory updates + 2s)
+         """ SMA ~ SFG + MFG + IFGoperc
+             SFG ~ MFG
+             MFG ~ SOG + IFGoperc
+             IFGoperc ~ FFG + IOG
+             IFGtriang ~ MFG + IFGoperc + SFG + SMA + CUN
+             SOG ~ IFGoperc + MOG + IOG + CUN
+             IOG ~ FFG + MOG + LING + CUN
+             FFG ~ MOG
+             LING ~ FFG
+             CAL ~ LING + FFG
+             CUN ~ CAL
+         """,
+         ]
+
+descs_confirm_ambiguous_opposite_from_other = [
+        # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
+         """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
+             SOG ~ MOG
+             MOG ~ SFG + IFGoperc
+             FFG ~ IFGtriang + MFG + SOG + IOG
+             LING ~ MOG + SOG + FFG + IOG
+             IOG ~ MOG + IFGoperc
+             CUN ~ CAL + SOG + MOG + FFG
+             CAL ~ SOG + LING + FFG
+             MFG ~ SFG + IFGtriang
+             SFG ~ IFGtriang
+             IFGoperc ~ MFG + IFGtriang
+         """,
+        # tetrad IMAGES winner for GLM 120 beta series (@ theory updates + 2s)
+         """ SMA ~ SFG + MFG + IFGoperc
+             SFG ~ MFG
+             MFG ~ SOG + IFGoperc
+             IFGoperc ~ FFG + IOG
+             IFGtriang ~ MFG + IFGoperc + SFG + SMA + CUN
+             SOG ~ IFGoperc + MOG + IOG + CUN
+             IOG ~ FFG + MOG + LING + CUN
+             LING ~ CAL
+             FFG ~ MOG + LING + CAL
+             CAL ~ CUN
+         """,
+         ]
+
+
+descs_confirm_close = [
+        # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
+         """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
+             SOG ~ MOG
+             MOG ~ SFG + IFGoperc
+             FFG ~ IFGtriang + MFG + SOG + IOG
+             LING ~ MOG + SOG + FFG + IOG
+             IOG ~ MOG + IFGoperc
+             CUN ~ CAL + SOG + MOG + FFG
+             CAL ~ SOG + LING + FFG
+             MFG ~ SFG + IFGtriang
+             SFG ~ IFGtriang
+             IFGoperc ~ MFG + IFGtriang
+         """,
+        # tetrad IMAGES winner for GLM 120 beta series (@ theory updates + 2s)
+         """ SMA ~ SFG + MFG + IFGoperc
+             SFG ~ MFG
+             MFG ~ SOG + IFGoperc
+             IFGoperc ~ FFG + IOG
+             IFGtriang ~ MFG + IFGoperc + SFG + SMA + CUN
+             SOG ~ IFGoperc + MOG + IOG + CUN
+             IOG ~ FFG + MOG + LING + CUN
+             LING ~ CAL
+             FFG ~ LING + CAL
+             CAL ~ CUN 
+             MOG ~ FFG
+         """,
+         ]
+
+descs_confirm_test = [
+        # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
+         """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
+             SOG ~ MOG
+             MOG ~ SFG + IFGoperc
+             FFG ~ IFGtriang + MFG + SOG + IOG
+             LING ~ MOG + SOG + FFG + IOG
+             IOG ~ MOG + IFGoperc
+             CUN ~ CAL + SOG + MOG + FFG
+             CAL ~ SOG + LING + FFG
+             MFG ~ SFG + IFGtriang
+             SFG ~ IFGtriang
+             IFGoperc ~ MFG + IFGtriang
+         """,
+        # tetrad IMAGES winner for GLM 120 beta series (@ theory updates + 2s)
+         """ SMA ~ SFG + MFG + IFGoperc
+             SFG ~ MFG
+             MFG ~ SOG + IFGoperc
+             IFGoperc ~ FFG + IOG
+             IFGtriang ~ MFG + IFGoperc + SFG + SMA + CUN
+             SOG ~ IFGoperc + MOG + IOG + CUN
+             IOG ~ FFG + MOG + LING + CUN
+             LING ~ CAL
+             FFG ~ LING + CAL
+             CAL ~ CUN 
+             MOG ~ FFG
+         """,
+         ]
+
+
+descs_confirm_no_ambiguous_in_either = [
+        # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
+         """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
+             SOG ~ MOG
+             MOG ~ SFG + IFGoperc
+             FFG ~ IFGtriang + MFG + SOG + IOG
+             LING ~ MOG + SOG + IOG
+             IOG ~ MOG + IFGoperc
+             CUN ~ SOG + MOG + FFG
+             CAL ~ SOG
+         """,
+        # tetrad IMAGES winner for GLM 120 beta series (@ theory updates + 2s)
+         """ SMA ~ SFG + MFG + IFGoperc
+             MFG ~ SOG
+             IFGoperc ~ FFG + IOG
+             IFGtriang ~ SMA + CUN
+             SOG ~ IFGoperc + MOG + IOG + CUN
+             IOG ~ FFG + MOG + LING + CUN
+         """,
+         ]
+
+
+descs_confirm_close2 = [
+        # tetrad IMAGES winner for GLM 109 beta series (@ theory updates)
+         """ SMA ~ SFG + MFG + IFGoperc + IFGtriang + SOG
+             SOG ~ MOG
+             MOG ~ SFG + IFGoperc
+             FFG ~ IFGtriang + MFG + SOG + IOG
+             LING ~ MOG + SOG + FFG + IOG
+             IOG ~ MOG + IFGoperc
+             CUN ~ CAL + SOG + MOG + FFG
+             CAL ~ SOG + LING + FFG
+             MFG ~ SFG
+             SFG ~ IFGtriang
+             IFGtriang ~ MFG
+             IFGoperc ~ MFG + IFGtriang
+         """,
+        # tetrad IMAGES winner for GLM 120 beta series (@ theory updates + 2s)
+         """ SMA ~ SFG + MFG + IFGoperc
+             SFG ~ MFG
+             MFG ~ SOG + IFGoperc
+             IFGoperc ~ FFG + IOG
+             IFGtriang ~ MFG + IFGoperc + SFG + SMA + CUN
+             SOG ~ IFGoperc + MOG + IOG + CUN
+             IOG ~ FFG + MOG + LING + CUN
+             LING ~ CAL
+             FFG ~ LING + CAL + MOG
+             CAL ~ CUN 
+         """,
+         ]
+
+descs_confirm = descs_confirm_close
 
 def gen_descs_helper(cur, cand, ix, descs):
 
@@ -88,7 +290,7 @@ descs = descs_confirm
 
 
 
-for dirname in ['GLM_109', 'GLM_120']:
+for dirname in ['GLM_109', 'GLM_120', 'GLM_121', 'GLM_122']:
 
     print(dirname)
 
@@ -110,7 +312,7 @@ for dirname in ['GLM_109', 'GLM_120']:
 
             model = Model(descs[j])
 
-            filepath = os.path.join(dirname, files[i])
+            filepath = os.path.join('tetrad', dirname, files[i])
             data = pd.read_csv(filepath, sep='\t')
 
             opt_res = model.fit(data)
@@ -119,10 +321,10 @@ for dirname in ['GLM_109', 'GLM_120']:
             # WARNING: all of these are up to a proportionality constant that DIFFERS ACROSS SUBJECTS => do not use for BMS
             #
             '''
-            logliks[i,j] = stats.calc_likelihood(model) # note up to proportionality constant, b/c w.r.t. saturated model, but that's the same for all models so it's fine
-            ks[i,j], ns[i,j] = len(model.param_vals), model.mx_data.shape[0]
+            loglik = stats.calc_likelihood(model) # note up to proportionality constant, b/c w.r.t. saturated model, but that's the same for all models so it's fine
+            k, n = len(model.param_vals), model.mx_data.shape[0]
             bic = stats.calc_bic(model)
-            lmes[i,j] = -0.5 * bic
+            lme = -0.5 * bic
             '''
 
             # calculate likelihood manually, following https://en.wikipedia.org/wiki/Wishart_distribution
@@ -147,7 +349,7 @@ for dirname in ['GLM_109', 'GLM_120']:
             bics[i,j] = bic 
             lmes[i,j] = lme
 
-            print('subj=', i, ' mod=', j, filepath, ' k=', k, ' n=', n, ' loglik=', logliks[i,j])
+            print('subj=', i, ' mod=', j, filepath, ' p=', p, ' k=', k, ' n=', n, ' loglik=', logliks[i,j])
             print(model.mx_cov.shape)
 
     print(lmes.shape)
@@ -158,7 +360,8 @@ for dirname in ['GLM_109', 'GLM_120']:
          'ks': ks,
          'ns': ns,
          'files': files,
-         'descs': descs}
+         'descs': descs,
+         'names': names}
 
     filename = 'mat/semopy_%s_lmes.mat' % dirname
     print(filename)
