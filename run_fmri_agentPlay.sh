@@ -27,8 +27,9 @@ fi
 curriculum_file=${curriculum_dir}/curriculum_${1}_${3}_*_subj=${2}*
 echo Curriculum file: ${curriculum_file}
 ls -latch ${curriculum_file}
-echo 'NOT REMOVING CURRICULUM FILE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1'
-#rm ${curriculum_file}
+#echo 'NOT REMOVING CURRICULUM FILE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1'
+echo 'Removing curriculum file....'
+rm ${curriculum_file}
 
 tot_plays=0
 level=0

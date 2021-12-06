@@ -327,8 +327,12 @@ class DQNAgent(Agent):
 
     def load_model(self):
         print(' loading model')
-        self.policy_net.load_state_dict(torch.load(self.model_path))
-        self.target_net.load_state_dict(torch.load(self.model_path))
+        if torch.cuda.is_available():
+            self.policy_net.load_state_dict(torch.load(self.model_path))
+            self.target_net.load_state_dict(torch.load(self.model_path))
+        else:
+            self.policy_net.load_state_dict(torch.load(self.model_path, map_location=torch.device('cpu')))
+            self.target_net.load_state_dict(torch.load(self.model_path, map_location=torch.device('cpu')))
 
 
 

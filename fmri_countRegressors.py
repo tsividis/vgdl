@@ -95,6 +95,7 @@ if __name__ == '__main__':
                 q = {'play_key': play['_id']}
                 #cnt = db.plays_post.count(q)
                 cnt = db.empa_plays_post.count(q)
+                #cnt = db.empa_plays_post.count(q)
                 #cnt = db.regressors.count(q)
                 #cnt = db.empa_regressors.count(q)
                 #cnt = db.regressors_cannon_spriteEvery20.count(q)
