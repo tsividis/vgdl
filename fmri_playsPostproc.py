@@ -181,7 +181,8 @@ def playsPostproc(subj_id):
             print q
             print db.empa_plays_post2.count(q)
             if db.empa_plays_post2.count(q) > 0:
-                print '..........skipping: already computed'
+                print '..........skipping: already computed '
+                assert False, "this messes up last_theory_from_previous_play...." # TODO fix
                 continue
 
             # get regressors
