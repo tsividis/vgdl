@@ -94,7 +94,7 @@ if __name__ == '__main__':
             for play in plays:
                 q = {'play_key': play['_id']}
                 #cnt = db.plays_post.count(q)
-                cnt = db.empa_plays_post.count(q)
+                cnt = db.empa_plays_post2.count(q)
                 #cnt = db.empa_plays_post.count(q)
                 #cnt = db.regressors.count(q)
                 #cnt = db.empa_regressors.count(q)

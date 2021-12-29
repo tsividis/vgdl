@@ -57,7 +57,7 @@ goodRuns = [np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 #logging.disable(logging.CRITICAL)
-logging.disable(logging.ERROR)
+logging.disable(logging.ERROR) 
 
 client = utils.get_mongo_client()
 
@@ -399,6 +399,9 @@ def getGameDescriptionFromLines(lines):
         termination_type = None
         stype_obj = None
         outcome = None
+        # novelty terminations
+        s1_obj = None
+        s2_obj = None
         
         for i, token in enumerate(tokens):
             if i == 0:
@@ -407,6 +410,10 @@ def getGameDescriptionFromLines(lines):
             info = token.split("=")
             if info[0] == 'stype':
                 stype_obj = info[1]
+            elif info[0] == 's1':
+                s1_obj = info[1]
+            elif info[0] == 's2':
+                s2_obj = info[1]
             elif info[0] == 'win':
                 outcome = info[1]
             elif termination_type == "Timeout" and info[0] == "limit":
@@ -415,10 +422,14 @@ def getGameDescriptionFromLines(lines):
         # distinguish roles of the same type across interactions
         if stype_obj is not None:
             termination_info = {"termination_type": termination_type, "stype" + "_" + termination_type: stype_obj, "outcome": outcome}
-            terminationSet.append(termination_info)
+        elif s1_obj is not None:
+            # novelty termination
+            assert s2_obj is not None
+            assert termination_type == 'NoveltyTermination'
+            termination_info = {"termination_type": termination_type, "s1" + "_" + termination_type: s1_obj, "s2" + "_" + termination_type: s2_obj, "outcome": outcome}
         else:
             termination_info = {"termination_type": termination_type, "outcome": outcome}
-            terminationSet.append(termination_info)
+        terminationSet.append(termination_info)
             
     gameDesc = {"sprites": spriteSet, "interactions": interactionSet, "terminations": terminationSet}
     return gameDesc
@@ -454,6 +465,7 @@ class SubjectHRR(object):
         spriteSet_HRR = np.zeros(self.D)
         interactionSet_HRR = np.zeros(self.D)
         terminationSet_HRR = np.zeros(self.D)
+        noveltySet_HRR = np.zeros(self.D)
 
         sprite_set = gameDesc['sprites']
         interaction_set = gameDesc['interactions']
@@ -579,8 +591,11 @@ class SubjectHRR(object):
         
         for termination_info in termination_set:
             termination_embedding = np.zeros(self.D)
+
+            logging.debug(termination_info)
+
             for field, val in termination_info.iteritems():
-                if 'stype' in field:
+                if 'stype' in field or 's1' in field or 's2' in field:
                     logging.debug('             + ' + field + ' * sprite ' + val)
                     if val not in sprite_embeddings:
                         logging.error('NO SUCH SPRITE ' + val) # TODO add assert for theories
@@ -591,19 +606,27 @@ class SubjectHRR(object):
                     logging.debug('             + ' + field + ' * ' + val)
                     embedding = encode(self.embedToken(field), self.embedToken(val))
                     termination_embedding = np.add(termination_embedding, embedding)
-            terminationSet_HRR = np.add(terminationSet_HRR, termination_embedding)
+
+            if termination_info['termination_type'] == 'NoveltyTermination':
+                logging.debug('                                  ...adding to noveltySet_HRR')
+                noveltySet_HRR = np.add(noveltySet_HRR, termination_embedding)
+            else:
+                logging.debug('                                  ...adding to terminationSet_HRR')
+                terminationSet_HRR = np.add(terminationSet_HRR, termination_embedding)
 
         if normalize == 2:
             # Z score
             spriteSet_HRR = scipy.stats.zscore(spriteSet_HRR)   
             interactionSet_HRR = scipy.stats.zscore(interactionSet_HRR)   
             terminationSet_HRR = scipy.stats.zscore(terminationSet_HRR)   
+            noveltySet_HRR = scipy.stats.zscore(noveltySet_HRR)   
         elif normalize == 1:
             # normalized to unit vector length
             # see X.E in Plate 1995
             spriteSet_HRR = spriteSet_HRR / np.sqrt(np.sum(np.square(spriteSet_HRR)))
             interactionSet_HRR = interactionSet_HRR / np.sqrt(np.sum(np.square(interactionSet_HRR)))
             terminationSet_HRR = terminationSet_HRR / np.sqrt(np.sum(np.square(terminationSet_HRR)))
+            noveltySet_HRR = noveltySet_HRR / np.sqrt(np.sum(np.square(noveltySet_HRR)))
         elif normalize == 0:
             pass
         else:
@@ -612,6 +635,7 @@ class SubjectHRR(object):
         game_HRR = np.add(game_HRR, spriteSet_HRR)
         game_HRR = np.add(game_HRR, interactionSet_HRR)
         game_HRR = np.add(game_HRR, terminationSet_HRR)
+        #game_HRR = np.add(game_HRR, noveltySet_HRR) # do not include, as per discussion with Pedro -- noveltySet_HRRs # do not include, as per discussion with Pedro -- noveltySet_HRRs are exploratory goals
 
         if normalize == 2:
             game_HRR = scipy.stats.zscore(game_HRR)    
@@ -621,7 +645,7 @@ class SubjectHRR(object):
             assert False, 'bad normalize'
 
                 
-        return game_HRR, spriteSet_HRR, interactionSet_HRR, terminationSet_HRR
+        return game_HRR, spriteSet_HRR, interactionSet_HRR, terminationSet_HRR, noveltySet_HRR
 
 
 
@@ -706,6 +730,7 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
     sprite_RDMs = np.zeros((nsamples, ng, ng))
     interaction_RDMs = np.zeros((nsamples, ng, ng))
     termination_RDMs = np.zeros((nsamples, ng, ng))
+    novelty_RDMs = np.zeros((nsamples, ng, ng))
 
     for i in range(nsamples):
         #logging.info('iter ' + str(i)) 
@@ -717,6 +742,7 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
         sprite_HRR = np.zeros((len(games), subj.D))
         interaction_HRR = np.zeros((len(games), subj.D))
         termination_HRR = np.zeros((len(games), subj.D))
+        novelty_HRR = np.zeros((len(games), subj.D))
         for j in range(ng):
             game = games[j]
 
@@ -725,7 +751,7 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
             lines = game['descs'][0].replace('\t', '    ').split('\n')
             desc = getGameDescriptionFromLines(lines)
             
-            game_HRR[j,:], sprite_HRR[j,:], interaction_HRR[j,:], termination_HRR[j,:] = subj.embedGame(desc, normalize=False)
+            game_HRR[j,:], sprite_HRR[j,:], interaction_HRR[j,:], termination_HRR[j,:], novelty_HRR[j,:] = subj.embedGame(desc, normalize=False)
 
         if shuffle:
             np.random.shuffle(game_HRR) # null distr
@@ -735,16 +761,19 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
             sprite_RDM = 1 - np.corrcoef(sprite_HRR)
             interaction_RDM = 1 - np.corrcoef(interaction_HRR)
             termination_RDM = 1 - np.corrcoef(termination_HRR)
+            novelty_RDM = 1 - np.corrcoef(novelty_HRR)
         elif dist == 'cosine':
             game_RDM = 1 - k.cosine_similarity(game_HRR)
             sprite_RDM = 1 - k.cosine_similarity(sprite_HRR)
             interaction_RDM = 1 - k.cosine_similarity(interaction_HRR)
             termination_RDM = 1 - k.cosine_similarity(termination_HRR)
+            novelty_RDM = 1 - k.cosine_similarity(novelty_HRR)
         elif dist == 'euclidean':
             game_RDM = k.euclidean_distances(game_HRR)
             sprite_RDM = k.euclidean_distances(sprite_HRR)
             interaction_RDM = k.euclidean_distances(interaction_HRR)
             termination_RDM = k.euclidean_distances(termination_HRR)
+            novelty_RDM = k.euclidean_distances(novelty_HRR)
         else: 
             assert False, 'invalid distance metric'
 
@@ -752,13 +781,15 @@ def gen_ground_truth_RDMs(K=10, N=10, E=0.05, nsamples=100, dist='correlation', 
         sprite_RDMs[i,:,:] = sprite_RDM
         interaction_RDMs[i,:,:] = interaction_RDM
         termination_RDMs[i,:,:] = termination_RDM
+        novelty_RDMs[i,:,:] = novelty_RDM
 
     game_RDM = np.mean(game_RDMs, axis=0)
     sprite_RDM = np.mean(sprite_RDMs, axis=0)
     interaction_RDM = np.mean(interaction_RDMs, axis=0)
     termination_RDM = np.mean(termination_RDMs, axis=0)
+    novelty_RDM = np.mean(novelty_RDMs, axis=0)
 
-    return game_RDM, sprite_RDM, interaction_RDM, termination_RDM, game_names
+    return game_RDM, sprite_RDM, interaction_RDM, termination_RDM, novelty_RDM, game_names
 
 
 
@@ -769,12 +800,12 @@ def gen_and_export_RDMs_to_matlab(K, N, E, nsamples, dist):
 
     filename = os.path.join(matDir, 'HRR_groundtruth_RDM_K=%d_N=%d_E=%.3f_nsamples=%d_dist=%s.mat' % (K, N, E, nsamples, dist))
 
-    game_RDM, sprite_RDM, interaction_RDM, termination_RDM, game_names = gen_ground_truth_RDMs(K, N, E, nsamples, dist)
+    game_RDM, sprite_RDM, interaction_RDM, termination_RDM, novelty_RDM, game_names = gen_ground_truth_RDMs(K, N, E, nsamples, dist)
 
     g = np.zeros((len(game_names),), dtype=np.object)
     g[:] = game_names
 
-    scipy.io.savemat(filename, {'game_RDM': game_RDM, 'sprite_RDM': sprite_RDM, 'interaction_RDM': interaction_RDM, 'termination_RDM': termination_RDM, 'game_names': game_names})
+    scipy.io.savemat(filename, {'game_RDM': game_RDM, 'sprite_RDM': sprite_RDM, 'interaction_RDM': interaction_RDM, 'termination_RDM': termination_RDM, 'novelty_RDM': novelty_RDM, 'game_names': game_names})
 
 
 
@@ -829,6 +860,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
     sprite_HRRs = [[] for _ in range(nsamples)] 
     interaction_HRRs = [[] for _ in range(nsamples)]
     termination_HRRs = [[] for _ in range(nsamples)] 
+    novelty_HRRs = [[] for _ in range(nsamples)] 
     ts = []
     run_id = []
     play_key = []
@@ -860,12 +892,12 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
         # get regressors
         q = {'play_key': play['_id']}
         print q
-        print db.regressors.count(q)
-        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
-        if db.regressors.count(q) == 0:
+        print db.empa_regressors.count(q)
+        assert db.empa_regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.empa_regressors.count(q) == 0:
             print 'skipping (e.g. Sokoban)'
             continue
-        regs = db.regressors.find(q).sort('ts', -1)
+        regs = db.empa_regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
@@ -925,11 +957,12 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
 
                 # note each new row = unique theory, not frame
                 for j in range(nsamples):
-                    theory_HRR, sprite_HRR, interaction_HRR, termination_HRR = samples[j].embedGame(gameDesc, normalize)
+                    theory_HRR, sprite_HRR, interaction_HRR, termination_HRR, novelty_HRR = samples[j].embedGame(gameDesc, normalize)
                     theory_HRRs[j].append(theory_HRR)
                     sprite_HRRs[j].append(sprite_HRR)
                     interaction_HRRs[j].append(interaction_HRR)
                     termination_HRRs[j].append(termination_HRR)
+                    novelty_HRRs[j].append(novelty_HRR)
 
             theory_id = gameString_to_id[gameString]
             assert gameStrings[theory_id] == gameString
@@ -947,7 +980,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
 
     print 'total time: ', (time.time() - then0)
 
-    return theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names
+    return theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names
 
 
 
@@ -975,6 +1008,7 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
     sprite_HRRs = [[] for _ in range(nsamples)] 
     interaction_HRRs = [[] for _ in range(nsamples)]
     termination_HRRs = [[] for _ in range(nsamples)] 
+    novelty_HRRs = [[] for _ in range(nsamples)] 
     ts = []
     run_id = []
     play_key = []
@@ -1004,12 +1038,12 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
         proj = {'regressors.theory_filename': 1}
 
         print q
-        print db.regressors.count(q)
-        assert db.regressors.count(q) <= 1, 'Too many regressors!' 
-        if db.regressors.count(q) == 0:
+        print db.empa_regressors.count(q)
+        assert db.empa_regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.empa_regressors.count(q) == 0:
             print 'skipping (e.g. Sokoban)'
             continue
-        regs = db.regressors.find(q).sort('ts', -1)
+        regs = db.empa_regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
@@ -1065,11 +1099,12 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
             gameDesc = getGameDescriptionFromLines(gameLines)
 
             for j in range(nsamples):
-                theory_HRR, sprite_HRR, interaction_HRR, termination_HRR = samples[j].embedGame(gameDesc, normalize)
+                theory_HRR, sprite_HRR, interaction_HRR, termination_HRR, novelty_HRR = samples[j].embedGame(gameDesc, normalize)
                 theory_HRRs[j].append(theory_HRR)
                 sprite_HRRs[j].append(sprite_HRR)
                 interaction_HRRs[j].append(interaction_HRR)
                 termination_HRRs[j].append(termination_HRR)
+                novelty_HRRs[j].append(novelty_HRR)
 
             frame.append(reg['regressors']['theory'][i][1])
             ts.append(reg['regressors']['theory'][i][2] - play['run_start_ts'])
@@ -1085,7 +1120,7 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
 
     print 'total time: ', (time.time() - then0)
 
-    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx
+    return theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx
 
 
 # aggregate single sample HRRs in range
@@ -1287,11 +1322,12 @@ def gen_subject_kernels_multisigma(subj_id, HRRs, ts, run_id, block_ons_idx, blo
 
 # generate RDMs from output of gen_subject_HRRs
 #
-def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist='correlation', agg='avg', glmodel=24, shuffle=False):
+def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, dist='correlation', agg='avg', glmodel=24, shuffle=False):
 
     assert len(theory_HRRs[0]) == len(sprite_HRRs[0])
     assert len(theory_HRRs[0]) == len(interaction_HRRs[0])
     assert len(theory_HRRs[0]) == len(termination_HRRs[0])
+    assert len(theory_HRRs[0]) == len(novelty_HRRs[0])
     assert len(theory_HRRs[0]) == len(ts)
     assert len(theory_HRRs[0]) == len(run_id)
     assert len(theory_HRRs[0]) == len(sprite_HRRs[0])
@@ -1299,6 +1335,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
     assert all([len(sprite_HRRs[0]) == len(sprite_HRRs[j]) for j in range(len(sprite_HRRs))])
     assert all([len(interaction_HRRs[0]) == len(interaction_HRRs[j]) for j in range(len(interaction_HRRs))])
     assert all([len(termination_HRRs[0]) == len(termination_HRRs[j]) for j in range(len(termination_HRRs))])
+    assert all([len(novelty_HRRs[0]) == len(novelty_HRRs[j]) for j in range(len(novelty_HRRs))])
 
     nsamples = len(theory_HRRs)
 
@@ -1318,6 +1355,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
         sprite_HRRs[j] = np.array(sprite_HRRs[j])[run_id_mask]
         interaction_HRRs[j] = np.array(interaction_HRRs[j])[run_id_mask]
         termination_HRRs[j] = np.array(termination_HRRs[j])[run_id_mask]
+        novelty_HRRs[j] = np.array(novelty_HRRs[j])[run_id_mask]
 
     #
     # first aggregate HRRs according to boxcars from beta series GLM
@@ -1328,6 +1366,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
     agg_sprite_HRRs = [[] for _ in range(nsamples)] 
     agg_interaction_HRRs = [[] for _ in range(nsamples)]
     agg_termination_HRRs = [[] for _ in range(nsamples)] 
+    agg_novelty_HRRs = [[] for _ in range(nsamples)] 
     agg_run_id = []
     agg_SPM_run_id = []
     beta_id = [] # boxcar/beta idx within run, before aggregation
@@ -1365,6 +1404,9 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
 
                 termination_HRR = aggregate_HRRs(termination_HRRs[j], st, en + 1, agg)
                 agg_termination_HRRs[j].append(termination_HRR)
+
+                novelty_HRR = aggregate_HRRs(novelty_HRRs[j], st, en + 1, agg)
+                agg_novelty_HRRs[j].append(novelty_HRR)
                 
             agg_SPM_run_id.append(r)
             agg_run_id.append(run_id[en])
@@ -1414,6 +1456,7 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
     sprite_RDMs = np.zeros((nsamples, n, n))
     interaction_RDMs = np.zeros((nsamples, n, n))
     termination_RDMs = np.zeros((nsamples, n, n))
+    novelty_RDMs = np.zeros((nsamples, n, n))
 
     for j in range(nsamples):
 
@@ -1422,18 +1465,21 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
             sprite_RDM = 1 - np.corrcoef(agg_sprite_HRRs[j])
             interaction_RDM = 1 - np.corrcoef(agg_interaction_HRRs[j])
             termination_RDM = 1 - np.corrcoef(agg_termination_HRRs[j])
+            novelty_RDM = 1 - np.corrcoef(agg_novelty_HRRs[j])
 
         elif dist == 'cosine':
             theory_RDM = 1 - k.cosine_similarity(agg_theory_HRRs[j])
             sprite_RDM = 1 - k.cosine_similarity(agg_sprite_HRRs[j])
             interaction_RDM = 1 - k.cosine_similarity(agg_interaction_HRRs[j])
             termination_RDM = 1 - k.cosine_similarity(agg_termination_HRRs[j])
+            novelty_RDM = 1 - k.cosine_similarity(agg_novelty_HRRs[j])
 
         elif dist == 'euclidean':
             theory_RDM = k.euclidean_distances(agg_theory_HRRs[j])
             sprite_RDM = k.euclidean_distances(agg_sprite_HRRs[j])
             interaction_RDM = k.euclidean_distances(agg_interaction_HRRs[j])
             termination_RDM = k.euclidean_distances(agg_termination_HRRs[j])
+            novelty_RDM = k.euclidean_distances(agg_novelty_HRRs[j])
 
         else: 
             assert False, 'invalid distance metric'
@@ -1442,13 +1488,15 @@ def gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termin
         sprite_RDMs[j,:,:] = sprite_RDM
         interaction_RDMs[j,:,:] = interaction_RDM
         termination_RDMs[j,:,:] = termination_RDM
+        novelty_RDMs[j,:,:] = novelty_RDM
 
     theory_RDM = np.mean(theory_RDMs, axis=0)
     sprite_RDM = np.mean(sprite_RDMs, axis=0)
     interaction_RDM = np.mean(interaction_RDMs, axis=0)
     termination_RDM = np.mean(termination_RDMs, axis=0)
+    novelty_RDM = np.mean(novelty_RDMs, axis=0)
 
-    return theory_RDM, sprite_RDM, interaction_RDM, termination_RDM, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_SPM_run_id, beta_id, agg_run_id
+    return theory_RDM, sprite_RDM, interaction_RDM, termination_RDM, novelty_RDM, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, novelty_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_novelty_HRRs, agg_SPM_run_id, beta_id, agg_run_id
 
 
 
@@ -1470,28 +1518,32 @@ def gen_and_save_subject_RDMs_batched(subj_id,  K=10, N=10, E=0.05, nsamples=100
     all_sprite_RDMs = []
     all_interaction_RDMs = []
     all_termination_RDMs = []
+    all_novelty_RDMs = []
 
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size)
 
-        _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_SPM_run_id, beta_id, agg_run_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, dist, agg, glmodel)
+        _, _, _, _, theory_RDMs, sprite_RDMs, interaction_RDMs, termination_RDMs, novelty_RDMs, agg_theory_HRRs, agg_sprite_HRRs, agg_interaction_HRRs, agg_termination_HRRs, agg_novelty_HRRs, agg_SPM_run_id, beta_id, agg_run_id = gen_subject_RDMs(subj_id, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, dist, agg, glmodel)
 
         all_theory_RDMs.append(theory_RDMs)
         all_sprite_RDMs.append(sprite_RDMs)
         all_interaction_RDMs.append(interaction_RDMs)
         all_termination_RDMs.append(termination_RDMs)
+        all_novelty_RDMs.append(novelty_RDMs)
 
     theory_RDMs = np.concatenate(all_theory_RDMs, axis=0)
     sprite_RDMs = np.concatenate(all_sprite_RDMs, axis=0)
     interaction_RDMs = np.concatenate(all_interaction_RDMs, axis=0)
     termination_RDMs = np.concatenate(all_termination_RDMs, axis=0)
+    novelty_RDMs = np.concatenate(all_novelty_RDMs, axis=0)
 
     theory_RDM = np.mean(theory_RDMs, axis=0)
     sprite_RDM = np.mean(sprite_RDMs, axis=0)
     interaction_RDM = np.mean(interaction_RDMs, axis=0)
     termination_RDM = np.mean(termination_RDMs, axis=0)
+    novelty_RDM = np.mean(novelty_RDMs, axis=0)
 
     # save last batch of HRRs, for sanity checks
     # ...or not (memory)
@@ -1504,6 +1556,7 @@ def gen_and_save_subject_RDMs_batched(subj_id,  K=10, N=10, E=0.05, nsamples=100
         'sprite_HRRs': sprite_HRRs,
         'interaction_HRRs': interaction_HRRs,
         'termination_HRRs': termination_HRRs,
+        'novelty_HRRs': novelty_HRRs,
         'ts': ts,
         'run_id': run_id,
         'play_key': play_key,
@@ -1525,14 +1578,17 @@ def gen_and_save_subject_RDMs_batched(subj_id,  K=10, N=10, E=0.05, nsamples=100
         'sprite_RDM': sprite_RDM,
         'interaction_RDM': interaction_RDM,
         'termination_RDM': termination_RDM,
+        'novelty_RDM': novelty_RDM,
         #'theory_RDMs': theory_RDMs,  # -- too much memory
         #'sprite_RDMs': sprite_RDMs,
         #'interaction_RDMs': interaction_RDMs,
         #'termination_RDMs': termination_RDMs,
+        #'novelty_RDMs': novelty_RDMs,
         'agg_theory_HRRs': agg_theory_HRRs,
         'agg_sprite_HRRs': agg_sprite_HRRs,
         'agg_interaction_HRRs': agg_interaction_HRRs,
         'agg_termination_HRRs': agg_termination_HRRs,
+        'agg_novelty_HRRs': agg_novelty_HRRs,
         'ts': ts,
         'run_id': run_id,
         'beta_id': beta_id,
@@ -1570,36 +1626,42 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
     all_sprite_kernels = []
     all_interaction_kernels = []
     all_termination_kernels = []
+    all_novelty_kernels = []
 
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize)
 
         theory_kernels, r_id, theory_Xx, theory_sf = gen_subject_kernels(subj_id, theory_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
         sprite_kernels, _, sprite_Xx, sprite_sf = gen_subject_kernels(subj_id, sprite_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
         interaction_kernels, _, interaction_Xx, interaction_sf = gen_subject_kernels(subj_id, interaction_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
         termination_kernels, _, termination_Xx, termination_sf = gen_subject_kernels(subj_id, termination_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
+        novelty_kernels, _, novelty_Xx, novelty_sf = gen_subject_kernels(subj_id, novelty_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
 
         all_theory_kernels.append(theory_kernels)
         all_sprite_kernels.append(sprite_kernels)
         all_interaction_kernels.append(interaction_kernels)
         all_termination_kernels.append(termination_kernels)
+        all_novelty_kernels.append(novelty_kernels)
 
     theory_kernels = np.concatenate(all_theory_kernels, axis=0)
     sprite_kernels = np.concatenate(all_sprite_kernels, axis=0)
     interaction_kernels = np.concatenate(all_interaction_kernels, axis=0)
     termination_kernels = np.concatenate(all_termination_kernels, axis=0)
+    novelty_kernels = np.concatenate(all_novelty_kernels, axis=0)
 
     theory_kernel = np.mean(theory_kernels, axis=0)
     sprite_kernel = np.mean(sprite_kernels, axis=0)
     interaction_kernel = np.mean(interaction_kernels, axis=0)
     termination_kernel = np.mean(termination_kernels, axis=0)
+    novelty_kernel = np.mean(novelty_kernels, axis=0)
 
     theory_kernel_std = np.std(theory_kernels, axis=0)
     sprite_kernel_std = np.std(sprite_kernels, axis=0)
     interaction_kernel_std = np.std(interaction_kernels, axis=0)
     termination_kernel_std = np.std(termination_kernels, axis=0)
+    novelty_kernel_std = np.std(novelty_kernels, axis=0)
 
     # save last batch of HRRs, for sanity checks
     # ...or not (memory)
@@ -1612,6 +1674,7 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
         'sprite_HRRs': sprite_HRRs,
         'interaction_HRRs': interaction_HRRs,
         'termination_HRRs': termination_HRRs,
+        'novelty_HRRs': novelty_HRRs,
         'ts': ts,
         'run_id': run_id,
         'play_key': play_key,
@@ -1633,22 +1696,27 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
         'sprite_kernel': sprite_kernel,
         'interaction_kernel': interaction_kernel,
         'termination_kernel': termination_kernel,
+        'novelty_kernel': novelty_kernel,
         'theory_kernel_std': theory_kernel_std,
         'sprite_kernel_std': sprite_kernel_std,
         'interaction_kernel_std': interaction_kernel_std,
         'termination_kernel_std': termination_kernel_std,
+        'novelty_kernel_std': novelty_kernel_std,
         #'theory_kernels': theory_kernels, # -- too much memory
         #'sprite_kernels': sprite_kernels,
         #'interaction_kernels': interaction_kernels,
         #'termination_kernels': termination_kernels,
+        #'novelty_kernels': novelty_kernels,
         'theory_Xx': theory_Xx,
         'sprite_Xx': sprite_Xx,
         'interaction_Xx': interaction_Xx,
         'termination_Xx': termination_Xx,
+        'novelty_Xx': novelty_Xx,
         #'theory_sf': theory_sf, # -- too much memory
         #'sprite_sf': sprite_sf,
         #'interaction_sf': interaction_sf,
         #'termination_sf': termination_sf,
+        #'novelty_sf': novelty_sf,
         'r_id': r_id,
         'ts': ts,
         'block_ons_idx': block_ons_idx,
@@ -1691,36 +1759,41 @@ def gen_and_save_subject_kernels_batched_multisigma(subj_id):
     sprite_kernel_aggregate = [None] * len(sigma_ws)
     interaction_kernel_aggregate = [None] * len(sigma_ws)
     termination_kernel_aggregate = [None] * len(sigma_ws)
+    novelty_kernel_aggregate = [None] * len(sigma_ws)
 
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
         # theory_HRRs = batch_size x TRs x HRR_dim
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize)
 
         # theory_kernelss = sigma_ws x [batch_size x TRs x TRs]
         theory_kernelss, r_id, theory_Xx, theory_sf = gen_subject_kernels_multisigma(subj_id, theory_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
         sprite_kernelss, _, sprite_Xx, sprite_sf = gen_subject_kernels_multisigma(subj_id, sprite_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
         interaction_kernelss, _, interaction_Xx, interaction_sf = gen_subject_kernels_multisigma(subj_id, interaction_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
         termination_kernelss, _, termination_Xx, termination_sf = gen_subject_kernels_multisigma(subj_id, termination_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
+        novelty_kernelss, _, novelty_Xx, novelty_sf = gen_subject_kernels_multisigma(subj_id, novelty_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
 
         # use online algorithm for computing mean and std kernels 
         assert len(theory_kernelss) == len(sigma_ws)
         assert len(sprite_kernelss) == len(sigma_ws)
         assert len(interaction_kernelss) == len(sigma_ws)
         assert len(termination_kernelss) == len(sigma_ws)
+        assert len(novelty_kernelss) == len(sigma_ws)
         # compute separate aggregate for each sigma_w
         for i in range(len(sigma_ws)):
             assert len(theory_kernelss[i]) == batch_size
             assert len(sprite_kernelss[i]) == batch_size
             assert len(interaction_kernelss[i]) == batch_size
             assert len(termination_kernelss[i]) == batch_size
+            assert len(novelty_kernelss[i]) == batch_size
             # update aggregate for each sample in the batch
             for j in range(batch_size):
                 theory_kernel_aggregate[i] = Welford_update(theory_kernel_aggregate[i], theory_kernelss[i][j])
                 sprite_kernel_aggregate[i] = Welford_update(sprite_kernel_aggregate[i], sprite_kernelss[i][j])
                 interaction_kernel_aggregate[i] = Welford_update(interaction_kernel_aggregate[i], interaction_kernelss[i][j])
                 termination_kernel_aggregate[i] = Welford_update(termination_kernel_aggregate[i], termination_kernelss[i][j])
+                novelty_kernel_aggregate[i] = Welford_update(novelty_kernel_aggregate[i], novelty_kernelss[i][j])
 
     # save kernels separately for each sigma_w
     #
@@ -1731,6 +1804,7 @@ def gen_and_save_subject_kernels_batched_multisigma(subj_id):
         sprite_kernel, sprite_kernel_std = Welford_finalize(sprite_kernel_aggregate[i])
         interaction_kernel, interaction_kernel_std = Welford_finalize(interaction_kernel_aggregate[i])
         termination_kernel, termination_kernel_std = Welford_finalize(termination_kernel_aggregate[i])
+        novelty_kernel, novelty_kernel_std = Welford_finalize(novelty_kernel_aggregate[i])
 
         kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3e_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize))
 
@@ -1739,26 +1813,32 @@ def gen_and_save_subject_kernels_batched_multisigma(subj_id):
             #'sprite_HRRs': sprite_HRRs,
             #'interaction_HRRs': interaction_HRRs,
             #'termination_HRRs': termination_HRRs,
+            #'novelty_HRRs': novelty_HRRs,
             'theory_kernel': theory_kernel,
             'sprite_kernel': sprite_kernel,
             'interaction_kernel': interaction_kernel,
             'termination_kernel': termination_kernel,
+            'novelty_kernel': novelty_kernel,
             'theory_kernel_std': theory_kernel_std,
             'sprite_kernel_std': sprite_kernel_std,
             'interaction_kernel_std': interaction_kernel_std,
             'termination_kernel_std': termination_kernel_std,
+            'novelty_kernel_std': novelty_kernel_std,
             #'theory_kernels': theory_kernels, # -- too much memory
             #'sprite_kernels': sprite_kernels,
             #'interaction_kernels': interaction_kernels,
             #'termination_kernels': termination_kernels,
+            #'novelty_kernels': novelty_kernels,
             'theory_Xx': theory_Xx,
             'sprite_Xx': sprite_Xx,
             'interaction_Xx': interaction_Xx,
             'termination_Xx': termination_Xx,
+            'novelty_Xx': novelty_Xx,
             #'theory_sf': theory_sf, # -- too much memory
             #'sprite_sf': sprite_sf,
             #'interaction_sf': interaction_sf,
             #'termination_sf': termination_sf,
+            #'novelty_sf': novelty_sf,
             'r_id': r_id,
             'ts': ts,
             'block_ons_idx': block_ons_idx,
@@ -1788,7 +1868,7 @@ def gen_and_save_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=1, no
     theories_filename = os.path.join(theoriesDir, 'unique_theories_subject_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_norm=%d.pickle' % (subj_id, K, N, E, nsamples, normalize))
     print 'filenames', HRR_filename, theories_filename
 
-    theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names = gen_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
+    theory_id_seq, gameString_to_id, gameStrings, theories, theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx, game_names = gen_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
 
     # save unique HRRs and theory sequence
     #
@@ -1803,6 +1883,7 @@ def gen_and_save_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=1, no
         'sprite_HRRs': sprite_HRRs,
         'interaction_HRRs': interaction_HRRs,
         'termination_HRRs': termination_HRRs,
+        'novelty_HRRs': novelty_HRRs,
         'ts': ts,
         'run_id': run_id,
         'play_key': play_key,
