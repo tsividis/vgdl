@@ -282,10 +282,10 @@ def playsPostproc(subj_id):
 
             # get termination changes based on 1) new hypothesized determinations, and 2) falsified existing terminations
             #
-            hypothesized_new_terminations_len = []
-            hypothesized_new_terminations_flag = []
-            falsified_existing_terminations_len = []
-            falsified_existing_terminations_flag = []
+            hypothesized_terminations_len = []
+            hypothesized_terminations_flag = []
+            falsified_terminations_len = []
+            falsified_terminations_flag = []
             for i in range(0, len(reg['regressors']['theory'])):
                 prev_theory = reg['regressors']['theory'][i-1][0] if i > 0 else last_theory_from_previous_play
                 curr_theory = reg['regressors']['theory'][i][0]
@@ -293,22 +293,22 @@ def playsPostproc(subj_id):
                 # apotheosized new rules
                 if prev_theory is not None:
                     # there was a previous play
-                    hypothesized_new_terminations = [t for t in curr_theory.terminationSet if t not in prev_theory.terminationSet and t.ruleType != 'NoveltyRule']
+                    hypothesized_terminations = [t for t in curr_theory.terminationSet if t not in prev_theory.terminationSet and t.ruleType != 'NoveltyRule']
                 else:
                     # this is the first play for this game => just add all the rules
-                    hypothesized_new_terminations = [t for t in curr_theory.terminationSet if t.ruleType != 'NoveltyRule']
-                hypothesized_new_terminations_len.append(len(hypothesized_new_terminations))
-                hypothesized_new_terminations_flag.append(len(hypothesized_new_terminations) > 0)
+                    hypothesized_terminations = [t for t in curr_theory.terminationSet if t.ruleType != 'NoveltyRule']
+                hypothesized_terminations_len.append(len(hypothesized_terminations))
+                hypothesized_terminations_flag.append(len(hypothesized_terminations) > 0)
 
                 # falsified existing rules
-                falsified_existing_terminations = [t for t in curr_theory.falsified if t not in prev_theory.falsified]
-                falsified_existing_terminations_len.append(len(falsified_existing_terminations))
-                falsified_existing_terminations_flag.append(len(falsified_existing_terminations) > 0)
+                falsified_terminations = [t for t in curr_theory.falsified if t not in prev_theory.falsified]
+                falsified_terminations_len.append(len(falsified_terminations))
+                falsified_terminations_flag.append(len(falsified_terminations) > 0)
 
-            play_post['hypothesized_new_terminations_len'] = hypothesized_new_terminations_len
-            play_post['hypothesized_new_terminations_flag'] = hypothesized_new_terminations_flag
-            play_post['falsified_existing_terminations_len'] = falsified_existing_terminations_len
-            play_post['falsified_existing_terminations_flag'] = falsified_existing_terminations_flag
+            play_post['hypothesized_terminations_len'] = hypothesized_terminations_len
+            play_post['hypothesized_terminations_flag'] = hypothesized_terminations_flag
+            play_post['falsified_terminations_len'] = falsified_terminations_len
+            play_post['falsified_terminations_flag'] = falsified_terminations_flag
 
             # Save last theory for next play
             last_theory_from_previous_play = curr_theory
