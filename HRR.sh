@@ -11,8 +11,8 @@ mkdir output
 subjects=( 1 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
-K=50
-N=100
+K=10
+N=10
 E=0.05
 nsamples=100
 batch_size=10
@@ -36,7 +36,7 @@ for subj in ${subjects[*]}; do
 
         # send the job to NCF
         #
-        sbatch_output=`sbatch -p fasse --mem 20001 -t 1-06:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python HRR.py --subj-id=${subj} --K=${K} --N=${N} --E=${E} --nsamples=${nsamples} --batch-size=${batch_size} --normalize=${normalize} --type=${type} --dist=${dist} --glmodel=${glmodel} --agg=${agg}"`
+        sbatch_output=`sbatch -p fasse --mem 40001 -t 1-06:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python HRR.py --subj-id=${subj} --K=${K} --N=${N} --E=${E} --nsamples=${nsamples} --batch-size=${batch_size} --normalize=${normalize} --type=${type} --dist=${dist} --glmodel=${glmodel} --agg=${agg}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output
