@@ -57,7 +57,7 @@ goodRuns = [np.array([1,1,1,1,1,1]), np.array([1,1,1,1,1,1]), np.array([1,1,1,1,
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 #logging.disable(logging.CRITICAL)
-logging.disable(logging.ERROR) 
+logging.disable(logging.ERROR)
 
 client = utils.get_mongo_client()
 
@@ -457,7 +457,7 @@ class SubjectHRR(object):
             logging.debug('                                        generating ' + token) #, ': ', self.embeddings[token]
         return self.embeddings[token]
 
-    def embedGame(self, gameDesc, normalize):
+    def embedGame(self, gameDesc, normalize, concat=False, novelty=False):
         
         #pprint(gameDesc)
 
@@ -614,6 +614,10 @@ class SubjectHRR(object):
                 logging.debug('                                  ...adding to terminationSet_HRR')
                 terminationSet_HRR = np.add(terminationSet_HRR, termination_embedding)
 
+        if novelty:
+            logging.debug('                                adding novelty terminations to termination HRR')
+            terminationSet_HRR = np.add(terminationSet_HRR, noveltySet_HRR)
+
         if normalize == 2:
             # Z score
             spriteSet_HRR = scipy.stats.zscore(spriteSet_HRR)   
@@ -632,10 +636,14 @@ class SubjectHRR(object):
         else:
             assert False, 'bad normalize'
 
-        game_HRR = np.add(game_HRR, spriteSet_HRR)
-        game_HRR = np.add(game_HRR, interactionSet_HRR)
-        game_HRR = np.add(game_HRR, terminationSet_HRR)
-        #game_HRR = np.add(game_HRR, noveltySet_HRR) # do not include, as per discussion with Pedro -- noveltySet_HRRs # do not include, as per discussion with Pedro -- noveltySet_HRRs are exploratory goals
+        if concat:
+            logging.debug('                                concatenating HRRs for game_HRR')
+            game_HRR = np.concatenate((spriteSet_HRR, interactionSet_HRR, terminationSet_HRR))
+        else:
+            logging.debug('                                adding HRRs for game_HRR')
+            game_HRR = np.add(game_HRR, spriteSet_HRR)
+            game_HRR = np.add(game_HRR, interactionSet_HRR)
+            game_HRR = np.add(game_HRR, terminationSet_HRR)
 
         if normalize == 2:
             game_HRR = scipy.stats.zscore(game_HRR)    
@@ -986,7 +994,7 @@ def gen_subject_unique_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize
 
 # get squence of HRRs for subject's inferred theories
 #
-def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False):
+def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False, concat=False, novelty=False):
     subj_id = str(subj_id)
 
     db = client['heroku_7lzprs54']
@@ -1099,7 +1107,7 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False)
             gameDesc = getGameDescriptionFromLines(gameLines)
 
             for j in range(nsamples):
-                theory_HRR, sprite_HRR, interaction_HRR, termination_HRR, novelty_HRR = samples[j].embedGame(gameDesc, normalize)
+                theory_HRR, sprite_HRR, interaction_HRR, termination_HRR, novelty_HRR = samples[j].embedGame(gameDesc, normalize, concat, novelty)
                 theory_HRRs[j].append(theory_HRR)
                 sprite_HRRs[j].append(sprite_HRR)
                 interaction_HRRs[j].append(interaction_HRR)
@@ -1608,7 +1616,7 @@ def gen_and_save_subject_RDMs_batched(subj_id,  K=10, N=10, E=0.05, nsamples=100
     scipy.io.savemat(RDM_filename, d)
 
 
-def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1, batch_size=1, normalize=True):
+def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1, batch_size=1, normalize=True, concat=False, novelty=False):
 
     # copy of gen_and_save_subject_RDMs_batched but for kernels
 
@@ -1617,7 +1625,7 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
     #
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
-    kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d_concat=%d_novelty=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize, concat, novelty))
     print 'filename', kernel_filename
 
     assert nsamples % batch_size == 0
@@ -1631,7 +1639,7 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
     for batch in range(nsamples / batch_size):
         print 'BATCH ', batch
 
-        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize)
+        theory_HRRs, sprite_HRRs, interaction_HRRs, termination_HRRs, novelty_HRRs, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_HRRs(subj_id, K, N, E, batch_size, normalize, concat, novelty)
 
         theory_kernels, r_id, theory_Xx, theory_sf = gen_subject_kernels(subj_id, theory_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
         sprite_kernels, _, sprite_Xx, sprite_sf = gen_subject_kernels(subj_id, sprite_HRRs, ts, run_id, block_ons_idx, block_offs_idx, sigma_w)
@@ -1913,6 +1921,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', default=10, help='batch size')
     parser.add_argument('--normalize', default=2, help='whether/how to normalize the HRRs (0 = no, 1 = Z score, 2 = unit vector')
     parser.add_argument('--type', default='kernel')
+    parser.add_argument('--concat', type=int, default=False, help='whether to concatenate the sprite, interaction, and termination HRRs instead of adding them')
+    parser.add_argument('--novelty', type=int, default=False, help='whether to include the novelty terminations in the termination HRR')
     parser.add_argument('--dist', default='correlation')
     parser.add_argument('--glmodel', default=24)
     parser.add_argument('--agg', default='avg')
@@ -1927,6 +1937,8 @@ if __name__ == '__main__':
     nsamples = int(config.nsamples)
     batch_size = int(config.batch_size)
     normalize = int(config.normalize)
+    concat = bool(config.concat)
+    novelty = bool(config.novelty)
     dist = config.dist
     glmodel = int(config.glmodel)
     agg = config.agg
@@ -1934,7 +1946,7 @@ if __name__ == '__main__':
     if config.type == 'RDM':
         gen_and_save_subject_RDMs_batched(subj_id, K, N, E, nsamples, batch_size, normalize, dist, glmodel, agg)
     elif config.type == 'kernel':
-        gen_and_save_subject_kernels_batched(subj_id, K, N, E, nsamples, batch_size, normalize)
+        gen_and_save_subject_kernels_batched(subj_id, K, N, E, nsamples, batch_size, normalize, concat, novelty)
     elif config.type == 'unique':
         gen_and_save_subject_unique_HRRs(subj_id, K, N, E, nsamples, normalize)
     #gen_and_save_subject_kernels_batched_multisigma(subj_id)
