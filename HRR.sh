@@ -7,17 +7,19 @@ mkdir output
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32  )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 1 2 3 4 5 6 7 8 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-#subjects=( 1 2 3 4 5 6 7 8 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 )  #  e.g. subjects=( 1 2 5 6 7 10 )
-subjects=( 1 )  #  e.g. subjects=( 1 2 5 6 7 10 )
+subjects=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 )  #  e.g. subjects=( 1 2 5 6 7 10 )
+#subjects=( 1 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 subj_arg="${subjects[@]}" # stringify it
 
-K=10
-N=10
-E=0.05
-nsamples=100
-batch_size=10
-normalize=1
-type='kernel'
+K=10 # 10
+N=10 # 10
+E=0.05 # 0.05
+nsamples=100 # 100
+batch_size=10 # 10
+normalize=1 # 1
+concat=0 # 0
+novelty=0 # 0
+type='kernel' # kernel
 
 # RDM
 dist='correlation'
@@ -36,7 +38,7 @@ for subj in ${subjects[*]}; do
 
         # send the job to NCF
         #
-        sbatch_output=`sbatch -p fasse --mem 40001 -t 1-06:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python HRR.py --subj-id=${subj} --K=${K} --N=${N} --E=${E} --nsamples=${nsamples} --batch-size=${batch_size} --normalize=${normalize} --type=${type} --dist=${dist} --glmodel=${glmodel} --agg=${agg}"`
+        sbatch_output=`sbatch -p fasse --mem 40001 -t 1-06:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python HRR.py --subj-id=${subj} --K=${K} --N=${N} --E=${E} --nsamples=${nsamples} --batch-size=${batch_size} --normalize=${normalize} --type=${type} --concat=${concat} --novelty=${novelty} --dist=${dist} --glmodel=${glmodel} --agg=${agg}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output
