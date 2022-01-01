@@ -104,20 +104,24 @@ if __name__ == '__main__':
 
     for play in plays:
         subj = db.subjects.find_one({'subj_id': subj_id})
+
         game = subj['games'][play['game_id']]
-        if subj_id in ['12', '13', '14', '15', '16', '17']:
-            # Chelsea's color mess up fix
-            # use game description from games collection
-            count = db.games.count_documents({'name': game['name']})
-            assert count == 1
-            game_from_db = db.games.find_one({'name': game['name']})
-            game['descs'] = game_from_db['descs']
-            print 'Using colors from the games collection'
+        # Chelsea's color mess up fix
+        # use game description from games collection
+        # do it for ALL subjects
+        count = db.games.count_documents({'name': game['name']})
+        assert count == 1
+        game_from_db = db.games.find_one({'name': game['name']})
+        game['descs'] = game_from_db['descs']
+        print 'Using description from the games collection (because of messed up colors)'
+
         game_str = game['descs'][play['desc_id']]
         level_str = game['levels'][play['level_id']]
-        if subj_id not in ['12', '13', '14', '15', '16', '17']:
-            assert game_str == play['game_str']
         assert level_str == play['level_str']
+        #assert game_str == play['game_str'] # they are NOT equal anymore, because of the color mix up; 
+        # instead, make sure the avatar and the walls are the right colors
+        assert 'DARKBLUE' in game_str
+        assert 'DARKGRAY' in game_str
 
         print 'EMPA playing subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
