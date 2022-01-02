@@ -11,6 +11,7 @@ import sys
 import uuid
 import csv
 import socket
+import numpy as np
 from collections import defaultdict
 from vgdl import core
 from vgdl.core import VGDLParser, fMRI_screensize
@@ -148,7 +149,6 @@ def playsPostproc(subj_id):
         games = ['vgfmri3_chase', 'vgfmri3_helper', 'vgfmri3_bait', 'vgfmri3_lemmings', 'vgfmri3_plaqueAttack', 'vgfmri3_zelda']
     else:
         games = ['vgfmri4_chase', 'vgfmri4_helper', 'vgfmri4_bait', 'vgfmri4_lemmings', 'vgfmri4_avoidgeorge', 'vgfmri4_zelda']
-    #games = ['vgfmri4_helper']
 
     # Do it game by game, so we know what the last theory was from the previous play
     last_theory_from_previous_play = None
@@ -179,8 +179,8 @@ def playsPostproc(subj_id):
 
             q = {'play_key': play['_id']}
             print q
-            print db.empa_plays_post2.count(q)
-            if db.empa_plays_post2.count(q) > 0:
+            print db.empa_plays_post3.count(q)
+            if db.empa_plays_post3.count(q) > 0:
                 print '..........skipping: already computed '
                 assert False, "this messes up last_theory_from_previous_play...." # TODO fix
                 continue
@@ -216,6 +216,10 @@ def playsPostproc(subj_id):
             # load newTimeSteps i.e. basically finalTimeStepList from disk
             with open(reg['regressors']['newTimeStep_filename'], 'r') as f:
                 reg['regressors']['newTimeStep'] = cloudpickle.load(f)
+
+            # load plans from disk
+            with open(reg['regressors']['plans_filename'], 'r') as f:
+                reg['regressors']['plans'] = cloudpickle.load(f)
 
             # create object to hold play postprocessing data
             # similar to regressors (see fmri_empaReplay.py)
@@ -736,7 +740,55 @@ def playsPostproc(subj_id):
             play_post['keyups'] = keyups
             play_post['keydowns'] = keydowns
 
-            db.empa_plays_post2.insert_one(play_post)
+            # plans
+            #
+            win_plan_length = [] # length of winning plan, if any
+            avg_plan_length = [] # average plan lenth
+            num_plans = [] # number of plans
+            win_plan_ac = [] # number of avatar collisions on winning plan, if any
+            avg_plan_ac = [] # average number of avatar collisions (across plans)
+            win_plan_eff = [] # number of collisions on winning plan, if any
+            avg_plan_eff = [] # average number of collisions (across plans)
+
+            assert len(reg['regressors']['plans']) == len(reg['regressors']['theory'])
+            for i in range(len(reg['regressors']['plans'])):
+                plans = reg['regressors']['plans'][i][0]
+
+                def num_avatar_collisions(plan):
+                    cnt = 0
+                    for effs in plan['effectListByClassSeq']:
+                        for eff in effs:
+                            if 'avatar' == eff[1] or 'avatar' == eff[2]:
+                                cnt += 1
+                    return cnt
+
+                wpl = np.mean([len(plan['actionSeq']) for plan in plans if plan['win']])
+                apl = np.mean([len(plan['actionSeq']) for plan in plans])
+                wpa = np.mean([num_avatar_collisions(plan) for plan in plans if plan['win']])
+                apa = np.mean([num_avatar_collisions(plan) for plan in plans])
+                wpe = np.mean([sum([len(effs) for effs in plan['effectListByClassSeq']]) for plan in plans if plan['win']])
+                ape = np.mean([sum([len(effs) for effs in plan['effectListByClassSeq']]) for plan in plans])
+
+                win_plan_length.append(wpl)
+                avg_plan_length.append(apl)
+                num_plans.append(len(plans))
+                win_plan_ac.append(wpa)
+                avg_plan_ac.append(apa)
+                win_plan_eff.append(wpe)
+                avg_plan_eff.append(ape)
+
+            play_post['win_plan_length'] = win_plan_length
+            play_post['avg_plan_length'] = avg_plan_length
+            play_post['num_plans'] = num_plans
+            play_post['win_plan_ac'] = win_plan_ac
+            play_post['avg_plan_ac'] = avg_plan_ac
+            play_post['win_plan_eff'] = win_plan_eff
+            play_post['avg_plan_eff'] = avg_plan_eff
+
+            # Insert into database
+            #
+
+            db.empa_plays_post3.insert_one(play_post)
 
         plays.close()
         
