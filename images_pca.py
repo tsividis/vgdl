@@ -42,16 +42,7 @@ def process_frame(img):
     img = img.flatten()
     return img
 
-random.seed(0)
-
-if __name__ == '__main__':
-    if is_game_specific:
-        game_name = int(sys.argv[1])
-
-    #rootDir = os.path.join(imagesDir, 'makeMovie')
-    rootDir = os.path.join(imagesDir, 'DQN')
-
-    # first collect all images
+def get_all_frame_files(rootDir):
     all_frame_files = []
     for dirName, subdirList, fileList in os.walk(rootDir):
         print('Found directory: %s' % dirName)
@@ -67,6 +58,19 @@ if __name__ == '__main__':
             all_frame_files.append(path)
         #if len(all_frame_files) > 1000:
         #    break
+    return all_frame_files
+
+random.seed(0)
+
+if __name__ == '__main__':
+    if is_game_specific:
+        game_name = int(sys.argv[1])
+
+    #rootDir = os.path.join(imagesDir, 'makeMovie')
+    rootDir = os.path.join(imagesDir, 'DQN')
+
+    # first collect all images
+    all_frame_files = get_all_frame_files(rootDir)
 
     # go in random order because of autocorrelation 
     random.shuffle(all_frame_files)
