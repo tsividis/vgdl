@@ -34,12 +34,13 @@ batch_size = 10000 # how many frames to accumulate before running PCA
 n_components = 100 # TODO param
 is_game_specific = False
 
-def process_frame(img):
+def process_frame(img, flatten=True):
     # convert and resize
     img = img.astype(np.uint8)
     img = img / 255
     img = resize(img, image_size)
-    img = img.flatten()
+    if flatten:
+        img = img.flatten()
     return img
 
 def get_all_frame_files(rootDir):
@@ -54,7 +55,7 @@ def get_all_frame_files(rootDir):
             if is_game_specific and not fname.contains(game_name):
                 continue
             path = os.path.join(dirName, fname)
-            print('\t%s' % path)
+            #print('\t%s' % path)
             all_frame_files.append(path)
         #if len(all_frame_files) > 1000:
         #    break

@@ -11,15 +11,17 @@ from torch.utils.data import DataLoader,random_split
 from torch import nn
 import torch.nn.functional as F
 import torch.optim as optim
+from IPython import embed
 
 class VariationalEncoder(nn.Module):
-    def __init__(self, latent_dims):  
+    def __init__(self, latent_dims, num_channels, last_conv_size):  
         super(VariationalEncoder, self).__init__()
-        self.conv1 = nn.Conv2d(1, 8, 3, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(num_channels, 8, 3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(8, 16, 3, stride=2, padding=1)
         self.batch2 = nn.BatchNorm2d(16)
         self.conv3 = nn.Conv2d(16, 32, 3, stride=2, padding=0)  
-        self.linear1 = nn.Linear(3*3*32, 128)
+        #self.linear1 = nn.Linear(3*3*32, 128) # MNIST
+        self.linear1 = nn.Linear(last_conv_size * last_conv_size * 32, 128)
         self.linear2 = nn.Linear(128, latent_dims)
         self.linear3 = nn.Linear(128, latent_dims)
 
@@ -43,26 +45,27 @@ class VariationalEncoder(nn.Module):
 
 class Decoder(nn.Module):
     
-    def __init__(self, latent_dims):
+    def __init__(self, latent_dims, num_channels, last_conv_size):
         super().__init__()
 
         self.decoder_lin = nn.Sequential(
             nn.Linear(latent_dims, 128),
             nn.ReLU(True),
-            nn.Linear(128, 3 * 3 * 32),
+            #nn.Linear(128, 3 * 3 * 32), # MNIST
+            nn.Linear(128, last_conv_size * last_conv_size * 32),
             nn.ReLU(True)
         )
 
-        self.unflatten = nn.Unflatten(dim=1, unflattened_size=(32, 3, 3))
+        self.unflatten = nn.Unflatten(dim=1, unflattened_size=(32, last_conv_size, last_conv_size))
 
         self.decoder_conv = nn.Sequential(
-            nn.ConvTranspose2d(32, 16, 3, stride=2, output_padding=0),
+            nn.ConvTranspose2d(32, 16, 3, stride=2, output_padding=1),
             nn.BatchNorm2d(16),
             nn.ReLU(True),
             nn.ConvTranspose2d(16, 8, 3, stride=2, padding=1, output_padding=1),
             nn.BatchNorm2d(8),
             nn.ReLU(True),
-            nn.ConvTranspose2d(8, 1, 3, stride=2, padding=1, output_padding=1)
+            nn.ConvTranspose2d(8, num_channels, 3, stride=2, padding=1, output_padding=1)
         )
         
     def forward(self, x):
@@ -74,10 +77,10 @@ class Decoder(nn.Module):
 
 
 class VariationalAutoencoder(nn.Module):
-    def __init__(self, latent_dims):
+    def __init__(self, latent_dims, num_channels=1, last_conv_size=3):
         super(VariationalAutoencoder, self).__init__()
-        self.encoder = VariationalEncoder(latent_dims)
-        self.decoder = Decoder(latent_dims)
+        self.encoder = VariationalEncoder(latent_dims, num_channels, last_conv_size)
+        self.decoder = Decoder(latent_dims, num_channels, last_conv_size)
 
     def forward(self, x):
         x = x.to(device)
@@ -161,14 +164,39 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import images_pca
+import random
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
+import time
+from glob import iglob
+import pandas as pd
+from skimage.transform import resize
+from IPython import embed
+from sklearn.decomposition import PCA, IncrementalPCA
+import torchvision.transforms as T
+from PIL import Image
+import socket
+import os
+import cloudpickle
 
 class FramesDataset(Dataset):
 
-    def __init__(self, rootDir, transform=None):
+    def __init__(self, rootDir):
         # from images_pca.py
         # first collect all images
         self.all_frame_files = images_pca.get_all_frame_files(rootDir)
-        self.transform = transform
+
+        img = cv2.imread(self.all_frame_files[0])
+        self.game_size = img.shape
+        self.img_size = 64
+
+        # from RC_RL::Player.__init__()
+        self.resize = T.Compose([T.ToPILImage(),
+                                 T.Pad((np.max(self.game_size[0:2]) - self.game_size[1],
+                                        np.max(self.game_size[0:2]) - self.game_size[0])),
+                                 T.Resize((self.img_size, self.img_size), interpolation=Image.CUBIC),
+                                 T.ToTensor()])
 
     def __len__(self):
         return len(self.all_frame_files)
@@ -177,47 +205,59 @@ class FramesDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-            img = cv2.imread(path)
-            img = images_pca.process_frame(img)
+        path = self.all_frame_files[idx]
+        img = cv2.imread(path)
 
-            if self.transform:
-                img = self.transform(img)
-            return img
+        # from RC_RL::Player.get_screen()
+        img = img.transpose((2, 0, 1))
+        img = np.ascontiguousarray(img, dtype=np.float32) / 255
+        img = torch.from_numpy(img)
+        img = self.resize(img)
+
+        #img = images_pca.process_frame(img, flatten=False)
+        #img = img.transpose((2, 0, 1))
+        return (img, 0) # artificial label
+
+
+
+latent_dims =images_pca.n_components
 
 
 if __name__ == '__main__':
     data_dir = 'dataset'
 
-    train_dataset = torchvision.datasets.MNIST(data_dir, train=True, download=True)
-    test_dataset  = torchvision.datasets.MNIST(data_dir, train=False, download=True)
+    rootDir = os.path.join(images_pca.imagesDir, 'DQN')
+    frames_dataset = FramesDataset(rootDir)
 
-    train_transform = transforms.Compose([
-    transforms.ToTensor(),
-    ])
+    ## MIST
+    #train_dataset = torchvision.datasets.MNIST(data_dir, train=True, download=True)
+    #test_dataset  = torchvision.datasets.MNIST(data_dir, train=False, download=True)
+    #transform = transforms.Compose([
+    #    transforms.ToTensor(),
+    #])
+    #train_dataset.transform = transform
+    #test_dataset.transform = transform
 
-    test_transform = transforms.Compose([
-    transforms.ToTensor(),
-    ])
 
-    train_dataset.transform = train_transform
-    test_dataset.transform = test_transform
+    #m=len(train_dataset)
+    m=len(frames_dataset)
 
-    m=len(train_dataset)
-
-    train_data, val_data = random_split(train_dataset, [int(m-m*0.2), int(m*0.2)])
-    batch_size=256
+    #train_data, val_data = random_split(train_dataset, [int(m-m*0.2), int(m*0.2)])
+    train_data, val_data = random_split(frames_dataset, [m - int(m*0.2), int(m*0.2)])
+    batch_size = 256
 
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size)
     valid_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,shuffle=True)
+    #test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True) # MNIST
+    test_loader = torch.utils.data.DataLoader(frames_dataset, batch_size=batch_size, shuffle=True)
 
 
     ### Set the random seed for reproducible results
     torch.manual_seed(0)
 
-    d = 4
-
-    vae = VariationalAutoencoder(latent_dims=d)
+    #d = 4 # MNIST
+    #vae = VariationalAutoencoder(latent_dims=d) # MNIST
+    vae = VariationalAutoencoder(latent_dims=latent_dims, num_channels=3, last_conv_size=7)
 
     lr = 1e-3 
 
@@ -228,7 +268,6 @@ if __name__ == '__main__':
 
     vae.to(device)
 
-
     num_epochs = 50
 
     for epoch in range(num_epochs):
@@ -238,5 +277,4 @@ if __name__ == '__main__':
        plot_ae_outputs(vae.encoder,vae.decoder,n=10)
 
 
-    rootDir = os.path.join(images_pca.imagesDir, 'DQN')
 
