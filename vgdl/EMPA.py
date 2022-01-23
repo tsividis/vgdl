@@ -1015,7 +1015,13 @@ class Agent(object):
                 self.logfMRIRegressor('avatar_collisions', ac) 
                     
         else:
-            self.action = self.planAsNeeded()
+            if self.metacontroller_decided_to_quit:
+                # momchil: planning failed at some point => do nothing until the end of the episode
+                # notice did we cannot "quit" in fMRI mode
+                self.action = 0
+            else:
+                # plan normally
+                self.action = self.planAsNeeded()
 
 
 

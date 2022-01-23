@@ -19,7 +19,7 @@ record_video_info=''
 agent='EMPA'
 #tag='attempt_1_states'
 #tag='attempt_2_states_steps_1200'
-tag='attempt_3_colors_bigmem'
+tag='attempt_3_colors'
 steps_per_level=1200 # fMRI level # frames in a minute
 
 #agent='DQN'
@@ -35,11 +35,13 @@ steps_per_level=1200 # fMRI level # frames in a minute
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
 #games=(  'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda')
 
-#games=(  'vgfmri4_lemmings' 'vgfmri4_zelda') # 90000, 2 days
+#games=(  'vgfmri4_lemmings' ) # 90000, 2 days
 #games=( 'vgfmri4_avoidgeorge' ) # 50000, 2 days
+#games=( 'vgfmri4_zelda' )  # 90000? 
+#games=(...)
 
 games=( 'vgfmri4_helper' ) # n 140000 , 4 days
-#games=( 'vgfmri4_bait' ) # 140000, 4 days
+#games=( 'vgfmri4_bait' 'vgfmri4_chase' 'vgfmri3_zelda' ) # 140000, 4 days
 #games=( 'vgfmri4_chase' ) # 50000, 4 days
 #games=( 'vgfmri3_chase' ) # 50000, 4 days
 
@@ -58,7 +60,8 @@ for subj in ${subjects[*]}; do
         #
         #sbatch_output=`sbatch -p fasse_bigmem --mem 450001 -t 7-00:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python fmri_agentPlay.py --agent-name=${agent} --subj-id=${subj} --steps-per-level=${steps_per_level} --game-name=${game}"`
         #sbatch_output=`sbatch -p fasse_gpu --gres=gpu --mem 20001 -t 0-0:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
-        sbatch_output=`sbatch -p fasse_bigmem --mem 450000 -t 7-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
+        #sbatch_output=`sbatch -p fasse_bigmem --mem 450000 -t 7-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
+        sbatch_output=`sbatch -p fasse --mem 140000 -t 5-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output

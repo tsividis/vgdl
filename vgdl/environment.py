@@ -20,7 +20,7 @@ Environment class for running VGDL experiments
 
 MAX_STEPS_PER_LEVEL = 1 + 60 * 20 # momchil: fMRI max steps per instance (i.e. until end of level) = 60 s x 20 fps, + 1 for debugging
 MAX_STEPS = MAX_STEPS_PER_LEVEL * 9 + 10000 # momchil: nine levels per game + some buffer
-MAX_STEPS = 100000000 #  ...jk override for DQN training
+#MAX_STEPS = 100000000 #  ...jk override for DQN training
 
 actionDict = {K_SPACE: 'space', K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', 0:'none', None: 'none'}
 
