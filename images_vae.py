@@ -10,6 +10,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader,random_split
 from torch import nn
 import torch.nn.functional as F
+import cloudpickle
 import torch.optim as optim
 from IPython import embed
 
@@ -132,8 +133,7 @@ def test_epoch(vae, device, dataloader):
 
 def plot_ae_outputs(encoder,decoder,n=10):
     plt.figure(figsize=(16,4.5))
-    targets = test_dataset.targets.numpy()
-    t_idx = {i:np.where(targets==i)[0][0] for i in range(n)}
+    t_idx = list(range(n))
     for i in range(n):
       ax = plt.subplot(2,n,i+1)
       img = test_dataset[t_idx[i]][0].unsqueeze(0).to(device)
@@ -141,18 +141,18 @@ def plot_ae_outputs(encoder,decoder,n=10):
       decoder.eval()
       with torch.no_grad():
          rec_img  = decoder(encoder(img))
-      plt.imshow(img.cpu().squeeze().numpy(), cmap='gist_gray')
+      plt.imshow(img.cpu().squeeze().permute([1,2,0]).numpy(), cmap='gist_gray')
       ax.get_xaxis().set_visible(False)
       ax.get_yaxis().set_visible(False)  
       if i == n//2:
         ax.set_title('Original images')
       ax = plt.subplot(2, n, i + 1 + n)
-      plt.imshow(rec_img.cpu().squeeze().numpy(), cmap='gist_gray')  
+      plt.imshow(rec_img.cpu().squeeze().permute([1,2,0]).numpy(), cmap='gist_gray')  
       ax.get_xaxis().set_visible(False)
       ax.get_yaxis().set_visible(False)  
       if i == n//2:
          ax.set_title('Reconstructed images')
-    plt.show()
+    #plt.show()
 
 
 import os
@@ -181,11 +181,20 @@ import os
 import cloudpickle
 
 class FramesDataset(Dataset):
+    n_train = 430000
+    n_test = 100 
 
-    def __init__(self, rootDir):
+    def __init__(self, rootDir, train):
         # from images_pca.py
         # first collect all images
+        self.train = train
         self.all_frame_files = images_pca.get_all_frame_files(rootDir)
+        random.shuffle(self.all_frame_files)
+        self.all_frame_files = self.all_frame_files[:self.n_train+self.n_test]
+        if self.train:
+            self.all_frame_files = self.all_frame_files[:-self.n_test]
+        else:
+            self.all_frame_files = self.all_frame_files[-self.n_test:]
 
         img = cv2.imread(self.all_frame_files[0])
         self.game_size = img.shape
@@ -197,6 +206,7 @@ class FramesDataset(Dataset):
                                         np.max(self.game_size[0:2]) - self.game_size[0])),
                                  T.Resize((self.img_size, self.img_size), interpolation=Image.CUBIC),
                                  T.ToTensor()])
+
 
     def __len__(self):
         return len(self.all_frame_files)
@@ -220,14 +230,15 @@ class FramesDataset(Dataset):
 
 
 
-latent_dims =images_pca.n_components
+latent_dims = images_pca.n_components
 
 
 if __name__ == '__main__':
     data_dir = 'dataset'
 
     rootDir = os.path.join(images_pca.imagesDir, 'DQN')
-    frames_dataset = FramesDataset(rootDir)
+    frames_dataset = FramesDataset(rootDir, train=False)
+    test_dataset = FramesDataset(rootDir, train=True)
 
     ## MIST
     #train_dataset = torchvision.datasets.MNIST(data_dir, train=True, download=True)
@@ -249,7 +260,7 @@ if __name__ == '__main__':
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size)
     valid_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size)
     #test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True) # MNIST
-    test_loader = torch.utils.data.DataLoader(frames_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
 
     ### Set the random seed for reproducible results
@@ -268,13 +279,20 @@ if __name__ == '__main__':
 
     vae.to(device)
 
-    num_epochs = 50
+    num_epochs = 10000
 
     for epoch in range(num_epochs):
        train_loss = train_epoch(vae,device,train_loader,optim)
        val_loss = test_epoch(vae,device,valid_loader)
        print('\n EPOCH {}/{} \t train loss {:.3f} \t val loss {:.3f}'.format(epoch + 1, num_epochs,train_loss,val_loss))
        plot_ae_outputs(vae.encoder,vae.decoder,n=10)
+       plt.savefig('vae_test_e{}.png'.format(epoch+1))
+       plt.close()
 
 
+
+       filename = 'images_vae_epoch={}.pkl'.format(epoch)
+       filepath = os.path.join(images_pca.imagesDir, filename)
+       print('saving to filepath: ', filepath)
+       torch.save(vae, filepath)
 

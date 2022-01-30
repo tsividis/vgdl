@@ -57,7 +57,7 @@ def get_all_frame_files(rootDir):
             path = os.path.join(dirName, fname)
             #print('\t%s' % path)
             all_frame_files.append(path)
-        #if len(all_frame_files) > 1000:
+        #if len(all_frame_files) > 200:
         #    break
     return all_frame_files
 
