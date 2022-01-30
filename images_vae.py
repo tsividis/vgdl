@@ -32,7 +32,7 @@ class VariationalEncoder(nn.Module):
         self.kl = 0
 
     def forward(self, x):
-        x = x.to(device)
+        #x = x.to(device)
         x = F.relu(self.conv1(x))
         x = F.relu(self.batch2(self.conv2(x)))
         x = F.relu(self.conv3(x))
@@ -171,7 +171,7 @@ import matplotlib.pyplot as plt
 import time
 from glob import iglob
 import pandas as pd
-from skimage.transform import resize
+#from skimage.transform import resize
 from IPython import embed
 from sklearn.decomposition import PCA, IncrementalPCA
 import torchvision.transforms as T
@@ -179,6 +179,26 @@ from PIL import Image
 import socket
 import os
 import cloudpickle
+
+GAME_SIZE = (420, 735, 3)
+IMG_SIZE = 64
+
+resize_for_vae = T.Compose([T.ToPILImage(),
+                         T.Pad((np.max(GAME_SIZE[0:2]) - GAME_SIZE[1],
+                                np.max(GAME_SIZE[0:2]) - GAME_SIZE[0])),
+                         T.Resize((IMG_SIZE, IMG_SIZE), interpolation=Image.CUBIC),
+                         T.ToTensor()])
+
+def read_image_for_vae(path):
+        img = cv2.imread(path)
+
+        # from RC_RL::Player.get_screen()
+        img = img.transpose((2, 0, 1))
+        img = np.ascontiguousarray(img, dtype=np.float32) / 255
+        img = torch.from_numpy(img)
+        img = resize_for_vae(img)
+        return img
+
 
 class FramesDataset(Dataset):
     n_train = 430000
@@ -198,7 +218,8 @@ class FramesDataset(Dataset):
 
         img = cv2.imread(self.all_frame_files[0])
         self.game_size = img.shape
-        self.img_size = 64
+        assert self.game_size == GAME_SIZE
+        self.img_size = IMG_SIZE
 
         # from RC_RL::Player.__init__()
         self.resize = T.Compose([T.ToPILImage(),
@@ -216,14 +237,7 @@ class FramesDataset(Dataset):
             idx = idx.tolist()
 
         path = self.all_frame_files[idx]
-        img = cv2.imread(path)
-
-        # from RC_RL::Player.get_screen()
-        img = img.transpose((2, 0, 1))
-        img = np.ascontiguousarray(img, dtype=np.float32) / 255
-        img = torch.from_numpy(img)
-        img = self.resize(img)
-
+        img = read_image_for_vae(path)
         #img = images_pca.process_frame(img, flatten=False)
         #img = img.transpose((2, 0, 1))
         return (img, 0) # artificial label
@@ -281,6 +295,7 @@ if __name__ == '__main__':
 
     num_epochs = 10000
 
+
     for epoch in range(num_epochs):
        train_loss = train_epoch(vae,device,train_loader,optim)
        val_loss = test_epoch(vae,device,valid_loader)
@@ -291,7 +306,7 @@ if __name__ == '__main__':
 
 
 
-       filename = 'images_vae_epoch={}.pkl'.format(epoch)
+       filename = 'images_vae_epoch={}.pt'.format(epoch)
        filepath = os.path.join(images_pca.imagesDir, filename)
        print('saving to filepath: ', filepath)
        torch.save(vae, filepath)
