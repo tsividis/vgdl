@@ -1046,12 +1046,13 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False,
         proj = {'regressors.theory_filename': 1}
 
         print q
-        print db.empa_regressors.count(q)
-        assert db.empa_regressors.count(q) <= 1, 'Too many regressors!' 
-        if db.empa_regressors.count(q) == 0:
+        #print db.empa_regressors.count(q)
+        print db.cannon_repro_regressors.count(q)
+        assert db.cannon_repro_regressors.count(q) <= 1, 'Too many regressors!' 
+        if db.cannon_repro_regressors.count(q) == 0:
             print 'skipping (e.g. Sokoban)'
             continue
-        regs = db.empa_regressors.find(q).sort('ts', -1)
+        regs = db.cannon_repro_regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
@@ -1072,7 +1073,9 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False,
         # load theories from disk
         theory_filename = reg['regressors']['theory_filename']
         # from Canon to fasse
-        theory_filename = theory_filename.replace('/n/holyscratch01/gershman_lab/Users/mtomov13', os.environ.get('MY_CANNON_SCRATCH'))
+        #theory_filename = theory_filename.replace('/n/holyscratch01/gershman_lab/Users/mtomov13', os.environ.get('MY_CANNON_SCRATCH'))  # !!! they're not all there
+        #theory_filename = theory_filename.replace('/n/holyscratch01/gershman_lab/Users/mtomov13/VGDL/theories', '/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/theories_cannon_repro_regressors')  
+        theory_filename = theory_filename.replace('/n/holyscratch01/', '/n/holyscratch01-ro/')  
         with open(theory_filename, 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
 
@@ -1625,7 +1628,7 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
     #
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
-    kernel_filename = os.path.join(matDir, 'HRR_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d_concat=%d_novelty=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize, concat, novelty))
+    kernel_filename = os.path.join(matDir, 'HRR_cannon_repro_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d_concat=%d_novelty=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize, concat, novelty))
     print 'filename', kernel_filename
 
     assert nsamples % batch_size == 0
