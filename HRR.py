@@ -1919,7 +1919,7 @@ if __name__ == '__main__':
     parser.add_argument('--E', default=0.05, help='the probability of error')
     parser.add_argument('--nsamples', default=100, help='number of HRR samples; must be a multiple of batch_size')
     parser.add_argument('--batch-size', default=10, help='batch size')
-    parser.add_argument('--normalize', default=2, help='whether/how to normalize the HRRs (0 = no, 1 = Z score, 2 = unit vector')
+    parser.add_argument('--normalize', default=1, help='whether/how to normalize the HRRs (0 = no, 2 = Z score, 1 = unit vector')
     parser.add_argument('--type', default='kernel')
     parser.add_argument('--concat', type=int, default=False, help='whether to concatenate the sprite, interaction, and termination HRRs instead of adding them')
     parser.add_argument('--novelty', type=int, default=False, help='whether to include the novelty terminations in the termination HRR')

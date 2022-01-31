@@ -217,7 +217,7 @@ def gen_and_save_subject_kernels(subj_id, normalize):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--subj-id', required=True)
-    parser.add_argument('--normalize', default=2, help='whether/how to normalize the HRRs (0 = no, 1 = Z score, 2 = unit vector')
+    parser.add_argument('--normalize', default=1, help='whether/how to normalize the HRRs (0 = no, 2 = Z score, 1 = unit vector')
 
     config = parser.parse_args()
     print(config)
