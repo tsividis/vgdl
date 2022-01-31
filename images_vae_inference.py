@@ -56,6 +56,8 @@ if __name__ == '__main__':
             embedding = vae.encoder(img.unsqueeze(0).to(device))
 
         new_path = path.replace('DQN', 'VAE').replace('png', 'pkl')
+        new_path = new_path.replace('/n/holystore01/LABS/gershman_lab/Users/mtomov13/', '/n/holyscratch01/LABS/gershman_lab/Users/mtomov13/')
+
         os.makedirs(os.path.split(new_path)[0], exist_ok=True)
 
         with open(new_path, 'wb') as f:
