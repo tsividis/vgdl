@@ -142,6 +142,7 @@ def gen_subject_VAE_embeddings(subj_id, normalize=False):
             # tight coupling with dqn_agent.py saveImage
             image_filename = os.path.join(subj_game_images_dir, video_name + '_step=' + str(i) + '.png')
             image_filename = image_filename.replace('DQN', 'VAE').replace('png', 'pkl') # se images_vae_inference.py
+            image_filename = image_filename.replace('/n/holystore01/LABS/gershman_lab/Users/mtomov13/', '/n/holyscratch01/LABS/gershman_lab/Users/mtomov13/')
 
             # load precomputed embedding buy images_vae_inference.py
             with open(image_filename, 'rb') as f:
