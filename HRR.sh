@@ -18,7 +18,7 @@ nsamples=100 # 100
 batch_size=10 # 10
 normalize=1 # 1
 concat=0 # 0
-novelty=0 # 0
+novelty=1 # 0
 type='kernel' # kernel
 
 # RDM
