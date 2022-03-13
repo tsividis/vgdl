@@ -11,7 +11,8 @@ source activate pedro
 if [ ${1} == "EMPA" ]; then
     collection='empa_regressors'
 elif [ ${1} == "DQN" ]; then
-    collection='dqn_regressors'
+    #collection='dqn_regressors'
+    collection='dqn_regressors_25M'
 else
     echo 'Invalid agent'
     exit 1

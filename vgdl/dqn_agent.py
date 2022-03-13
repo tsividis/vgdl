@@ -317,7 +317,8 @@ class DQNAgent(Agent):
         self.best_reward = 0
         self.episode_reward = 0
 
-        self.model_path = os.path.join(os.environ.get('MY_HOME'), 'RC_RL', 'model_weights/{}_trial{}_{}.pt'.format(self.game_name, 1, 'repeated'))
+        #self.model_path = os.path.join(os.environ.get('MY_HOME'), 'RC_RL', 'model_weights/{}_trial{}_{}.pt'.format(self.game_name, 1, 'repeated'))
+        self.model_path = os.path.join(os.environ.get('MY_HOME'), 'RC_RL', 'model_weights_25M/{}_trial{}_{}.pt'.format(self.game_name, 1, 'repnonseq'))
         print('model_path', self.model_path)
 
         self.load_model()

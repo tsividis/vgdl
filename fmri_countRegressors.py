@@ -58,7 +58,8 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         s_ids = [int(sys.argv[1])]
     else:
-        s_ids = list(range(1,33))
+        s_ids = list(range(1,12))
+        #s_ids = list(range(1,33))
 
     for s in s_ids:
         subj_id = str(s)
@@ -82,7 +83,8 @@ if __name__ == '__main__':
             #nregs = db.plays_post.count(query)
             #nregs = db.regressors.count(query)
             #nregs = db.dqn_regressors.count(query)
-            nregs = db.empa_regressors.count(query)
+            nregs = db.dqn_regressors_25M.count(query)
+            #nregs = db.empa_regressors.count(query)
             #nregs = db.regressors_cannon_spriteEvery20.count(query)
 
             print query

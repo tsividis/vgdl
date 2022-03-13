@@ -169,7 +169,8 @@ if __name__ == '__main__':
             #count = db.regressors.count(q)
             count = db.empa_regressors.count(q)
         elif agent_name == 'DQN':
-            count = db.dqn_regressors.count(q)
+            #count = db.dqn_regressors.count(q)
+            count = db.dqn_regressors_25M.count(q)
         else:
             assert False, 'Invalid agent name ' + agent_name
         print q, count
@@ -340,7 +341,7 @@ if __name__ == '__main__':
                         reg['regressors'][regressor_name + '_filename'] = filename
                         reg['regressors'][regressor_name] = [] # remove from regressor object
 
-                db.dqn_regressors.insert_one(reg)
+                db.dqn_regressors_25M.insert_one(reg)
 
             else:
                 assert False, 'Invalid agent name ' + agent_name
