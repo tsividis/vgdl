@@ -108,12 +108,12 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
         # get regressors
         q = {'play_key': play['_id']}
         print q
-        print db.dqn_regressors.count(q)
-        assert db.dqn_regressors.count(q) <= 1, 'Too many regressors!' 
-        if db.dqn_regressors.count(q) == 0:
+        print db.dqn_regressors_25M.count(q)
+        assert db.dqn_regressors_25M.count(q) <= 1, 'Too many regressors!' 
+        if db.dqn_regressors_25M.count(q) == 0:
             print 'skipping (e.g. Sokoban)'
             continue
-        regs = db.dqn_regressors.find(q).sort('ts', -1)
+        regs = db.dqn_regressors_25M.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
@@ -208,7 +208,7 @@ def gen_and_save_subject_kernels(subj_id, normalize):
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'DQN25M_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
     print('kernel_filename', kernel_filename)
 
     d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernels.iteritems()}
@@ -251,7 +251,7 @@ def gen_and_save_subject_kernels_multisigma(subj_id):
 
         # save kernels
         #
-        kernel_filename = os.path.join(matDir, 'DQN_subject_kernel_subj=%s_sigma_w=%.3e_norm=%d.mat' % (subj_id, sigma_w, normalize))
+        kernel_filename = os.path.join(matDir, 'DQN25M_subject_kernel_subj=%s_sigma_w=%.3e_norm=%d.mat' % (subj_id, sigma_w, normalize))
 
         d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernelss[i][0].iteritems()}
         d.update({regressor_name + '_Xx': Xx for regressor_name, Xx in layer_Xx.iteritems()}) 
