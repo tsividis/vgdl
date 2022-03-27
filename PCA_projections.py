@@ -48,7 +48,7 @@ else:
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
     print(matDir)
     # NCF cluster
-    #client = MongoClient('holy7c22101.rc.fas.harvard.edu', 27017)
+    #client = MongoClient('holy7c22107.rc.fas.harvard.edu', 27017)
 
 
 db = client['heroku_7lzprs54']

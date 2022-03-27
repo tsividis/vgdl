@@ -41,7 +41,7 @@ else:
     matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
     print layersDir, matDir
     # NCF cluster
-    #client = MongoClient('holy7c22101.rc.fas.harvard.edu', 27017)
+    #client = MongoClient('holy7c22107.rc.fas.harvard.edu', 27017)
 
 
 db = client['heroku_7lzprs54']
@@ -109,7 +109,7 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
         q = {'play_key': play['_id']}
         print q
         print db.dqn_regressors_25M.count(q)
-        assert db.dqn_regressors_25M.count(q) <= 1, 'Too many regressors!' 
+        #assert db.dqn_regressors_25M.count(q) <= 1, 'Too many regressors!'  # disable for subject nineteen
         if db.dqn_regressors_25M.count(q) == 0:
             print 'skipping (e.g. Sokoban)'
             continue
