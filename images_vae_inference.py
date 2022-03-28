@@ -44,7 +44,8 @@ if __name__ == '__main__':
     rootDir = os.path.join(images_pca.imagesDir, 'DQN')
     all_frame_files = images_pca.get_all_frame_files(rootDir)
 
-    vae = torch.load('/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/images/VAE/training/images_vae_epoch=9999_final.pt')
+    #vae = torch.load('/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/images/VAE/training/images_vae_epoch=9999_final.pt')
+    vae = torch.load('/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/images/VAE/training/second_1000/images_vae_epoch=999_final.pt')
     vae.to(device)
 
     for i in range(len(all_frame_files)):

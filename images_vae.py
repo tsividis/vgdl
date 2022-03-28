@@ -293,12 +293,16 @@ if __name__ == '__main__':
 
     vae.to(device)
 
-    num_epochs = 10000
+    num_epochs = 1000
 
 
+    train_losses = []
+    val_losses = []
     for epoch in range(num_epochs):
        train_loss = train_epoch(vae,device,train_loader,optim)
        val_loss = test_epoch(vae,device,valid_loader)
+       train_losses.append(train_loss)
+       val_losses.append(val_loss)
        print('\n EPOCH {}/{} \t train loss {:.3f} \t val loss {:.3f}'.format(epoch + 1, num_epochs,train_loss,val_loss))
        plot_ae_outputs(vae.encoder,vae.decoder,n=10)
        plt.savefig('vae_test_e{}.png'.format(epoch+1))
@@ -310,4 +314,6 @@ if __name__ == '__main__':
        filepath = os.path.join(images_pca.imagesDir, filename)
        print('saving to filepath: ', filepath)
        torch.save(vae, filepath)
-
+       
+       with open(os.path.join(images_pca.imagesDir, 'losses.pkl'), 'wb') as f:
+           cloudpickle.dump({'train_losses': train_losses, 'val_losses': val_losses}, f, protocol=2)
