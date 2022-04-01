@@ -195,7 +195,7 @@ def gen_and_save_subject_kernels(subj_id, normalize):
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'VAE_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'VAE_e1k_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
     print('kernel_filename', kernel_filename)
 
     d = {

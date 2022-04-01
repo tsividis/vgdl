@@ -58,6 +58,7 @@ if __name__ == '__main__':
 
         new_path = path.replace('DQN', 'VAE').replace('png', 'pkl')
         new_path = new_path.replace('/n/holystore01/LABS/gershman_lab/Users/mtomov13/', '/n/holyscratch01/LABS/gershman_lab/Users/mtomov13/')
+        print(i, 'out of', len(all_frame_files), '(', 100.0 * i / len(all_frame_files), '%); new_path', new_path)
 
         os.makedirs(os.path.split(new_path)[0], exist_ok=True)
 
