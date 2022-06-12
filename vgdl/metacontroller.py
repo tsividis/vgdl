@@ -9,7 +9,7 @@ class Metacontroller:
         self.quitting = False
 
     def isReplanningNecessary(self):
-        
+
         re_plan = False
         ## Make sure agent is far enough from unpredictable dangerous objects.
         # Check for disparities between plan and reality
@@ -57,7 +57,7 @@ class Metacontroller:
         if hypothesis.classes['avatar'][0].args and 'stype' in hypothesis.classes['avatar'][0].args:
             thingWeShoot = hypothesis.classes['avatar'][0].args['stype']
         else:
-            thingWeShoot = None    
+            thingWeShoot = None
         moving_types = [k for k in hypothesis.classes.keys() if k!=thingWeShoot and any([t in str(hypothesis.classes[k][0].vgdlType) for t in ['Missile', 'Random', 'Chaser']])]
         moving_colors = [hypothesis.classes[k][0].color for k in moving_types]
         movingTypes = False
@@ -73,8 +73,8 @@ class Metacontroller:
         if hypothesis.classes['avatar'][0].args and 'stype' in hypothesis.classes['avatar'][0].args:
             thingWeShoot = hypothesis.classes['avatar'][0].args['stype']
         else:
-            thingWeShoot = None         
-        
+            thingWeShoot = None
+
         min_age = min([sprite.lastmove for sprite in environment.getAliveSprites() if sprite.name not in [thingWeShoot, 'avatar']])
 
         try:
@@ -139,7 +139,7 @@ class Metacontroller:
                 planner_hyperparameters = self.agent.hyperparameterSwitch(new_index=new_index)
 
             elif self.agent.hyperparameter_index == 'short-term':
-                
+
                 ## Do things move?
                 movingTypes = self.checkForMovingTypes(env, self.agent.hypotheses[0])
 
@@ -178,7 +178,7 @@ class Metacontroller:
             if stall_mode: #aka 'stall' mode
                 ## Replan in new mode
                 p = WBP.WBP(self.agent.theoryRLEs[0], self.agent.gameFilename, theory=self.agent.hypotheses[0], fakeInteractionRules = self.agent.fakeInteractionRules,
-                    seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, return_subgoal_plans=self.agent.return_subgoal_plans, stall_mode=stall_mode, hyperparameters=planner_hyperparameters, 
+                    seen_limits = self.agent.seen_limits, max_nodes=self.agent.max_nodes, return_subgoal_plans=self.agent.return_subgoal_plans, stall_mode=stall_mode, hyperparameters=planner_hyperparameters,
                     extra_atom=self.agent.extra_atom, IW_k=self.agent.IW_k, lesion=self.agent.planner_lesion)
                 planner_recommended_quitting = p.quitting
                 p.BFS()
@@ -203,9 +203,9 @@ class Metacontroller:
                 if self.display_text:
                     print "turning on extra atom"
                 self.agent.extra_atom = True
-            
+
             ## if you don't get a plan with short-horizon mode you'll plan in stall mode. You only get here if you're in long-term planning and don't find a plan.
-            if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit: 
+            if self.agent.longHorizonObservations<self.agent.longHorizonObservationLimit:
                 if self.agent.produce_printout:
                     print "Didn't get solution. Taking {} random steps and then replanning".format(self.agent.random_steps_on_plan_failure)
                 solution = [] ## You may have gotten p.quitting but also a solution; make sure you don't try to act on that if the planner decided it wasn't worth it.

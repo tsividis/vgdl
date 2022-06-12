@@ -114,17 +114,17 @@ class Agent:
         self.allow_long_range = True ## for the exploration lesion we want to optionally disable long-range planning
 
         ## Longer-format param_ID string. Use this if you want all the info (e.g., for hyperparameter tuning)
-        # self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_PL={}_DTL={}_IL={}_ILR={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom, 
-        #         self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing, 
-        #         self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy, 
+        # self.param_ID = "IW={}_eaa={}_ea={}_sh={}_lh={}_sha={}_lha={}_shr={}_nF=True_abmax={}_lR={}_eG={}_sTE={}_hyb={}_PL={}_DTL={}_IL={}_ILR={}_nnon={}_ontl={}_oltl={}_sD={}_lhol={}_igl={}".format(self.IW_k, self.extra_atom_allowed, self.extra_atom,
+        #         self.shortHorizonNodes, self.longHorizonNodes, self.shortHorizonAnnealing, self.longhorizonAnnealing,
+        #         self.shortHorizonRandomChoice, self.absolute_max_nodes, self.allow_long_range, self.epsilon_greedy,
         #         self.switch_to_exploit_step, self.hybrid, self.planner_lesion, self.dynamic_type_lesion, self.interaction_lesion, self.interaction_lesion_replacement,
-        #         self.noNewObjectNum, self.objectNumberTrackingLimit, 
+        #         self.noNewObjectNum, self.objectNumberTrackingLimit,
         #         self.objectLocationTrackingLimit, self.safeDistance, self.longHorizonObservationLimit,
         #         self.objectsWhoseLocationWeIgnoreString)
 
         self.param_ID = "BZ=T_d={}_Bi={}_Bm={}_Be={}_e={}_Bt={}".format(self.bfs_depth, self.boltz_init, self.boltz_min, self.boltz_exploit, self.epsilon, self.boltz_temp)
         self.param_ID = self.param_ID+'_batchID='+str(0)
-    
+
         self.dirname_for_video = "raw_video_info/{}/{}/".format(self.param_ID, self.gameFilename)
 
         self.stall_mode = False
@@ -167,7 +167,7 @@ class Agent:
 
         ## used for time-stamping data related to this particular run of the model.
         timestamp = datetime.utcfromtimestamp(time.time()).strftime('%Y-%m-%d__%H_%M__')+self.task_ID
-        
+
         self.timestamp = timestamp
 
         if self.record_states:
@@ -314,7 +314,7 @@ class Agent:
         initialTheory = gameObject.buildGenericTheory(spriteTypeHypothesis)
 
         avatar = [o for o in initialTheory.spriteSet if o.vgdlType in AvatarTypes][0]
-        
+
         self.hypotheses = [initialTheory]
         self.symbolDict = generateSymbolDict(self.environment)
 
@@ -325,7 +325,7 @@ class Agent:
 
         spriteTypeHypothesis, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, allObjects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet)
         gameObject = Game(spriteInductionResult=spriteTypeHypothesis)
-        
+
         ## TODO: Look into this loop. Is it needed?
         newHypotheses = []
         try:
@@ -370,11 +370,11 @@ class Agent:
 
         if self.make_movie or self.record_video_info:
             self.bookkeeping.statesEncountered.append(self.environment.getFullState())
-        
+
         self.last_recorded_time = time.time()
         if self.record_states:
             self.bookkeeping.compactStates.append(self.compactify(self.environment))
-        
+
         ## Initialize memory of object positions
         self.memory.objectMemoryDict, self.memory.previousPositions = {}, {}
         for k, v in self.environment._game.all_objects.iteritems():
@@ -421,7 +421,7 @@ class Agent:
 
     def planAsNeeded(self):
 
-        """ 
+        """
         Calls all planning-related functions:
         Uses an existing plan if it is still valid;
         otherwise determines the appropriate mode for re-planning,
@@ -432,7 +432,7 @@ class Agent:
         ## initialize one or many VRLEs (simulators) according to hypothesis-selection method
         ## Later -- consider not constantly reinitializing vrles
         self.quitting = False
-        
+
         # print "plan phase 1: {}".format(time.time()-t1)
         # t1 = time.time()
         ended, win = self.environment._isDone()
@@ -459,11 +459,11 @@ class Agent:
             # t1 = time.time()
 
             ## Initialize planner
-            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
+            planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])
 
             # t1 = time.time()
             p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
-                return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
+                return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters,
                 extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion, boltz_hyps=[self.bfs_depth, self.bfs_range, self.win_bonus])
             # print "plan phase 4: {}".format(time.time()-t1)
             # t1 = time.time()
@@ -495,7 +495,7 @@ class Agent:
             * EMPA.py:planAsNeeded
                 * set re_plan: is true before every step because solution length = 1
                 * initialize planner with boltz_hyps
-                * take decision whether to take best reward action (best_action=True) 
+                * take decision whether to take best reward action (best_action=True)
                     or boltzmann action (best_action = False), using epsilon-greedy
                 * call planner.plan() (see next main point) with current root_node, till_bfs, boltz_temp, and best_action
                 * get new root node, till_bfs
@@ -504,9 +504,9 @@ class Agent:
 
             * WBP.py:plan
                 * if root_node is uninitialized, create a new node
-                * reset root_node's RLE 
+                * reset root_node's RLE
                 * if best reward action is to be taken: get children nodes and pick argmax as action
-                * else if boltzmann action is to be taken: 
+                * else if boltzmann action is to be taken:
                     * run BFS if either till_bfs has expired or children values are uncalculated
                     * select action using softmax over BFS values
                 * decrement till_bfs and return child (new root_node), till_bfs
@@ -528,12 +528,12 @@ class Agent:
                     best_action
             )
             planning_time = time.time() - start
-            
+
             # decay boltzmann temperature
             if best_action == False:
                 self.boltz_temp -= (self.boltz_init-self.boltz_min)/self.boltz_exploit
                 self.boltz_temp = max(self.boltz_min, self.boltz_temp)
-            
+
             # decay epsilon
             self.epsilon -= (self.epsilon_init-self.epsilon_min)/self.epsilon_exploit
             self.epsilon = max(self.epsilon_min, self.epsilon)
@@ -560,7 +560,7 @@ class Agent:
             self.predicted_states = p.predicted_states
             self.printable_predicted_states = p.printable_predicted_states
             planner_recommended_quitting = p.quitting
-            
+
 
             self.solution, self.predicted_states, self.printable_predicted_states = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.environment, planner_recommended_quitting)
             # print "plan phase 6: {}".format(time.time()-t1)
@@ -571,7 +571,6 @@ class Agent:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
                 for i,g in enumerate(self.printable_predicted_states[1:]):
                     print(i)
-                    print actionDict[self.solution[i]]
                     print colored(g, 'green')
                     # print colored(self.printable_predicted_states[i], 'green')
                 # print "==============================================================="
@@ -634,7 +633,7 @@ class Agent:
             self.environment.agentStatePrev = self.agentState
 
         ## If agent is killed before we grab its agentState,
-        ## use what's printed in the effect label to get it. 
+        ## use what's printed in the effect label to get it.
         except (IndexError, AttributeError) as e:
             ignored_negative_change = False
             for e in self.environment._game.effectList:
@@ -646,7 +645,7 @@ class Agent:
                         self.agentState[changes['resource']] += 0
                         ignored_negative_change = True
             self.environment.agentStatePrev = self.agentState
-        
+
         for k,v in self.agentState.items():
             self.agentState[k] = max(0, v)
 
@@ -666,14 +665,14 @@ class Agent:
         # t1 = time.time()
 
         distributionsHaveChanged = self.distribution.spriteInduction(self.environment._game, self.memory, step=3, bestSpriteTypeDict=self.bestSpriteTypeDict, oldSpriteSet=hypotheses[0].spriteSet)
-        
+
         # print "phase 4: {}".format(time.time()-t1)
         # t1 = time.time()
 
 
         effects = self.environment.getEffectListByColor()
         effectList = self.environment._game.effectList
-        
+
         if ended:
             self.quitting = ended
             self.episodeRecord.insert(0, (win, effects))
@@ -682,7 +681,7 @@ class Agent:
             print "score: {}, game step: {}".format(self.environment.getScore(), self.environment.getTime())
 
         print "action", self.memory.totalGameSteps+self.environment.getTime()
-        
+
         # print "phase 5: {}".format(time.time()-t1)
         # t1 = time.time()
 
@@ -735,10 +734,10 @@ class Agent:
                     if self.display_text:
                         print "New event: {}".format(compactEvent)
                     newEffects = True
-        
+
 
         # print "phase 6: {}".format(time.time()-t1)
-        
+
 
         inf_t1 = time.time()
 
@@ -754,16 +753,16 @@ class Agent:
 
             if newEffects or distributionsHaveChanged:
                 theory_change_flag = True
-            
+
             # t1 = time.time()
-            
+
             sample, _, self.best_params= self.distribution.sampleFromDynamicTypeDistribution(self.environment._game, self.memory, self.all_objects, self.bestSpriteTypeDict, self.hypotheses[0].spriteSet, display=self.display_text)
-            
+
             # print "inference phase 1: {}".format(time.time()-t1)
             # t1 = time.time()
-            
+
             game_object = Game(spriteInductionResult=sample)
-            
+
             terminationCondition = {'ended': False, 'win':False, 'time':self.environment.getTime()}
             trace = (self.finalTimeStepList, terminationCondition)
 
@@ -841,7 +840,7 @@ class Agent:
         return self.action, self.quitting
 
     def checkForDangerOrAvatarMisLocation(self, environment, hypothesis, predicted_states, i):
-        
+
         ## For metacontroller to decide whether there's danger worth worrying about (like if something dangerous isn't where the agent predicted it would be), or if Avatar ended up in a surprising location.
 
         ## i corresponds to the index of the action we took
@@ -896,7 +895,7 @@ class Agent:
             self.hypotheses[0].addSpriteToTheory(event[1])
         if event[2] not in self.hypotheses[0].spriteObjects:
             self.hypotheses[0].addSpriteToTheory(event[2])
-    
+
         try:
             hypSlot1 = self.hypotheses[0].spriteObjects[event[1]].className
             hypSlot2 = self.hypotheses[0].spriteObjects[event[2]].className

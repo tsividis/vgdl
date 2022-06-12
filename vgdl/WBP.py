@@ -29,7 +29,7 @@ OBJECT_LOCATION_TRACKING_LIMIT = 1000
 ## Base class for width-based planners (IW(k) and 2BFS)
 class WBP():
     def __init__(self, rle, gameFilename, theory=None, fakeInteractionRules = [], seen_limits=[], max_nodes=100000,
-        return_subgoal_plans=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1, 
+        return_subgoal_plans=False, stall_mode=False, hyperparameters={}, extra_atom=False, IW_k=1,
         objectsWhoseLocationsWeIgnore=['Flicker', 'Random'], lesion=[], display=False, boltz_hyps = None):
         self.rle = rle
         self.gameFilename = gameFilename
@@ -75,7 +75,7 @@ class WBP():
         self.trueAtoms = defaultdict(lambda:0) ## set of atoms that have been true at some point thus far in the planner.
         self.objectTypes = sorted(rle._game.sprite_groups.keys())
         self.seen_limits = seen_limits ## Filling up agent's stores of any given resource it can pick up is a curiosity goal; we keep track of what we've witnessed here so that we can only assign credit (and return a plan) if it's the first time the agent has done this
-        
+
         for i,k in enumerate(rle._game.all_objects.keys()):
             self.objIDs[k] = i * 100 * (rle.outdim[0]*rle.outdim[1]+self.padding)
 
@@ -98,7 +98,7 @@ class WBP():
             self.theory=copy.deepcopy(theory)
             self.theory.interactionSet.extend(fakeInteractionRules)
             self.theory.updateTerminations()
-    
+
         if any([t in str(s.vgdlType) for s in self.theory.spriteObjects.values() for t in ['Missile', 'Random', 'Chaser']]):
             movingTypesInGame = True
         else:
@@ -126,7 +126,7 @@ class WBP():
                 self.objectsToTrack.append(k)
 
             ## Don't track (in either way) objects that are very numerous; completely breaks calculateAtoms()
-            ## Also don't track projectiles we generate 
+            ## Also don't track projectiles we generate
             if (len(rle._game.sprite_groups[k])>self.objectNumberTrackingLimit) or k==self.thingWeShoot:
                 self.classesWhosePresenceWeIgnore.append(k)
             if (len(rle._game.sprite_groups[k])>self.objectLocationTrackingLimit):
@@ -166,18 +166,18 @@ class WBP():
             print "ignoring locations for", self.classesWhoseLocationsWeIgnore
 
 
-    def getAvailableActions(self):		
+    def getAvailableActions(self):
         ## get actions from avatar-type definition
         actions = self.rle._game.getAvatars()[0].declare_possible_actions().values()
         actions.append(NONE)
-        actions = sorted(actions)		
+        actions = sorted(actions)
 
         return actions
 
     def isFlicker(self, rle, sprite_name):
         ## Don't track Flicker in atoms. The point is that the Flicker should have an effect on other objects, so atom novelty that would have been a function of the Flicker's presence is being taken care of by that. Otherwise the agent can keep exploring states that have no actual effect on the game state: Using its Flicker on every possible location on the board.
-        if ((rle._game.sprite_groups[sprite_name] and 
-            rle._game.sprite_groups[sprite_name][0].colorName in self.theory.spriteObjects.keys() and 
+        if ((rle._game.sprite_groups[sprite_name] and
+            rle._game.sprite_groups[sprite_name][0].colorName in self.theory.spriteObjects.keys() and
             any([obj in str(self.theory.spriteObjects[rle._game.sprite_groups[sprite_name][0].colorName].vgdlType) for obj in self.objectsWhoseLocationsWeIgnore])) or
             sprite_name in self.classesWhoseLocationsWeIgnore) or sprite_name==self.thingWeShoot:
             return True
@@ -185,7 +185,7 @@ class WBP():
             return False
 
     def calculateAtoms(self, rle):
-        
+
         ## Hashes the state according to object-token location and presence/absence of items of each type. Idea is to prune states where no new atom is made true in this search episode.
 
         lst = []
@@ -250,14 +250,14 @@ class WBP():
 
     def rewardSelection(self, QReward):
         if not self.lesion:
-            
-            ## Normal case: Always use novelty to filter. 
+
+            ## Normal case: Always use novelty to filter.
             # acceptableNodes = filter(lambda n: n.novelty<self.IW_k+1, QReward)
             ## Sort max to min for pop()
             bestNodes = sorted(QReward, key=lambda n: (-n.intrinsic_reward, n.novelty))
 
         elif 'IW' in self.lesion:
-            
+
             ## IW ablations: don't filter for novelty
             acceptableNodes = filter(lambda n: (not n.terminal or n.win), QReward)
             bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward))
@@ -280,7 +280,7 @@ class WBP():
             if self.display:
                 print("RewardSelection didn't find a node that satisfied novelty criteria.")
             return 'pickMaxNode'
-        
+
     def updateNoveltyDict(self, node, QReward):
         jointSet = list(set(QReward))
         for c in node.candidates:
@@ -375,7 +375,7 @@ class WBP():
         return current_actions
 
     def check_node_for_subgoal_progress(self, node):
-        
+
         if not self.return_subgoal_plans:
             return node
 
@@ -434,7 +434,7 @@ class WBP():
         self.total_nodes_selected = 0
 
         print "planning..."
-        
+
         while len(QReward)>0 and self.total_nodes_selected < n_depth:
 
             if self.total_nodes_selected > 0 and self.total_nodes_selected%100 == 0 and self.display:
@@ -449,7 +449,7 @@ class WBP():
                 self.quitting = True
                 self.return_non_win_plan(start, QReward)
                 return
-            
+
             self.update_visited_positions(current.rle)
             self.updateNoveltyDict(current, QReward)
 
@@ -520,7 +520,7 @@ class WBP():
             # if current is a loss node
             elif (current.terminal and not current.win) or (current.intrinsic_reward == -np.inf):
                 continue
-            
+
             # unexpanded node
             else:
                 current_actions = self.trim_futile_actions(current)
@@ -562,10 +562,10 @@ class WBP():
                 # perform TD update unless current node is a loss node.
                 # we don't want to backup -inf rewards
                 current_node.parent.value += lr * (current_node.parent.intrinsic_reward + discount * current_node.value - current_node.parent.value)
-            
+
             if current_node.parent.actionSeq == till.actionSeq:
                 # when we've reached a child of "till"
-                parent_actions = self.trim_futile_actions(current_node.parent) 
+                parent_actions = self.trim_futile_actions(current_node.parent)
                 a_i = parent_actions.index(current_node.actionSeq[-1])
                 till.children[a_i] = current_node
                 break
@@ -639,10 +639,10 @@ class WBP():
         for n in last_nodes:
             child = self.TD(n, till=root_node)
         td_time = time.time()
-        
+
         print('BFS CHILD VALUES: {}'.format([c.value for c in root_node.children]))
         print('TIME FOR TDBFS: {} (BFS: {}, TD: {})'.format(td_time-start, bfs_time-start, td_time-bfs_time))
-        
+
         return root_node
 
 
@@ -688,7 +688,7 @@ class WBP():
                     # if BFS is not run, decrement till_bfs
                     till_bfs -= 1
 
-                # select action 
+                # select action
                 child_values_rewards = [(child.value, child.intrinsic_reward) for child in root_node.children]
                 child_values, child_rewards = zip(*child_values_rewards)
                 a_i = self.get_boltzmann_action(child_values, boltz_temp)
@@ -754,19 +754,19 @@ class Node():
             thingWeShot = vrle.find_projectile_if_new(thingWeShoot)
 
             prevHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
-            
+
             rolloutArray = []
             i=0
             terminal, win = vrle._isDone()
 
             while i<max(vrle.outdim) and thingWeShot not in vrle._game.kill_list and not terminal:
-                
+
                 a = random.choice([K_UP, K_DOWN, K_LEFT, K_RIGHT]) ## move randomly during rollout
                 res = vrle.step(a, getTermination=True, getEffectList=True)
 
                 if self.WBP.display:
                     print vrle.show(indent=True, color='cyan')
-                
+
                 currHeuristicVal = self.calculate_theory_driven_heuristics(vrle, **self.WBP.rolloutHyperparameters)
 
                 heuristicVal = currHeuristicVal-prevHeuristicVal
@@ -774,7 +774,7 @@ class Node():
                 prevHeuristicVal = currHeuristicVal
 
                 terminal, win, t = vrle._isDone(getTermination=True)
-                
+
                 if self.WBP.display and win and t.name=='SpriteCounter':
                     print t.stype
 
@@ -972,7 +972,7 @@ class Node():
 
                 resource_names = [list(resource[1])[0].item for resource in avatar_preconditions]
 
-                resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else 
+                resource_yielder_names = [[inter.slot2 if (inter.interaction=='changeResource' and inter.args['resource']==res) else
                         inter.slot1 if (inter.interaction=='collectResource' and res==inter.args['resource']==res) else None
                         for inter in theory.interactionSet] for res in resource_names]
 
@@ -1069,7 +1069,7 @@ class Node():
                 return 2 * mult * first_alpha, 10000
 
             if not eval(resource_str+true_operator+str(num)):
-                return 0, 10000		
+                return 0, 10000
 
         if compute_second_order:
             ## Get all positions of objects whose type is in killer_types; compute minimum distance
@@ -1081,7 +1081,7 @@ class Node():
 
             s2_positions = rle.findObjectsInRLE(s2)
             s1_positions = rle.findObjectsInRLE(s1)
-        
+
             ## Don't return a value for novelty for the mere existence of a projectile that has novelty bonuses
             if self.WBP.thingWeShoot in theory.classes and self.WBP.thingWeShoot in [s1,s2]:
                 return 0, 10000
@@ -1138,7 +1138,7 @@ class Node():
         sprite_second_alpha=100, sprite_negative_mult=.1,
         multisprite_first_alpha=10000, multisprite_second_alpha=100,
         novelty_first_alpha=1000, novelty_second_alpha=10, time_alpha=10):
-        
+
         ## "No goal gradient" ablations
         if any([s in self.WBP.lesion for s in ['AGH1', 'AGH3']]):
             return 0.
@@ -1178,7 +1178,7 @@ class Node():
 
         if avatarNoveltyVals:
             heuristicVal += min(avatarNoveltyVals, key= lambda x: x[1])[0]
-        
+
         self.heuristicVal = heuristicVal
 
         return heuristicVal
@@ -1346,8 +1346,8 @@ if __name__ == "__main__":
     max_nodes = 500 if hyperparameters['short_horizon'] else 1000
 
     ## Initialize planner
-    p = WBP(rle, gameFilename, max_nodes=max_nodes, 
-            return_subgoal_plans=hyperparameters['return_subgoal_plans'], stall_mode=False, 
+    p = WBP(rle, gameFilename, max_nodes=max_nodes,
+            return_subgoal_plans=hyperparameters['return_subgoal_plans'], stall_mode=False,
             hyperparameters=planner_hyperparameters, extra_atom=True)
 
     t1 = time.time()
@@ -1373,5 +1373,3 @@ if __name__ == "__main__":
     print rle._isDone()
     print "total nodes opened: {}. total nodes selected: {}".format(p.total_nodes_opened, p.total_nodes_selected)
     print "total time searched: {} seconds".format(t2)
-
-
