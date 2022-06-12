@@ -342,35 +342,36 @@ class WBP():
 
     def trim_futile_actions(self, current):
         current_actions = self.actions
-        try:
-            # If there's already a Missile on the screen
-            # and the projectile class is a singleton
-            # and the action chosen is shooting
-            # and we're safe:
-            # Don't search actual actions -- just search what happens if you wait for the thing you shot to get somewhere.
-            # Removing this just enlarges the search tree
-            if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
-                    'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
-                    current.rle.findObjectsInRLE(current.rle._game.getAvatars()[0].stype) and
-                    'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
-                    bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
-                    len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0):
-                current_actions = [0]
-                avatar = current.rle._game.getAvatars()[0]
-                killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
-                if killer_sprites:
-                    nearest = find_nearest_sprite(avatar, killer_sprites)
-                    if manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
-                        current_actions = [0]
-                    else:
-                        current_actions = self.actions
-                        if self.display:
-                            print "didn't change current_actions; will plan normally"
-                            print "nearest dangerous sprite:", manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
+        # try:
+        #     # If there's already a Missile on the screen
+        #     # and the projectile class is a singleton
+        #     # and the action chosen is shooting
+        #     # and we're safe:
+        #     # Don't search actual actions -- just search what happens if you wait for the thing you shot to get somewhere.
+        #     # Removing this just enlarges the search tree
+        #     if (current.rle._game.getAvatars() and hasattr(current.rle._game.getAvatars()[0], 'stype') and
+        #             'Missile' in str(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].vgdlType) and
+        #             current.rle.findObjectsInRLE(current.rle._game.getAvatars()[0].stype) and
+        #             'singleton' in self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args and
+        #             bool(self.theory.classes[current.rle._game.getAvatars()[0].stype][0].args['singleton']) and
+        #             len([s for s in current.rle._game.sprite_groups[current.rle._game.getAvatars()[0].stype] if s not in current.rle._game.kill_list])>0
+        #     ):
+        #         current_actions = [0]
+        #         avatar = current.rle._game.getAvatars()[0]
+        #         killer_sprites = [s for k in self.killer_types for s in current.rle._game.sprite_groups[k]]
+        #         if killer_sprites:
+        #             nearest = find_nearest_sprite(avatar, killer_sprites)
+        #             if manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))>3:
+        #                 current_actions = [0]
+        #             else:
+        #                 current_actions = self.actions
+        #                 if self.display:
+        #                     print "didn't change current_actions; will plan normally"
+        #                     print "nearest dangerous sprite:", manhattan_distance(current.rle._rect2pos(avatar.rect), current.rle._rect2pos(nearest.rect))
 
-        except (IndexError, AttributeError, TypeError) as e:
-            print "Problem checking missile-shooting conditions."
-            pass
+        # except (IndexError, AttributeError, TypeError) as e:
+        #     print "Problem checking missile-shooting conditions."
+        #     pass
 
         return current_actions
 
