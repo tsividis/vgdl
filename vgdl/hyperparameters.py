@@ -57,7 +57,7 @@ metacontroller_sets = [
     'safeDistance': 3,
     'longHorizonObservationLimit': 2,
     # hyps specific to boltzmann ablation
-    'bfs_depth': 3,
+    'bfs_depth': 5,
     'bfs_range': 0,
     'boltz_init': 8.0,
     'boltz_min': 0.1,
