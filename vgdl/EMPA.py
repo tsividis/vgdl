@@ -561,7 +561,8 @@ class Agent:
             self.printable_predicted_states = p.printable_predicted_states
             planner_recommended_quitting = p.quitting
 
-
+            print('solution before metacontroler')
+            print(self.solution)
             self.solution, self.predicted_states, self.printable_predicted_states = self.metacontroller.determinePlanningModeAndReplanIfNecessary(self.solution, self.environment, planner_recommended_quitting)
             # print "plan phase 6: {}".format(time.time()-t1)
             # t1 = time.time()
@@ -571,6 +572,11 @@ class Agent:
                 print "found plan of length {}. Intended actions and predicted states:".format(len(self.solution))
                 for i,g in enumerate(self.printable_predicted_states[1:]):
                     print(i)
+                    print(self.solution)
+                    try:
+                        print actionDict[self.solution[i]]
+                    except:
+                        pass
                     print colored(g, 'green')
                     # print colored(self.printable_predicted_states[i], 'green')
                 # print "==============================================================="
