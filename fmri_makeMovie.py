@@ -145,9 +145,9 @@ if __name__ == '__main__':
         # get regressors
         q = {'play_key': play['_id']}
         print(q)
-        print(db.regressors.count(q))
-        #assert db.regressors.count(q) == 1, 'Too many regressors!' 
-        regs = db.regressors.find(q).sort('ts', -1)
+        print(db.empa_regressors.count(q))
+        #assert db.empa_regressors.count(q) == 1, 'Too many regressors!' 
+        regs = db.empa_regressors.find(q).sort('ts', -1)
         reg = None
         for reg in regs:
             break # just take the latest one
@@ -162,22 +162,22 @@ if __name__ == '__main__':
             continue
 
         # load theories from disk
-        '''
         with open(reg['regressors']['theory_filename'], 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
 
         # hack to fix interaction_change_flag TODO undo once we re-run it
-        for i in range(1, len(reg['regressors']['interaction_change_flag'])):
-            prev_theory = reg['regressors']['theory'][i-1][0]
-            curr_theory = reg['regressors']['theory'][i][0]
-            interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
+        #for i in range(1, len(reg['regressors']['interaction_change_flag'])):
+        #    prev_theory = reg['regressors']['theory'][i-1][0]
+        #    curr_theory = reg['regressors']['theory'][i][0]
+        #    interactionSetEqual = all(any(i1==i2 for i2 in prev_theory.interactionSet) for i1 in curr_theory.interactionSet)
 
-            #if reg['regressors']['interaction_change_flag'][i][0]:
-                #print 'w000000t interaction_change_flag!'
-                #embed()
-            reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
+        #    #if reg['regressors']['interaction_change_flag'][i][0]:
+        #        #print 'w000000t interaction_change_flag!'
+        #        #embed()
+        #    reg['regressors']['interaction_change_flag'][i][0] = not interactionSetEqual
         '''
         reg['regressors'] = None # -- uncomment this and comment the lines above to run locally
+        '''
 
         # get states
         zstates = play['zstates']
