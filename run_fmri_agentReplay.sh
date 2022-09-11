@@ -24,7 +24,7 @@ if [[ `hostname` == *"Momchil"* ]]; then
     nplays_idx=4
     curriculum_dir=savedCurricula
 else
-    host='holy7c22107.rc.fas.harvard.edu'
+    host='holy7c22108.rc.fas.harvard.edu'
     nplays_idx=2
     curriculum_dir=${MY_SCRATCH}/VGDL/savedCurricula
 fi

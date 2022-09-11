@@ -13,4 +13,4 @@ echo $MY_CANNON_LAB
 ls -latch $MY_CANNON_LAB/mongo
 
 cd $MY_CANNON_LAB/mongo
-mongorestore --host holy7c22107.rc.fas.harvard.edu
+mongorestore --host holy7c22108.rc.fas.harvard.edu
