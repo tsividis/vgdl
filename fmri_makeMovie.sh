@@ -13,7 +13,7 @@ for subj in ${subjects[*]}; do
     echo Subject ${subj}, file prefix = $outfileprefix
 
     # send the job to NCF
-    sbatch_output=`sbatch -p shared --mem 10001 -t 1-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_makeMovie.sh ${subj}"`
+    sbatch_output=`sbatch -p fasse --mem 10001 -t 1-15:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_makeMovie.sh ${subj}"`
     # for local testing
     #sbatch_output=`echo Submitted batch job 88725418`
     echo $sbatch_output

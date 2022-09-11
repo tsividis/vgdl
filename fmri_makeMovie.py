@@ -1,4 +1,5 @@
 # create movie after fmri_empaReplay has been run, to show regressors & theory plotted on top of actual game play
+# example: python fmri_makeMovie.py --subj-id=1 --run-id=1 --block-id=0 --instance-id=0 --play-id=0 --use-renders=0 
 
 from pymongo import MongoClient
 import pprint
@@ -86,12 +87,12 @@ if __name__ == '__main__':
     print(config)
 
     subj_id = config.subj_id
-    show_symbols = config.show_symbols
-    use_renders = config.use_renders
-    default_colors = config.default_colors
-    make_images = config.make_images
-    make_movie = config.make_movie
-    headless = config.headless
+    show_symbols = bool(int(config.show_symbols))
+    use_renders = bool(int(config.use_renders))
+    default_colors = bool(int(config.default_colors))
+    make_images = bool(int(config.make_images))
+    make_movie = bool(int(config.make_movie))
+    headless = bool(int(config.headless))
 
     # construct query
     query = {'subj_id': subj_id}

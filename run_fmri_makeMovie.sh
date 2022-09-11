@@ -26,7 +26,7 @@ do
             echo ==== run_fmri_makeMovie: subj ${1}, run $run, block $block, instance $instance
 
             # get # of plays with given run, block, instance
-            out=`mongo --host ${host} heroku_7lzprs54 --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}})"`
+            out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.plays.count({'subj_id': '${1}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}})"`
             echo mongo play count -- $out
 
             # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601

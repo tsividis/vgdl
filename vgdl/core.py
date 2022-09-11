@@ -1206,6 +1206,10 @@ class BasicGame(object):
 
         return fs_colorized
 
+    def theory_did_change(self, regressors):
+        times = [r[1] for r in regressors['theory_change_flag']]
+        theory_did_change = regressors['theory_change_flag'][times.index(self.time)][0] if self.time in times else 0
+        return theory_did_change
 
     def fMRI_plotStuff(self, regressors):
         # plot regressors and stuff for fMRI analysis 
@@ -1671,6 +1675,7 @@ class BasicGame(object):
                         else:
                             pygame.image.save(self.screen, tmpl%i)
                 '''
+
                 if make_images: 
                     image_filename = VGDLParser.get_image_filename(self.playback_index)
                     image_filename = os.path.join(images_dir, image_filename)
@@ -1680,11 +1685,14 @@ class BasicGame(object):
                         Image.fromarray(screen).save(image_filename)
                     else:
                         # regular images like the ones the subject saw
-                        pygame.image.save(self.screen, image_filename)
+                        if not regressors or self.time <= 1 or self.theory_did_change(regressors): # Optionally render only frames where the theory changed
+                            pygame.image.save(self.screen, image_filename)
+                            #embed()
                     
 
                 if persist_movie:
-                    tmp_dir = "./temp/"
+                    #tmp_dir = "./temp/"
+                    tmp_dir = "/tmp/"
                     tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                     if use_renders:
                         # render image as it would be seen by the DQN
@@ -2108,7 +2116,8 @@ class BasicGame(object):
 
             #if(headless):
             if(persist_movie):
-                tmp_dir = "./temp/"
+                #tmp_dir = "./temp/"
+                tmp_dir = "/tmp/"
                 tmpl = '{tmp_dir}%09d-{name}-{g_id}.png'.format(i,tmp_dir = tmp_dir, name="VGDL-GAME", g_id=self.uiud)
                 pygame.image.save(self.screen, tmpl%i)
                 i+=1
