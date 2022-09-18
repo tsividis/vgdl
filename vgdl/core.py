@@ -114,6 +114,7 @@ def dispTheory(theory, fontsize, pos, screen, color=white):
     for i in range(len(lines)):
         if 'generic: True' in lines[i]:
             continue
+        lines[i] = lines[i].replace('generic: False', '')
         if lines[i][-1] == ':':
             lines[i] = '-------- ' + lines[i]
         dispText(lines[i], fontsize, (x,y), screen, color, align='left')
@@ -127,7 +128,7 @@ def plotRegressor(regressors, name, max_time, pos, screen, color=white):
     ys = list(np.nan_to_num(ys))
     points = [(pos[0] + xs[i], pos[1] - ys[i]) for i in range(len(xs))]
     points.insert(0, pos)
-    dispText(name, 8, (pos[0] - 50, pos[1] - 7), screen, color=color)
+    dispText(name, 12, (pos[0] - 70, pos[1] - 7), screen, color=color)
     pygame.draw.lines(screen, color, False, points, 2) 
 
 
@@ -1221,13 +1222,13 @@ class BasicGame(object):
             times = [t[1] for t in regressors['theory']]
             ix = bisect.bisect(times, self.time) - 1 # find latest theory inferred up to (and including) current time
             if ix >= 0:
-                dispTheory(regressors['theory'][ix][0], 10, (20,20+30), self.screen, color=black)
+                dispTheory(regressors['theory'][ix][0], 13, (5,30+30), self.screen, color=black)
 
             # plot theory_change_flag 
-            plotRegressor(regressors, 'theory_change_flag', self.time, (400,15+30), self.screen, color=(0,100,0))
-            plotRegressor(regressors, 'sprite_change_flag', self.time, (400,30+30), self.screen, color=(100,100,0))
-            plotRegressor(regressors, 'interaction_change_flag', self.time, (400,45+30), self.screen, color=(0,100,100))
-            plotRegressor(regressors, 'termination_change_flag', self.time, (400,60+30), self.screen, color=(100,0,100))
+            plotRegressor(regressors, 'theory_change_flag', self.time, (410,15+30), self.screen, color=(0,100,0))
+            plotRegressor(regressors, 'sprite_change_flag', self.time, (410,30+30), self.screen, color=(100,100,0))
+            plotRegressor(regressors, 'interaction_change_flag', self.time, (410,45+30), self.screen, color=(0,100,100))
+            plotRegressor(regressors, 'termination_change_flag', self.time, (410,60+30), self.screen, color=(100,0,100))
             #plotRegressor(regressors, 'sampleKL', self.time, (400,75+30), self.screen, color=(100,0,0)) same
             #plotRegressor(regressors, 'spriteKL', self.time, (400,90+30), self.screen, color=(0,0,100)) we don't log it anymore
 
@@ -1685,7 +1686,7 @@ class BasicGame(object):
                         Image.fromarray(screen).save(image_filename)
                     else:
                         # regular images like the ones the subject saw
-                        if not regressors or self.time <= 1 or self.theory_did_change(regressors): # Optionally render only frames where the theory changed
+                        if not regressors or self.time <= 1 or self.playback_index >= len(self.playback_states) - 2 or len(current_state['effectList']) > 0 or self.theory_did_change(regressors): # Optionally render only frames where the theory changed
                             pygame.image.save(self.screen, image_filename)
                             #embed()
                     
