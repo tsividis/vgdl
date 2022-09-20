@@ -22,6 +22,17 @@ import utils
 import socket
 from pymongo import MongoClient
 from fmri_agentReplay import layersDir
+from sklearn.decomposition import PCA
+import socket
+from pymongo import MongoClient
+from collections import defaultdict
+from vgdl import core
+from vgdl.core import keyPresses as keyNames
+from IPython import embed
+import cPickle, cloudpickle
+
+import pygame
+
 
 # ### Helper functions
 
@@ -45,23 +56,19 @@ else:
     #client = MongoClient('holy7c22108.rc.fas.harvard.edu', 27017)
 
 
+
 db = client['heroku_7lzprs54']
 
-# get squence of DQN layer activations for a given subject
+n_components = 100  # TODO
+#n_components = 10  # TODO
+
+LAYER_NAMES = ['layer_conv1_output', 'layer_conv2_output', 'layer_conv3_output', 'layer_linear1_output', 'layer_linear2_output']
+
+# get squence of DQN layer activations for a given subject, grouped by game
 # copied and adapted from gen_subject_HRRs
 #
-def gen_subject_DQN_layers(subj_id, normalize=False):
+def gen_subject_DQN_layers_by_game(subj_id):
     subj_id = str(subj_id)
-
-    import socket
-    from pymongo import MongoClient
-    from collections import defaultdict
-    from vgdl import core
-    from vgdl.core import keyPresses as keyNames
-    from IPython import embed
-    import cPickle, cloudpickle
-
-    import pygame
 
     db = client['heroku_7lzprs54']
 
@@ -77,13 +84,124 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
 
     # regressor name (as defined in dqn_agent.py; see LAYER_TO_LAYER_NAME and save_hidden_layer_output) -> sequence of layer activations
     # notice that here we only have a single "sample", unlike in HRRs
-    layers = {
-        'layer_conv1_output': [],
-        'layer_conv2_output': [],
-        'layer_conv3_output': [],
-        'layer_linear1_output': [],
-        'layer_linear2_output': [],
-    }
+    layers_by_game = {};
+
+    then0 = time.time()
+
+    for pk in pks:
+
+        then = time.time()
+
+        query = {'_id': pk}
+        play = db.plays.find_one(query)
+        assert play['subj_id'] == subj_id
+
+        game = subj['games'][play['game_id']]
+        print 'gen_subject_DQN_layers_by_game: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+
+        # get regressors
+        q = {'play_key': play['_id']}
+        print q
+        print db.dqn_regressors_25M.count(q)
+        #assert db.dqn_regressors_25M.count(q) <= 1, 'Too many regressors!'  # disable for subject nineteen
+        if db.dqn_regressors_25M.count(q) == 0:
+            print 'skipping (e.g. Sokoban)'
+            continue
+        regs = db.dqn_regressors_25M.find(q).sort('ts', -1)
+        reg = None
+        for reg in regs:
+            break # just take the latest one
+
+        # get states
+        zstates = play['zstates']
+        states = core.VGDLParser.decompress(zstates)
+        states = states['states'] # dummy dict
+
+        if game['name'] not in layers_by_game:
+            layers_by_game[game['name']] = {k: [] for k in LAYER_NAMES}
+
+        print 'loading play time: ', (time.time() - then)
+
+        if len(states) <= 2:
+            print('skipping because of too few states', len(states),  reg['regressors'])
+            continue
+
+        # loop over layers
+        num_frames = None
+        for regressor_name in LAYER_NAMES:
+
+            then = time.time()
+
+            # load layers from disk
+            assert regressor_name in reg['regressors']
+            with open(reg['regressors'][regressor_name + '_filename'], 'r') as f:
+                reg['regressors'][regressor_name] = cloudpickle.load(f)
+
+            # sanity check that all layers have the same number of frames
+            if num_frames is None:
+                num_frames = len(reg['regressors'][regressor_name])
+            else:
+                assert num_frames == len(reg['regressors'][regressor_name])
+
+            # insert layer for each time step
+            for i in range(0, len(reg['regressors'][regressor_name])):
+                layer = reg['regressors'][regressor_name][i][0].flatten()
+
+                layers_by_game[game['name']][regressor_name].append(layer)
+
+            print 'layer', regressor_name, 'game', game['name'], ' time: ', (time.time() - then)
+
+        #break # TODO
+        
+    print 'total time: ', (time.time() - then0)
+
+    return layers_by_game
+
+
+
+
+
+
+
+def PCA_layers_by_game(layers_by_game):
+
+    pca = {}
+    for game_name in layers_by_game.keys():
+        pca[game_name] = {}
+        for layer_name in LAYER_NAMES:
+            if layer_name == 'layer_linear2_output':
+                # output units are consistent cross all DQNs, plus there's only 6 of them => can't PCA
+                continue
+            pca[game_name][layer_name] = PCA(n_components=n_components)
+            pca[game_name][layer_name].fit(layers_by_game[game_name][layer_name])
+
+    return pca
+
+
+
+
+
+
+# get squence of DQN layer activations for a given subject, projected onto PC's
+# copied and adapted from gen_subject_HRRs
+#
+def gen_subject_DQN_layers_projected(subj_id, pca, normalize=False):
+    subj_id = str(subj_id)
+
+
+    subj = db.subjects.find_one({'subj_id': subj_id})
+
+    # get plays
+    query = {'subj_id': subj_id, 'run_id': {'$lt': 7}}
+    plays = db.plays.find(query, {'_id': 1}).sort('start_time')
+    pks = []
+    for play in plays:
+        pks.append(play['_id'])
+    del plays # close cursor, o/w screws things up
+
+    # regressor name (as defined in dqn_agent.py; see LAYER_TO_LAYER_NAME and save_hidden_layer_output) -> sequence of layer activations
+    # notice that here we only have a single "sample", unlike in HRRs
+    layers = {k: [] for k in LAYER_NAMES}
     ts = []
     run_id = []
     play_key = []
@@ -104,7 +222,7 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
         assert play['subj_id'] == subj_id
 
         game = subj['games'][play['game_id']]
-        print 'gen_subject_DQN_layers: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
+        print 'gen_subject_DQN_layers_projected: subj %s, run %d, block %d, instance %d, play %d: %s (%s), desc %d, level %d' % (play['subj_id'], play['run_id'], play['block_id'], play['instance_id'], play['play_id'], game['name'], game['fake_name'], play['desc_id'], play['level_id'])
 
         # get regressors
         q = {'play_key': play['_id']}
@@ -157,17 +275,22 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
             for i in range(0, len(reg['regressors'][regressor_name])):
                 layer = reg['regressors'][regressor_name][i][0].flatten()
 
+                if regressor_name != 'layer_linear2_output':
+                    projection = pca[game['name']][regressor_name].transform(layer.reshape(1,-1)).flatten()
+                else:
+                    projection = layer
+
                 # potentially normalize
                 if normalize == 2:
-                    layer = scipy.stats.zscore(layer)
+                    projection = scipy.stats.zscore(projection)
                 elif normalize == 1:
-                    layer = layer / np.sqrt(np.sum(np.square(layer)))
+                    projection = projection / np.sqrt(np.sum(np.square(projection)))
                 elif normalize == 0:
                     pass
                 else:
                     assert False, 'bad normalize'
 
-                layers[regressor_name].append(layer)
+                layers[regressor_name].append(projection)
 
                 if regressor_name == layers.keys()[0]:
                     # only insert these for one layer, since this should be identical across layers
@@ -178,6 +301,8 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
                     run_id.append(play['run_id'])
 
             print 'layer', regressor_name, ' time: ', (time.time() - then)
+
+        #break # TODO
         
 
     block_offs_idx.append(len(ts))
@@ -189,13 +314,21 @@ def gen_subject_DQN_layers(subj_id, normalize=False):
 
 
 
+
+
 # copy of HRR.gen_and_save_subject_kernels_batched but for DQN
 def gen_and_save_subject_kernels(subj_id, normalize):
 
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
-    # get sequences of DQN layer activations
-    layers, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_DQN_layers(subj_id, normalize)
+    # get sequences of DQN layer activations, per game
+    layers_by_game = gen_subject_DQN_layers_by_game(subj_id)
+
+    # Run PCA
+    pca = PCA_layers_by_game(layers_by_game)
+
+    # get sequences of DQN layer activations, projected on PC's
+    layers, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_DQN_layers_projected(subj_id, pca, normalize)
 
     # generate GP kernels
     layer_kernels = dict()
@@ -209,7 +342,7 @@ def gen_and_save_subject_kernels(subj_id, normalize):
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'DQN25M_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'DQN25M_PCA_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
     print('kernel_filename', kernel_filename)
 
     d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernels.iteritems()}
@@ -227,47 +360,6 @@ def gen_and_save_subject_kernels(subj_id, normalize):
     scipy.io.savemat(kernel_filename, d)
 
 
-# copy of gen_and_save_subject_kernels but for multiple sigma_w's
-# notice that this might not be necessary - sigma_w is a constant factor that gets absorbed in the noise variance (see equation 2.23 in the GP book)
-def gen_and_save_subject_kernels_multisigma(subj_id):
-
-    normalize = True
-
-    sigma_ws = np.logspace(-10, 10) # grid search the parameter space
-
-    # get sequences of DQN layer activations
-    layers, ts, run_id, play_key, frame, block_ons_idx, block_offs_idx = gen_subject_DQN_layers(subj_id, normalize)
-
-    # generate GP kernels
-    layer_kernelss = dict()
-    layer_Xx = dict()
-    layer_sf = dict()
-    for regressor_name, layer_sequence in layers.iteritems():
-        # note that we are reusing the HRR kernel code which expects several samples; here we create a single sample
-        layer_kernelss[regressor_name], r_id, layer_Xx[regressor_name], layer_sf[regressor_name] = \
-            gen_subject_kernels_multisigma(subj_id, [layer_sequence], ts, run_id, block_ons_idx, block_offs_idx, sigma_ws)
-
-    for i in range(len(sigma_ws)):
-        sigma_w = sigma_ws[i]
-
-        # save kernels
-        #
-        kernel_filename = os.path.join(matDir, 'DQN25M_subject_kernel_subj=%s_sigma_w=%.3e_norm=%d.mat' % (subj_id, sigma_w, normalize))
-
-        d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernelss[i][0].iteritems()}
-        d.update({regressor_name + '_Xx': Xx for regressor_name, Xx in layer_Xx.iteritems()}) 
-        #d.update({regressor_name + '_sf': sf for regressor_name, sf in layer_sf.iteritems()}) - there are too big
-        d.update({
-            'normalize': normalize,
-            'r_id': r_id,
-            'ts': ts,
-            'block_ons_idx': block_ons_idx,
-            'block_offs_idx': block_offs_idx,
-            'sigma_w': sigma_w,
-            'subj_id': subj_id,
-        })
-
-        scipy.io.savemat(kernel_filename, d)
 
 
 if __name__ == '__main__':
