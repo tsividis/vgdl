@@ -275,10 +275,14 @@ def gen_subject_DQN_layers_projected(subj_id, pca, normalize=False):
             for i in range(0, len(reg['regressors'][regressor_name])):
                 layer = reg['regressors'][regressor_name][i][0].flatten()
 
-                if regressor_name != 'layer_linear2_output':
-                    projection = pca[game['name']][regressor_name].transform(layer.reshape(1,-1)).flatten()
-                else:
+                if regressor_name == 'layer_linear2_output':
                     projection = layer
+                else:
+                    projection = pca[game['name']][regressor_name].transform(layer.reshape(1,-1)).flatten()
+                    projection = np.nan_to_num(projection) # linear1 sometimes has 0/0
+                    # Investigate 0/0 for subject 12
+                    #if regressor_name == 'layer_linear1_output' and play['run_id'] == 2:
+                    #    embed()
 
                 # potentially normalize
                 if normalize == 2:
@@ -342,7 +346,7 @@ def gen_and_save_subject_kernels(subj_id, normalize):
 
     # save kernels
     #
-    kernel_filename = os.path.join(matDir, 'DQN25M_PCA_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d.mat' % (subj_id, sigma_w, normalize))
+    kernel_filename = os.path.join(matDir, 'DQN25M_PCA_subject_kernel_subj=%s_sigma_w=%.3f_norm=%d_comp=%d.mat' % (subj_id, sigma_w, normalize, n_components))
     print('kernel_filename', kernel_filename)
 
     d = {regressor_name + '_kernel': kernel for regressor_name, kernel in layer_kernels.iteritems()}
