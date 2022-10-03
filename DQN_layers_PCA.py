@@ -279,7 +279,6 @@ def gen_subject_DQN_layers_projected(subj_id, pca, normalize=False):
                     projection = layer
                 else:
                     projection = pca[game['name']][regressor_name].transform(layer.reshape(1,-1)).flatten()
-                    projection = np.nan_to_num(projection) # linear1 sometimes has 0/0
                     # Investigate 0/0 for subject 12
                     #if regressor_name == 'layer_linear1_output' and play['run_id'] == 2:
                     #    embed()
@@ -293,6 +292,8 @@ def gen_subject_DQN_layers_projected(subj_id, pca, normalize=False):
                     pass
                 else:
                     assert False, 'bad normalize'
+
+                projection = np.nan_to_num(projection) # linear1 sometimes has 0/0
 
                 layers[regressor_name].append(projection)
 
