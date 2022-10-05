@@ -1686,6 +1686,7 @@ class BasicGame(object):
                         Image.fromarray(screen).save(image_filename)
                     else:
                         # regular images like the ones the subject saw
+                        # TODO (momchil) make optional!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         if not regressors or self.time <= 1 or self.playback_index >= len(self.playback_states) - 2 or len(current_state['effectList']) > 0 or self.theory_did_change(regressors): # Optionally render only frames where the theory changed
                             pygame.image.save(self.screen, image_filename)
                             #embed()
