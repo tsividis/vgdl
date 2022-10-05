@@ -36,7 +36,7 @@ AvatarTypes = [MovingAvatar, HorizontalAvatar, VerticalAvatar, FlakAvatar, Aimed
 class Agent(object):
     def __init__(self, modelType, gameFilename, hyperparameter_sets, hyperparameter_index='short-term', 
         metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=0, produce_printout=False, movieName=None,
-        agent_name='EMPA'):
+        agent_name='EMPA', epsilon_greedy=False, max_nodes_scale = 1.0):
         self.modelType = modelType
         self.gameFilename = gameFilename
         self.gameString = None
@@ -64,8 +64,9 @@ class Agent(object):
         self.return_subgoal_plans = self.hyperparameters['return_subgoal_plans'] # Makes agent commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k # Only using IW 1
         self.extra_atom_allowed = extra_atom_allowed # Adding optional extra atom to IW
-        self.epsilon_greedy = False # Ablation
+        self.epsilon_greedy = epsilon_greedy # Ablation
         self.absolute_max_nodes = 32000 #To save on compute, don't deal with games that require more than this
+        self.max_nodes_scale = max_nodes_scale
         self.shortHorizonNodes = 500 ## This isn't used, but code needs further cleanup to actually delete it.
         self.shortHorizonAnnealing = 1.05 ##  This isn't used, but code needs further cleanup to actually delete it.
         self.forfeit_level = False
@@ -503,7 +504,7 @@ class Agent(object):
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
 
             # t1 = time.time()
-            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
+            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=int(self.max_nodes * self.max_nodes_scale),
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
             # print "plan phase 4: {}".format(time.time()-t1)
@@ -565,6 +566,10 @@ class Agent(object):
         else:
             action = 0
             self.quitting = True
+
+        if self.epsilon_greedy and random.random() < 0.1:
+            action = random.choice([0, 1, 2, 3, 4, 5])
+            print('random action ', action)
 
         return action
 
@@ -1043,7 +1048,7 @@ class Agent(object):
             self.metacontroller.setMaxNodes()
             self.steps_in_solution = 0
             planner_hyperparameters = dict((k, self.hyperparameters[k]) for k in self.hyperparameters.keys() if k not in ['short_horizon', 'return_subgoal_plans'])  
-            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=self.max_nodes,
+            p = WBP.WBP(self.theoryRLEs[0], self.gameFilename, theory=self.hypotheses[0], fakeInteractionRules = self.fakeInteractionRules,seen_limits = self.seen_limits, max_nodes=int(self.max_nodes * self.max_nodes_scale),
                 return_subgoal_plans=self.return_subgoal_plans, stall_mode=self.stall_mode, hyperparameters=planner_hyperparameters, 
                 extra_atom=self.extra_atom, IW_k=self.IW_k, lesion=self.planner_lesion)
             node = WBP.Node(p.rle, p, [], None)

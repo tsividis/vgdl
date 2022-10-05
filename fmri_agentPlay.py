@@ -71,6 +71,9 @@ if __name__ == '__main__':
     #parser.add_argument('--play-id', default=None)
     parser.add_argument('--game-name', default=None)
     parser.add_argument('--tag', default='')
+    parser.add_argument('--metacontroller-index', default=0)
+    parser.add_argument('--epsilon-greedy', default=0)
+    parser.add_argument('--max-nodes-scale', default=1.0)
     parser.add_argument('--steps-per-level', default=FMRI_STEPS_PER_LEVEL)
     parser.add_argument('--insert', action='store_true', default=False)
     parser.add_argument('--record-video-info', action='store_true', default=False)
@@ -161,7 +164,7 @@ if __name__ == '__main__':
             # defaults from load_games.py 
             # python -m vgdl.load_games --game_name tiny_zelda
             agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
-                metacontroller_index=4, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
+                metacontroller_index=int(config.metacontroller_index), IW_k=1, extra_atom_allowed=True, task_ID=task_ID, epsilon_greedy=int(config.epsilon_greedy), max_nodes_scale=float(config.max_nodes_scale))
         elif agent_name == 'Random':
             agent = RandomAgent(game_name, task_ID=task_ID)
         elif agent_name == 'DQN':

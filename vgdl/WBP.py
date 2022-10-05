@@ -43,6 +43,7 @@ class WBP():
 		self.objectNumberTrackingLimit = OBJECT_NUMBER_TRACKING_LIMIT
 		self.objectLocationTrackingLimit = OBJECT_LOCATION_TRACKING_LIMIT
 		self.max_nodes = max_nodes
+		print('WBP max_nodes', max_nodes)
 		self.objectsWhoseLocationsWeIgnore = objectsWhoseLocationsWeIgnore
 		self.objectsWhosePresenceWeIgnore = ['Flicker']
 		self.classesWhoseLocationsWeIgnore = []
