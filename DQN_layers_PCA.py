@@ -175,6 +175,10 @@ def PCA_layers_by_game(layers_by_game):
             pca[game_name][layer_name] = PCA(n_components=n_components)
             pca[game_name][layer_name].fit(layers_by_game[game_name][layer_name])
 
+    with open('/n/holystore01/LABS/gershman_lab/Users/mtomov13/DQN_layers_PCA_pca1.pkl', 'wb') as f:
+        cloudpickle.dump({'pca': pca, 'layers_by_game': layers_by_game}, f)
+    #embed()
+
     return pca
 
 
@@ -279,9 +283,6 @@ def gen_subject_DQN_layers_projected(subj_id, pca, normalize=False):
                     projection = layer
                 else:
                     projection = pca[game['name']][regressor_name].transform(layer.reshape(1,-1)).flatten()
-                    # Investigate 0/0 for subject 12
-                    #if regressor_name == 'layer_linear1_output' and play['run_id'] == 2:
-                    #    embed()
 
                 # potentially normalize
                 if normalize == 2:
@@ -293,7 +294,12 @@ def gen_subject_DQN_layers_projected(subj_id, pca, normalize=False):
                 else:
                     assert False, 'bad normalize'
 
-                projection = np.nan_to_num(projection) # linear1 sometimes has 0/0
+                if any(np.isnan(projection)):
+                    projection = np.zeros_like(projection)
+                    projection[0] = 1
+                    #print('NAN!!!!!!!!!!!!')
+                    #embed()
+                #projection = np.nan_to_num(projection) # linear1 sometimes has 0/0
 
                 layers[regressor_name].append(projection)
 
