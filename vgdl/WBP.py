@@ -255,7 +255,7 @@ class WBP():
 			## Sort max to min for pop()
 			bestNodes = sorted(acceptableNodes, key=lambda n: (-n.intrinsic_reward, n.novelty))
 
-		elif 'IW' in self.lesion:
+		elif 'IW' in self.lesion or 'AGH' in self.lesion:
 			
 			## IW ablations: don't filter for novelty
 			acceptableNodes = filter(lambda n: (not n.terminal or n.win), QReward)
@@ -914,7 +914,7 @@ class Node():
 		
 		## "No goal gradient" ablations
 		if any([s in self.WBP.lesion for s in ['AGH1', 'AGH3']]):
-			return 0.
+			return 0., (0, 0, 0, 0)
 
 		if rle==None:
 			rle = self.rle

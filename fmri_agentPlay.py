@@ -161,7 +161,7 @@ if __name__ == '__main__':
             # defaults from load_games.py 
             # python -m vgdl.load_games --game_name tiny_zelda
             agent = Agent('full', game_name, hyperparameter_sets=hyperparameter_sets, hyperparameter_index='short-term', 
-                metacontroller_index=0, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
+                metacontroller_index=4, IW_k=1, extra_atom_allowed=True, task_ID=task_ID)
         elif agent_name == 'Random':
             agent = RandomAgent(game_name, task_ID=task_ID)
         elif agent_name == 'DQN':
@@ -184,6 +184,7 @@ if __name__ == '__main__':
         curriculumResults = environment.playCurriculum(level_game_pairs=level_game_pairs, make_movie=False, heatmap=False, steps_per_level=int(config.steps_per_level))
 
         # optionally insert into Mongo
+        print('FINISHED, about to insert')
         if config.insert:
             res = {
                 'subj_id': subj_id,
@@ -194,4 +195,5 @@ if __name__ == '__main__':
                 'ts': time.time(),
                 'results': curriculumResults,
             }
+            print('INSERTing... ', res)
             db.sim_results.insert_one(res)

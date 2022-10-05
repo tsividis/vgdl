@@ -7,7 +7,7 @@ mkdir output
 #subjects=( 1 2 3 4 5 6 7 8 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=( 1 2 3 4 5 6 7 8 9 10 11 )  #  e.g. subjects=( 1 2 5 6 7 10 )
 #subjects=(13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32)
-subjects=(12)
+subjects=(11)
 subj_arg="${subjects[@]}" # stringify it
 
 insert='--insert' # whether to insert any results in the db
@@ -19,7 +19,7 @@ record_video_info=''
 agent='EMPA'
 #tag='attempt_1_states'
 #tag='attempt_2_states_steps_1200'
-tag='ablation_1'
+tag='ablation_AGH3'
 steps_per_level=1200 # fMRI level # frames in a minute
 
 #agent='DQN'
@@ -35,6 +35,8 @@ steps_per_level=1200 # fMRI level # frames in a minute
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
 #games=(  'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda')
 
+games=(  'vgfmri3_plaqueAttack' ) # 140000, 5 days
+
 #games=(  'vgfmri4_lemmings' ) # 90000, 2 days
 #games=( 'vgfmri4_avoidgeorge' ) # 50000, 2 days
 #games=( 'vgfmri4_zelda' )  # 90000? 
@@ -42,7 +44,7 @@ steps_per_level=1200 # fMRI level # frames in a minute
 
 #games=( 'vgfmri4_helper' ) # n 140000 , 4 days
 #games=( 'vgfmri4_bait' 'vgfmri4_chase' 'vgfmri3_zelda' ) # 140000, 4 days
-games=( 'vgfmri4_chase' ) # 50000, 4 days
+#games=( 'vgfmri4_chase' ) # 50000, 4 days
 #games=( 'vgfmri4_bait' ) # 50000, 4 days
 #games=(..)
 #games=( 'vgfmri3_chase' ) # 50000, 4 days

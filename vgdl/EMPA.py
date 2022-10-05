@@ -72,6 +72,9 @@ class Agent(object):
         self.agentState = defaultdict(lambda: 0)
 
         self.metacontroller_params = metacontroller_sets[metacontroller_index]
+
+        print('hyperparameters', self.hyperparameters)
+        print('metacontroller_params', self.metacontroller_params)
         self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
         self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
         self.longhorizonAnnealing = self.metacontroller_params['longhorizonAnnealing']

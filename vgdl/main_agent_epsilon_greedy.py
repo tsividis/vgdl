@@ -16,7 +16,7 @@ import cPickle, cloudpickle, pickle
 import time
 from datetime import datetime
 import copy
-from metaplanner import translate_events, observe
+#from metaplanner import translate_events, observe
 from rlenvironmentnonstatic import createRLInputGame, createRLInputGameFromStrings, defInputGame, createMindEnv
 from termcolor import colored
 from pygame import K_LEFT, K_UP, K_RIGHT, K_DOWN, K_SPACE
@@ -47,11 +47,13 @@ class Agent:
         self.timestamp = False
         self.annealingFactor = 1.
         self.shortHorizon = self.hyperparameters['short_horizon']#False
-        self.firstOrderHorizon = self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
+        self.firstOrderHorizon = True  # self.hyperparameters['first_order_horizon'] #True ## Makes you commit to a plan once first-order distances change (e.g., spritecounter values)
         self.IW_k = IW_k
         self.task_ID = task_ID
         self.extra_atom_allowed = extra_atom_allowed ## for analysis, allows for toggling whether we allow the below.
         self.epsilon_greedy = epsilon_greedy
+        self.final_epsilon = 0.1
+        self.record_fMRIRegressors = False
         self.hybrid = False
         self.absolute_max_nodes = 50000 ## just a convenience parameter
         self.shortHorizonNodes = 500 ## this isn't used.
@@ -60,8 +62,9 @@ class Agent:
         self.random_steps_on_plan_failure = self.metacontroller_params['random_steps_on_plan_failure']
         self.longHorizonNodes = self.metacontroller_params['longHorizonNodes']
         self.longhorizonAnnealing = self.metacontroller_params['longhorizonAnnealing']
+        self.shortHorizonAnnealing = self.metacontroller_params['longhorizonAnnealing']
         self.shortHorizonRandomChoice = self.metacontroller_params['shortHorizonRandomChoice']
-        self.conservative_max_nodes = self.metacontroller_params['conservative_max_nodes']
+        #self.conservative_max_nodes = self.metacontroller_params['conservative_max_nodes']
         self.extra_atom = self.metacontroller_params['extra_atom']
         self.noNewObjectNum = self.metacontroller_params['noNewObjectNum']
         self.objectLocationTrackingLimit = self.metacontroller_params['objectLocationTrackingLimit']
@@ -73,9 +76,9 @@ class Agent:
         #SN=smart-normal ('explore' step fulfills curiosity; 'exploit fulfills win'). 
         #SS=smart-sequential. Same as above, but it's first explore everything, then exploit everything.
         ## Also note that changing nonewobjectnum will delay quitting, as only long-term planning anneals up such that you'd ever reach absolute_max_nodes.
-        self.epsilon_greedy_variant = self.metacontroller_params['epsilon_greedy_variant']
-        self.switch_to_exploit_step = self.metacontroller_params['switch_to_exploit_step'] ## only used for e-greedy lesion
-        self.allow_long_range = self.metacontroller_params['allow_long_range'] ## for the exploration lesion we want to optionally disable long-range planning
+        self.epsilon_greedy_variant = 'DF' # self.metacontroller_params['epsilon_greedy_variant']
+        self.switch_to_exploit_step = 1000 # self.metacontroller_params['switch_to_exploit_step'] ## only used for e-greedy lesion
+        self.allow_long_range = False # self.metacontroller_params['allow_long_range'] ## for the exploration lesion we want to optionally disable long-range planning
 
         if 'objectsWhoseLocationWeIgnore' in self.metacontroller_params:
             self.objectsWhoseLocationWeIgnore = self.metacontroller_params['objectsWhoseLocationWeIgnore']
