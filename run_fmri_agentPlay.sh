@@ -99,7 +99,7 @@ do
                 # run agentPlay
                 echo ---- run_fmri_agentPlay: agent ${1}, subj ${2}, run $run, block $block, instance $instance, game ${3}
                 #cmd="python -m cProfile -s cumtime fmri_agentPlay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance}  --game-name=${3}"
-                cmd="python -W ignore::UserWarning -m cProfile -o fmri_agentPlay_${1}_${3}.prof fmri_agentPlay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --game-name=${3} --steps-per-level=${4} --tag=${5} ${6} ${7}"
+                cmd="python -W ignore::UserWarning -m cProfile -o fmri_agentPlay_${1}_${3}.prof fmri_agentPlay.py --agent-name=${1} --subj-id=${2} --run-id=${run} --block-id=${block} --instance-id=${instance} --game-name=${3} --steps-per-level=${4} --tag=${5} --metacontroller-index=${6} --epsilon-greedy=${7} --max-nodes-scale=${8} ${9} ${10}"
                 echo ${cmd}
                 eval ${cmd}
 

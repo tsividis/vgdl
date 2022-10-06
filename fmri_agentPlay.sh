@@ -16,10 +16,17 @@ insert='--insert' # whether to insert any results in the db
 #record_video_info='--record-video-info'  # whether to save the encountered states
 record_video_info=''
 
+metacontroller_index=0
+epsilon_greedy=0
+max_nodes_scale='0.1'
+
 agent='EMPA'
 #tag='attempt_1_states'
 #tag='attempt_2_states_steps_1200'
-tag='ablation_AGH3'
+#tag='ablation_AGH3_attempt_1'
+#tag='ablation_IW_attempt_1'
+#tag='ablation_greedy_attempt_1'
+tag='ablation_nodes_attempt_1'
 steps_per_level=1200 # fMRI level # frames in a minute
 
 #agent='DQN'
@@ -65,7 +72,7 @@ for subj in ${subjects[*]}; do
         #sbatch_output=`sbatch -p fasse_bigmem --mem 450001 -t 7-00:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python fmri_agentPlay.py --agent-name=${agent} --subj-id=${subj} --steps-per-level=${steps_per_level} --game-name=${game}"`
         #sbatch_output=`sbatch -p fasse_gpu --gres=gpu --mem 20001 -t 0-0:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
         #sbatch_output=`sbatch -p fasse_bigmem --mem 450000 -t 7-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
-        sbatch_output=`sbatch -p fasse --mem 140000 -t 5-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
+        sbatch_output=`sbatch -p fasse --mem 140000 -t 5-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${metacontroller_index} ${epsilon_greedy} ${max_nodes_scale} ${insert} ${record_video_info}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output
