@@ -655,6 +655,60 @@ class SubjectHRR(object):
                 
         return game_HRR, spriteSet_HRR, interactionSet_HRR, terminationSet_HRR, noveltySet_HRR
 
+    def embedState(self, state, normalize):
+        
+        #pprint(gameDesc)
+
+        state_HRR = np.zeros(self.D)
+        objects_HRR = np.zeros(self.D)
+        effects_HRR = np.zeros(self.D)
+
+        logging.debug('...objects')
+        
+        # embed objects and their positions
+        for key, ss in state['objects'].iteritems():
+            for pos, attrs in ss.iteritems():
+                # pos is str, e.g. '(140, 40)'
+                x = np.zeros(self.D)
+                y = np.zeros(self.D)
+                x[int(attrs['x'] / fMRI_screensize[0] * self.D)] = 1
+                y[int(attrs['y'] / fMRI_screensize[1] * self.D)] = 1
+                x = scipy.ndimage.gaussian_filter1d(x, self.D / 10)
+                y = scipy.ndimage.gaussian_filter1d(y, self.D / 10)
+
+                color_HRR = encode(self.embedToken('color'), self.embedToken(attrs['colorName'])) 
+                x_HRR = encode(self.embedToken('x'), x)
+                y_HRR = encode(self.embedToken('y'), y)
+                object_HRR = encode(self.embedToken('object'), color_HRR + x_HRR + y_HRR)
+                objects_HRR = np.add(objects_HRR, object_HRR)
+
+        # Embed effects
+        for effect in state['effectListByColor']:
+            type_HRR = encode(self.embedToken('type'), self.embedToken(effect[0]))
+            agent_HRR = encode(self.embedToken('agent'), self.embedToken(effect[1]))
+            patient_HRR = encode(self.embedToken('patient'), self.embedToken(effect[2]))
+            effect_HRR = encode(self.embedToken('effect'), type_HRR + agent_HRR + patient_HRR)
+            effects_HRR = np.add(effects_HRR, effect_HRR)
+            
+        # normalize
+        if normalize == 2:
+            # Z score
+            objects_HRR = scipy.stats.zscore(objects_HRR)   
+            effects_HRR = scipy.stats.zscore(effects_HRR)   
+        elif normalize == 1:
+            # normalized to unit vector length
+            # see X.E in Plate 1995
+            objects_HRR = objects_HRR / np.sqrt(np.sum(np.square(objects_HRR)))
+            effects_HRR = effects_HRR / np.sqrt(np.sum(np.square(effects_HRR)))
+        elif normalize == 0:
+            pass
+        else:
+            assert False, 'bad normalize'
+
+        state_HRR = np.add(objects_HRR, effects_HRR)
+
+        return state_HRR
+
 
 
     def embedTheory(self, theory):
