@@ -154,7 +154,7 @@ if __name__ == '__main__':
         movie_names = all_movie_names[game_name]
         assert len(movie_names) == len(level_game_pairs)
 
-        task_ID = 'subj={}'.format(subj_id) # This is crucial to make sure the curriculum is subject-specific
+        task_ID = 'subj={}_tag={}'.format(subj_id, config.tag) # This is crucial to make sure the curriculum is subject-specific
         subj_game_videos_dir = os.path.join(videosDir, 'DQN', 'subj_'+str(subj_id), game_name)
         subj_game_images_dir = os.path.join(imagesDir, 'DQN', 'subj_'+str(subj_id), game_name)
 
