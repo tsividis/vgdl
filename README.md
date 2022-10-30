@@ -1,3 +1,9 @@
+See `fMRI_README.md` for the fMRI experiment and analysis.
+
+
+--------------------
+
+
 PyVGDL
 =======
 
