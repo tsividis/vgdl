@@ -32,6 +32,7 @@ import cPickle, cloudpickle
 from vgdl.environment import Environment
 from vgdl.hyperparameters import hyperparameter_sets
 from vgdl.theory_template import TimeStep, Theory, Game, writeTheoryToTxt, generateSymbolDict
+from sprite_valence import sprite_valences
 #from fmri_agentReplay import theoriesDir
 
 import pygame
@@ -66,7 +67,8 @@ if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncfl
     matDir = 'mat'
 else:
     # cluster
-    matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
+    #matDir = os.path.join(os.environ.get('MY_LAB'), 'VGDL', 'mat')
+    matDir = os.path.join(os.environ.get('MY_SCRATCH'), 'VGDL', 'mat')
 
     print theoriesDir, matDir
 
@@ -231,7 +233,7 @@ def gameDescFromFile(filename):
 # pass e.g. gameString.replace('\t', '    ').split('\n')
 # as returned by writeTheoryToTxt
 #
-def getGameDescriptionFromLines(lines):
+def getGameDescriptionFromLines(lines, game_name=None, approachAvoid=False):
 
     #pprint(lines)
         
@@ -278,47 +280,82 @@ def getGameDescriptionFromLines(lines):
         if len(tokens) < 3:
             logging.error('NO SPRITE TYPE' + str(tokens)) # TODO zelda enemy sprite; assert false for theories
             continue
+
+        if approachAvoid:
+            # each spright has single attribute: approach/avoid/neutral, as requested by reviewer 1 
+
+            # Determine sprite kind by color
+            color = None
+            for token in tokens[2:]:
+                if "=" in token:
+                    field, value = token.split("=")
+                    # cooldown, spawnCooldown, speed, total, prob, limit
+                    # orientation, color eliminated
+                    # momchil TODO: brain might care about color, even in theory region
+                    if field == 'color':
+                        color = value
+
+            if color is None:
+                print 'No sprite color!!!!!!' 
+                embed()
+
+            if game_name not in sprite_valences:
+                print 'Unrecognized game name', game_name
+                embed()
+
+            if color in sprite_valences[game_name]['approach_colors']:
+                sprite_type = 'approach'
+            elif color in sprite_valences[game_name]['avoid_colors']:
+                sprite_type = 'avoid'
+            else:
+                sprite_type = 'neutral'
+
+            sprite_info["name"] = tokens[0]
+            sprite_info["type"] = sprite_type
         
-        sprite_info["name"] = tokens[0]
-        sprite_info["type"] = tokens[2]
-        
-        for token in tokens[2:]:
-            if "=" in token:
-                field, value = token.split("=")
-                # cooldown, spawnCooldown, speed, total, prob, limit
-                # orientation, color eliminated
-                # momchil TODO: brain might care about color, even in theory region
-                if field in ['color', 'singleton', 'cons', 'rotateInPlace', 'autotling', 'frameRate', 'portal', 'total']:
-                    continue
-                if field == "speed":
-                    if float(value) < 0.5:
-                        value = "slow"
+        else:
+            # otherwise, just parse sprite attributes
+            sprite_info["name"] = tokens[0]
+            sprite_info["type"] = tokens[2]
+            
+            for token in tokens[2:]:
+                if "=" in token:
+                    field, value = token.split("=")
+                    # cooldown, spawnCooldown, speed, total, prob, limit
+                    # orientation, color eliminated
+                    # momchil TODO: brain might care about color, even in theory region
+                    if field in ['color', 'singleton', 'cons', 'rotateInPlace', 'autotling', 'frameRate', 'portal', 'total']:
+                        continue
+                    if field == "speed":
+                        if float(value) < 0.5:
+                            value = "slow"
+                        else:
+                            value = "fast"
+                    if field == "cooldown":
+                        if float(value) < 4:
+                            value = "slow"
+                        else:
+                            value = "fast"
+                    if field == "limit":
+                        if float(value) < 6:
+                            value = "few"
+                        else:
+                            value = "many"
+                    if field == "spawnCooldown":
+                        if float(value) < 10:
+                            value = "few"
+                        else:
+                            value = "many"
+                    if field == "prob":
+                        if float(value) < 0.03:
+                            value = "slow"
+                        else:
+                            value = "fast"
+                    if field == 'stype':
+                        sprite_info[field + "_" + tokens[2]] = value
                     else:
-                        value = "fast"
-                if field == "cooldown":
-                    if float(value) < 4:
-                        value = "slow"
-                    else:
-                        value = "fast"
-                if field == "limit":
-                    if float(value) < 6:
-                        value = "few"
-                    else:
-                        value = "many"
-                if field == "spawnCooldown":
-                    if float(value) < 10:
-                        value = "few"
-                    else:
-                        value = "many"
-                if field == "prob":
-                    if float(value) < 0.03:
-                        value = "slow"
-                    else:
-                        value = "fast"
-                if field == 'stype':
-                    sprite_info[field + "_" + tokens[2]] = value
-                else:
-                    sprite_info[field] = value
+                        sprite_info[field] = value
+
         spriteSet.append(sprite_info)
 
     # stores information of the interaction set
@@ -457,7 +494,7 @@ class SubjectHRR(object):
             logging.debug('                                        generating ' + token) #, ': ', self.embeddings[token]
         return self.embeddings[token]
 
-    def embedGame(self, gameDesc, normalize, concat=False, novelty=False):
+    def embedGame(self, gameDesc, normalize, concat=False, novelty=True):
         
         #pprint(gameDesc)
 
@@ -549,6 +586,7 @@ class SubjectHRR(object):
         
         for sprite in sprite_embeddings:
             spriteSet_HRR = np.add(spriteSet_HRR, sprite_embeddings[sprite])
+
         
         logging.debug('...interactions')
 
@@ -1129,7 +1167,8 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False,
         # from Canon to fasse
         #theory_filename = theory_filename.replace('/n/holyscratch01/gershman_lab/Users/mtomov13', os.environ.get('MY_CANNON_SCRATCH'))  # !!! they're not all there
         #theory_filename = theory_filename.replace('/n/holyscratch01/gershman_lab/Users/mtomov13/VGDL/theories', '/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/theories_cannon_repro_regressors')  
-        theory_filename = theory_filename.replace('/n/holyscratch01/', '/n/holyscratch01-ro/')  
+        #theory_filename = theory_filename.replace('/n/holyscratch01/', '/n/holyscratch01-ro/')  
+        theory_filename = theory_filename.replace('/n/holyscratch01/gershman_lab/Users/mtomov13/VGDL/theories/', '/n/holystore01/LABS/gershman_lab/Users/mtomov13/VGDL/theories_cannon_repro_regressors/')  # !!! they're not all there
         with open(theory_filename, 'r') as f:
             reg['regressors']['theory'] = cloudpickle.load(f)
 
@@ -1161,7 +1200,7 @@ def gen_subject_HRRs(subj_id, K=10, N=10, E=0.05, nsamples=100, normalize=False,
             gameString, _, _ = writeTheoryToTxt(environment.environment, theory, symbolDict, "./theory_files/{}_{}.py_auto_HRR".format(agent.gameFilename, task_ID))
             gameLines = gameString.replace('\t', '    ').split('\n')
 
-            gameDesc = getGameDescriptionFromLines(gameLines)
+            gameDesc = getGameDescriptionFromLines(gameLines, game_name, True)
 
             for j in range(nsamples):
                 theory_HRR, sprite_HRR, interaction_HRR, termination_HRR, novelty_HRR = samples[j].embedGame(gameDesc, normalize, concat, novelty)
@@ -1682,7 +1721,8 @@ def gen_and_save_subject_kernels_batched(subj_id, K=10, N=10, E=0.05, nsamples=1
     #
     sigma_w = 1; # This is effectively a constant scaling factor of the kernel K, which gets canceled out in the posterior mean equation and gets absorbed in the noise variance (see equation 2.23 in Rasmussen's GP book)
 
-    kernel_filename = os.path.join(matDir, 'HRR_cannon_repro_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d_concat=%d_novelty=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize, concat, novelty))
+    kernel_filename = os.path.join(matDir, 'HRR_approach_avoid_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d_concat=%d_novelty=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize, concat, novelty))
+    #kernel_filename = os.path.join(matDir, 'HRR_cannon_repro_subject_kernel_subj=%s_K=%d_N=%d_E=%.3f_nsamples=%d_sigma_w=%.3f_norm=%d_concat=%d_novelty=%d.mat' % (subj_id, K, N, E, nsamples, sigma_w, normalize, concat, novelty))
     print 'filename', kernel_filename
 
     assert nsamples % batch_size == 0
@@ -1979,7 +2019,7 @@ if __name__ == '__main__':
     parser.add_argument('--normalize', default=1, help='whether/how to normalize the HRRs (0 = no, 2 = Z score, 1 = unit vector')
     parser.add_argument('--type', default='kernel')
     parser.add_argument('--concat', type=int, default=False, help='whether to concatenate the sprite, interaction, and termination HRRs instead of adding them')
-    parser.add_argument('--novelty', type=int, default=False, help='whether to include the novelty terminations in the termination HRR')
+    parser.add_argument('--novelty', type=int, default=True, help='whether to include the novelty terminations in the termination HRR')
     parser.add_argument('--dist', default='correlation')
     parser.add_argument('--glmodel', default=24)
     parser.add_argument('--agg', default='avg')
