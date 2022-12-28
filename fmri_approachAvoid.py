@@ -22,7 +22,7 @@ import cPickle, cloudpickle
 import utils
 from vgdl.theory_template import TimeoutRule, SpriteCounterRule, MultiSpriteCounterRule, NoveltyRule, generateTheoryFromGame
 from fmri_agentReplay import chelsea_fix_states_avatar_only
-from sprite_valence import sprite_valences
+from sprite_valence import sprite_valences, valences
 
 import pygame
 
@@ -110,10 +110,10 @@ def playsPostprocApproachAvoid(subj_id):
             state_timestamps = []
             # initialize effects_by_valence
             effects_by_valence = {}
-            for valance in sprite_valences[game_name].keys():
-                effects_by_valence[valance] = {}
-                for sprite_class in sprite_valences[game_name][valence].keys():
-                    effects_by_valence[valance][sprite_class] = []
+            for valence in valences:
+                effects_by_valence[valence] = {}
+                for sprite_class in sprite_valences[game_name][valence]:
+                    effects_by_valence[valence][sprite_class] = []
 
             assert(len(states) == len(keystates))
             for t in range(len(states)):
@@ -127,15 +127,12 @@ def playsPostprocApproachAvoid(subj_id):
                     elif 'avatar' == eff[2]:
                         touched_sprites.add(eff[1])
 
-            if len(touched_sprites)>0:
-                embed()
-                snaohe
-
-            print('touched sprites', touched_sprites)
-            for valance in sprite_valences[game_name].keys():
-                for sprite_class in sprite_valences[game_name][valence].keys():
-                    is_touched = sprite_class in touched_sprites
-                    effects_by_valence[valance][sprite_class].append(is_touched)
+                if len(touched_sprites)>0:
+                    print('touched sprites', t, touched_sprites)
+                for valence in valences:
+                    for sprite_class in sprite_valences[game_name][valence]:
+                        is_touched = sprite_class in touched_sprites
+                        effects_by_valence[valence][sprite_class].append(is_touched)
 
 
 
@@ -146,7 +143,6 @@ def playsPostprocApproachAvoid(subj_id):
 
             # Insert into database
             #
-
             db.approach_avoid.insert_one(approach_avoid)
 
         plays.close()

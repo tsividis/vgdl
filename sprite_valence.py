@@ -1,5 +1,7 @@
 # For each game, whether each sprite is approach/avoid/neutral
 
+valences = set(['approach','avoid','neutral'])
+
 sprite_valences = {
         "vgfmri3_chase": {
             "approach_colors": ["RED"],
