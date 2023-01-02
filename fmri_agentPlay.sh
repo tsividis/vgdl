@@ -18,16 +18,18 @@ record_video_info=''
 
 metacontroller_index=0 #0, 4, 5
 epsilon_greedy=0  #0, 1
-max_nodes_scale='0.01'  # 1, 0.1, 0.01
+max_nodes_scale='1'  # 1, 0.1, 0.01
 
 agent='EMPA'
 #tag='attempt_1_states'
+#tag='attempt_3_colors'
+tag='attempt_4_colors'
 #tag='attempt_2_states_steps_1200'
 #tag='ablation_AGH3_attempt_1'
-#tag='ablation_AGH3_attempt_1'
+#tag='ablation_IW_attempt_1'
 #tag='ablation_greedy_attempt_1'
 #tag='ablation_nodes_attempt_1'
-tag='ablation_lessnodes_attempt_1'
+#tag='ablation_lessnodes_attempt_1'
 steps_per_level=1200 # fMRI level # frames in a minute
 
 #agent='DQN'
@@ -43,6 +45,8 @@ steps_per_level=1200 # fMRI level # frames in a minute
 #games=( 'vgfmri3_chase' 'vgfmri3_helper' 'vgfmri3_bait' 'vgfmri3_lemmings' 'vgfmri3_plaqueAttack' 'vgfmri3_zelda')
 #games=(  'vgfmri3_helper' 'vgfmri3_bait'  'vgfmri3_zelda')
 
+# see commit 1d234e28da082c05a7fccdfdd16855d13f52128b
+
 #games=(  'vgfmri3_plaqueAttack' ) # 140000, 5 days
 
 #games=(  'vgfmri4_lemmings' ) # 90000, 2 days
@@ -51,11 +55,12 @@ steps_per_level=1200 # fMRI level # frames in a minute
 #games=(...)
 
 #games=( 'vgfmri4_helper' ) # n 140000 , 4 days
-#games=( 'vgfmri4_bait' 'vgfmri4_chase' 'vgfmri3_zelda' ) # 140000, 4 days
-games=( 'vgfmri4_chase' ) # 50000, 4 days
+#games=( 'vgfmri4_bait' 'vgfmri4_chase' 'vgfmri4_zelda' ) # 140000, 4 days
+#games=( 'vgfmri4_bait' 'vgfmri4_chase' 'vgfmri4_zelda' 'vgfmri4_helper' 'vgfmri4_avoidgeorge' 'vgfmri4_lemmings' ) # 140000, 4 days
+#games=( 'vgfmri4_chase' ) # 50000, 4 days
 #games=( 'vgfmri4_bait' ) # 50000, 4 days
-#games=(..)
-#games=( 'vgfmri3_chase' ) # 50000, 4 days
+games=(..)
+#games=( 'vgfmri3_c.hase' ) # 50000, 4 days
 
 echo ---------------- >> jobs.txt
 echo --- $(date): Running fmri_agentPlay for subjects ${subj_arg} in parallel >> jobs.txt
@@ -73,7 +78,7 @@ for subj in ${subjects[*]}; do
         #sbatch_output=`sbatch -p fasse_bigmem --mem 450001 -t 7-00:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="source activate pedro; python fmri_agentPlay.py --agent-name=${agent} --subj-id=${subj} --steps-per-level=${steps_per_level} --game-name=${game}"`
         #sbatch_output=`sbatch -p fasse_gpu --gres=gpu --mem 20001 -t 0-0:20 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
         #sbatch_output=`sbatch -p fasse_bigmem --mem 450000 -t 7-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${insert} ${record_video_info}"`
-        sbatch_output=`sbatch -p fasse --mem 50000 -t 4-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${metacontroller_index} ${epsilon_greedy} ${max_nodes_scale} ${insert} ${record_video_info}"`
+        sbatch_output=`sbatch -p fasse --mem 140000 -t 5-0:00 -o ${outfileprefix}_%j.out -e ${outfileprefix}_%j.err --wrap="./run_fmri_agentPlay.sh ${agent} ${subj} ${game} ${steps_per_level} ${tag} ${metacontroller_index} ${epsilon_greedy} ${max_nodes_scale} ${insert} ${record_video_info}"`
         # for local testing
         #sbatch_output=`echo Submitted batch job 88725418`
         echo $sbatch_output

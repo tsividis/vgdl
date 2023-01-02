@@ -17,7 +17,7 @@ if [[ `hostname` == *"Momchil"* ]]; then
     nplays_idx=4
     curriculum_dir=savedCurricula
 else
-    host='holy7c22108.rc.fas.harvard.edu'
+    host='holy7c22109.rc.fas.harvard.edu'
     nplays_idx=2
     curriculum_dir=${MY_SCRATCH}/VGDL/savedCurricula
 fi
@@ -63,7 +63,8 @@ do
             then
                 # make sure to skip levels that we have already played
                 # note this assumes that we are not removing the saved curricula
-                out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'tag': '${5}'})"`
+                #out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'tag': '${5}'})"`
+                out=`mongo --host ${host} heroku_7lzprs54  --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'tag': '${5}'})"`
                 echo mongo nlevel -- $out
                 # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601
                 SAVEIFS=$IFS   # Save current IFS
@@ -81,7 +82,8 @@ do
                 level=$(( level + 1 ))
 
                 # make sure current level is actually not computed
-                out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'results.level': ${level}, 'tag': '${5}'})"`
+                #out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'results.level': ${level}, 'tag': '${5}'})"`
+                out=`mongo --host ${host} heroku_7lzprs54  --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'results.level': ${level}, 'tag': '${5}'})"`
                 echo mongo level $level count -- $out
                 # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601
                 SAVEIFS=$IFS   # Save current IFS
