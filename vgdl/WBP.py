@@ -951,6 +951,7 @@ class Node():
 				noveltytermination_val, ranking = self.noveltytermination_val(
 					theory, term, term.termination.s1, term.termination.s2, rle,
 					first_alpha=novelty_first_alpha, second_alpha=novelty_second_alpha)
+				#print('noveltytermination_val=',noveltytermination_val,novelty_first_alpha,novelty_second_alpha)
 				if 'avatar' == term.termination.s2:
 					avatarNoveltyVals.append([noveltytermination_val,
 						ranking])
