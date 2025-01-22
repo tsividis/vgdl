@@ -170,3 +170,27 @@ def read_gvgai_game(filename):
 def quickcopy(obj):
 	return cPickle.loads(cPickle.dumps(obj))
 
+#
+# Cedric additions
+#
+
+# Functions to get the key state, indicating which keys of the keyboard are
+# currently pressed. The key state structure is a dictionary whose keys
+# are integers corresponding to pygame's key codes (e.g. K_LEFT, K_SPACE)
+# and whose values are booleans, indicating whether the corresponding key
+# is currently pressed (True if pressed, False otherwise).
+
+import pygame
+
+def getAllKeys():
+	return [getattr(pygame.locals, k) for k in dir(pygame.locals) if k.startswith("K_")]
+
+def getEmptyKeyState():
+	# returns the key state when no keys are pressed
+	allKeys = getAllKeys()
+	return {k: False for k in allKeys}
+
+def getPressedKeyState():
+	allKeys = getAllKeys()
+	pressed = pygame.key.get_pressed()
+	return {k: pressed[k] for k in allKeys}

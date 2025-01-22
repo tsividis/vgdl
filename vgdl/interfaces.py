@@ -8,7 +8,8 @@ These are based on the PyBrain RL framework of Environment and Task classes.
 '''
 
 from numpy import zeros
-import pygame    
+import pygame  
+import util  
 
 from pybrain.rl.environments.environment import Environment
 from pybrain.rl.environments.episodic import EpisodicTask
@@ -55,7 +56,8 @@ class GameEnvironment(Environment, StateObsHandler):
         if self.recordingEnabled:
             self._last_state = self.getState()
             self._allEvents = []            
-        self._game.keystate = pygame.key.get_pressed()  
+        # self._game.keystate = pygame.key.get_pressed()  
+        self._gamekeystate = util.getPressedKeyState()
             
     def getSensors(self, state=None):
         if state is None:

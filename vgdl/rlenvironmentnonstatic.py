@@ -19,6 +19,7 @@ import random
 import math
 import importlib
 from colors import *
+import util
 from util import factorize, assign_symbols_to_objects, quickcopy
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 from termcolor import colored
@@ -475,7 +476,8 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
             # off-policy learning from human action/state replay
             # 
 
-            emptyKeyState = [0]*323 #keyState when no keys are pressed
+            # emptyKeyState = [0]*323 #keyState when no keys are pressed
+            emptyKeyState = util.getEmptyKeyState()
             self._game.keystate = emptyKeyState # momchil: important to reset keystate
 
             # the full game state, for full state replay

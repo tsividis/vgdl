@@ -9,6 +9,7 @@ These are based on the PyBrain RL framework of Agent classes.
 
 
 import pygame
+import util
 from pybrain.rl.agents.agent import Agent
 from pybrain.rl.learners.modelbased import policyIteration
 from pybrain.utilities import drawIndex
@@ -27,7 +28,8 @@ class InteractiveAgent(Agent):
         from pygame.locals import K_ESCAPE, QUIT        
         from ontology import RIGHT, LEFT, UP, DOWN
         pygame.event.pump()
-        keystate = pygame.key.get_pressed()    
+        # keystate = pygame.key.get_pressed()    
+        keystate = util.getPressedKeyState()
         res = None
         if   keystate[K_RIGHT]: res = BASEDIRS.index(RIGHT)
         elif keystate[K_LEFT]:  res = BASEDIRS.index(LEFT)

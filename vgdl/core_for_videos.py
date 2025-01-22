@@ -4,6 +4,7 @@ Video game description language -- parser, framework and core game classes.
 @author: Tom Schaul
 '''
 import pygame
+import util
 from random import choice
 from tools import Node, indentTreeParser
 from collections import defaultdict
@@ -36,7 +37,8 @@ actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
                     (0,1): pygame.K_DOWN, (0,-1): pygame.K_UP}
 
 keyPresses = {273: 'up', 274: 'down', 276: 'left', 275: 'right', 32: 'spacebar', 0:'none'}
-emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
+# emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
+emptyKeyState = util.getEmptyKeyState()
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
@@ -1190,7 +1192,8 @@ class BasicGame(object):
             pygame.event.pump()
 
             # get action pressed
-            self.keystate = pygame.key.get_pressed()
+            # self.keystate = pygame.key.get_pressed()
+            self.keystate = util.getPressedKeyState()
 
             # # PT: Disables mistaken contiguous key presses, prints to terminal
             if disableContinuousKeyPress and not self.playback_states:
@@ -1393,7 +1396,8 @@ class BasicGame(object):
 
         # gather events
         pygame.event.pump()
-        self.keystate = list(pygame.key.get_pressed())
+        # self.keystate = list(pygame.key.get_pressed())
+        self.keystate = util.getPressedKeyState()
 
         self.keystate[action] = 1
 

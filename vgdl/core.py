@@ -4,6 +4,7 @@ Video game description language -- parser, framework and core game classes.
 @author: Tom Schaul
 '''
 import pygame
+import util
 import random
 import copy
 import hashlib
@@ -49,7 +50,8 @@ actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
                     (0,1): pygame.K_DOWN, (0,-1): pygame.K_UP}
 
 keyPresses = {K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', K_SPACE: 'spacebar', 0:'none'}
-emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
+# emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
+emptyKeyState = util.getEmptyKeyState()
 
 # fMRI helpers
 # TODO momchil put somewhere else
@@ -132,17 +134,73 @@ def plotRegressor(regressors, name, max_time, pos, screen, color=white):
     pygame.draw.lines(screen, color, False, points, 2) 
 
 
+# Cedric: Utility functions to convert all keys in the state dictionary
+# into strings, and to convert them back into what they were originally
+
+def cf_stringify_dict(d):
+    """
+    Recursively transforms all keys of type int in the input dictionary into
+    string keys prefixed with "int_"
+    """
+    if isinstance(d, dict):
+        new_dict = {}
+        for k, v in d.iteritems():
+            # Transform the key if it's an integer
+            if isinstance(k, (int, long)):
+                new_k = "int_" + str(k)
+            else:
+                new_k = k
+            # Apply the transformation recursively
+            new_dict[new_k] = cf_stringify_dict(v)
+        return new_dict
+    elif isinstance(d, list):
+        return [cf_stringify_dict(v) for v in d]
+    else:
+        return d
+
+def cf_destringify_dict(d):
+    """
+    Transforms all "int_" keys in the input dictionary back into integer
+    """
+    if isinstance(d, dict):
+        new_dict = {}
+        for k, v in d.iteritems():
+            # Transform the key back into an int if needed
+            if ((isinstance(k, str) or isinstance(k, unicode))
+                and k.startswith("int_") and k[4:].isdigit()):
+                new_k = int(k[4:])
+            else:
+                new_k = k
+            # Apply the transformation recursively
+            new_dict[new_k] = cf_destringify_dict(v)
+        return new_dict
+    elif isinstance(d, list):
+        return [cf_destringify_dict(v) for v in d]
+    else:
+        return d
+
+
 class VGDLParser(object):
     """ Parses a string into a Game object. """
     verbose = False
 
     @staticmethod
     def compress(state):
-        return zlib.compress(bson.encode(state))
+        # Cedric: bson.encode() does not allow dictionary keys to be of any
+        # other type than strings. Calling it directly onto the given state
+        # resulted in a runtime error due to state containing integer keys.
+        # I added the line below to convert all keys
+        # into string during encoding, and another line in decompress() to
+        # convert them back into their original type during decoding.
+        stringified_state = cf_stringify_dict(state)
+        return zlib.compress(bson.encode(stringified_state))
 
     @staticmethod
     def decompress(zstate):
-        return bson.decode(zlib.decompress(zstate))
+        stringified_state = bson.decode(zlib.decompress(zstate))
+        # Cedric: convert keys which were transformed by stringify_dict()
+        # back into their original type.
+        return cf_destringify_dict(stringified_state)
 
     @staticmethod
     def fMRI_showAlphabets(alphabets):
@@ -437,7 +495,8 @@ class VGDLParser(object):
         if playback_states:
             g.startPlaybackGame(headless, persist_movie, make_images, make_movie, movie_dir, padding, images_dir=images_dir, gameName=gameName, parameter_string=parameter_string, regressors=regressors, video_name=video_name, default_colors=default_colors, use_renders=use_renders)
         else:
-            win, score, allStates, _, _, _ = g.startGame(headless, persist_movie)
+            win, score, allStates = g.startGame(headless, persist_movie)[0:3]
+
 
         return g
 
@@ -1878,7 +1937,8 @@ class BasicGame(object):
 
             # get action pressed
             # TODO momchil don't use this -- you could skip key presses between calls -- see docs https://www.pygame.org/docs/ref/key.html
-            self.keystate = pygame.key.get_pressed()
+            # self.keystate = pygame.key.get_pressed()
+            self.keystate = util.getPressedKeyState()
 
             # optionally remap keys
             if fMRI_remap_keys:
@@ -1945,10 +2005,15 @@ class BasicGame(object):
                 #     self.playback_index += 1
 
                 # TODO momchil this only takes into account one keypress per frame! and in fact it's the one with the lowest ASCII code I think
-                if lastKeyPress.index(1) in keyPresses.keys():
-                    keyPressType = keyPresses[lastKeyPress.index(1)]
-
-
+                # if lastKeyPress.index(1) in keyPresses.keys():
+                #     keyPressType = keyPresses[lastKeyPress.index(1)]
+                # Cedric: I changed the above commented code to be compatible
+                # with the new dictionary structure for key states.
+                if (1 in lastKeyPress.values()):
+                    for k, pressed in lastKeyPress.items():
+                        if pressed and k in keyPresses.keys():
+                            keyPressType = keyPresses[k]
+                            break
 
             # # load/save handling
             # if self.load_.save_enabled:
@@ -2207,7 +2272,8 @@ class BasicGame(object):
 
         # gather events
         pygame.event.pump()
-        self.keystate = list(pygame.key.get_pressed())
+        # self.keystate = list(pygame.key.get_pressed())
+        self.keystate = util.getPressedKeyState()
 
         self.keystate[action] = 1
 
