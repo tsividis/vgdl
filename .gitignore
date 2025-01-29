@@ -57,3 +57,7 @@ vgdl/sprites
 *.swp
 *.sh
 dump/
+
+results/
+savedCurricula/
+theories/
