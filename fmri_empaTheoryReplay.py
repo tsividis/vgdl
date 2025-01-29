@@ -38,8 +38,9 @@ def randomString(stringLength=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
-
-if 'omchil' in socket.gethostname():
+# Cedric: To make the code work in the same way as before when executed on the
+# server, change the string 'harvard' below to match the server hostname
+if 'harvard' not in socket.gethostname():
     # local 
     client = MongoClient('localhost', 27017)
     theoriesDir = 'theories'

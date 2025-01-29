@@ -27,7 +27,9 @@ def get_size(obj, seen=None):
 def get_mongo_client():
     ''' connect to the appropriate Mongo server '''
 
-    if 'Momchil' in socket.gethostname():
+    # Cedric: To make the code work in the same way as before when executed on the
+    # server, change the string 'harvard' below to match the server hostname
+    if 'harvard' not in socket.gethostname():
         # mac with exploded battery -- local
         client = MongoClient('localhost', 27017)
         print 'get_mongo_client: mac pro 2017'

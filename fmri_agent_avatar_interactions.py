@@ -35,8 +35,9 @@ from fmri_agentReplay import fix_states
 client = utils.get_mongo_client()
 db = client['heroku_7lzprs54']
 
-
-if 'omchil' in socket.gethostname() or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
+# Cedric: To make the code work in the same way as before when executed on the
+# server, change the string 'harvard' below to match the server hostname
+if ('harvard' not in socket.gethostname()) or 'ncfood' in socket.gethostname() or 'ncflogin' in socket.gethostname():
     # local on my Mac, or on a login / VDI node
     matDir = 'mat'
 else:

@@ -42,7 +42,9 @@ def randomString(stringLength=10):
 
 client = utils.get_mongo_client()
 
-if 'omchil' in socket.gethostname():
+# Cedric: To make the code work in the same way as before when executed on the
+# server, change the string 'harvard' below to match the server hostname
+if 'harvard' not in socket.gethostname():
     # local 
     theoriesDir = 'theories'
     layersDir = 'layers'

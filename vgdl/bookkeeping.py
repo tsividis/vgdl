@@ -11,7 +11,9 @@ Class for supporting interrupted runs on cluster. Saves where we are in the curr
 """
 
 def get_curriculum_directory():
-    if 'omchil' in socket.gethostname():
+    # Cedric: To make the code work in the same way as before when executed on the
+    # server, change the string 'harvard' below to match the server hostname
+    if 'harvard' not in socket.gethostname():
         # local
         return 'savedCurricula'
     # Cannon cluster

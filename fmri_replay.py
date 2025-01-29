@@ -14,7 +14,9 @@ from IPython import embed
 # USAGE: python fmri_replay.py [subj_id] [run_id] [block_id*] [instance_id*] [play_id*]
 # * - optional
 
-if 'omchil' in socket.gethostname():
+# Cedric: To make the code work in the same way as before when executed on the
+# server, change the string 'harvard' below to match the server hostname
+if 'harvard' not in socket.gethostname():
     # local 
     client = MongoClient('localhost', 27017)
 else:
