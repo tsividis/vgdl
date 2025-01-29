@@ -34,7 +34,8 @@ client = utils.get_mongo_client()
 
 db = client['heroku_7lzprs54']
 
-actual_fMRI_experiment = True 
+# actual_fMRI_experiment = True
+actual_fMRI_experiment = False
 
 
 # > db.games.find({'name': /vgfmri3.*/}, {'name': 1})
@@ -273,10 +274,15 @@ def gen_runs(games):
             'postrun_interval': postrun_interval
         }
         blocks = []
+        # Cedric's change: Randomize and vary the games played in each block,
+        # instead of always playing the same game as was done in original code.
+        block_game_indices = range(len(games))
+        random.shuffle(block_game_indices)
         for b in range(nblocks):
-            g = random.randint(0, len(games) - 1) # TODO actual 
-            g = b + 1 # TODO 
-            g = 6
+            g = block_game_indices[b]
+            # g = random.randint(0, len(games) - 1) # TODO actual 
+            # g = b + 1 # TODO 
+            # g = 6
             block = {
                 'block_id': b,
                 'game_id': g,
