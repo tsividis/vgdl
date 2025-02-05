@@ -36,6 +36,7 @@ db = client['heroku_7lzprs54']
 
 # actual_fMRI_experiment = True
 actual_fMRI_experiment = False
+do_meg_triggers = True
 
 
 # > db.games.find({'name': /vgfmri3.*/}, {'name': 1})
@@ -391,7 +392,8 @@ if __name__ == '__main__':
 
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
-    wins, scores, best_instance_scores = VGDLParser.fMRI_playRun(subj, run_id, db, subj['seed'], remap_keys=remap_keys)
+    wins, scores, best_instance_scores = VGDLParser.fMRI_playRun(subj, run_id, db,
+        subj['seed'], remap_keys=remap_keys, do_meg_triggers=do_meg_triggers)
 
     print 'wins ', wins
     print 'scores ', scores

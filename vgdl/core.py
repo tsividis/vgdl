@@ -36,6 +36,7 @@ import atexit
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 import cv2
 from PIL import Image
+import meg_trigger
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -245,7 +246,7 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def fMRI_playRun(subj, run_id, db, seed, remap_keys=None):
+    def fMRI_playRun(subj, run_id, db, seed, remap_keys=None, do_meg_triggers=False):
         # Play a given fMRI run for given subject
         #
 
@@ -258,6 +259,16 @@ class VGDLParser(object):
         fMRI_bg = pygame.Surface(fMRI_screensize)
         fMRI_bg.fill(black)
         fMRI_screen.blit(fMRI_bg, (0, 0))
+
+        if do_meg_triggers:
+            log_fname = 'trigger_log_s={}_r={}.txt'.format(subj['subj_id'], run_id)
+            log_dir = "trigger_logs"
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+            log_fpath = os.path.join(log_dir, log_fname)
+            trigger = meg_trigger.MEGTrigger(do_log=True, log_fpath=log_fpath)
+        else:
+            trigger = None
 
         def fullScreenText(text, duration, bg, fontsize=50, color=white):
             fMRI_screen.blit(bg, (0, 0))
@@ -323,6 +334,8 @@ class VGDLParser(object):
         # note we don't insert run until very end
         run['scan_start_ts'] = run_start_ts # the single most important timestamp
         run['scan_start_dt'] = run_start_dt 
+        if do_meg_triggers:
+            trigger.send(run_start=True)
 
         run_time = 0 # estimated run time; used for correcting 
         drift = 0
@@ -349,6 +362,8 @@ class VGDLParser(object):
             
             run['blocks'][b]['start_time'] = time.time()
             run_time += interblock_interval
+            if do_meg_triggers:
+                trigger.send(block_start=True)
 
             block_bg = pygame.Surface(fMRI_screensize)
             block_bg.fill(bg_color)
@@ -369,7 +384,9 @@ class VGDLParser(object):
                 instance_start_time = time.time() 
                 instance_end_time = instance_start_time + duration - drift # adjust instance duration to correct for drift
 
-                run['blocks'][b]['instances'][i]['start_time'] = instance_start_time 
+                run['blocks'][b]['instances'][i]['start_time'] = instance_start_time
+                if do_meg_triggers:
+                    trigger.send(instance_start=True) 
 
                 play_keys = []
                 best_instance_score = -10000
@@ -386,10 +403,17 @@ class VGDLParser(object):
                     timeleft = instance_end_time - interplay_interval - time.time()
 
                     play_start_time = time.time() 
+                    if do_meg_triggers:
+                        trigger.send(play_start=True)
                     dispFn = lambda score, win: displayScore(game['fake_name'], score, win, block_bg)
 
-                    win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(headless=False, persist_movie=False, screen=fMRI_screen, displayScoreFn=dispFn, fMRI_timeout=timeleft, fMRI_remap_keys=remap_keys)
+                    win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(
+                        headless=False, persist_movie=False, screen=fMRI_screen,
+                        displayScoreFn=dispFn, fMRI_timeout=timeleft, fMRI_remap_keys=remap_keys,
+                        do_meg_triggers=do_meg_triggers, trigger=trigger)
                     play_end_time = time.time()
+                    if do_meg_triggers:
+                        trigger.send(play_end=True)
 
                     wins.append(win)
                     scores.append(score)
@@ -454,6 +478,8 @@ class VGDLParser(object):
 
                 run['blocks'][b]['instances'][i]['end_time'] = time.time()
                 run['blocks'][b]['instances'][i]['play_keys'] = play_keys # just in case
+                if do_meg_triggers:
+                    trigger.send(instance_end=True)
 
                 run_time += duration
                 actual_run_time = time.time() - run_start_ts
@@ -461,10 +487,14 @@ class VGDLParser(object):
                 print 'running run time: ', run_time, actual_run_time, drift 
 
             run['blocks'][b]['end_time'] = time.time()
+            if do_meg_triggers:
+                trigger.send(block_end=True)
 
         run['postrun_interval_start_time'] = time.time()
         fullScreenText('+', run['postrun_interval'], bg=fMRI_bg)
         run['end_time'] = time.time()
+        if do_meg_triggers:
+            trigger.send(run_end=True)
 
         run['subj_id'] = subj['subj_id'] # important!
         run['subj_key'] = subj['_id'] # just in case
@@ -1823,8 +1853,10 @@ class BasicGame(object):
     #     os.makedirs("images/tmp/"+gameFilename)
     #     return
 
-
-    def startGame(self, headless, persist_movie, make_images=False, make_movie=False, screen=None, displayScoreFn=None, fMRI_timeout=None, fMRI_remap_keys=None):
+    def startGame(self, headless, persist_movie,
+        make_images=False, make_movie=False, screen=None, displayScoreFn=None,
+        fMRI_timeout=None, fMRI_remap_keys=None,
+        do_meg_triggers=False, trigger=None):
         """
         Main method to run game.
         """
@@ -2165,6 +2197,19 @@ class BasicGame(object):
 
             # important to log state at the right spot for replay
             allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
+
+            if do_meg_triggers and (trigger is not None):
+                # Send a clock trigger every N frames, where N is equal to the
+                # frame rate. This will result in sending a trigger
+                # approximately every second. The play_clock value sent with
+                # this trigger is the multiple of N that corresponds to the
+                # current game frame (i.e., the current frame number is equal to
+                # play_clock * N).
+                if (self.time % self.frame_rate) == 0:
+                    play_clock = self.time // self.frame_rate
+                    if ((play_clock >= meg_trigger.PLAY_CLOCK_MIN)
+                        and (play_clock <= meg_trigger.PLAY_CLOCK_MAX)):
+                        trigger.send(play_clock=play_clock)
 
             #### in manual game-play mode ####
             if displayScoreFn:
