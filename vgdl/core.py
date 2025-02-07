@@ -1974,12 +1974,12 @@ class BasicGame(object):
 
             # optionally remap keys
             if fMRI_remap_keys:
-                keystate = list(self.keystate)
+                keystate = self.keystate.copy()
                 for fro, to in fMRI_remap_keys.iteritems():
                     keystate[to] = self.keystate[fro]
                     keystate[fro] = 0 # TODO momchil is this safe???
                 keystate[ord('=')] = 0 # TODO is this safe???
-                self.keystate = tuple(keystate)
+                self.keystate = keystate
 
             # log actual button presses & releases, for fMRI
             for event in pygame.event.get():
