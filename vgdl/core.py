@@ -261,12 +261,16 @@ class VGDLParser(object):
         fMRI_screen.blit(fMRI_bg, (0, 0))
 
         if do_meg_triggers:
-            log_fname = 'trigger_log_s={}_r={}.txt'.format(subj['subj_id'], run_id)
-            log_dir = "trigger_logs"
-            if not os.path.exists(log_dir):
-                os.makedirs(log_dir)
-            log_fpath = os.path.join(log_dir, log_fname)
-            trigger = meg_trigger.MEGTrigger(do_log=True, log_fpath=log_fpath)
+            do_log = True
+            if do_log:
+                log_fname = 'trigger_log_s={}_r={}.txt'.format(subj['subj_id'], run_id)
+                log_dir = "trigger_logs"
+                if not os.path.exists(log_dir):
+                    os.makedirs(log_dir)
+                log_fpath = os.path.join(log_dir, log_fname)
+            else:
+                log_fpath = None
+            trigger = meg_trigger.MEGTrigger(do_log=do_log, log_fpath=log_fpath)
         else:
             trigger = None
 
