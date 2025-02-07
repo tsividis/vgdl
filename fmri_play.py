@@ -24,19 +24,21 @@ import utils
 
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
-
-keyboard_remap = {ord('h'): K_LEFT, ord('k'): K_DOWN, ord(','): K_RIGHT, ord('u'): K_UP}
-scanner_remap = {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('4'): K_RIGHT, ord('2'): K_UP, ord('0'): K_SPACE}
-
-# USAGE: python fmri_play.py [subj_id] [run_id]
+experiment_mode = "meg" # "fmri", "meg" or "test"
+keyboard_remap = {
+    "fmri": {ord('h'): K_LEFT, ord('k'): K_DOWN, ord(','): K_RIGHT, ord('u'): K_UP},
+    "meg": None,
+    "test": None
+}
+scanner_remap = {
+    "fmri": {ord('1'): K_LEFT, ord('3'): K_DOWN, ord('4'): K_RIGHT, ord('2'): K_UP, ord('0'): K_SPACE},
+    "meg": None,
+    "test": None
+}
 
 client = utils.get_mongo_client()
 
 db = client['heroku_7lzprs54']
-
-# actual_fMRI_experiment = True
-actual_fMRI_experiment = False
-do_meg_triggers = True
 
 
 # > db.games.find({'name': /vgfmri3.*/}, {'name': 1})
@@ -207,22 +209,56 @@ interblock_interval = 2 # = 2 sec, how long to show game name
 
 
 def gen_runs_for_actual_experiment(games):
+    #
+    # === Experimental structure ===
+    #
+    # - 'Level'/'Instance': One level of a game constitutes 60s of playtime. The
+    #   level is played on repeat: every time the player loses or wins, the
+    #   level is reset and the player plays it again. Hence, multiple plays
+    #   (episodes) of the same level can occur. The level uniquely identifies
+    #   the initial state of the game.
+    # - 'Block': A set of 3 instances (levels) of one game played contiguously,
+    #   lasting about 3 min.
+    # - 'Run': A set of 3 blocks played continuously in the scanner, lasting 566
+    #   s (9 min 26 s). There are 6 scanner runs, meaning that the scanner
+    #   session takes about 1h without taking breaks into account.
+    #
+    # Outside the scanner, in addition to the 6 scanner runs, there is one
+    # practice run before going in the scanner, which contains only one block
+    # and is always playing Sokoban, and one post-scan evaluation run, during
+    # which the player plays level 10-11-12 of all 6 games played in the
+    # scanner.
+
+    # First run (run#1) - Practice behavioral run:
+    # Play level 1-2-3 of Sokoban (which is  not part of the 6 games played in
+    # the scanner)
     run_game_ids  = []
     run_game_ids.append([0]) # run 0 is practice, and is always sokoban
 
+    # First two scanner runs (run #2&3):
+    # Play level 1-2-3 of each of the 6 games, in 2 runs. The 6 games are played
+    # in a random order.
     gs = range(1,7)
     random.shuffle(gs)
     run_game_ids.append(gs[0:3])
     run_game_ids.append(gs[3:6])
     
+    # Next two scanner runs (run #4&5):
+    # Play level 4-5-6 of each of the 6 games, in 2 runs. The 6 games are played
+    # in a random order.
     random.shuffle(gs)
     run_game_ids.append(gs[0:3])
     run_game_ids.append(gs[3:6])
 
+    # Last two scanner runs (run #6&7):
+    # Play level 7-8-9 of each of the 6 games, in 2 runs. The 6 games are played
+    # in a random order.
     random.shuffle(gs)
     run_game_ids.append(gs[0:3])
     run_game_ids.append(gs[3:6])
 
+    # Last run (run #8) - Post-scan evaluation run:
+    # Play level 10-11-12 of each of the 6 games in one run.
     random.shuffle(gs) # last run is post-scan evaluation
     run_game_ids.append(gs)
 
@@ -325,7 +361,7 @@ def gen_subj(subj_id):
     seed = random.randint(1, 100000000) # beware of bday paradox
 
     fakes = list(fake_names)
-    if actual_fMRI_experiment:
+    if (experiment_mode.lower() == "fmri" or experiment_mode.lower() == "meg"):
         random.shuffle(fakes)
 
     alphs = list(alphabets)
@@ -341,7 +377,7 @@ def gen_subj(subj_id):
 
     games = get_games(fakes, alphs, colors)
 
-    if actual_fMRI_experiment:
+    if (experiment_mode.lower() == "fmri" or experiment_mode.lower() == "meg"):
         runs = gen_runs_for_actual_experiment(games)
     else:
         runs = gen_runs(games)
@@ -381,17 +417,17 @@ if __name__ == '__main__':
     run_length = prerun_interval + postrun_interval + nblocks * interblock_interval + nblocks * ninstances * duration
     print 'run length = ', run_length, 's = ', run_length/60.0, 'min = ', run_length/2.0, 'TRs'
 
-    if actual_fMRI_experiment:
+    if (experiment_mode.lower() == "fmri" or experiment_mode.lower() == "meg"):
         if run_id == 0 or run_id == 7: # TODO hardcoded
-            remap_keys = keyboard_remap
+            remap_keys = keyboard_remap[experiment_mode.lower()]
         else:
-            remap_keys = scanner_remap
+            remap_keys = scanner_remap[experiment_mode.lower()]
     else:
         remap_keys = None 
 
-
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
+    do_meg_triggers = experiment_mode.lower() == "meg"
     wins, scores, best_instance_scores = VGDLParser.fMRI_playRun(subj, run_id, db,
         subj['seed'], remap_keys=remap_keys, do_meg_triggers=do_meg_triggers)
 
