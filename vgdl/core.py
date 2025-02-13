@@ -1147,7 +1147,8 @@ class BasicGame(object):
                 obj_list[ob.ID] = {'sprite': sprite, 'position':(ob.rect.left, ob.rect.top), 'features':features, 'type': type_vector}
         return obj_list
 
-    def getFullState(self, as_string=True, observe_state=False, keyPressType=None): # momchil note: strings so we can dump to json
+    def getFullState(self, as_string=True, observe_state=False, keyPressType=None,
+        do_meg_triggers=False, trigger_play_clock=None): # momchil note: strings so we can dump to json
         """ Return a dictionary that allows full reconstruction of the game state,
         e.g. for the load/save functionality. """
         # TODO: make sure this list is complete/correct -- maybe a naming convention would be easier,
@@ -1228,6 +1229,8 @@ class BasicGame(object):
               'list': [str(s) for s in list(self)] # sanity
             #  'new_sprites': self.new_sprites
               }
+        if do_meg_triggers:
+            fs['trigger_play_clock'] = trigger_play_clock
  
         return fs
 
@@ -1911,7 +1914,7 @@ class BasicGame(object):
         ##figure out keypress type:
         #disableContinuousKeyPress = all([item.physicstype.__name__=='GridPhysics' for sublist in self.sprite_groups.values() for item in sublist]) momchil: enable for fMRI
 
-        allStates = [self.getFullState()] # important for replay
+        allStates = [self.getFullState(do_meg_triggers=do_meg_triggers)] # important for replay
         allKeystates = [None] # log keys pre-update & event handling (states are logged after); this is the dummy keystate corresponding to the initial stote
 
         # for k,v in self.alt_sprite_constr.items():
@@ -1961,6 +1964,21 @@ class BasicGame(object):
         while not self.ended:
             clock.tick(self.frame_rate)
             self.time += 1
+            if do_meg_triggers:
+                # Send a clock trigger every N frames, where N is equal to the
+                # frame rate. This will result in sending a trigger
+                # approximately every second. The play_clock value sent with
+                # this trigger is the multiple of N that corresponds to the
+                # current game frame (i.e., the current frame number is equal to
+                # play_clock * N).
+                if (self.time % self.frame_rate) == 0:
+                    trigger_play_clock = self.time // self.frame_rate
+                    if ((trigger_play_clock >= meg_trigger.PLAY_CLOCK_MIN)
+                        and (trigger_play_clock <= meg_trigger.PLAY_CLOCK_MAX)
+                        and (trigger is not None)):
+                        trigger.send(play_clock=trigger_play_clock)
+                else:
+                    trigger_play_clock = None # To record that no trigger was sent on this frame
 
             if fMRI_timeout is not None: # TODO momchil have actual is_fMRI flag
                 self._fMRI_clearAll()
@@ -2127,7 +2145,7 @@ class BasicGame(object):
 
                     # important to get RNG state at the right spot for replay
                     # TODO momchil dedupe / not exactly the same as in _performAction
-                    allKeystates.append({
+                    new_keystate = {
                         'keystate': self.keystate,
                         'keyPressType': keyPressType,
                         'RNG_state': random.getstate(),
@@ -2136,7 +2154,10 @@ class BasicGame(object):
                         'gt': self.time,
                         'keyups': keyups,
                         'keydowns': keydowns
-                        })
+                        }
+                    if do_meg_triggers:
+                        new_keystate['trigger_play_clock'] = trigger_play_clock
+                    allKeystates.append(new_keystate)
                     
                     # clear collision events for state logging TODO momchil make sure it works
                     self._eventHandling()
@@ -2151,7 +2172,9 @@ class BasicGame(object):
                         self._drawAll()
                     pygame.display.update(VGDLSprite.dirtyrects)
 
-                    allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
+                    allStates.append(self.getFullState(keyPressType=keyPressType,
+                        do_meg_triggers=do_meg_triggers,
+                        trigger_play_clock=trigger_play_clock)) # cannot do colorized; playback fails TODO investigate
 
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
@@ -2179,14 +2202,17 @@ class BasicGame(object):
                         assert False
 
             # important to get RNG state at the right spot for replay
-            allKeystates.append({
+            new_keystate = {
                 'keystate': self.keystate,
                 'keyPressType': keyPressType,
                 'RNG_state': random.getstate(),
                 'dt': datetime.now(),
                 'ts': time.time(),
                 'gt': self.time # important to match up regressor game time with actual time
-                })
+                }
+            if do_meg_triggers:
+                new_keystate['trigger_play_clock'] = trigger_play_clock
+            allKeystates.append(new_keystate)
 
 
             ## Update actual sprite positions.
@@ -2200,20 +2226,9 @@ class BasicGame(object):
             self._eventHandling()
 
             # important to log state at the right spot for replay
-            allStates.append(self.getFullState(keyPressType=keyPressType)) # cannot do colorized; playback fails TODO investigate
-
-            if do_meg_triggers and (trigger is not None):
-                # Send a clock trigger every N frames, where N is equal to the
-                # frame rate. This will result in sending a trigger
-                # approximately every second. The play_clock value sent with
-                # this trigger is the multiple of N that corresponds to the
-                # current game frame (i.e., the current frame number is equal to
-                # play_clock * N).
-                if (self.time % self.frame_rate) == 0:
-                    play_clock = self.time // self.frame_rate
-                    if ((play_clock >= meg_trigger.PLAY_CLOCK_MIN)
-                        and (play_clock <= meg_trigger.PLAY_CLOCK_MAX)):
-                        trigger.send(play_clock=play_clock)
+            allStates.append(self.getFullState(keyPressType=keyPressType,
+                do_meg_triggers=do_meg_triggers,
+                trigger_play_clock=trigger_play_clock)) # cannot do colorized; playback fails TODO investigate
 
             #### in manual game-play mode ####
             if displayScoreFn:

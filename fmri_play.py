@@ -235,6 +235,7 @@ def gen_runs_for_actual_experiment(games):
     run_game_ids  = []
     run_game_ids.append([0]) # run 0 is practice, and is always sokoban
 
+    # Data partition 1
     # First two scanner runs (run #2&3):
     # Play level 1-2-3 of each of the 6 games, in 2 runs. The 6 games are played
     # in a random order.
@@ -243,6 +244,7 @@ def gen_runs_for_actual_experiment(games):
     run_game_ids.append(gs[0:3])
     run_game_ids.append(gs[3:6])
     
+    # Data partition 2
     # Next two scanner runs (run #4&5):
     # Play level 4-5-6 of each of the 6 games, in 2 runs. The 6 games are played
     # in a random order.
@@ -250,6 +252,7 @@ def gen_runs_for_actual_experiment(games):
     run_game_ids.append(gs[0:3])
     run_game_ids.append(gs[3:6])
 
+    # Data partition 3
     # Last two scanner runs (run #6&7):
     # Play level 7-8-9 of each of the 6 games, in 2 runs. The 6 games are played
     # in a random order.

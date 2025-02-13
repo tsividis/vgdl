@@ -2,6 +2,7 @@
 Module for sending TTL triggers to the MEG acquisition system.
 """
 
+import datetime
 import pygame
 import serial
 import time
@@ -18,24 +19,31 @@ class FakePort(object):
         pass
 
 class Log:
-    def __init__(self, fpath):
+    def __init__(self, fpath, do_print=False):
         self.log_file = open(fpath, "w")
+        self.do_print = do_print
 
     def write(self, trigger_value, msg=""):
-        self.log_file.write("[t=%.3f] WRITE TRIGGER value=%d[%s] (%s)\n" % (
-            time.time(), ord(trigger_value), format(ord(trigger_value),'08b'), msg))
+        timestamp = datetime.datetime.utcnow().strftime('%H:%M:%S.%f')
+        line = ("[%s] WRITE TRIGGER value=%d[%s] (%s)" % (
+                    timestamp, ord(trigger_value), format(ord(trigger_value),'08b'), msg))
+        if self.do_print:
+            print(line)
+        self.log_file.write(line + "\n")
 
     def __del__(self):
         self.log_file.close()
 
 class MEGTrigger:
-    def __init__(self, do_log=False, log_fpath=None):
-        # SER_PORT_ADDR = "/dev/ttyUSB0" # update with actual serial port address
-        # self.port = serial.Serial(port=SER_PORT_ADDR) # open serial port
-        self.port = FakePort() # fake object to test the code without access to a serial port
+    # SER_PORT_ADDR = "/dev/ttyUSB0" # update with actual serial port address
+    def __init__(self, port=None, do_log=False, log_fpath=None, do_print_log=False):
+        if port is not None:
+            self.port = serial.Serial(port=port) # open serial port
+        else:
+            self.port = FakePort() # fake object to test the code without access to a serial port
         self.do_log = do_log
         if self.do_log:
-            self.log = Log(log_fpath)
+            self.log = Log(log_fpath, do_print=do_print_log)
 
     def send(self, play_clock=None, run_start=False, run_end=False,
         block_start=False, block_end=False, instance_start=False,
