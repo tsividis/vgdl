@@ -8,6 +8,7 @@ import serial
 import time
 
 TRIGGER_DURATION_MS = 5 # Duration of the TTL pulse to send for each trigger, in milliseconds
+BAUDRATE = 115200
 PLAY_CLOCK_MIN = 1
 PLAY_CLOCK_MAX = 63
 
@@ -38,7 +39,7 @@ class MEGTrigger:
     # SER_PORT_ADDR = "/dev/ttyUSB0" # update with actual serial port address
     def __init__(self, port=None, do_log=False, log_fpath=None, do_print_log=False):
         if port is not None:
-            self.port = serial.Serial(port=port) # open serial port
+            self.port = serial.Serial(port=port, baudrate=BAUDRATE) # open serial port
         else:
             self.port = FakePort() # fake object to test the code without access to a serial port
         self.do_log = do_log
@@ -89,11 +90,11 @@ class MEGTrigger:
 
         # Send the structural trigger if it's nonzero
         if trigger_value > 0:
-            self.port.write(chr(trigger_value)) # Send trigger value
+            self.port.write(bytes([trigger_value])) # Send trigger value
             if self.do_log:
                 self.log.write(chr(trigger_value), " ".join(log_msgs))
             pygame.time.wait(TRIGGER_DURATION_MS) # Hold for 5 ms
-            self.port.write(chr(0))  # Reset trigger
+            self.port.write(bytes([0]))  # Reset trigger
             if self.do_log:
                 self.log.write(chr(0), "reset")
 
@@ -103,10 +104,10 @@ class MEGTrigger:
             and (play_clock <= PLAY_CLOCK_MAX)):
             # Encode the play_clock value between 65 and 127
             trigger_value = 64 + play_clock
-            self.port.write(chr(trigger_value)) # Send trigger value
+            self.port.write(bytes([trigger_value])) # Send trigger value
             if self.do_log:
                 self.log.write(chr(trigger_value), "play_clock_%d" % play_clock)
             pygame.time.wait(TRIGGER_DURATION_MS) # Hold for 5 ms
-            self.port.write(chr(0))  # Reset trigger
+            self.port.write(bytes([0]))  # Reset trigger
             if self.do_log:
                 self.log.write(chr(0), "reset")
