@@ -7,10 +7,10 @@ import pygame
 import serial
 import time
 
-TRIGGER_DURATION_MS = 5 # Duration of the TTL pulse to send for each trigger, in milliseconds
-BAUDRATE = 115200
+BAUDRATE = 9600
 PLAY_CLOCK_MIN = 1
 PLAY_CLOCK_MAX = 63
+TRIGGER_RESET_DELAY = 5 # in milliseconds
 
 class FakePort(object):
     def __init__(self):
@@ -46,7 +46,7 @@ class MEGTrigger:
         if self.do_log:
             self.log = Log(log_fpath, do_print=do_print_log)
 
-    def send(self, play_clock=None, run_start=False, run_end=False,
+    def send(self, do_reset=False, play_clock=None, run_start=False, run_end=False,
         block_start=False, block_end=False, instance_start=False,
         instance_end=False, play_start=False, play_end=False):
 
@@ -93,10 +93,14 @@ class MEGTrigger:
             self.port.write(bytes([trigger_value])) # Send trigger value
             if self.do_log:
                 self.log.write(chr(trigger_value), " ".join(log_msgs))
-            pygame.time.wait(TRIGGER_DURATION_MS) # Hold for 5 ms
-            self.port.write(bytes([0]))  # Reset trigger
-            if self.do_log:
-                self.log.write(chr(0), "reset")
+            if do_reset:
+                # Reset all bits to zero after delay. This should be done here
+                # only if the reset is not already handled by the receiving
+                # device
+                pygame.time.wait(RESET_DELAY)
+                self.port.write(bytes([0]))
+                if self.do_log:
+                    self.log.write(chr(0), "reset")
 
         # Send play_clock signal separately if provided
         if ((play_clock is not None)
@@ -107,7 +111,11 @@ class MEGTrigger:
             self.port.write(bytes([trigger_value])) # Send trigger value
             if self.do_log:
                 self.log.write(chr(trigger_value), "play_clock_%d" % play_clock)
-            pygame.time.wait(TRIGGER_DURATION_MS) # Hold for 5 ms
-            self.port.write(bytes([0]))  # Reset trigger
-            if self.do_log:
-                self.log.write(chr(0), "reset")
+            if do_reset:
+                # Reset all bits to zero after delay. This should be done here
+                # only if the reset is not already handled by the receiving
+                # device
+                pygame.time.wait(RESET_DELAY)
+                self.port.write(bytes([0]))
+                if self.do_log:
+                    self.log.write(chr(0), "reset")
