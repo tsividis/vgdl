@@ -10,7 +10,7 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available()) {
+  if (Serial.available() > 0) {
     byte triggerValue = Serial.read();  // Read 8-bit trigger value
 
      // Set each pin according to the corresponding bit in trigger value

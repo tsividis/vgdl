@@ -8,6 +8,7 @@ import serial
 import time
 
 BAUDRATE = 9600
+ARDUINO_PORT = "/dev/tty.usbmodem101"
 PLAY_CLOCK_MIN = 1
 PLAY_CLOCK_MAX = 63
 TRIGGER_RESET_DELAY = 5 # in milliseconds
@@ -36,7 +37,6 @@ class Log:
         self.log_file.close()
 
 class MEGTrigger:
-    # SER_PORT_ADDR = "/dev/ttyUSB0" # update with actual serial port address
     def __init__(self, port=None, do_log=False, log_fpath=None, do_print_log=False):
         if port is not None:
             self.port = serial.Serial(port=port, baudrate=BAUDRATE) # open serial port
@@ -90,7 +90,7 @@ class MEGTrigger:
 
         # Send the structural trigger if it's nonzero
         if trigger_value > 0:
-            self.port.write(bytes([trigger_value])) # Send trigger value
+            self.port.write(chr(trigger_value)) # Send trigger value
             if self.do_log:
                 self.log.write(chr(trigger_value), " ".join(log_msgs))
             if do_reset:
@@ -98,7 +98,7 @@ class MEGTrigger:
                 # only if the reset is not already handled by the receiving
                 # device
                 pygame.time.wait(RESET_DELAY)
-                self.port.write(bytes([0]))
+                self.port.write(chr(0))
                 if self.do_log:
                     self.log.write(chr(0), "reset")
 
@@ -108,7 +108,7 @@ class MEGTrigger:
             and (play_clock <= PLAY_CLOCK_MAX)):
             # Encode the play_clock value between 65 and 127
             trigger_value = 64 + play_clock
-            self.port.write(bytes([trigger_value])) # Send trigger value
+            self.port.write(chr(trigger_value)) # Send trigger value
             if self.do_log:
                 self.log.write(chr(trigger_value), "play_clock_%d" % play_clock)
             if do_reset:
@@ -116,6 +116,6 @@ class MEGTrigger:
                 # only if the reset is not already handled by the receiving
                 # device
                 pygame.time.wait(RESET_DELAY)
-                self.port.write(bytes([0]))
+                self.port.write(chr(0))
                 if self.do_log:
                     self.log.write(chr(0), "reset")

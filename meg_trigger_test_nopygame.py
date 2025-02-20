@@ -24,13 +24,12 @@ KEYS_TO_DETECT = {
 }
 
 FPS = 1000  # Limit event loop to given #frames per second
-port = None  # TBD
 do_log = True
 do_print_log = True
 log_fpath = "trigger_logs/meg_trigger_test.txt"
 
 def main(stdscr):
-    trigger = meg_trigger.MEGTrigger(port=port, do_log=do_log, log_fpath=log_fpath, do_print_log=do_print_log)
+    trigger = meg_trigger.MEGTrigger(port=meg_trigger.ARDUINO_PORT, do_log=do_log, log_fpath=log_fpath, do_print_log=do_print_log)
     stdscr.nodelay(1)  # Make getch non-blocking
     stdscr.timeout(1000 // FPS)  # Set refresh rate
     

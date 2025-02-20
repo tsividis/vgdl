@@ -11,11 +11,10 @@ def main():
                       pygame.K_y, pygame.K_u, pygame.K_i]
     FPS = 1000 # Limit event loop to given #frames per second
 
-    port = None # TBD
     do_log = True
     do_print_log = True
     log_fpath = "trigger_logs/meg_trigger_test.txt"
-    trigger = meg_trigger.MEGTrigger(port=port,
+    trigger = meg_trigger.MEGTrigger(port=meg_trigger.ARDUINO_PORT,
         do_log=do_log, log_fpath=log_fpath, do_print_log=do_print_log)
 
     pygame.init()
