@@ -51,6 +51,7 @@ actionToKeyPress = {(-1,0): pygame.K_LEFT, (1,0): pygame.K_RIGHT,
                     (0,1): pygame.K_DOWN, (0,-1): pygame.K_UP}
 
 keyPresses = {K_UP: 'up', K_DOWN: 'down', K_LEFT: 'left', K_RIGHT: 'right', K_SPACE: 'spacebar', 0:'none'}
+direction_to_key = {"left": K_LEFT, "right": K_RIGHT, "up": K_UP, "down": K_DOWN}
 # emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 emptyKeyState = util.getEmptyKeyState()
 
@@ -246,7 +247,9 @@ class VGDLParser(object):
 
 
     @staticmethod
-    def fMRI_playRun(subj, run_id, db, seed, remap_keys=None, do_meg_triggers=False):
+    def fMRI_playRun(subj, run_id, db, seed, remap_keys=None,
+        do_wait_scan_trigger=False,
+        do_meg_triggers=False, joystick_controller=None):
         # Play a given fMRI run for given subject
         #
 
@@ -332,8 +335,9 @@ class VGDLParser(object):
         fullScreenText('Please keep your head as still as possible', 0, bg=fMRI_bg, fontsize=35)
         waitForKeypress(clock, ' ') 
 
-        fullScreenText('Waiting for scanner trigger...', 0, bg=fMRI_bg, fontsize=35, color=(150, 150, 150))
-        waitForKeypress(clock, '=')
+        if do_wait_scan_trigger:
+            fullScreenText('Waiting for scanner trigger...', 0, bg=fMRI_bg, fontsize=35, color=(150, 150, 150))
+            waitForKeypress(clock, '=')
 
         run_start_ts = time.time()
         run_start_dt = datetime.now()
@@ -416,7 +420,8 @@ class VGDLParser(object):
                     win, score, allStates, allKeystates, actions, events, keyups, keydowns, keyholds = g.startGame(
                         headless=False, persist_movie=False, screen=fMRI_screen,
                         displayScoreFn=dispFn, fMRI_timeout=timeleft, fMRI_remap_keys=remap_keys,
-                        do_meg_triggers=do_meg_triggers, trigger=trigger)
+                        do_meg_triggers=do_meg_triggers, trigger=trigger,
+                        joystick_controller=joystick_controller)
                     play_end_time = time.time()
                     if do_meg_triggers:
                         trigger.send(play_end=True)
@@ -1865,7 +1870,8 @@ class BasicGame(object):
     def startGame(self, headless, persist_movie,
         make_images=False, make_movie=False, screen=None, displayScoreFn=None,
         fMRI_timeout=None, fMRI_remap_keys=None,
-        do_meg_triggers=False, trigger=None):
+        do_meg_triggers=False, trigger=None,
+        joystick_controller=None):
         """
         Main method to run game.
         """
@@ -2005,6 +2011,34 @@ class BasicGame(object):
                 keystate[ord('=')] = 0 # TODO is this safe???
                 self.keystate = keystate
 
+            # remap joystick actions to key presses for the corresponding action
+            if joystick_controller is not None:
+                keystate = self.keystate.copy()
+
+                direction = joystick_controller.get_direction()
+                if direction is not None:
+                    keystate[direction_to_key[direction]] = True
+                if joystick_controller.anyjoybuttonpressed():
+                    keystate[K_SPACE] = True
+                
+                # xaxis = joystick.get_axis(0)
+                # yaxis = joystick.get_axis(1)
+                # print("xaxis, yaxis", (xaxis, yaxis))
+                # if xaxis < -0.7:
+                #     keystate[K_LEFT] = True
+                # elif xaxis > 0.7:
+                #     keystate[K_RIGHT] = True
+                # if yaxis < -0.7:
+                #     keystate[K_UP] = True
+                # elif yaxis > 0.7:
+                #     keystate[K_DOWN] = True
+                # anyjoybuttonpressed = any((joystick.get_button(i) > 0)
+                #     for i in range(joystick.get_numbuttons()))
+                # if anyjoybuttonpressed:
+                #     keystate[K_SPACE] = True
+
+                self.keystate = keystate
+
             # log actual button presses & releases, for fMRI
             for event in pygame.event.get():
                 if event.type != pygame.KEYUP and event.type != pygame.KEYDOWN:
@@ -2039,11 +2073,14 @@ class BasicGame(object):
 
             # momchil: slow down initial key press for fMRI
             # subsequent presses too
+            CONTINUOUSKEYPRESS_INTERVAL = 0.15
+            # CONTINUOUSKEYPRESS_INTERVAL = 0.25
             if not disableContinuousKeyPress and not self.playback_states: # allow key hold
 
                 if self.keystate != emptyKeyState: # key pressed
                         continuousKeyPressCount += 1
-                        if continuousKeyPressCount == 1 or (continuousKeyPressCount > 1 and time.time() - lastKeyPressActualTime > 0.15):
+                        if continuousKeyPressCount == 1 or (continuousKeyPressCount > 1
+                            and (time.time() - lastKeyPressActualTime > CONTINUOUSKEYPRESS_INTERVAL)):
                             lastKeyPressActualTime = time.time()
                         else:
                             self.keystate = emptyKeyState

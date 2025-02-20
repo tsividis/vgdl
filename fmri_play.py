@@ -19,9 +19,11 @@ import sys
 import csv
 from collections import defaultdict
 from vgdl import core
+from vgdl.joystick_controller import JoystickController
 from IPython import embed
 import utils
 
+import pygame
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
 experiment_mode = "meg" # "fmri", "meg" or "test"
@@ -426,13 +428,26 @@ if __name__ == '__main__':
         else:
             remap_keys = scanner_remap[experiment_mode.lower()]
     else:
-        remap_keys = None 
+        remap_keys = None
+
+    # Intialize joystick control
+    joystick_controller = None
+    if experiment_mode.lower() == "meg":
+        pygame.joystick.init()
+        if pygame.joystick.get_count() == 0:
+            print("No joystick detected.")
+        else:
+            joystick = pygame.joystick.Joystick(0)
+            joystick.init()
+            print("Joystick '%s' initialized." % joystick.get_name())
+            joystick_controller = JoystickController(joystick)
 
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
     do_meg_triggers = experiment_mode.lower() == "meg"
     wins, scores, best_instance_scores = VGDLParser.fMRI_playRun(subj, run_id, db,
-        subj['seed'], remap_keys=remap_keys, do_meg_triggers=do_meg_triggers)
+        subj['seed'], remap_keys=remap_keys, do_meg_triggers=do_meg_triggers,
+        joystick_controller=joystick_controller)
 
     print 'wins ', wins
     print 'scores ', scores
