@@ -2018,7 +2018,7 @@ class BasicGame(object):
                 direction = joystick_controller.get_direction()
                 if direction is not None:
                     keystate[direction_to_key[direction]] = True
-                if joystick_controller.anyjoybuttonpressed():
+                if joystick_controller.anybuttonpressed():
                     keystate[K_SPACE] = True
                 
                 # xaxis = joystick.get_axis(0)

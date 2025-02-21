@@ -1,5 +1,5 @@
 class JoystickController:
-    def __init__(self, joystick, move_threshold=0.7, early_stop=False):
+    def __init__(self, joystick, move_threshold=0.7, early_stop=True):
         self.joystick = joystick
         self.nbuttons = joystick.get_numbuttons()
         self.move_threshold = move_threshold
@@ -22,9 +22,9 @@ class JoystickController:
                 new_direction = None
         else:  # Prioritize vertical movement
             if y > self.move_threshold:
-                new_direction = "up"
-            elif y < -self.move_threshold:
                 new_direction = "down"
+            elif y < -self.move_threshold:
+                new_direction = "up"
             else:
                 new_direction = None
 
