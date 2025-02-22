@@ -86,22 +86,32 @@ game_names_old = [
 #    "vgfmri3_jaws",
 #    "vgfmri3_zelda"
 ]
-
-game_names = [
-    "vgfmri4_sokoban",
-    "vgfmri4_chase",
-    "vgfmri4_helper",
-    "vgfmri4_bait",
-    "vgfmri4_lemmings",
-    #"vgfmri4_plaqueAttack",
-    "vgfmri4_zelda",
-#    "vgfmri4_aliens",
-#    "vgfmri4_sokoban",
-    "vgfmri4_avoidgeorge",
-#    "vgfmri4_butterflies",
-#    "vgfmri4_jaws",
-#    "vgfmri4_zelda"
-]
+if experiment_mode == "meg":
+    game_names = [
+        "vgmeg_sokoban",
+        "vgmeg_chase",
+        "vgmeg_helper",
+        "vgmeg_bait",
+        "vgmeg_lemmings",
+        "vgmeg_zelda",
+        "vgmeg_avoidgeorge",
+    ]
+else:
+    game_names = [
+        "vgfmri4_sokoban",
+        "vgfmri4_chase",
+        "vgfmri4_helper",
+        "vgfmri4_bait",
+        "vgfmri4_lemmings",
+        #"vgfmri4_plaqueAttack",
+        "vgfmri4_zelda",
+    #    "vgfmri4_aliens",
+    #    "vgfmri4_sokoban",
+        "vgfmri4_avoidgeorge",
+    #    "vgfmri4_butterflies",
+    #    "vgfmri4_jaws",
+    #    "vgfmri4_zelda"
+    ]
 
 #real_names = [
 #    "Chase",
@@ -209,8 +219,40 @@ duration = 60 # TODO vs. timeout in game rules! = 60 instance duration (sec)
 interplay_interval = 2 # = 2 sec, how long to hold last screen
 interblock_interval = 2 # = 2 sec, how long to show game name
 
+def gen_runs_for_actual_experiment(games,
+    do_gen_run_for_test_games=False):
+    if do_gen_run_for_test_games:
+        # Test levels 1-2-3-4-5-6-7-8-9 of each game in sequential order
+        runs = []
+        for i_run in range(7):
+            i_game = i_run
+            run = {
+                'run_id': i_run,
+                'prerun_interval': 1,
+                'postrun_interval': 1
+            }
+            block = {
+                'block_id': 0,
+                'game_id': i_game,
+                'game': games[i_game],
+                'interblock_interval': interblock_interval
+            }
+            instances = []
+            for level in range(9):
+                instance = {
+                    'instance_id': level,
+                    'desc_id': 0,
+                    'level_id': level,
+                    'duration': duration,
+                    'interplay_interval': interplay_interval
+                }
+                instances.append(instance)
+            block['instances'] = instances
 
-def gen_runs_for_actual_experiment(games):
+            run['blocks'] = [block]
+            runs.append(run)
+        
+        return runs
     #
     # === Experimental structure ===
     #
@@ -383,7 +425,9 @@ def gen_subj(subj_id):
     games = get_games(fakes, alphs, colors)
 
     if (experiment_mode.lower() == "fmri" or experiment_mode.lower() == "meg"):
-        runs = gen_runs_for_actual_experiment(games)
+        do_gen_run_for_test_games = int(subj_id) > 900000 and int(subj_id) < 900099
+        runs = gen_runs_for_actual_experiment(games,
+            do_gen_run_for_test_games=do_gen_run_for_test_games)
     else:
         runs = gen_runs(games)
 
