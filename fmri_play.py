@@ -211,8 +211,12 @@ assert(len(bg_colors) == len(game_names))
 # total TRs = 283 TRs = 566 seconds
 
 nruns = 6 # = 6 per subject: 0 = practice, last one = post-training
-prerun_interval = 10 # = 10 sec, how long for scanner to settle
-postrun_interval = 10 # = 10 sec, how long for HRF to settle
+if experiment_mode == "fmri":
+    prerun_interval = 10 # = 10 sec, how long for scanner to settle
+    postrun_interval = 10 # = 10 sec, how long for HRF to settle
+else:
+    prerun_interval = 3 # short pause to collect baseline activity
+    postrun_interval = 3
 nblocks = 3 # = 3 per run
 ninstances = 3 # = 3 per block
 duration = 60 # TODO vs. timeout in game rules! = 60 instance duration (sec) 
