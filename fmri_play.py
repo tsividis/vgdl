@@ -462,6 +462,8 @@ def get_subj(subj_id):
 if __name__ == '__main__':
     subj_id = sys.argv[1]
     run_id = int(sys.argv[2])
+    block_id = int(sys.argv[3]) if len(sys.argv) > 3 else None
+    instance_id = int(sys.argv[4]) if len(sys.argv) > 4 else None
 
     assert subj_id > 10 # safeguard so we don't overwrite the precious subject 0
 
@@ -495,7 +497,8 @@ if __name__ == '__main__':
     do_meg_triggers = experiment_mode.lower() == "meg"
     wins, scores, best_instance_scores = VGDLParser.fMRI_playRun(subj, run_id, db,
         subj['seed'], remap_keys=remap_keys, do_meg_triggers=do_meg_triggers,
-        joystick_controller=joystick_controller)
+        joystick_controller=joystick_controller,
+        block_id=block_id, instance_id=instance_id)
 
     print 'wins ', wins
     print 'scores ', scores

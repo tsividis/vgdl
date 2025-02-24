@@ -249,7 +249,8 @@ class VGDLParser(object):
     @staticmethod
     def fMRI_playRun(subj, run_id, db, seed, remap_keys=None,
         do_wait_scan_trigger=False,
-        do_meg_triggers=False, joystick_controller=None):
+        do_meg_triggers=False, joystick_controller=None,
+        block_id=None, instance_id=None):
         # Play a given fMRI run for given subject
         #
 
@@ -357,7 +358,8 @@ class VGDLParser(object):
         scores = []
         best_instance_scores = []
 
-        for b in range(len(blocks)):
+        block_ids = range(len(blocks)) if block_id is None else [block_id]
+        for b in block_ids:
             block = blocks[b]
             assert block['block_id'] == b
 
@@ -379,7 +381,8 @@ class VGDLParser(object):
             block_bg.fill(bg_color)
             fullScreenText(game['fake_name'], interblock_interval, bg=block_bg)
 
-            for i in range(len(instances)):
+            instance_ids = range(len(instances)) if instance_id is None else [instance_id]
+            for i in instance_ids:
                 instance = instances[i]
                 assert instance['instance_id'] == i
 
