@@ -1158,7 +1158,7 @@ class BasicGame(object):
         return obj_list
 
     def getFullState(self, as_string=True, observe_state=False, keyPressType=None,
-        do_meg_triggers=False, trigger_play_clock=None): # momchil note: strings so we can dump to json
+        do_meg_triggers=False, trigger_play_clock=None, joystick_state=None): # momchil note: strings so we can dump to json
         """ Return a dictionary that allows full reconstruction of the game state,
         e.g. for the load/save functionality. """
         # TODO: make sure this list is complete/correct -- maybe a naming convention would be easier,
@@ -1241,6 +1241,8 @@ class BasicGame(object):
               }
         if do_meg_triggers:
             fs['trigger_play_clock'] = trigger_play_clock
+        if joystick_state is not None:
+            fs["joystick_state"] = joystick_state
  
         return fs
 
@@ -1924,8 +1926,14 @@ class BasicGame(object):
         self.all_objects = self.getAllObjects() #self.getObjects() # Save all objects, some which may be killed in game
         ##figure out keypress type:
         #disableContinuousKeyPress = all([item.physicstype.__name__=='GridPhysics' for sublist in self.sprite_groups.values() for item in sublist]) momchil: enable for fMRI
-
-        allStates = [self.getFullState(do_meg_triggers=do_meg_triggers)] # important for replay
+        if joystick_controller is not None:
+            joystick_controller.initialize_state()
+            joystick_state = joystick_controller.get_state()
+        else:
+            joystick_state = None
+        allStates = [self.getFullState(do_meg_triggers=do_meg_triggers,
+                        trigger_play_clock=None,
+                        joystick_state=joystick_state)] # important for replay
         allKeystates = [None] # log keys pre-update & event handling (states are logged after); this is the dummy keystate corresponding to the initial stote
 
         # for k,v in self.alt_sprite_constr.items():
@@ -2014,33 +2022,22 @@ class BasicGame(object):
                 keystate[ord('=')] = 0 # TODO is this safe???
                 self.keystate = keystate
 
-            # remap joystick actions to key presses for the corresponding action
+            # Joystick control and state update
             if joystick_controller is not None:
+                # - Update joystick state
+                joystick_controller.update_state()
+                joystick_state = joystick_controller.get_state()
+                # - Remap the joystick direction and button press
+                #  to key presses for the corresponding actions
                 keystate = self.keystate.copy()
-
-                direction = joystick_controller.get_direction()
+                direction = joystick_state["direction"]
                 if direction is not None:
                     keystate[direction_to_key[direction]] = True
-                if joystick_controller.anybuttonpressed():
+                if joystick_state["buttonpressed"]:
                     keystate[K_SPACE] = True
-                
-                # xaxis = joystick.get_axis(0)
-                # yaxis = joystick.get_axis(1)
-                # print("xaxis, yaxis", (xaxis, yaxis))
-                # if xaxis < -0.7:
-                #     keystate[K_LEFT] = True
-                # elif xaxis > 0.7:
-                #     keystate[K_RIGHT] = True
-                # if yaxis < -0.7:
-                #     keystate[K_UP] = True
-                # elif yaxis > 0.7:
-                #     keystate[K_DOWN] = True
-                # anyjoybuttonpressed = any((joystick.get_button(i) > 0)
-                #     for i in range(joystick.get_numbuttons()))
-                # if anyjoybuttonpressed:
-                #     keystate[K_SPACE] = True
-
                 self.keystate = keystate
+            else:
+                joystick_state = None
 
             # log actual button presses & releases, for fMRI
             for event in pygame.event.get():
@@ -2216,7 +2213,8 @@ class BasicGame(object):
 
                     allStates.append(self.getFullState(keyPressType=keyPressType,
                         do_meg_triggers=do_meg_triggers,
-                        trigger_play_clock=trigger_play_clock)) # cannot do colorized; playback fails TODO investigate
+                        trigger_play_clock=trigger_play_clock,
+                        joystick_state=joystick_state)) # cannot do colorized; playback fails TODO investigate
 
                     pygame.time.wait(10)
                     print len(self.actions), win, self.score
@@ -2270,7 +2268,8 @@ class BasicGame(object):
             # important to log state at the right spot for replay
             allStates.append(self.getFullState(keyPressType=keyPressType,
                 do_meg_triggers=do_meg_triggers,
-                trigger_play_clock=trigger_play_clock)) # cannot do colorized; playback fails TODO investigate
+                trigger_play_clock=trigger_play_clock,
+                joystick_state=joystick_state)) # cannot do colorized; playback fails TODO investigate
 
             #### in manual game-play mode ####
             if displayScoreFn:
