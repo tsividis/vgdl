@@ -265,7 +265,7 @@ class VGDLParser(object):
         fMRI_screen.blit(fMRI_bg, (0, 0))
 
         if do_meg_triggers:
-            do_log = True
+            do_log = False
             if do_log:
                 log_fname = 'trigger_log_s={}_r={}.txt'.format(subj['subj_id'], run_id)
                 log_dir = "trigger_logs"
@@ -276,8 +276,7 @@ class VGDLParser(object):
                 log_fpath = None
             trigger = meg_trigger.MEGTrigger(
                 port=meg_trigger.ARDUINO_PORT, # comment this line to test code when arduino is not connected
-                do_log=do_log, log_fpath=log_fpath,
-                use_new_protocol=True)
+                do_log=do_log, log_fpath=log_fpath)
         else:
             trigger = None
 
