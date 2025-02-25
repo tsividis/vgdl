@@ -48,7 +48,8 @@ class MEGTrigger:
 
     def send(self, do_reset=False, play_clock=None, run_start=False, run_end=False,
         block_start=False, block_end=False, instance_start=False,
-        instance_end=False, play_start=False, play_end=False):
+        instance_end=False, play_start=False, play_end=False,
+        use_new_protocol=False):
 
         # Encode structural events using bitwise OR
         trigger_value = 0
@@ -90,9 +91,10 @@ class MEGTrigger:
 
         # Send the structural trigger if it's nonzero
         if trigger_value > 0:
-            self.port.write(chr(trigger_value)) # Send trigger value
+            t_msg = trigger_message(trigger_value, use_new_protocol=use_new_protocol)
+            self.port.write(t_msg) # Send trigger value
             if self.do_log:
-                self.log.write(chr(trigger_value), " ".join(log_msgs))
+                self.log.write(t_msg, " ".join(log_msgs))
             if do_reset:
                 # Reset all bits to zero after delay. This should be done here
                 # only if the reset is not already handled by the receiving
@@ -108,9 +110,10 @@ class MEGTrigger:
             and (play_clock <= PLAY_CLOCK_MAX)):
             # Encode the play_clock value between 65 and 127
             trigger_value = 64 + play_clock
-            self.port.write(chr(trigger_value)) # Send trigger value
+            t_msg = trigger_message(trigger_value, use_new_protocol=use_new_protocol)
+            self.port.write(t_msg) # Send trigger value
             if self.do_log:
-                self.log.write(chr(trigger_value), "play_clock_%d" % play_clock)
+                self.log.write(t_msg, "play_clock_%d" % play_clock)
             if do_reset:
                 # Reset all bits to zero after delay. This should be done here
                 # only if the reset is not already handled by the receiving
@@ -119,3 +122,10 @@ class MEGTrigger:
                 self.port.write(chr(0))
                 if self.do_log:
                     self.log.write(chr(0), "reset")
+
+# send trigger; 1 <= t < 256
+def trigger_message(t, use_new_protocol=False):
+    if use_new_protocol:
+        return bytes([int.from_bytes(b'T'), t, ord('>')]) if t > 0 else 'R>'
+    else:
+        return chr(t)
