@@ -275,8 +275,9 @@ class VGDLParser(object):
             else:
                 log_fpath = None
             trigger = meg_trigger.MEGTrigger(
-                # port=meg_trigger.ARDUINO_PORT, # comment this line to test code when arduino is not connected
-                do_log=do_log, log_fpath=log_fpath)
+                port=meg_trigger.ARDUINO_PORT, # comment this line to test code when arduino is not connected
+                do_log=do_log, log_fpath=log_fpath,
+                use_new_protocol=True)
         else:
             trigger = None
 

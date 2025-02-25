@@ -8,7 +8,8 @@ import serial
 import time
 
 BAUDRATE = 9600
-ARDUINO_PORT = "/dev/tty.usbmodem101"
+# ARDUINO_PORT = "/dev/tty.usbmodem101" # mac
+ARDUINO_PORT = "/dev/ttyACM0" # mac
 PLAY_CLOCK_MIN = 1
 PLAY_CLOCK_MAX = 63
 TRIGGER_RESET_DELAY = 5 # in milliseconds
@@ -27,8 +28,11 @@ class Log:
 
     def write(self, trigger_value, msg=""):
         timestamp = datetime.datetime.utcnow().strftime('%H:%M:%S.%f')
-        line = ("[%s] WRITE TRIGGER value=%d[%s] (%s)" % (
-                    timestamp, ord(trigger_value), format(ord(trigger_value),'08b'), msg))
+        # line = ("[%s] WRITE TRIGGER value=%d[%s] (%s)" % (
+        #             timestamp, ord(trigger_value), format(ord(trigger_value),'08b'), msg))
+        # TBD: fix
+        line = ("[%s] WRITE TRIGGER=%s (%s)" % (
+                    timestamp, trigger_value, msg))
         if self.do_print:
             print(line)
         self.log_file.write(line + "\n")
@@ -37,7 +41,8 @@ class Log:
         self.log_file.close()
 
 class MEGTrigger:
-    def __init__(self, port=None, do_log=False, log_fpath=None, do_print_log=False):
+    def __init__(self, port=None, do_log=False, log_fpath=None, do_print_log=False,
+        use_new_protocol=False):
         if port is not None:
             self.port = serial.Serial(port=port, baudrate=BAUDRATE) # open serial port
         else:
@@ -45,11 +50,11 @@ class MEGTrigger:
         self.do_log = do_log
         if self.do_log:
             self.log = Log(log_fpath, do_print=do_print_log)
+        self.use_new_protocol = use_new_protocol
 
     def send(self, do_reset=False, play_clock=None, run_start=False, run_end=False,
         block_start=False, block_end=False, instance_start=False,
-        instance_end=False, play_start=False, play_end=False,
-        use_new_protocol=False):
+        instance_end=False, play_start=False, play_end=False):
 
         # Encode structural events using bitwise OR
         trigger_value = 0
@@ -91,7 +96,7 @@ class MEGTrigger:
 
         # Send the structural trigger if it's nonzero
         if trigger_value > 0:
-            t_msg = trigger_message(trigger_value, use_new_protocol=use_new_protocol)
+            t_msg = trigger_message(trigger_value, use_new_protocol=self.use_new_protocol)
             self.port.write(t_msg) # Send trigger value
             if self.do_log:
                 self.log.write(t_msg, " ".join(log_msgs))
@@ -110,7 +115,7 @@ class MEGTrigger:
             and (play_clock <= PLAY_CLOCK_MAX)):
             # Encode the play_clock value between 65 and 127
             trigger_value = 64 + play_clock
-            t_msg = trigger_message(trigger_value, use_new_protocol=use_new_protocol)
+            t_msg = trigger_message(trigger_value, use_new_protocol=self.use_new_protocol)
             self.port.write(t_msg) # Send trigger value
             if self.do_log:
                 self.log.write(t_msg, "play_clock_%d" % play_clock)
@@ -126,6 +131,9 @@ class MEGTrigger:
 # send trigger; 1 <= t < 256
 def trigger_message(t, use_new_protocol=False):
     if use_new_protocol:
-        return bytes([int.from_bytes(b'T'), t, ord('>')]) if t > 0 else 'R>'
+        # Python 3
+        # return bytes([int.from_bytes(b'T'), t, ord('>')]) if t > 0 else 'R>'
+        # Python 2
+        return ''.join(chr(x) for x in [ord('T'), t, ord('>')]) if t > 0 else 'R>'
     else:
         return chr(t)
