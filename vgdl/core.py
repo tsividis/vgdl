@@ -42,8 +42,15 @@ import meg_trigger
 #     Constants
 # ---------------------------------------------------------------------
 
-# fMRI_screensize = (800,580)  # dimension of the screen shown to participants
-fMRI_screensize = (1920,1080)  # dimension of the screen shown to participants
+# fMRI_screensize = (800,580)
+# Match the screensize to the resolution of the display, with some margin
+# to account for GUI (e.g. window titlebar at the top), so that the game fills
+# but doesn't extend beyond the visible portion of the display.
+display_w = 1920
+display_h = 1080
+margin_w = 66
+margin_h = 70
+fMRI_screensize = (display_w-margin_w,display_h-margin_h)
 render_screensize = (80,60)  # dimensions of the renders used for training the DQN, PCA, etc.
 BLOCK_SIZE = 35 #35
 
