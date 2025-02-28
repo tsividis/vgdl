@@ -56,8 +56,9 @@ direction_to_key = {"left": K_LEFT, "right": K_RIGHT, "up": K_UP, "down": K_DOWN
 # emptyKeyState = tuple([0]*323) #keyState when no keys are pressed
 emptyKeyState = util.getEmptyKeyState()
 
+# If photodiode test, flash a white circle on black background while the game is running
 DO_PHOTODIODE_TEST = False
-# DO_PHOTODIODE_TEST = True # If photodiode test, flash a white circle on black background above the game world
+# DO_PHOTODIODE_TEST = True
 
 # fMRI helpers
 # TODO momchil put somewhere else
@@ -2006,8 +2007,8 @@ class BasicGame(object):
                     trigger_play_clock = None # To record that no trigger was sent on this frame
                 if DO_PHOTODIODE_TEST:
                     # print("do photodiode")
-                    x, y = (fMRI_screensize[0]//2, 40)
                     radius = 24
+                    x, y = (fMRI_screensize[0]-radius, fMRI_screensize[1]-radius)
                     rect = pygame.Rect(x-radius, y-radius, radius*2, radius*2)
                     if (self.time % self.frame_rate) == 0:
                         pygame.draw.circle(self.screen, white, (x, y), radius)
