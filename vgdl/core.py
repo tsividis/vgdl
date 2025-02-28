@@ -2013,7 +2013,6 @@ class BasicGame(object):
                 else:
                     trigger_play_clock = None # To record that no trigger was sent on this frame
                 if DO_PHOTODIODE_TEST:
-                    # print("do photodiode")
                     radius = 24
                     x, y = (fMRI_screensize[0]-radius, fMRI_screensize[1]-radius)
                     rect = pygame.Rect(x-radius, y-radius, radius*2, radius*2)
