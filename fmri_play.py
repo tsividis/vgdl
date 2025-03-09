@@ -494,7 +494,8 @@ if __name__ == '__main__':
 
     from vgdl.core import VGDLParser
     #VGDLParser.fMRI_showAlphabets(alphabets)
-    do_meg_triggers = experiment_mode.lower() == "meg"
+    do_meg_triggers = (experiment_mode.lower() == "meg"
+        and run_id > 0) # run 0 is behavioral training outside of the scanner
     wins, scores, best_instance_scores = VGDLParser.fMRI_playRun(subj, run_id, db,
         subj['seed'], remap_keys=remap_keys, do_meg_triggers=do_meg_triggers,
         joystick_controller=joystick_controller,

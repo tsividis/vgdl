@@ -2237,7 +2237,7 @@ class BasicGame(object):
 
                     allStates.append(self.getFullState(keyPressType=keyPressType,
                         do_meg_triggers=do_meg_triggers,
-                        trigger_play_clock=trigger_play_clock,
+                        trigger_play_clock=(trigger_play_clock if do_meg_triggers else None),
                         joystick_state=joystick_state)) # cannot do colorized; playback fails TODO investigate
 
                     pygame.time.wait(10)
@@ -2292,7 +2292,7 @@ class BasicGame(object):
             # important to log state at the right spot for replay
             allStates.append(self.getFullState(keyPressType=keyPressType,
                 do_meg_triggers=do_meg_triggers,
-                trigger_play_clock=trigger_play_clock,
+                trigger_play_clock=(trigger_play_clock if do_meg_triggers else None),
                 joystick_state=joystick_state)) # cannot do colorized; playback fails TODO investigate
 
             #### in manual game-play mode ####
