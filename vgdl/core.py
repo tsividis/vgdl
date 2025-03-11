@@ -2225,14 +2225,14 @@ class BasicGame(object):
                     # clear collision events for state logging TODO momchil make sure it works
                     self._eventHandling()
 
-                    # TODO momchil dedupe / sanity
-                    if displayScoreFn:
-                        displayScoreFn(self.score, self.win)
-
                     if fMRI_timeout is not None: # TODO momchil have actual is_fMRI flag
                         self._fMRI_drawAll()
                     else:
                         self._drawAll()
+                    # TODO momchil dedupe / sanity
+                    if displayScoreFn:
+                        displayScoreFn(self.score, self.win)
+
                     pygame.display.update(VGDLSprite.dirtyrects)
 
                     allStates.append(self.getFullState(keyPressType=keyPressType,
@@ -2295,14 +2295,13 @@ class BasicGame(object):
                 trigger_play_clock=(trigger_play_clock if do_meg_triggers else None),
                 joystick_state=joystick_state)) # cannot do colorized; playback fails TODO investigate
 
-            #### in manual game-play mode ####
-            if displayScoreFn:
-                displayScoreFn(self.score, self.win)
-
             if fMRI_timeout is not None: # TODO momchil have actual is_fMRI flag
                 self._fMRI_drawAll()
             else:
                 self._drawAll()
+            #### in manual game-play mode ####
+            if displayScoreFn:
+                displayScoreFn(self.score, self.win)
 
             # TODO momchil for testing only TODO rm
             #regressor = [(1, 10), (3, 11), (4, 15), (2, 25), (5, 100)]
