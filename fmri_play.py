@@ -26,6 +26,8 @@ import utils
 import pygame
 from pygame.locals import K_SPACE, K_UP, K_DOWN, K_LEFT, K_RIGHT
 
+import os
+
 experiment_mode = "meg" # "fmri", "meg" or "test"
 keyboard_remap = {
     "fmri": {ord('h'): K_LEFT, ord('k'): K_DOWN, ord(','): K_RIGHT, ord('u'): K_UP},
@@ -528,7 +530,19 @@ if __name__ == '__main__':
     """
     i = random.randint(0, len(best_instance_scores)-1)
     money = best_instance_scores[i]
-    print 'money for run', run_id, '= $', money, '   from instance ', i
+    print 'money for run', run_id, '= ', money, ' points  from instance ', i
 
     i = random.randint(1, 7)
     print 'for bonus, pick run ', i
+
+    do_save_best_scores = True
+    if do_save_best_scores:
+        fname = 'sub-{}_run-{}_best_instance_scores.txt'.format(subj_id, run_id)
+        fdir = "sub_scores"
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+        fpath = os.path.join(fdir, fname)
+        file = open(fpath, "w")
+        for s in best_instance_scores:
+            file.write(str(s) + '\n')
+        file.close()
