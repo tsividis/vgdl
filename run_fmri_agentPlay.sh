@@ -7,8 +7,10 @@ echo running agent play for agent ${1}, subj ${2}, game ${3}, steps_for_level ${
 
 hostname
 
+module load Anaconda2/2019.10-fasrc01
 source activate pedro
 
+MONGO=/n/home_fasse/mtomov13/mongo_bin/mongodb-linux-x86_64-3.2.22/bin/mongo
 collection='sim_results'
 
 # figure out host based on machine (RC, NCF, local)
@@ -17,7 +19,7 @@ if [[ `hostname` == *"Momchil"* ]]; then
     nplays_idx=4
     curriculum_dir=savedCurricula
 else
-    host='holy7c22109.rc.fas.harvard.edu'
+    host='holy7c22412.rc.fas.harvard.edu'
     nplays_idx=2
     curriculum_dir=${MY_SCRATCH}/VGDL/savedCurricula
 fi
@@ -44,7 +46,7 @@ do
             echo ==== run_fmri_agentPlay: subj ${2}, run $run, block $block, instance $instance, game ${3}
 
             # get # of plays with given run, block, instance
-            out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.plays.count({'subj_id': '${2}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${3}'})"`
+            out=`$MONGO --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.plays.count({'subj_id': '${2}', 'run_id': ${run}, 'block_id': ${block}, 'instance_id': ${instance}, 'game_name': '${3}'})"`
 
             echo mongo play count -- $out
 
@@ -63,8 +65,8 @@ do
             then
                 # make sure to skip levels that we have already played
                 # note this assumes that we are not removing the saved curricula
-                #out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'tag': '${5}'})"`
-                out=`mongo --host ${host} heroku_7lzprs54  --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'tag': '${5}'})"`
+                #out=`$MONGO --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'tag': '${5}'})"`
+                out=`$MONGO --host ${host} heroku_7lzprs54  --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'tag': '${5}'})"`
                 echo mongo nlevel -- $out
                 # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601
                 SAVEIFS=$IFS   # Save current IFS
@@ -82,8 +84,8 @@ do
                 level=$(( level + 1 ))
 
                 # make sure current level is actually not computed
-                #out=`mongo --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'results.level': ${level}, 'tag': '${5}'})"`
-                out=`mongo --host ${host} heroku_7lzprs54  --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'results.level': ${level}, 'tag': '${5}'})"`
+                #out=`$MONGO --host ${host} heroku_7lzprs54  --authenticationDatabase "admin" -u "root" -p "parolatabe" --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'results.level': ${level}, 'tag': '${5}'})"`
+                out=`$MONGO --host ${host} heroku_7lzprs54  --eval "db.${collection}.count({'agent_name': '${1}', 'subj_id': '${2}', 'game_name': '${3}', 'results.level': ${level}, 'tag': '${5}'})"`
                 echo mongo level $level count -- $out
                 # https://stackoverflow.com/questions/24628076/bash-convert-n-delimited-strings-into-array/45565601
                 SAVEIFS=$IFS   # Save current IFS

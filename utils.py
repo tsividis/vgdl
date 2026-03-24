@@ -38,7 +38,7 @@ def get_mongo_client():
     else:
         # cannon
         #client = MongoClient('holy7c22108.rc.fas.harvard.edu', 27017, username='root', password='parolatabe', authSource='admin')
-        client = MongoClient('holy7c22109.rc.fas.harvard.edu', 27017)
+        client = MongoClient('holy7c22412.rc.fas.harvard.edu', 27017)
         print 'get_mongo_client: Cannon or FASSE'
 
     return client
