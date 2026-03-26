@@ -347,11 +347,14 @@ class Environment:
 
                 print 'checkpoint 3'
 
-                if win:
-                    self.n_level += 1
-                    self.agent.n_level += 1
-                    self.within_level_iteration = 0
-                    self.agent.within_level_iteration = 0
+                # momchil 2026_03_26: commented out to fix fMRI per-level invocation bug
+                # (agent.n_level was being incremented on each win, causing loaded_n_level > 0
+                # on subsequent invocations which then skipped the single level_game_pair)
+                #if win:
+                #    self.n_level += 1
+                #    self.agent.n_level += 1
+                #    self.within_level_iteration = 0
+                #    self.agent.within_level_iteration = 0
 
                 print 'checkpoint 4'
                     

@@ -775,8 +775,10 @@ class Agent(object):
                 terminationCondition = {'ended': False, 'win':False, 'time':self.environment.getTime()}
                 trace = (self.finalTimeStepList, terminationCondition) 
 
+                _t_induction = time.time()
                 hypotheses = list(game_object.runInduction(game_object.spriteInductionResult, trace, 20, \
                 verbose=False, existingTheories=hypotheses))
+                print "TIMING runInduction: {:.3f}s (trace len={})".format(time.time()-_t_induction, len(self.finalTimeStepList))
 
                 if self.record_fMRIRegressors and self.environment.getTime() > 0:  # record regressors after each frame, which means excluding the initial frame
  
@@ -893,15 +895,22 @@ class Agent(object):
         # print "phase 9: {}".format(time.time()-t1)
         # t1 = time.time()
 
+        _t_deepcopy = time.time()
         self.memory.nextPositions = {}
         for k, v in self.environment._game.all_objects.iteritems():
             self.memory.nextPositions[k] = (int(self.environment._game.all_objects[k]['sprite'].rect.x), int(self.environment._game.all_objects[k]['sprite'].rect.y))
             try:
                 if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                    self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+                    self.memory.objectMemoryDict[k] = self.memory.previousPositions[k]  # tuples are immutable, no deepcopy needed
             except KeyError:
                 pass
-        self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+        self.memory.previousPositions = self.memory.nextPositions.copy()  # shallow copy suffices
+        if not hasattr(self, '_t_positions_total'): self._t_positions_total = 0.0; self._t_positions_count = 0
+        self._t_positions_total += time.time() - _t_deepcopy
+        self._t_positions_count += 1
+        if self._t_positions_count % 100 == 0:
+            print "TIMING positions deepcopy: {:.4f}s avg over {} calls (total {:.3f}s)".format(
+                self._t_positions_total/self._t_positions_count, self._t_positions_count, self._t_positions_total)
 
         # print "phase 10: {}".format(time.time()-t1)
         # t1 = time.time()
@@ -912,6 +921,8 @@ class Agent(object):
             self.agentState = defaultdict(lambda: 0)
 
         self.bookkeeping.effectsEncountered.extend(effects)
+        if len(self.bookkeeping.effectsEncountered) > 10000:  # cap to avoid unbounded memory growth
+            self.bookkeeping.effectsEncountered = self.bookkeeping.effectsEncountered[-5000:]
         self.memory.episodeSteps +=1
         if theory_change_flag or self.theory_playback:
             self.hypotheses = hypotheses
@@ -1199,10 +1210,10 @@ class Agent(object):
                     self.memory.nextPositions[k] = (int(environment._game.all_objects[k]['sprite'].rect.x), int(environment._game.all_objects[k]['sprite'].rect.y))
                     try:
                         if self.memory.previousPositions[k] != self.memory.nextPositions[k]:
-                            self.memory.objectMemoryDict[k] = copy.deepcopy(self.memory.previousPositions[k])
+                            self.memory.objectMemoryDict[k] = self.memory.previousPositions[k]  # tuples are immutable, no deepcopy needed
                     except KeyError:
                         pass
-                self.memory.previousPositions = copy.deepcopy(self.memory.nextPositions)
+                self.memory.previousPositions = self.memory.nextPositions.copy()  # shallow copy suffices
                 self.distribution.spriteInduction(environment._game, self.memory, step=3,  bestSpriteTypeDict=bestSpriteTypeDict)
 
                 if self.record_fMRIRegressors:

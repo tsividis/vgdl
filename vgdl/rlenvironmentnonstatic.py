@@ -14,6 +14,15 @@ from core import VGDLSprite, pauseForDuration
 from stateobsnonstatic import StateObsHandlerNonStatic
 from collections import defaultdict
 import argparse
+import time as _time_module
+
+# TIMING: module-level accumulators for fastcopy
+_fastcopy_total_time = 0.0
+_fastcopy_call_count = 0
+_fc_t_sprite_groups = 0.0
+_fc_t_dict_quickcopy = 0.0
+_fc_t_other_quickcopy = 0.0
+_fc_dict_key_times = {}
 from IPython import embed
 import random
 import math
@@ -313,6 +322,9 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
 
     def fastcopy(self):
         ## Method for rapid copying of a simulator environment (the self)
+        global _fastcopy_total_time, _fastcopy_call_count
+        global _fc_t_sprite_groups, _fc_t_dict_quickcopy, _fc_t_other_quickcopy, _fc_dict_key_times
+        _t = _time_module.time()
         newRle = empty_copy(self)
         for k,v in self.__dict__.iteritems():
             ctype = str(type(getattr(self,k)))
@@ -346,8 +358,21 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                     newRle._game.kill_list = v[:]
             elif 'defaultdict' in ctype or 'dict' in ctype:
                 if k != 'sprite_groups':
-                    newRle._game.__dict__[k] = quickcopy(v)
+                    _t2 = _time_module.time()
+                    # FIX 4: avoid expensive pickle for known-safe dicts
+                    if k == 'lastcollisions':
+                        # always reset to {} at start of _eventHandling; no need to copy
+                        newRle._game.__dict__[k] = {}
+                    elif k == 'all_objects':
+                        # never accessed during BFS simulation on copied rles; shallow copy suffices
+                        newRle._game.__dict__[k] = v.copy()
+                    else:
+                        newRle._game.__dict__[k] = quickcopy(v)
+                    _dt = _time_module.time() - _t2
+                    _fc_t_dict_quickcopy += _dt
+                    _fc_dict_key_times[k] = _fc_dict_key_times.get(k, 0.0) + _dt
                 else:
+                    _t2 = _time_module.time()
                     new_sprite_groups = defaultdict(list)
                     for group_name, group in self._game.sprite_groups.iteritems():
                         for sprite in group:
@@ -356,18 +381,23 @@ class RLEnvironmentNonStatic( StateObsHandlerNonStatic):
                             else:
                                 new_sprite = empty_copy(sprite)
                                 try:
-                                    for attr in sprite.__dict__.keys():
-                                        if hasattr(sprite, attr):
-                                            setattr(new_sprite, attr, getattr(sprite, attr))
-                                    setattr(new_sprite, 'resources', quickcopy(sprite.__dict__['resources']))
+                                    new_sprite.__dict__.update(sprite.__dict__)
+                                    new_sprite.resources = quickcopy(sprite.__dict__.get('resources', {}))
                                 except:
                                     embed()
                                 new_sprite_groups[group_name].append(new_sprite)
                     newRle._game.sprite_groups = new_sprite_groups
+                    _fc_t_sprite_groups += _time_module.time() - _t2
             elif 'vgdl' in ctype:
+                _t2 = _time_module.time()
                 newRle._game.__dict__[k] = quickcopy(v)
+                _fc_t_other_quickcopy += _time_module.time() - _t2
             else:
+                _t2 = _time_module.time()
                 setattr(newRle._game, k, quickcopy(v))
+                _fc_t_other_quickcopy += _time_module.time() - _t2
+        _fastcopy_total_time += _time_module.time() - _t
+        _fastcopy_call_count += 1
         return newRle
 
     def _isDone(self, getTermination=False):

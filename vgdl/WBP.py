@@ -184,9 +184,8 @@ class WBP():
 			return False
 
 	def calculateAtoms(self, rle):
-		
 		## Hashes the state according to object-token location and presence/absence of items of each type. Idea is to prune states where no new atom is made true in this search episode.
-
+		_t_atoms = time.time()
 		lst = []
 		## Track specific locations of objects
 		dead_objects = set(rle._game.kill_list)
@@ -245,6 +244,10 @@ class WBP():
 
 			stateIW1 = [vecValue] + rle.show_binary(self.thingWeShoot)
 			lst.append(hash(tuple(stateIW1)))
+		try:
+			self._t_calculateAtoms += time.time() - _t_atoms
+		except AttributeError:
+			pass
 		return set(lst)
 
 	def rewardSelection(self, QReward):
@@ -427,6 +430,17 @@ class WBP():
 		QReward.append(start)
 		self.total_nodes_selected = 0
 
+		# TIMING
+		import rlenvironmentnonstatic as _rlenv
+		_rlenv._fastcopy_total_time = 0.0
+		_rlenv._fastcopy_call_count = 0
+		_rlenv._fc_t_sprite_groups = 0.0
+		_rlenv._fc_t_dict_quickcopy = 0.0
+		_rlenv._fc_t_other_quickcopy = 0.0
+		_rlenv._fc_dict_key_times = {}
+		self._t_calculateAtoms = 0.0
+		self._t_bfs_start = time.time()
+
 		print "planning..."
 		
 		while len(QReward)>0 and self.total_nodes_selected < self.max_nodes:
@@ -442,6 +456,7 @@ class WBP():
 			if current in [None, 'pickMaxNode']:
 				self.quitting = True
 				self.return_non_win_plan(start, QReward)
+				self._print_bfs_timing()
 				return
 			
 			self.update_visited_positions(current.rle)
@@ -479,6 +494,7 @@ class WBP():
 				self.solution = self.bestNode.actionSeq
 				if self.display:
 					print "found winning states"
+				self._print_bfs_timing()
 				return
 
 		self.solution = []
@@ -486,15 +502,28 @@ class WBP():
 		if self.stall_mode:
 			print "returning best non-win-plan"
 			self.return_best_non_win_plan(QReward)
+			self._print_bfs_timing()
 			return
 
-		## Above segment can be changed to this:
-		# if self.stall_mode:
-		# 	print "returning best non-win-plan"
-		# 	self.return_non_win_plan(start, QReward)
-		# 	return
-
+		self._print_bfs_timing()
 		return
+
+	def _print_bfs_timing(self):
+		import rlenvironmentnonstatic as _rlenv
+		t_total = time.time() - self._t_bfs_start
+		t_fc = _rlenv._fastcopy_total_time
+		n_fc = _rlenv._fastcopy_call_count
+		t_atoms = self._t_calculateAtoms
+		t_other = t_total - t_fc - t_atoms
+		t_sg = _rlenv._fc_t_sprite_groups
+		t_dq = _rlenv._fc_t_dict_quickcopy
+		t_oq = _rlenv._fc_t_other_quickcopy
+		print ("TIMING BFS: total={:.3f}s nodes={} | fastcopy={:.3f}s (n={}) | calculateAtoms={:.3f}s | other={:.3f}s".format(
+			t_total, self.total_nodes_selected, t_fc, n_fc, t_atoms, t_other))
+		print ("TIMING FC breakdown: sprite_groups={:.3f}s dict_quickcopy={:.3f}s other_quickcopy={:.3f}s (sum={:.3f}s of fc={:.3f}s)".format(
+			t_sg, t_dq, t_oq, t_sg+t_dq+t_oq, t_fc))
+		sorted_keys = sorted(_rlenv._fc_dict_key_times.items(), key=lambda x: -x[1])
+		print ("TIMING FC dict keys: " + " | ".join("{}={:.3f}s".format(k,v) for k,v in sorted_keys))
 
 
 
