@@ -25,7 +25,7 @@ agent='EMPA'
 #tag='attempt_1_states'
 #tag='attempt_3_colors'
 #tag='attempt_4_colors'
-tag='2026_03_26'
+tag='2026_04_19'
 #tag='attempt_2_states_steps_1200'
 #tag='ablation_AGH3_attempt_1'
 #tag='ablation_IW_attempt_1'
@@ -60,8 +60,8 @@ steps_per_level=1200 # fMRI level # frames in a minute
 #games=( 'vgfmri4_bait' 'vgfmri4_chase' 'vgfmri4_zelda' ) # 140000, 4 days
 #games=( 'vgfmri4_bait' 'vgfmri4_chase' 'vgfmri4_zelda' 'vgfmri4_helper' 'vgfmri4_avoidgeorge' 'vgfmri4_lemmings' ) # 140000, 4 days
 #games=( 'vgfmri4_chase' ) # 50000, 4 days
-#games=( 'vgfmri4_bait' ) # 50000, 4 days
-games=('vgfmri4_zelda')
+games=( 'vgfmri4_bait' ) # 50000, 4 days
+#games=('vgfmri4_zelda')
 #games=( 'vgfmri3_c.hase' ) # 50000, 4 days
 
 echo ---------------- >> jobs.txt
