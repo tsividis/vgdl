@@ -244,8 +244,12 @@ class Environment:
                 if self.agent.memory.totalGameSteps > MAX_STEPS:
                     if self.produce_printout:
                         print "reached max number of steps ({}>{}) in playCurriculum. Stopping experiment".format(self.agent.memory.totalGameSteps, MAX_STEPS)
+                    break
 
                 self.agent.bookkeeping.deleteEpisodeFile()
+
+            if self.agent.memory.totalGameSteps > MAX_STEPS:
+                break
 
             if heatmap:
                 self.makeHeatmap(allStatesEncountered, 'heatmap_{}_{}_level{}.pdf'.format(self.gameFilename, n_level, self.agent.param_ID))

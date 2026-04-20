@@ -31,11 +31,11 @@ git log | head -n 1 >> jobs.txt
 
 sbatch_output=`sbatch \
     -p fasse \
-    --mem 50000 \
-    -t 5-0:00 \
+    --mem 140000 \
+    -t 7-0:00 \
     -o ${outfileprefix}_%j.out \
     -e ${outfileprefix}_%j.err \
-    --wrap="hostname; module load Anaconda2/2019.10-fasrc01; source activate pedro; cd /n/home_fasse/mtomov13/py_vgdl && python -m vgdl.load_games --game_name ${game} --task_ID ${task_id} --produce_printout True"`
+    --wrap="hostname; module load Anaconda2/2019.10-fasrc01; source activate pedro; cd /n/home_fasse/mtomov13/py_vgdl && python -m vgdl.load_games --game_name ${game} --task_ID ${task_id} --produce_printout True --make_movie True"`
 
 echo $sbatch_output
 
